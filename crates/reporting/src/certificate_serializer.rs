@@ -81,13 +81,17 @@ pub enum Certificate {
     Dependency(DependencyCertificate),
 }
 
-pub fn serialize_certificate(cert: &Certificate) -> Result<Vec<u8>, ciborium::ser::Error<std::io::Error>> {
+pub fn serialize_certificate(
+    cert: &Certificate,
+) -> Result<Vec<u8>, ciborium::ser::Error<std::io::Error>> {
     let mut buf = Vec::new();
     ciborium::into_writer(cert, &mut buf)?;
     Ok(buf)
 }
 
-pub fn deserialize_certificate(data: &[u8]) -> Result<Certificate, ciborium::de::Error<std::io::Error>> {
+pub fn deserialize_certificate(
+    data: &[u8],
+) -> Result<Certificate, ciborium::de::Error<std::io::Error>> {
     ciborium::from_reader(data)
 }
 

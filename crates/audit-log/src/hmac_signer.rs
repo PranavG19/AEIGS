@@ -12,9 +12,7 @@ pub struct HmacSigner {
 
 impl HmacSigner {
     pub fn new(key: &[u8]) -> Self {
-        Self {
-            key: key.to_vec(),
-        }
+        Self { key: key.to_vec() }
     }
 
     pub fn sign(&self, data: &[u8]) -> MacBytes {

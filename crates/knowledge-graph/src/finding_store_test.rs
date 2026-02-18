@@ -20,7 +20,10 @@ mod tests {
         let finding = store.get(id).unwrap();
         assert_eq!(finding.id, 0);
         assert_eq!(finding.linked_node_ids, vec![1, 2]);
-        assert_eq!(finding.vulnerability_class, VulnerabilityClass::SqlInjection);
+        assert_eq!(
+            finding.vulnerability_class,
+            VulnerabilityClass::SqlInjection
+        );
         assert!((finding.severity - 9.0).abs() < f64::EPSILON);
         assert!((finding.confidence - 0.95).abs() < f64::EPSILON);
         assert_eq!(finding.certificate, b"proof");

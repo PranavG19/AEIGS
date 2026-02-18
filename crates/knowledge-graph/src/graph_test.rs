@@ -20,47 +20,79 @@ mod tests {
     fn build_small_attack_graph() -> KnowledgeGraph {
         let graph = KnowledgeGraph::new();
         let entries = vec![
-            make_entry(0, ModuleIdentifier::Enumeration, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![("path".into(), "/api/login".into())],
-            }),
-            make_entry(1, ModuleIdentifier::Enumeration, GraphOperation::AddNode {
-                node_type: NodeType::Function,
-                properties: vec![("name".into(), "authenticate".into())],
-            }),
-            make_entry(2, ModuleIdentifier::Enumeration, GraphOperation::AddNode {
-                node_type: NodeType::DataStore,
-                properties: vec![("name".into(), "users_db".into())],
-            }),
-            make_entry(3, ModuleIdentifier::Enumeration, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![("path".into(), "/api/admin".into())],
-            }),
-            make_entry(4, ModuleIdentifier::Enumeration, GraphOperation::AddEdge {
-                source_node_id: 0,
-                target_node_id: 1,
-                label: EdgeLabel::Calls,
-                weight: 1.0,
-            }),
-            make_entry(5, ModuleIdentifier::Enumeration, GraphOperation::AddEdge {
-                source_node_id: 1,
-                target_node_id: 2,
-                label: EdgeLabel::Writes,
-                weight: 0.5,
-            }),
-            make_entry(6, ModuleIdentifier::Enumeration, GraphOperation::AddEdge {
-                source_node_id: 3,
-                target_node_id: 1,
-                label: EdgeLabel::Calls,
-                weight: 1.0,
-            }),
-            make_entry(7, ModuleIdentifier::Enumeration, GraphOperation::AddFinding {
-                linked_node_ids: vec![0, 1],
-                vulnerability_class: VulnerabilityClass::SqlInjection,
-                severity: 9.5,
-                confidence: 0.95,
-                certificate: b"SELECT * FROM users WHERE id = '1' OR '1'='1'".to_vec(),
-            }),
+            make_entry(
+                0,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![("path".into(), "/api/login".into())],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![("name".into(), "authenticate".into())],
+                },
+            ),
+            make_entry(
+                2,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddNode {
+                    node_type: NodeType::DataStore,
+                    properties: vec![("name".into(), "users_db".into())],
+                },
+            ),
+            make_entry(
+                3,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![("path".into(), "/api/admin".into())],
+                },
+            ),
+            make_entry(
+                4,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddEdge {
+                    source_node_id: 0,
+                    target_node_id: 1,
+                    label: EdgeLabel::Calls,
+                    weight: 1.0,
+                },
+            ),
+            make_entry(
+                5,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddEdge {
+                    source_node_id: 1,
+                    target_node_id: 2,
+                    label: EdgeLabel::Writes,
+                    weight: 0.5,
+                },
+            ),
+            make_entry(
+                6,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddEdge {
+                    source_node_id: 3,
+                    target_node_id: 1,
+                    label: EdgeLabel::Calls,
+                    weight: 1.0,
+                },
+            ),
+            make_entry(
+                7,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddFinding {
+                    linked_node_ids: vec![0, 1],
+                    vulnerability_class: VulnerabilityClass::SqlInjection,
+                    severity: 9.5,
+                    confidence: 0.95,
+                    certificate: b"SELECT * FROM users WHERE id = '1' OR '1'='1'".to_vec(),
+                },
+            ),
         ];
 
         graph.apply_operations(&entries).unwrap();
@@ -131,7 +163,10 @@ mod tests {
         let graph = build_small_attack_graph();
 
         let finding = graph.get_finding(0).unwrap();
-        assert_eq!(finding.vulnerability_class, VulnerabilityClass::SqlInjection);
+        assert_eq!(
+            finding.vulnerability_class,
+            VulnerabilityClass::SqlInjection
+        );
         assert!(!finding.certificate.is_empty());
     }
 

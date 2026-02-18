@@ -1,5 +1,5 @@
 use crate::dependency_parser::ParsedDependency;
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use std::path::Path;
 
 #[derive(Debug, Clone)]
@@ -173,11 +173,9 @@ impl VulnDatabase {
     }
 
     pub fn vulnerability_count(&self) -> Result<u64, VulnDatabaseError> {
-        let count: i64 = self
-            .connection
-            .query_row("SELECT COUNT(*) FROM vulnerabilities", [], |row| {
-                row.get(0)
-            })?;
+        let count: i64 =
+            self.connection
+                .query_row("SELECT COUNT(*) FROM vulnerabilities", [], |row| row.get(0))?;
         Ok(count as u64)
     }
 }
@@ -189,20 +187,13 @@ pub fn version_in_range(version: &str, start: &str, end: &str) -> bool {
         semver::Version::parse(end),
     ) {
         (Ok(v), Ok(s), Ok(e)) => v >= s && v <= e,
-        _ => naive_version_compare(version, start) >= 0
-            && naive_version_compare(version, end) <= 0,
+        _ => naive_version_compare(version, start) >= 0 && naive_version_compare(version, end) <= 0,
     }
 }
 
 fn naive_version_compare(a: &str, b: &str) -> i32 {
-    let a_parts: Vec<u64> = a
-        .split('.')
-        .filter_map(|p| p.parse().ok())
-        .collect();
-    let b_parts: Vec<u64> = b
-        .split('.')
-        .filter_map(|p| p.parse().ok())
-        .collect();
+    let a_parts: Vec<u64> = a.split('.').filter_map(|p| p.parse().ok()).collect();
+    let b_parts: Vec<u64> = b.split('.').filter_map(|p| p.parse().ok()).collect();
 
     let max_len = a_parts.len().max(b_parts.len());
     for i in 0..max_len {

@@ -155,9 +155,7 @@ mod tests {
         assert!(manager.has_policy(ModuleIdentifier::PassiveRecon));
         assert!(!manager.has_policy(ModuleIdentifier::Fuzzing));
 
-        let policy = manager
-            .policy_for(ModuleIdentifier::PassiveRecon)
-            .unwrap();
+        let policy = manager.policy_for(ModuleIdentifier::PassiveRecon).unwrap();
         assert_eq!(policy.allowed_permissions.len(), 2);
         assert_eq!(policy.token_lifetime, Duration::from_secs(3600));
 
@@ -207,9 +205,11 @@ mod tests {
             .unwrap();
 
         let just_before_expiry = token.expires_at_unix_ms - 1;
-        assert!(manager
-            .validate_token(&token, Permission::ReadGraph, just_before_expiry)
-            .is_ok());
+        assert!(
+            manager
+                .validate_token(&token, Permission::ReadGraph, just_before_expiry)
+                .is_ok()
+        );
 
         let at_expiry = token.expires_at_unix_ms;
         assert!(matches!(

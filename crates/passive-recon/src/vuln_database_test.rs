@@ -2,7 +2,7 @@
 mod tests {
     use crate::dependency_parser::{Ecosystem, ParsedDependency};
     use crate::vuln_database::{
-        version_in_range, VulnDatabase, VulnDatabaseError, VulnerabilityRecord,
+        VulnDatabase, VulnDatabaseError, VulnerabilityRecord, version_in_range,
     };
 
     fn sample_vuln(cve: &str, package: &str, start: &str, end: &str) -> VulnerabilityRecord {
@@ -43,10 +43,14 @@ mod tests {
         db.insert_vulnerability(&sample_vuln("CVE-2024-003", "express", "4.0.0", "4.18.1"))
             .unwrap();
 
-        let results = db.find_vulnerabilities_for_package("lodash", "npm").unwrap();
+        let results = db
+            .find_vulnerabilities_for_package("lodash", "npm")
+            .unwrap();
         assert_eq!(results.len(), 2);
 
-        let results = db.find_vulnerabilities_for_package("express", "npm").unwrap();
+        let results = db
+            .find_vulnerabilities_for_package("express", "npm")
+            .unwrap();
         assert_eq!(results.len(), 1);
 
         let results = db
@@ -196,13 +200,8 @@ mod tests {
 
         {
             let db = VulnDatabase::open(&db_path).unwrap();
-            db.insert_vulnerability(&sample_vuln(
-                "CVE-2024-001",
-                "express",
-                "4.0.0",
-                "4.18.1",
-            ))
-            .unwrap();
+            db.insert_vulnerability(&sample_vuln("CVE-2024-001", "express", "4.0.0", "4.18.1"))
+                .unwrap();
             assert_eq!(db.vulnerability_count().unwrap(), 1);
         }
 

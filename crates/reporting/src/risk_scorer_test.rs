@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::risk_scorer::{compute_risk_score, rank_findings, top_remediation_targets, RiskInput};
+    use crate::risk_scorer::{
+        RiskInput, compute_risk_score, rank_findings, top_remediation_targets,
+    };
     use aegis_protocol::finding::VulnerabilityClass;
 
     fn default_input() -> RiskInput {

@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::route_parser::{
-        parse_routes_from_source, Framework, HttpMethod, RouteParseError,
-    };
+    use crate::route_parser::{Framework, HttpMethod, RouteParseError, parse_routes_from_source};
 
     #[test]
     fn parse_express_get_route() {
@@ -116,10 +114,7 @@ urlpatterns = [
         assert_eq!(routes.len(), 2);
         assert_eq!(routes[0].path_pattern, "/users/");
         assert_eq!(routes[0].http_method, HttpMethod::Any);
-        assert_eq!(
-            routes[0].handler_name,
-            Some("views.user_list".to_string())
-        );
+        assert_eq!(routes[0].handler_name, Some("views.user_list".to_string()));
     }
 
     #[test]
@@ -134,7 +129,8 @@ public User createUser() {}
 @DeleteMapping("/api/users/{id}")
 public void deleteUser() {}
 "#;
-        let routes = parse_routes_from_source(source, "Controller.java", Framework::Spring).unwrap();
+        let routes =
+            parse_routes_from_source(source, "Controller.java", Framework::Spring).unwrap();
         assert_eq!(routes.len(), 3);
         assert_eq!(routes[0].path_pattern, "/api/users");
         assert_eq!(routes[0].http_method, HttpMethod::Get);
@@ -155,7 +151,10 @@ public void deleteUser() {}
     #[test]
     fn unsupported_framework_returns_error() {
         let result = parse_routes_from_source("code", "file.rs", Framework::Rails);
-        assert!(matches!(result, Err(RouteParseError::UnsupportedFramework(_))));
+        assert!(matches!(
+            result,
+            Err(RouteParseError::UnsupportedFramework(_))
+        ));
     }
 
     #[test]
@@ -201,10 +200,8 @@ public void deleteUser() {}
         let err = RouteParseError::UnsupportedFramework("rails".to_string());
         assert!(err.to_string().contains("unsupported framework"));
 
-        let err = RouteParseError::IoError(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            "missing",
-        ));
+        let err =
+            RouteParseError::IoError(std::io::Error::new(std::io::ErrorKind::NotFound, "missing"));
         assert!(err.to_string().contains("io error"));
     }
 

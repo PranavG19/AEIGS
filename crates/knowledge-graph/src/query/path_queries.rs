@@ -1,7 +1,7 @@
 use crate::edge_store::EdgeStore;
 use crate::node_store::NodeStore;
-use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
 pub struct PathResult {
@@ -217,7 +217,15 @@ fn enumerate_paths(
         } else if !visited.contains(&next) && current_path.len() < max_length as usize {
             visited.insert(next);
             current_path.push(next);
-            enumerate_paths(next, target, max_length, edge_store, visited, current_path, result);
+            enumerate_paths(
+                next,
+                target,
+                max_length,
+                edge_store,
+                visited,
+                current_path,
+                result,
+            );
             current_path.pop();
             visited.remove(&next);
         }

@@ -97,14 +97,11 @@ impl AuthorizationMatrix {
         &self.access_results
     }
 
-    pub fn status_for(
-        &self,
-        endpoint: &str,
-        method: &str,
-        credential_label: &str,
-    ) -> Option<u16> {
+    pub fn status_for(&self, endpoint: &str, method: &str, credential_label: &str) -> Option<u16> {
         self.access_results.iter().find_map(|a| {
-            if a.endpoint == endpoint && a.method == method && a.credential_label == credential_label
+            if a.endpoint == endpoint
+                && a.method == method
+                && a.credential_label == credential_label
             {
                 Some(a.status_code)
             } else {
@@ -113,9 +110,7 @@ impl AuthorizationMatrix {
         })
     }
 
-    pub fn build_matrix_table(
-        &self,
-    ) -> HashMap<(String, String), HashMap<String, u16>> {
+    pub fn build_matrix_table(&self) -> HashMap<(String, String), HashMap<String, u16>> {
         let mut table: HashMap<(String, String), HashMap<String, u16>> = HashMap::new();
 
         for access in &self.access_results {
@@ -157,10 +152,7 @@ impl AuthorizationMatrix {
                     }
 
                     if is_success(low_status) && is_success(high_status) {
-                        let anomaly_type = classify_anomaly(
-                            low_cred.privilege_level,
-                            endpoint,
-                        );
+                        let anomaly_type = classify_anomaly(low_cred.privilege_level, endpoint);
 
                         anomalies.push(AuthorizationAnomaly {
                             endpoint: endpoint.clone(),

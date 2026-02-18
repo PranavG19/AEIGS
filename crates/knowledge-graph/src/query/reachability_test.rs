@@ -18,10 +18,38 @@ mod tests {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
 
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(0, 2, EdgeLabel::Reads, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(1, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
-        edges.insert(2, 4, EdgeLabel::Writes, 1.0, ModuleIdentifier::PassiveRecon, 3);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            0,
+            2,
+            EdgeLabel::Reads,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            1,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
+        edges.insert(
+            2,
+            4,
+            EdgeLabel::Writes,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            3,
+        );
 
         (nodes, edges)
     }
@@ -95,14 +123,70 @@ mod tests {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
 
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(1, 0, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(1, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
-        edges.insert(2, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 3);
-        edges.insert(2, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 4);
-        edges.insert(3, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 5);
-        edges.insert(3, 4, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 6);
-        edges.insert(4, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 7);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            1,
+            0,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            1,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
+        edges.insert(
+            2,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            3,
+        );
+        edges.insert(
+            2,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            4,
+        );
+        edges.insert(
+            3,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            5,
+        );
+        edges.insert(
+            3,
+            4,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            6,
+        );
+        edges.insert(
+            4,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            7,
+        );
 
         let cuts = cut_vertices(&nodes, &edges);
 
@@ -129,12 +213,54 @@ mod tests {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
 
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(1, 0, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(1, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
-        edges.insert(2, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 3);
-        edges.insert(0, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 4);
-        edges.insert(2, 0, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 5);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            1,
+            0,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            1,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
+        edges.insert(
+            2,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            3,
+        );
+        edges.insert(
+            0,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            4,
+        );
+        edges.insert(
+            2,
+            0,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            5,
+        );
 
         let cuts = cut_vertices(&nodes, &edges);
         assert!(cuts.is_empty());
@@ -150,8 +276,22 @@ mod tests {
         }
 
         for i in 1..5u64 {
-            edges.insert(0, i, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, i - 1);
-            edges.insert(i, 0, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, i + 3);
+            edges.insert(
+                0,
+                i,
+                EdgeLabel::Calls,
+                1.0,
+                ModuleIdentifier::PassiveRecon,
+                i - 1,
+            );
+            edges.insert(
+                i,
+                0,
+                EdgeLabel::Calls,
+                1.0,
+                ModuleIdentifier::PassiveRecon,
+                i + 3,
+            );
         }
 
         let centrality = betweenness_centrality(&nodes, &edges);
@@ -174,8 +314,22 @@ mod tests {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
 
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(1, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            1,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
 
         let centrality = betweenness_centrality(&nodes, &edges);
 

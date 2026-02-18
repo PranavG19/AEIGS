@@ -26,13 +26,13 @@ mod tests {
     #[test]
     fn duplicate_registration_fails() {
         let mut manager = ProcessManager::new();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
         let result = manager.register(test_config(ComponentId::Fuzzing));
         assert!(matches!(
             result,
-            Err(ProcessManagerError::ComponentAlreadyRegistered(ComponentId::Fuzzing))
+            Err(ProcessManagerError::ComponentAlreadyRegistered(
+                ComponentId::Fuzzing
+            ))
         ));
     }
 
@@ -42,9 +42,7 @@ mod tests {
         manager
             .register(test_config(ComponentId::KnowledgeGraph))
             .unwrap();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
         manager
             .register(test_config(ComponentId::Reporting))
             .unwrap();
@@ -77,9 +75,7 @@ mod tests {
         manager
             .register(test_config(ComponentId::Reporting))
             .unwrap();
-        manager
-            .mark_started(ComponentId::Reporting, 100)
-            .unwrap();
+        manager.mark_started(ComponentId::Reporting, 100).unwrap();
         manager.mark_stopped(ComponentId::Reporting, 0).unwrap();
 
         let process = manager.get_process(ComponentId::Reporting).unwrap();
@@ -91,9 +87,7 @@ mod tests {
     #[test]
     fn mark_stopped_with_nonzero_exit_sets_failed() {
         let mut manager = ProcessManager::new();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
         manager.mark_started(ComponentId::Fuzzing, 200).unwrap();
         manager.mark_stopped(ComponentId::Fuzzing, 1).unwrap();
 
@@ -110,25 +104,21 @@ mod tests {
         let mut manager = ProcessManager::new();
         manager.register(config).unwrap();
 
-        let backoff1 = manager
-            .request_restart(ComponentId::Enumeration)
-            .unwrap();
+        let backoff1 = manager.request_restart(ComponentId::Enumeration).unwrap();
         assert_eq!(backoff1, Duration::from_secs(1));
 
-        let backoff2 = manager
-            .request_restart(ComponentId::Enumeration)
-            .unwrap();
+        let backoff2 = manager.request_restart(ComponentId::Enumeration).unwrap();
         assert_eq!(backoff2, Duration::from_secs(2));
 
-        let backoff3 = manager
-            .request_restart(ComponentId::Enumeration)
-            .unwrap();
+        let backoff3 = manager.request_restart(ComponentId::Enumeration).unwrap();
         assert_eq!(backoff3, Duration::from_secs(4));
 
         let result = manager.request_restart(ComponentId::Enumeration);
         assert!(matches!(
             result,
-            Err(ProcessManagerError::MaxRestartsExceeded(ComponentId::Enumeration))
+            Err(ProcessManagerError::MaxRestartsExceeded(
+                ComponentId::Enumeration
+            ))
         ));
     }
 
@@ -138,9 +128,7 @@ mod tests {
         manager
             .register(test_config(ComponentId::KnowledgeGraph))
             .unwrap();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
         manager
             .register(test_config(ComponentId::Reporting))
             .unwrap();
@@ -167,16 +155,12 @@ mod tests {
         manager
             .register(test_config(ComponentId::PassiveRecon))
             .unwrap();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
 
         manager
             .mark_started(ComponentId::KnowledgeGraph, 1)
             .unwrap();
-        manager
-            .mark_started(ComponentId::PassiveRecon, 2)
-            .unwrap();
+        manager.mark_started(ComponentId::PassiveRecon, 2).unwrap();
 
         let running = manager.components_in_state(ProcessState::Running);
         assert_eq!(running.len(), 2);
@@ -192,9 +176,7 @@ mod tests {
         manager
             .register(test_config(ComponentId::KnowledgeGraph))
             .unwrap();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
 
         manager
             .mark_started(ComponentId::KnowledgeGraph, 1)
@@ -298,9 +280,7 @@ mod tests {
         manager
             .register(test_config(ComponentId::KnowledgeGraph))
             .unwrap();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
 
         let all: Vec<_> = manager.all_processes().collect();
         assert_eq!(all.len(), 2);
@@ -309,9 +289,7 @@ mod tests {
     #[test]
     fn get_process_mut_allows_modification() {
         let mut manager = ProcessManager::new();
-        manager
-            .register(test_config(ComponentId::Fuzzing))
-            .unwrap();
+        manager.register(test_config(ComponentId::Fuzzing)).unwrap();
 
         let process = manager.get_process_mut(ComponentId::Fuzzing).unwrap();
         process.mark_started(999);
@@ -333,17 +311,13 @@ mod tests {
         manager
             .register(test_config(ComponentId::Reporting))
             .unwrap();
-        manager
-            .mark_started(ComponentId::Reporting, 100)
-            .unwrap();
+        manager.mark_started(ComponentId::Reporting, 100).unwrap();
         manager.mark_stopped(ComponentId::Reporting, 1).unwrap();
 
         let process = manager.get_process(ComponentId::Reporting).unwrap();
         assert_eq!(process.exit_code, Some(1));
 
-        manager
-            .mark_started(ComponentId::Reporting, 200)
-            .unwrap();
+        manager.mark_started(ComponentId::Reporting, 200).unwrap();
         let process = manager.get_process(ComponentId::Reporting).unwrap();
         assert!(process.exit_code.is_none());
     }

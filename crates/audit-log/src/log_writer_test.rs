@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::hash_chain::{genesis_hash, compute_next_hash};
+    use crate::hash_chain::{compute_next_hash, genesis_hash};
     use crate::hmac_signer::HmacSigner;
-    use crate::log_writer::{serialize_event, AuditLogWriter};
+    use crate::log_writer::{AuditLogWriter, serialize_event};
     use aegis_protocol::audit::AuditEventType;
     use aegis_protocol::finding::VulnerabilityClass;
     use aegis_protocol::operation::ModuleIdentifier;
@@ -70,9 +70,7 @@ mod tests {
             .unwrap();
 
         let entry2 = writer
-            .append_event(AuditEventType::ScanCompleted {
-                total_findings: 5,
-            })
+            .append_event(AuditEventType::ScanCompleted { total_findings: 5 })
             .unwrap();
 
         let expected_hash = compute_next_hash(&entry1.previous_hash, &entry1.payload_cbor);
@@ -114,9 +112,7 @@ mod tests {
         assert!(size1 > 0);
 
         writer
-            .append_event(AuditEventType::ScanCompleted {
-                total_findings: 0,
-            })
+            .append_event(AuditEventType::ScanCompleted { total_findings: 0 })
             .unwrap();
 
         let size2 = fs::metadata(&path).unwrap().len();
@@ -138,9 +134,7 @@ mod tests {
                 finding_id: 42,
                 vulnerability_class: VulnerabilityClass::SqlInjection,
             },
-            AuditEventType::ScanCompleted {
-                total_findings: 10,
-            },
+            AuditEventType::ScanCompleted { total_findings: 10 },
             AuditEventType::KeyEvent {
                 description: "key rotated".to_string(),
             },

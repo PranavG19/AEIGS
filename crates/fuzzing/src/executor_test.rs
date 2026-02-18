@@ -56,11 +56,8 @@ mod tests {
 
     #[test]
     fn executor_tracks_requests_and_errors() {
-        let mut executor = RequestExecutor::new(
-            "http://localhost".to_string(),
-            100,
-            Duration::from_secs(30),
-        );
+        let mut executor =
+            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30));
 
         assert_eq!(executor.total_requests(), 0);
         assert_eq!(executor.total_errors(), 0);
@@ -77,11 +74,8 @@ mod tests {
 
     #[test]
     fn executor_rate_limiting() {
-        let mut executor = RequestExecutor::new(
-            "http://localhost".to_string(),
-            2,
-            Duration::from_secs(30),
-        );
+        let mut executor =
+            RequestExecutor::new("http://localhost".to_string(), 2, Duration::from_secs(30));
 
         assert!(executor.try_acquire_rate_limit());
         assert!(executor.try_acquire_rate_limit());

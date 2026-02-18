@@ -114,7 +114,16 @@ fn tarjan_dfs(
         if !visited[v as usize] {
             child_count += 1;
             parent[v as usize] = Some(u);
-            tarjan_dfs(v, visited, disc, low, parent, is_articulation, timer, edge_store);
+            tarjan_dfs(
+                v,
+                visited,
+                disc,
+                low,
+                parent,
+                is_articulation,
+                timer,
+                edge_store,
+            );
 
             low[u as usize] = low[u as usize].min(low[v as usize]);
 
@@ -131,10 +140,7 @@ fn tarjan_dfs(
     }
 }
 
-pub fn betweenness_centrality(
-    node_store: &NodeStore,
-    edge_store: &EdgeStore,
-) -> HashMap<u64, f64> {
+pub fn betweenness_centrality(node_store: &NodeStore, edge_store: &EdgeStore) -> HashMap<u64, f64> {
     let node_count = node_store.count();
     let mut centrality: HashMap<u64, f64> = (0..node_count as u64).map(|id| (id, 0.0)).collect();
 
@@ -174,9 +180,9 @@ pub fn betweenness_centrality(
         while let Some(w) = stack.pop() {
             if let Some(preds) = predecessors.get(&w) {
                 for &v in preds {
-                    let contribution =
-                        (sigma.get(&v).copied().unwrap_or(0.0) / sigma.get(&w).copied().unwrap_or(1.0))
-                            * (1.0 + delta.get(&w).copied().unwrap_or(0.0));
+                    let contribution = (sigma.get(&v).copied().unwrap_or(0.0)
+                        / sigma.get(&w).copied().unwrap_or(1.0))
+                        * (1.0 + delta.get(&w).copied().unwrap_or(0.0));
                     *delta.entry(v).or_insert(0.0) += contribution;
                 }
             }

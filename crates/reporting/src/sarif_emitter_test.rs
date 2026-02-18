@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::sarif_emitter::{emit_sarif, sarif_to_json, SarifFinding, SarifLevel};
+    use crate::sarif_emitter::{SarifFinding, SarifLevel, emit_sarif, sarif_to_json};
 
     fn sample_finding() -> SarifFinding {
         SarifFinding {

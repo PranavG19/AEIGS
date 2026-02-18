@@ -192,7 +192,8 @@ impl ProcessManager {
             return Err(ProcessManagerError::ComponentAlreadyRegistered(component));
         }
         self.spawn_order.push(component);
-        self.processes.insert(component, ManagedProcess::new(config));
+        self.processes
+            .insert(component, ManagedProcess::new(config));
         Ok(())
     }
 
@@ -200,10 +201,7 @@ impl ProcessManager {
         self.processes.get(&component)
     }
 
-    pub fn get_process_mut(
-        &mut self,
-        component: ComponentId,
-    ) -> Option<&mut ManagedProcess> {
+    pub fn get_process_mut(&mut self, component: ComponentId) -> Option<&mut ManagedProcess> {
         self.processes.get_mut(&component)
     }
 

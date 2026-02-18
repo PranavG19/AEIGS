@@ -6,8 +6,7 @@ mod tests {
     #[test]
     fn generate_sqli_payloads() {
         let mutator = PayloadMutator::new();
-        let payloads =
-            mutator.generate_payloads(VulnerabilityClassTarget::SqlInjection, 5);
+        let payloads = mutator.generate_payloads(VulnerabilityClassTarget::SqlInjection, 5);
         assert_eq!(payloads.len(), 5);
         for p in &payloads {
             assert_eq!(
@@ -21,8 +20,7 @@ mod tests {
     #[test]
     fn generate_xss_payloads() {
         let mutator = PayloadMutator::new();
-        let payloads =
-            mutator.generate_payloads(VulnerabilityClassTarget::CrossSiteScripting, 3);
+        let payloads = mutator.generate_payloads(VulnerabilityClassTarget::CrossSiteScripting, 3);
         assert_eq!(payloads.len(), 3);
         assert!(payloads[0].raw.contains("script") || payloads[0].raw.contains("alert"));
     }
@@ -30,10 +28,9 @@ mod tests {
     #[test]
     fn generate_more_than_templates_uses_bitflip() {
         let mutator = PayloadMutator::new();
-        let template_count =
-            mutator.template_count(VulnerabilityClassTarget::CrlfInjection);
-        let payloads = mutator
-            .generate_payloads(VulnerabilityClassTarget::CrlfInjection, template_count + 5);
+        let template_count = mutator.template_count(VulnerabilityClassTarget::CrlfInjection);
+        let payloads =
+            mutator.generate_payloads(VulnerabilityClassTarget::CrlfInjection, template_count + 5);
         assert_eq!(payloads.len(), template_count + 5);
 
         let bitflip_count = payloads
@@ -50,9 +47,11 @@ mod tests {
         assert!(payloads.len() >= 10);
         assert!(payloads.iter().any(|p| p.raw.is_empty()));
         assert!(payloads.iter().any(|p| p.raw == "null"));
-        assert!(payloads
-            .iter()
-            .any(|p| p.mutation_strategy == MutationStrategy::Boundary));
+        assert!(
+            payloads
+                .iter()
+                .any(|p| p.mutation_strategy == MutationStrategy::Boundary)
+        );
     }
 
     #[test]
@@ -62,12 +61,8 @@ mod tests {
         assert!(mutator.template_count(VulnerabilityClassTarget::CrossSiteScripting) > 0);
         assert!(mutator.template_count(VulnerabilityClassTarget::CommandInjection) > 0);
         assert!(mutator.template_count(VulnerabilityClassTarget::PathTraversal) > 0);
-        assert!(
-            mutator.template_count(VulnerabilityClassTarget::ServerSideRequestForgery) > 0
-        );
-        assert!(
-            mutator.template_count(VulnerabilityClassTarget::ServerSideTemplateInjection) > 0
-        );
+        assert!(mutator.template_count(VulnerabilityClassTarget::ServerSideRequestForgery) > 0);
+        assert!(mutator.template_count(VulnerabilityClassTarget::ServerSideTemplateInjection) > 0);
     }
 
     #[test]

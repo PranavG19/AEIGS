@@ -1,15 +1,12 @@
 #[cfg(test)]
 mod tests {
     use crate::dependency_parser::{
-        detect_ecosystem, parse_lock_file_content, Ecosystem, ParseError, ParsedDependency,
+        Ecosystem, ParseError, ParsedDependency, detect_ecosystem, parse_lock_file_content,
     };
 
     #[test]
     fn detect_ecosystem_package_lock() {
-        assert_eq!(
-            detect_ecosystem("package-lock.json"),
-            Some(Ecosystem::Npm)
-        );
+        assert_eq!(detect_ecosystem("package-lock.json"), Some(Ecosystem::Npm));
     }
 
     #[test]
@@ -19,10 +16,7 @@ mod tests {
 
     #[test]
     fn detect_ecosystem_requirements_txt() {
-        assert_eq!(
-            detect_ecosystem("requirements.txt"),
-            Some(Ecosystem::PyPi)
-        );
+        assert_eq!(detect_ecosystem("requirements.txt"), Some(Ecosystem::PyPi));
     }
 
     #[test]
@@ -32,10 +26,7 @@ mod tests {
 
     #[test]
     fn detect_ecosystem_gemfile_lock() {
-        assert_eq!(
-            detect_ecosystem("Gemfile.lock"),
-            Some(Ecosystem::RubyGems)
-        );
+        assert_eq!(detect_ecosystem("Gemfile.lock"), Some(Ecosystem::RubyGems));
     }
 
     #[test]
@@ -222,10 +213,7 @@ BUNDLED WITH
         let err = ParseError::MalformedContent("bad data".to_string());
         assert!(err.to_string().contains("malformed"));
 
-        let err = ParseError::IoError(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            "missing",
-        ));
+        let err = ParseError::IoError(std::io::Error::new(std::io::ErrorKind::NotFound, "missing"));
         assert!(err.to_string().contains("io error"));
     }
 

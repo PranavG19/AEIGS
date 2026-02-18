@@ -130,10 +130,7 @@ mod tests {
             VulnerabilityClassTarget::OpenRedirect.to_string(),
             "open-redirect"
         );
-        assert_eq!(
-            VulnerabilityClassTarget::CrlfInjection.to_string(),
-            "crlf"
-        );
+        assert_eq!(VulnerabilityClassTarget::CrlfInjection.to_string(), "crlf");
     }
 
     #[test]

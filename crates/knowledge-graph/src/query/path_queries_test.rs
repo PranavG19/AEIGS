@@ -17,9 +17,30 @@ mod tests {
         for _ in 0..4 {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(1, 2, EdgeLabel::Calls, 2.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(2, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            1,
+            2,
+            EdgeLabel::Calls,
+            2.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            2,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
 
         (nodes, edges)
     }
@@ -31,10 +52,38 @@ mod tests {
         for _ in 0..4 {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(0, 2, EdgeLabel::Calls, 3.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(1, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
-        edges.insert(2, 3, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 3);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            0,
+            2,
+            EdgeLabel::Calls,
+            3.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            1,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
+        edges.insert(
+            2,
+            3,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            3,
+        );
 
         (nodes, edges)
     }
@@ -224,9 +273,30 @@ mod tests {
         for _ in 0..3 {
             nodes.insert(NodeType::Endpoint, HashMap::new());
         }
-        edges.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 0);
-        edges.insert(1, 0, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        edges.insert(1, 2, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 2);
+        edges.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            0,
+        );
+        edges.insert(
+            1,
+            0,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        edges.insert(
+            1,
+            2,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
 
         let result = find_paths_between(0, 2, 5, &nodes, &edges);
         assert_eq!(result.paths.len(), 1);

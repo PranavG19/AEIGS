@@ -58,12 +58,7 @@ impl KnowledgeGraph {
         path_queries::shortest_path(from, to, &inner.node_store, &inner.edge_store)
     }
 
-    pub fn all_simple_paths_bounded(
-        &self,
-        from: u64,
-        to: u64,
-        max_length: u32,
-    ) -> Vec<Vec<u64>> {
+    pub fn all_simple_paths_bounded(&self, from: u64, to: u64, max_length: u32) -> Vec<Vec<u64>> {
         let inner = self.inner.read().unwrap();
         path_queries::all_simple_paths_bounded(
             from,

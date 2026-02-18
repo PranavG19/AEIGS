@@ -58,15 +58,10 @@ mod tests {
         graph.add_node("bound2".to_string(), AttackNodeType::SecurityBoundary);
 
         assert_eq!(
-            graph
-                .nodes_by_type(AttackNodeType::SecurityBoundary)
-                .len(),
+            graph.nodes_by_type(AttackNodeType::SecurityBoundary).len(),
             2
         );
-        assert_eq!(
-            graph.nodes_by_type(AttackNodeType::EntryPoint).len(),
-            0
-        );
+        assert_eq!(graph.nodes_by_type(AttackNodeType::EntryPoint).len(), 0);
     }
 
     #[test]
@@ -97,10 +92,7 @@ mod tests {
             AttackNodeType::SecurityBoundary.to_string(),
             "security-boundary"
         );
-        assert_eq!(
-            AttackNodeType::Vulnerability.to_string(),
-            "vulnerability"
-        );
+        assert_eq!(AttackNodeType::Vulnerability.to_string(), "vulnerability");
         assert_eq!(AttackNodeType::Asset.to_string(), "asset");
     }
 

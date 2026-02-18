@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::filesystem_walker::{
-        classify_file, walk_directory, FileClassification, WalkerError,
+        FileClassification, WalkerError, classify_file, walk_directory,
     };
     use std::fs;
     use std::path::{Path, PathBuf};
@@ -236,7 +236,10 @@ mod tests {
 
         let result = walk_directory(&dir).unwrap();
         assert_eq!(result.files.len(), 1);
-        assert_eq!(result.files[0].classification, FileClassification::SourceCode);
+        assert_eq!(
+            result.files[0].classification,
+            FileClassification::SourceCode
+        );
 
         fs::remove_dir_all(&dir).ok();
     }

@@ -1,5 +1,5 @@
-use std::collections::BinaryHeap;
 use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuzzTarget {

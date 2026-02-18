@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::log_verifier::{verify_log, verify_log_bytes, VerifierError};
+    use crate::log_verifier::{VerifierError, verify_log, verify_log_bytes};
     use crate::log_writer::AuditLogWriter;
     use aegis_protocol::audit::AuditEventType;
     use std::fs;
@@ -113,9 +113,7 @@ mod tests {
             })
             .unwrap();
         writer
-            .append_event(AuditEventType::ScanCompleted {
-                total_findings: 42,
-            })
+            .append_event(AuditEventType::ScanCompleted { total_findings: 42 })
             .unwrap();
 
         let report = verify_log(&path, key).unwrap();

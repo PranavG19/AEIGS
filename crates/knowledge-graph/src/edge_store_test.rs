@@ -6,16 +6,44 @@ mod tests {
 
     fn make_store_with_edges() -> EdgeStore {
         let mut store = EdgeStore::new();
-        store.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        store.insert(0, 2, EdgeLabel::Reads, 0.5, ModuleIdentifier::PassiveRecon, 2);
-        store.insert(1, 2, EdgeLabel::Writes, 0.8, ModuleIdentifier::Enumeration, 1);
+        store.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        store.insert(
+            0,
+            2,
+            EdgeLabel::Reads,
+            0.5,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
+        store.insert(
+            1,
+            2,
+            EdgeLabel::Writes,
+            0.8,
+            ModuleIdentifier::Enumeration,
+            1,
+        );
         store
     }
 
     #[test]
     fn insert_and_retrieve_edge() {
         let mut store = EdgeStore::new();
-        let id = store.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
+        let id = store.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
 
         let edge = store.get(id).unwrap();
         assert_eq!(edge.id, 0);
@@ -28,8 +56,22 @@ mod tests {
     #[test]
     fn sequential_edge_id_assignment() {
         let mut store = EdgeStore::new();
-        let id0 = store.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
-        let id1 = store.insert(1, 2, EdgeLabel::Reads, 0.5, ModuleIdentifier::PassiveRecon, 2);
+        let id0 = store.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
+        let id1 = store.insert(
+            1,
+            2,
+            EdgeLabel::Reads,
+            0.5,
+            ModuleIdentifier::PassiveRecon,
+            2,
+        );
 
         assert_eq!(id0, 0);
         assert_eq!(id1, 1);
@@ -96,7 +138,14 @@ mod tests {
     #[test]
     fn update_weight_modifies_edge() {
         let mut store = EdgeStore::new();
-        let id = store.insert(0, 1, EdgeLabel::Calls, 1.0, ModuleIdentifier::PassiveRecon, 1);
+        let id = store.insert(
+            0,
+            1,
+            EdgeLabel::Calls,
+            1.0,
+            ModuleIdentifier::PassiveRecon,
+            1,
+        );
 
         assert!(store.update_weight(id, 5.0));
         assert!((store.get(id).unwrap().weight - 5.0).abs() < f64::EPSILON);

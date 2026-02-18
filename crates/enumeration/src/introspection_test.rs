@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::introspection::{
-        parse_graphql_introspection, parse_openapi_json, IntrospectionError, ParameterLocation,
+        IntrospectionError, ParameterLocation, parse_graphql_introspection, parse_openapi_json,
     };
 
     #[test]
@@ -36,13 +36,13 @@ mod tests {
         assert_eq!(get_endpoint.path, "/users");
         assert_eq!(get_endpoint.parameters.len(), 1);
         assert_eq!(get_endpoint.parameters[0].name, "limit");
-        assert_eq!(get_endpoint.parameters[0].location, ParameterLocation::Query);
+        assert_eq!(
+            get_endpoint.parameters[0].location,
+            ParameterLocation::Query
+        );
         assert_eq!(get_endpoint.parameters[0].param_type, "integer");
         assert!(!get_endpoint.parameters[0].required);
-        assert_eq!(
-            get_endpoint.description,
-            Some("List users".to_string())
-        );
+        assert_eq!(get_endpoint.description, Some("List users".to_string()));
     }
 
     #[test]
@@ -125,11 +125,13 @@ mod tests {
         let endpoints = parse_graphql_introspection(response).unwrap();
         assert_eq!(endpoints.len(), 1);
         assert!(endpoints[0].path.contains("createUser"));
-        assert!(endpoints[0]
-            .description
-            .as_ref()
-            .unwrap()
-            .contains("Mutation"));
+        assert!(
+            endpoints[0]
+                .description
+                .as_ref()
+                .unwrap()
+                .contains("Mutation")
+        );
     }
 
     #[test]

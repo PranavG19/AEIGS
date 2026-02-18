@@ -1,4 +1,4 @@
-use crate::hash_chain::{HashChain, Hash};
+use crate::hash_chain::{Hash, HashChain};
 use crate::hmac_signer::{HmacSigner, MacBytes};
 use aegis_protocol::audit::{AuditEntry, AuditEventType};
 use std::fs::{File, OpenOptions};

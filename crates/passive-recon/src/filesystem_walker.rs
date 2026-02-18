@@ -137,10 +137,7 @@ fn should_skip_directory(path: &Path) -> bool {
 }
 
 pub fn classify_file(path: &Path) -> FileClassification {
-    let filename = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("");
+    let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
     if is_lock_file(filename) {
         return FileClassification::LockFile;
@@ -162,10 +159,8 @@ pub fn classify_file(path: &Path) -> FileClassification {
 
     match extension {
         "tf" | "tfvars" => FileClassification::TerraformFile,
-        "rs" | "py" | "js" | "ts" | "jsx" | "tsx" | "go" | "java" | "rb" | "cpp" | "c"
-        | "h" | "hpp" | "cs" | "swift" | "kt" | "scala" | "php" => {
-            FileClassification::SourceCode
-        }
+        "rs" | "py" | "js" | "ts" | "jsx" | "tsx" | "go" | "java" | "rb" | "cpp" | "c" | "h"
+        | "hpp" | "cs" | "swift" | "kt" | "scala" | "php" => FileClassification::SourceCode,
         "yaml" | "yml" => classify_yaml_file(path, filename),
         "json" | "toml" | "ini" | "cfg" | "conf" | "properties" | "xml" => {
             FileClassification::ConfigFile
@@ -191,10 +186,7 @@ fn is_lock_file(filename: &str) -> bool {
 }
 
 fn is_env_file(filename: &str) -> bool {
-    filename == ".env"
-        || filename.starts_with(".env.")
-        || filename == "env"
-        || filename == ".envrc"
+    filename == ".env" || filename.starts_with(".env.") || filename == "env" || filename == ".envrc"
 }
 
 fn is_dockerfile(filename: &str) -> bool {

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::hash_chain::{compute_next_hash, genesis_hash, verify_chain, HashChain};
+    use crate::hash_chain::{HashChain, compute_next_hash, genesis_hash, verify_chain};
 
     #[test]
     fn genesis_hash_is_deterministic() {

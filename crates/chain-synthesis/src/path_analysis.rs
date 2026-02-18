@@ -1,6 +1,6 @@
 use crate::attack_graph::{AttackEdge, AttackGraph, AttackPath};
-use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 
 pub fn reachable_assets(graph: &AttackGraph) -> HashMap<u64, Vec<u64>> {
     let entry_points = graph.entry_points();
@@ -65,11 +65,7 @@ impl Ord for DijkstraState {
     }
 }
 
-pub fn shortest_attack_path(
-    graph: &AttackGraph,
-    source: u64,
-    target: u64,
-) -> Option<AttackPath> {
+pub fn shortest_attack_path(graph: &AttackGraph, source: u64, target: u64) -> Option<AttackPath> {
     let mut dist: HashMap<u64, f64> = HashMap::new();
     let mut prev: HashMap<u64, (u64, AttackEdge)> = HashMap::new();
     let mut heap = BinaryHeap::new();

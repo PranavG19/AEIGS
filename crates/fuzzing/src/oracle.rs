@@ -178,10 +178,7 @@ fn check_status_code_anomaly(
     }
 }
 
-fn check_timing_anomaly(
-    response: &FuzzResponse,
-    baseline: &BaselineProfile,
-) -> Option<Anomaly> {
+fn check_timing_anomaly(response: &FuzzResponse, baseline: &BaselineProfile) -> Option<Anomaly> {
     let response_ms = response.response_time.as_secs_f64() * 1000.0;
     let threshold = baseline.p99_response_time_ms * 3.0;
 
@@ -201,16 +198,13 @@ fn check_timing_anomaly(
     }
 }
 
-fn check_size_anomaly(
-    response: &FuzzResponse,
-    baseline: &BaselineProfile,
-) -> Option<Anomaly> {
+fn check_size_anomaly(response: &FuzzResponse, baseline: &BaselineProfile) -> Option<Anomaly> {
     if baseline.body_size_std_dev <= 0.0 {
         return None;
     }
 
-    let z_score =
-        (response.body_size_bytes as f64 - baseline.mean_body_size).abs() / baseline.body_size_std_dev;
+    let z_score = (response.body_size_bytes as f64 - baseline.mean_body_size).abs()
+        / baseline.body_size_std_dev;
 
     if z_score > 3.0 {
         Some(Anomaly {
@@ -227,10 +221,7 @@ fn check_size_anomaly(
     }
 }
 
-fn check_content_anomaly(
-    response: &FuzzResponse,
-    error_patterns: &[String],
-) -> Option<Anomaly> {
+fn check_content_anomaly(response: &FuzzResponse, error_patterns: &[String]) -> Option<Anomaly> {
     let body_lower = response.body.to_lowercase();
 
     for pattern in error_patterns {
@@ -253,7 +244,10 @@ fn check_reflection(response: &FuzzResponse, payload: &str) -> Option<Anomaly> {
             request_id: response.request_id,
             anomaly_type: AnomalyType::ReflectionDetected,
             score: 0.85,
-            description: format!("payload reflected in response body ({} chars)", payload.len()),
+            description: format!(
+                "payload reflected in response body ({} chars)",
+                payload.len()
+            ),
         })
     } else {
         None

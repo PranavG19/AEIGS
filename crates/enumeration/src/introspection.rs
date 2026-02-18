@@ -94,7 +94,9 @@ struct OpenApiSchema {
     schema_type: Option<String>,
 }
 
-pub fn parse_openapi_json(json_content: &str) -> Result<Vec<IntrospectedEndpoint>, IntrospectionError> {
+pub fn parse_openapi_json(
+    json_content: &str,
+) -> Result<Vec<IntrospectedEndpoint>, IntrospectionError> {
     let spec: OpenApiSpec = serde_json::from_str(json_content)?;
     let mut endpoints = Vec::new();
 

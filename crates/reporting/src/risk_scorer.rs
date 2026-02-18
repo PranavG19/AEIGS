@@ -25,7 +25,8 @@ pub struct RiskScore {
 pub fn compute_risk_score(input: &RiskInput) -> RiskScore {
     let exploitability = compute_exploitability(input);
     let reachability = compute_reachability(input.attack_path_count);
-    let blast_radius = compute_blast_radius(input.reachable_critical_assets, input.asset_pii_weight);
+    let blast_radius =
+        compute_blast_radius(input.reachable_critical_assets, input.asset_pii_weight);
     let confidence = input.confidence.clamp(0.0, 1.0);
 
     let raw = exploitability * reachability * blast_radius * confidence;

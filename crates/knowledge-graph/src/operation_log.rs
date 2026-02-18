@@ -57,7 +57,11 @@ impl OperationLog {
         let mut applied = 0u64;
 
         for entry in entries {
-            let current_seq = self.module_sequences.get(&entry.module).copied().unwrap_or(0);
+            let current_seq = self
+                .module_sequences
+                .get(&entry.module)
+                .copied()
+                .unwrap_or(0);
             if entry.sequence_number < current_seq {
                 return Err(OperationLogError::SequenceOutOfOrder {
                     module: entry.module,
@@ -66,7 +70,14 @@ impl OperationLog {
                 });
             }
 
-            self.apply_operation(&entry.operation, entry.module, entry.sequence_number, node_store, edge_store, finding_store)?;
+            self.apply_operation(
+                &entry.operation,
+                entry.module,
+                entry.sequence_number,
+                node_store,
+                edge_store,
+                finding_store,
+            )?;
 
             self.module_sequences
                 .insert(entry.module, entry.sequence_number + 1);

@@ -36,7 +36,9 @@ mod tests {
             },
         );
 
-        let applied = log.apply_batch(&[entry], &mut nodes, &mut edges, &mut findings).unwrap();
+        let applied = log
+            .apply_batch(&[entry], &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(applied, 1);
         assert_eq!(nodes.count(), 1);
 
@@ -79,7 +81,8 @@ mod tests {
             ),
         ];
 
-        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(edges.count(), 1);
 
         let outgoing = edges.outgoing_edges(0);
@@ -118,11 +121,15 @@ mod tests {
             ),
         ];
 
-        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(findings.count(), 1);
 
         let finding = findings.get(0).unwrap();
-        assert_eq!(finding.vulnerability_class, VulnerabilityClass::SqlInjection);
+        assert_eq!(
+            finding.vulnerability_class,
+            VulnerabilityClass::SqlInjection
+        );
         assert!((finding.severity - 9.0).abs() < f64::EPSILON);
     }
 
@@ -132,27 +139,44 @@ mod tests {
         let (mut nodes, mut edges, mut findings) = make_stores();
 
         let entries = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![],
-            }),
-            make_entry(1, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Function,
-                properties: vec![],
-            }),
-            make_entry(2, ModuleIdentifier::PassiveRecon, GraphOperation::AddEdge {
-                source_node_id: 0,
-                target_node_id: 1,
-                label: EdgeLabel::Calls,
-                weight: 1.0,
-            }),
-            make_entry(3, ModuleIdentifier::PassiveRecon, GraphOperation::UpdateWeight {
-                edge_id: 0,
-                new_weight: 5.0,
-            }),
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                2,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddEdge {
+                    source_node_id: 0,
+                    target_node_id: 1,
+                    label: EdgeLabel::Calls,
+                    weight: 1.0,
+                },
+            ),
+            make_entry(
+                3,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::UpdateWeight {
+                    edge_id: 0,
+                    new_weight: 5.0,
+                },
+            ),
         ];
 
-        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         let edge = edges.get(0).unwrap();
         assert!((edge.weight - 5.0).abs() < f64::EPSILON);
     }
@@ -165,17 +189,26 @@ mod tests {
         assert_eq!(log.current_sequence(ModuleIdentifier::PassiveRecon), 0);
 
         let entries = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![],
-            }),
-            make_entry(1, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Function,
-                properties: vec![],
-            }),
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
         ];
 
-        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(log.current_sequence(ModuleIdentifier::PassiveRecon), 2);
         assert_eq!(log.total_applied(), 2);
     }
@@ -186,24 +219,35 @@ mod tests {
         let (mut nodes, mut edges, mut findings) = make_stores();
 
         let first_batch = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![],
-            }),
-            make_entry(1, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Function,
-                properties: vec![],
-            }),
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
         ];
 
-        log.apply_batch(&first_batch, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&first_batch, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
 
-        let bad_batch = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
+        let bad_batch = vec![make_entry(
+            0,
+            ModuleIdentifier::PassiveRecon,
+            GraphOperation::AddNode {
                 node_type: NodeType::Service,
                 properties: vec![],
-            }),
-        ];
+            },
+        )];
 
         let result = log.apply_batch(&bad_batch, &mut nodes, &mut edges, &mut findings);
         assert!(result.is_err());
@@ -215,17 +259,26 @@ mod tests {
         let (mut nodes, mut edges, mut findings) = make_stores();
 
         let entries = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddNode {
-                node_type: NodeType::Endpoint,
-                properties: vec![],
-            }),
-            make_entry(0, ModuleIdentifier::Enumeration, GraphOperation::AddNode {
-                node_type: NodeType::Service,
-                properties: vec![],
-            }),
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                0,
+                ModuleIdentifier::Enumeration,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Service,
+                    properties: vec![],
+                },
+            ),
         ];
 
-        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings).unwrap();
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(log.current_sequence(ModuleIdentifier::PassiveRecon), 1);
         assert_eq!(log.current_sequence(ModuleIdentifier::Enumeration), 1);
         assert_eq!(nodes.count(), 2);
@@ -236,14 +289,16 @@ mod tests {
         let mut log = OperationLog::new();
         let (mut nodes, mut edges, mut findings) = make_stores();
 
-        let entries = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::AddEdge {
+        let entries = vec![make_entry(
+            0,
+            ModuleIdentifier::PassiveRecon,
+            GraphOperation::AddEdge {
                 source_node_id: 0,
                 target_node_id: 1,
                 label: EdgeLabel::Calls,
                 weight: 1.0,
-            }),
-        ];
+            },
+        )];
 
         let result = log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings);
         assert!(result.is_err());
@@ -254,12 +309,14 @@ mod tests {
         let mut log = OperationLog::new();
         let (mut nodes, mut edges, mut findings) = make_stores();
 
-        let entries = vec![
-            make_entry(0, ModuleIdentifier::PassiveRecon, GraphOperation::UpdateWeight {
+        let entries = vec![make_entry(
+            0,
+            ModuleIdentifier::PassiveRecon,
+            GraphOperation::UpdateWeight {
                 edge_id: 999,
                 new_weight: 5.0,
-            }),
-        ];
+            },
+        )];
 
         let result = log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings);
         assert!(result.is_err());
@@ -270,7 +327,9 @@ mod tests {
         let mut log = OperationLog::new();
         let (mut nodes, mut edges, mut findings) = make_stores();
 
-        let applied = log.apply_batch(&[], &mut nodes, &mut edges, &mut findings).unwrap();
+        let applied = log
+            .apply_batch(&[], &mut nodes, &mut edges, &mut findings)
+            .unwrap();
         assert_eq!(applied, 0);
         assert_eq!(log.total_applied(), 0);
     }

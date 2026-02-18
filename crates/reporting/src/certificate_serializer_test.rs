@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::certificate_serializer::{
-        certificate_hash, deserialize_certificate, serialize_certificate, Certificate,
-        ChainCertificate, ChainStep, ConfigCertificate, DependencyCertificate,
-        FuzzingCertificate, SourceSinkLocation, TaintCertificate, TaintPathStep,
+        Certificate, ChainCertificate, ChainStep, ConfigCertificate, DependencyCertificate,
+        FuzzingCertificate, SourceSinkLocation, TaintCertificate, TaintPathStep, certificate_hash,
+        deserialize_certificate, serialize_certificate,
     };
 
     fn sample_fuzzing_cert() -> Certificate {

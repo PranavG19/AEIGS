@@ -111,9 +111,7 @@ pub fn parse_routes_from_source(
         Framework::FastApi => Ok(parse_fastapi_routes(source, source_file)),
         Framework::Django => Ok(parse_django_routes(source, source_file)),
         Framework::Spring => Ok(parse_spring_routes(source, source_file)),
-        _ => Err(RouteParseError::UnsupportedFramework(
-            framework.to_string(),
-        )),
+        _ => Err(RouteParseError::UnsupportedFramework(framework.to_string())),
     }
 }
 

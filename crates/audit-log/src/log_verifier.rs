@@ -1,4 +1,4 @@
-use crate::hash_chain::{compute_next_hash, genesis_hash, Hash};
+use crate::hash_chain::{Hash, compute_next_hash, genesis_hash};
 use crate::hmac_signer::HmacSigner;
 use std::fs::File;
 use std::io::{self, Read};

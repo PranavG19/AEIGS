@@ -100,9 +100,11 @@ mod tests {
         let resp = response(500, body, 50, 100);
         let anomalies = oracle.analyze_response(&resp, "test", "/api", "GET");
 
-        assert!(anomalies
-            .iter()
-            .any(|a| a.anomaly_type == AnomalyType::ContentAnomaly));
+        assert!(
+            anomalies
+                .iter()
+                .any(|a| a.anomaly_type == AnomalyType::ContentAnomaly)
+        );
     }
 
     #[test]
@@ -202,8 +204,10 @@ mod tests {
         let resp = response(200, "ok", 50, 99999);
         let anomalies = oracle.analyze_response(&resp, "test", "/api/users", "GET");
 
-        assert!(!anomalies
-            .iter()
-            .any(|a| a.anomaly_type == AnomalyType::SizeAnomaly));
+        assert!(
+            !anomalies
+                .iter()
+                .any(|a| a.anomaly_type == AnomalyType::SizeAnomaly)
+        );
     }
 }
