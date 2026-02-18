@@ -9,3 +9,7 @@ mod node_store_test;
 #[cfg(test)]
 #[path = "edge_store_test.rs"]
 mod edge_store_test;
+
+#[cfg(test)]
+#[path = "finding_store_test.rs"]
+mod finding_store_test;
