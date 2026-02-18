@@ -156,25 +156,57 @@ When deciding what to build first, follow this order:
 
 ## Current Progress
 
-_No tasks completed yet. Awaiting user instruction to begin task planning._
+All core modules implemented. 391 Rust tests passing, 52 Python tests passing. Clippy clean, fmt clean.
+
+**Completed crates (9/9 Rust):**
+- [x] protocol — IPC types, node/edge/finding/operation/audit/capability schemas (12 tests)
+- [x] knowledge-graph — node store, edge store, finding store, operation log, path queries, reachability, graph facade (91 tests)
+- [x] audit-log — SHA3-256 hash chain, HMAC-SHA3-256 signing, append-only log writer, independent log verifier (40 tests)
+- [x] supervisor — process manager with backoff restart, capability token issuance/validation (32 tests)
+- [x] passive-recon — dependency lock file parsing (5 ecosystems), SQLite vuln database, filesystem walker (58 tests)
+- [x] enumeration — multi-framework route parser, OpenAPI/GraphQL introspection, authorization matrix with anomaly detection (47 tests)
+- [x] fuzzing — priority queue scheduler, template/bitflip mutator, rate-limited executor, statistical anomaly oracle (41 tests)
+- [x] chain-synthesis — attack graph model, Dijkstra shortest path, DFS all simple paths, betweenness centrality (24 tests)
+- [x] reporting — composite risk scorer, SARIF 2.1 emitter, CBOR certificate serializer with SHA3-256 hashing (46 tests)
+
+**Completed Python component (1/1):**
+- [x] hypothesis-engine — LLM hypothesis generator (Bedrock), hypothesis-to-test compiler, feedback manager with training data export (52 tests)
+
+**Quality gates:**
+- [x] cargo clippy --workspace -- -D warnings (zero warnings)
+- [x] cargo fmt --check (passes)
+- [x] cargo test --workspace (391 passed, 0 failed)
+- [x] Python pytest (52 passed, 0 failed)
 
 ---
 
 ## Decisions Log
 
-_Empty — no decisions made yet._
+- 2025: Chose SHA3-256 over SHA2-256 for hash chain and certificate hashing — aligned with LLD specification
+- 2025: Used arena-style Vec storage with u64 indices for node/edge stores — O(1) lookup, cache-friendly
+- 2025: Used SQLite in-memory for vuln database — no external dependencies, easy testing
+- 2025: Used `let` chains (Rust 2024 edition) for collapsible-if patterns — cleaner code, clippy-clean
+- 2025: LLM inference via AWS Bedrock (claude-sonnet-4-6) instead of local models — per CLAUDE.md directive
+- 2025: Used CBOR (ciborium) for certificate serialization — compact, self-describing, binary-safe per LLD
 
 ---
 
 ## Discovered Patterns
 
-_Empty — no patterns discovered yet._
+- Test file naming: `{module}_test.rs` adjacent to source, included via `#[path]` attribute in lib.rs
+- Python test naming: `test_{module}.py` in same package directory
+- Builder pattern with `with_*` methods for config structs (ProcessConfig, NodeData, FindingData)
+- Epoch-based concurrency: RwLock<Inner> pattern for KnowledgeGraph facade
 
 ---
 
 ## Known Pitfalls
 
-_Empty — no pitfalls encountered yet._
+- Gemfile.lock parsing: must track indent level to avoid picking up sub-dependencies
+- Express route handler extraction: trailing `)` and `;` must be stripped
+- Authorization matrix anomaly detection: symmetric 200s are correctly flagged — test expectations must account for this
+- Pydantic models starting with "Test" trigger pytest collection warnings — harmless but visible
+- cargo fmt reorders imports alphabetically — don't fight it
 
 ---
 
