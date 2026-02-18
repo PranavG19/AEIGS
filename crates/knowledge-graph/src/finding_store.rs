@@ -17,6 +17,7 @@ impl FindingStore {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn insert(
         &mut self,
         linked_node_ids: Vec<u64>,

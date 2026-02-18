@@ -80,6 +80,7 @@ pub fn cut_vertices(node_store: &NodeStore, edge_store: &EdgeStore) -> Vec<u64> 
         .collect()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn tarjan_dfs(
     u: u64,
     visited: &mut [bool],
@@ -157,8 +158,8 @@ pub fn betweenness_centrality(
                 let edge = edge_store.get(edge_id).unwrap();
                 let w = edge.target_node_id;
 
-                if !dist.contains_key(&w) {
-                    dist.insert(w, d_v + 1);
+                if let std::collections::hash_map::Entry::Vacant(e) = dist.entry(w) {
+                    e.insert(d_v + 1);
                     queue.push_back(w);
                 }
 

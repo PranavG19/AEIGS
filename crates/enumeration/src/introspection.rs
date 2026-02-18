@@ -181,10 +181,39 @@ pub fn parse_graphql_introspection(
         .data
         .ok_or_else(|| IntrospectionError::InvalidSchema("missing data field".to_string()))?;
 
-    if let Some(query_type) = &data.schema.query_type {
-        if let Some(fields) = &query_type.fields {
-            for field in fields {
-                let parameters: Vec<EndpointParameter> = field
+    if let Some(query_type) = &data.schema.query_type
+        && let Some(fields) = &query_type.fields
+    {
+        for field in fields {
+            let parameters: Vec<EndpointParameter> = field
+                .args
+                .iter()
+                .map(|a| EndpointParameter {
+                    name: a.name.clone(),
+                    location: ParameterLocation::Body,
+                    param_type: "string".to_string(),
+                    required: false,
+                })
+                .collect();
+
+            endpoints.push(IntrospectedEndpoint {
+                path: format!("/graphql?query={}", field.name),
+                method: "POST".to_string(),
+                parameters,
+                response_type: None,
+                description: Some(format!("Query: {}", field.name)),
+            });
+        }
+    }
+
+    if let Some(mutation_type) = &data.schema.mutation_type
+        && let Some(fields) = &mutation_type.fields
+    {
+        for field in fields {
+            endpoints.push(IntrospectedEndpoint {
+                path: format!("/graphql?mutation={}", field.name),
+                method: "POST".to_string(),
+                parameters: field
                     .args
                     .iter()
                     .map(|a| EndpointParameter {
@@ -193,39 +222,10 @@ pub fn parse_graphql_introspection(
                         param_type: "string".to_string(),
                         required: false,
                     })
-                    .collect();
-
-                endpoints.push(IntrospectedEndpoint {
-                    path: format!("/graphql?query={}", field.name),
-                    method: "POST".to_string(),
-                    parameters,
-                    response_type: None,
-                    description: Some(format!("Query: {}", field.name)),
-                });
-            }
-        }
-    }
-
-    if let Some(mutation_type) = &data.schema.mutation_type {
-        if let Some(fields) = &mutation_type.fields {
-            for field in fields {
-                endpoints.push(IntrospectedEndpoint {
-                    path: format!("/graphql?mutation={}", field.name),
-                    method: "POST".to_string(),
-                    parameters: field
-                        .args
-                        .iter()
-                        .map(|a| EndpointParameter {
-                            name: a.name.clone(),
-                            location: ParameterLocation::Body,
-                            param_type: "string".to_string(),
-                            required: false,
-                        })
-                        .collect(),
-                    response_type: None,
-                    description: Some(format!("Mutation: {}", field.name)),
-                });
-            }
+                    .collect(),
+                response_type: None,
+                description: Some(format!("Mutation: {}", field.name)),
+            });
         }
     }
 

@@ -136,17 +136,17 @@ fn parse_express_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute>
     for (line_num, line) in source.lines().enumerate() {
         let trimmed = line.trim();
         for (pattern, method) in &method_patterns {
-            if let Some(rest) = trimmed.strip_prefix(pattern) {
-                if let Some(path) = extract_quoted_string(rest) {
-                    routes.push(DiscoveredRoute {
-                        path_pattern: path,
-                        http_method: *method,
-                        handler_name: extract_handler_name(rest),
-                        framework: Framework::Express,
-                        source_file: source_file.to_string(),
-                        line_number: Some(line_num as u32 + 1),
-                    });
-                }
+            if let Some(rest) = trimmed.strip_prefix(pattern)
+                && let Some(path) = extract_quoted_string(rest)
+            {
+                routes.push(DiscoveredRoute {
+                    path_pattern: path,
+                    http_method: *method,
+                    handler_name: extract_handler_name(rest),
+                    framework: Framework::Express,
+                    source_file: source_file.to_string(),
+                    line_number: Some(line_num as u32 + 1),
+                });
             }
         }
     }
@@ -161,23 +161,23 @@ fn parse_flask_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute> {
     for (line_num, line) in lines.iter().enumerate() {
         let trimmed = line.trim();
 
-        if let Some(rest) = trimmed.strip_prefix("@app.route(") {
-            if let Some(path) = extract_quoted_string(rest) {
-                let methods = extract_flask_methods(rest);
-                let handler = lines
-                    .get(line_num + 1)
-                    .and_then(|next| extract_python_function_name(next));
+        if let Some(rest) = trimmed.strip_prefix("@app.route(")
+            && let Some(path) = extract_quoted_string(rest)
+        {
+            let methods = extract_flask_methods(rest);
+            let handler = lines
+                .get(line_num + 1)
+                .and_then(|next| extract_python_function_name(next));
 
-                for method in methods {
-                    routes.push(DiscoveredRoute {
-                        path_pattern: path.clone(),
-                        http_method: method,
-                        handler_name: handler.clone(),
-                        framework: Framework::Flask,
-                        source_file: source_file.to_string(),
-                        line_number: Some(line_num as u32 + 1),
-                    });
-                }
+            for method in methods {
+                routes.push(DiscoveredRoute {
+                    path_pattern: path.clone(),
+                    http_method: method,
+                    handler_name: handler.clone(),
+                    framework: Framework::Flask,
+                    source_file: source_file.to_string(),
+                    line_number: Some(line_num as u32 + 1),
+                });
             }
         }
 
@@ -189,21 +189,21 @@ fn parse_flask_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute> {
         ];
 
         for (pattern, method) in &flask_method_decorators {
-            if let Some(rest) = trimmed.strip_prefix(pattern) {
-                if let Some(path) = extract_quoted_string(rest) {
-                    let handler = lines
-                        .get(line_num + 1)
-                        .and_then(|next| extract_python_function_name(next));
+            if let Some(rest) = trimmed.strip_prefix(pattern)
+                && let Some(path) = extract_quoted_string(rest)
+            {
+                let handler = lines
+                    .get(line_num + 1)
+                    .and_then(|next| extract_python_function_name(next));
 
-                    routes.push(DiscoveredRoute {
-                        path_pattern: path,
-                        http_method: *method,
-                        handler_name: handler,
-                        framework: Framework::Flask,
-                        source_file: source_file.to_string(),
-                        line_number: Some(line_num as u32 + 1),
-                    });
-                }
+                routes.push(DiscoveredRoute {
+                    path_pattern: path,
+                    http_method: *method,
+                    handler_name: handler,
+                    framework: Framework::Flask,
+                    source_file: source_file.to_string(),
+                    line_number: Some(line_num as u32 + 1),
+                });
             }
         }
     }
@@ -232,21 +232,21 @@ fn parse_fastapi_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute>
         let trimmed = line.trim();
 
         for (pattern, method) in &decorators {
-            if let Some(rest) = trimmed.strip_prefix(pattern) {
-                if let Some(path) = extract_quoted_string(rest) {
-                    let handler = lines
-                        .get(line_num + 1)
-                        .and_then(|next| extract_python_function_name(next));
+            if let Some(rest) = trimmed.strip_prefix(pattern)
+                && let Some(path) = extract_quoted_string(rest)
+            {
+                let handler = lines
+                    .get(line_num + 1)
+                    .and_then(|next| extract_python_function_name(next));
 
-                    routes.push(DiscoveredRoute {
-                        path_pattern: path,
-                        http_method: *method,
-                        handler_name: handler,
-                        framework: Framework::FastApi,
-                        source_file: source_file.to_string(),
-                        line_number: Some(line_num as u32 + 1),
-                    });
-                }
+                routes.push(DiscoveredRoute {
+                    path_pattern: path,
+                    http_method: *method,
+                    handler_name: handler,
+                    framework: Framework::FastApi,
+                    source_file: source_file.to_string(),
+                    line_number: Some(line_num as u32 + 1),
+                });
             }
         }
     }
@@ -260,18 +260,18 @@ fn parse_django_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute> 
     for (line_num, line) in source.lines().enumerate() {
         let trimmed = line.trim();
 
-        if let Some(rest) = trimmed.strip_prefix("path(") {
-            if let Some(path) = extract_quoted_string(rest) {
-                let handler = extract_django_view_name(rest);
-                routes.push(DiscoveredRoute {
-                    path_pattern: format!("/{path}"),
-                    http_method: HttpMethod::Any,
-                    handler_name: handler,
-                    framework: Framework::Django,
-                    source_file: source_file.to_string(),
-                    line_number: Some(line_num as u32 + 1),
-                });
-            }
+        if let Some(rest) = trimmed.strip_prefix("path(")
+            && let Some(path) = extract_quoted_string(rest)
+        {
+            let handler = extract_django_view_name(rest);
+            routes.push(DiscoveredRoute {
+                path_pattern: format!("/{path}"),
+                http_method: HttpMethod::Any,
+                handler_name: handler,
+                framework: Framework::Django,
+                source_file: source_file.to_string(),
+                line_number: Some(line_num as u32 + 1),
+            });
         }
     }
 
@@ -294,17 +294,17 @@ fn parse_spring_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute> 
         let trimmed = line.trim();
 
         for (annotation, method) in &annotations {
-            if let Some(rest) = trimmed.strip_prefix(annotation) {
-                if let Some(path) = extract_quoted_string(rest) {
-                    routes.push(DiscoveredRoute {
-                        path_pattern: path,
-                        http_method: *method,
-                        handler_name: None,
-                        framework: Framework::Spring,
-                        source_file: source_file.to_string(),
-                        line_number: Some(line_num as u32 + 1),
-                    });
-                }
+            if let Some(rest) = trimmed.strip_prefix(annotation)
+                && let Some(path) = extract_quoted_string(rest)
+            {
+                routes.push(DiscoveredRoute {
+                    path_pattern: path,
+                    http_method: *method,
+                    handler_name: None,
+                    framework: Framework::Spring,
+                    source_file: source_file.to_string(),
+                    line_number: Some(line_num as u32 + 1),
+                });
             }
         }
     }
@@ -315,10 +315,10 @@ fn parse_spring_routes(source: &str, source_file: &str) -> Vec<DiscoveredRoute> 
 fn extract_quoted_string(s: &str) -> Option<String> {
     let s = s.trim();
     for quote in ['"', '\''] {
-        if s.starts_with(quote) {
-            if let Some(end) = s[1..].find(quote) {
-                return Some(s[1..end + 1].to_string());
-            }
+        if s.starts_with(quote)
+            && let Some(end) = s[1..].find(quote)
+        {
+            return Some(s[1..end + 1].to_string());
         }
     }
     None
@@ -341,20 +341,20 @@ fn extract_handler_name(s: &str) -> Option<String> {
 
 fn extract_python_function_name(line: &str) -> Option<String> {
     let trimmed = line.trim();
-    if let Some(rest) = trimmed.strip_prefix("def ") {
-        if let Some(paren) = rest.find('(') {
-            let name = rest[..paren].trim();
-            if !name.is_empty() {
-                return Some(name.to_string());
-            }
+    if let Some(rest) = trimmed.strip_prefix("def ")
+        && let Some(paren) = rest.find('(')
+    {
+        let name = rest[..paren].trim();
+        if !name.is_empty() {
+            return Some(name.to_string());
         }
     }
-    if let Some(rest) = trimmed.strip_prefix("async def ") {
-        if let Some(paren) = rest.find('(') {
-            let name = rest[..paren].trim();
-            if !name.is_empty() {
-                return Some(name.to_string());
-            }
+    if let Some(rest) = trimmed.strip_prefix("async def ")
+        && let Some(paren) = rest.find('(')
+    {
+        let name = rest[..paren].trim();
+        if !name.is_empty() {
+            return Some(name.to_string());
         }
     }
     None

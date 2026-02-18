@@ -165,6 +165,7 @@ pub fn all_simple_paths(
     results
 }
 
+#[allow(clippy::too_many_arguments)]
 fn dfs_paths(
     graph: &AttackGraph,
     current: u64,
