@@ -9,3 +9,7 @@ mod hash_chain_test;
 #[cfg(test)]
 #[path = "hmac_signer_test.rs"]
 mod hmac_signer_test;
+
+#[cfg(test)]
+#[path = "log_writer_test.rs"]
+mod log_writer_test;

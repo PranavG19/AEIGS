@@ -1,0 +1,197 @@
+#[cfg(test)]
+mod tests {
+    use crate::hash_chain::{genesis_hash, compute_next_hash};
+    use crate::hmac_signer::HmacSigner;
+    use crate::log_writer::{serialize_event, AuditLogWriter};
+    use aegis_protocol::audit::AuditEventType;
+    use aegis_protocol::finding::VulnerabilityClass;
+    use aegis_protocol::operation::ModuleIdentifier;
+    use std::fs;
+
+    fn temp_log_path(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join("aegis-test-logs");
+        fs::create_dir_all(&dir).unwrap();
+        dir.join(format!("{name}-{}.log", std::process::id()))
+    }
+
+    #[test]
+    fn write_single_event() {
+        let path = temp_log_path("single");
+        let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
+
+        let entry = writer
+            .append_event(AuditEventType::ScanStarted {
+                target_description: "test-app".to_string(),
+            })
+            .unwrap();
+
+        assert_eq!(entry.sequence_number, 0);
+        assert_eq!(entry.previous_hash, genesis_hash());
+        assert!(!entry.payload_cbor.is_empty());
+        assert_eq!(writer.sequence_number(), 1);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn write_multiple_events_increments_sequence() {
+        let path = temp_log_path("multi");
+        let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
+
+        let entry1 = writer
+            .append_event(AuditEventType::ScanStarted {
+                target_description: "app1".to_string(),
+            })
+            .unwrap();
+
+        let entry2 = writer
+            .append_event(AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::PassiveRecon,
+            })
+            .unwrap();
+
+        assert_eq!(entry1.sequence_number, 0);
+        assert_eq!(entry2.sequence_number, 1);
+        assert_ne!(entry1.previous_hash, entry2.previous_hash);
+        assert_eq!(writer.sequence_number(), 2);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn hash_chain_links_correctly() {
+        let path = temp_log_path("chain-link");
+        let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
+
+        let entry1 = writer
+            .append_event(AuditEventType::ScanStarted {
+                target_description: "app".to_string(),
+            })
+            .unwrap();
+
+        let entry2 = writer
+            .append_event(AuditEventType::ScanCompleted {
+                total_findings: 5,
+            })
+            .unwrap();
+
+        let expected_hash = compute_next_hash(&entry1.previous_hash, &entry1.payload_cbor);
+        assert_eq!(entry2.previous_hash, expected_hash);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn hmac_verifies_against_payload() {
+        let path = temp_log_path("hmac-verify");
+        let key = b"test-hmac-key";
+        let mut writer = AuditLogWriter::create(&path, key).unwrap();
+
+        let entry = writer
+            .append_event(AuditEventType::KeyEvent {
+                description: "test event".to_string(),
+            })
+            .unwrap();
+
+        let signer = HmacSigner::new(key);
+        assert!(signer.verify(&entry.payload_cbor, &entry.hmac));
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn file_grows_with_writes() {
+        let path = temp_log_path("file-grows");
+        let mut writer = AuditLogWriter::create(&path, b"key").unwrap();
+
+        writer
+            .append_event(AuditEventType::ScanStarted {
+                target_description: "app".to_string(),
+            })
+            .unwrap();
+
+        let size1 = fs::metadata(&path).unwrap().len();
+        assert!(size1 > 0);
+
+        writer
+            .append_event(AuditEventType::ScanCompleted {
+                total_findings: 0,
+            })
+            .unwrap();
+
+        let size2 = fs::metadata(&path).unwrap().len();
+        assert!(size2 > size1);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn all_event_types_serialize() {
+        let events = vec![
+            AuditEventType::ScanStarted {
+                target_description: "test".to_string(),
+            },
+            AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::Fuzzing,
+            },
+            AuditEventType::FindingRecorded {
+                finding_id: 42,
+                vulnerability_class: VulnerabilityClass::SqlInjection,
+            },
+            AuditEventType::ScanCompleted {
+                total_findings: 10,
+            },
+            AuditEventType::KeyEvent {
+                description: "key rotated".to_string(),
+            },
+            AuditEventType::ConfigChange {
+                key: "max_rps".to_string(),
+                old_value: "100".to_string(),
+                new_value: "200".to_string(),
+            },
+        ];
+
+        let path = temp_log_path("all-types");
+        let mut writer = AuditLogWriter::create(&path, b"key").unwrap();
+
+        for event in events {
+            writer.append_event(event).unwrap();
+        }
+
+        assert_eq!(writer.sequence_number(), 6);
+
+        fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn serialize_event_produces_valid_cbor() {
+        let event = AuditEventType::ScanStarted {
+            target_description: "test".to_string(),
+        };
+
+        let cbor_bytes = serialize_event(&event).unwrap();
+        assert!(!cbor_bytes.is_empty());
+
+        let deserialized: AuditEventType = ciborium::from_reader(&cbor_bytes[..]).unwrap();
+        match deserialized {
+            AuditEventType::ScanStarted { target_description } => {
+                assert_eq!(target_description, "test");
+            }
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn error_display_is_descriptive() {
+        use crate::log_writer::LogWriterError;
+
+        let io_err = LogWriterError::IoError(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "file not found",
+        ));
+        assert!(io_err.to_string().contains("io error"));
+
+        let ser_err = LogWriterError::SerializationError("bad data".to_string());
+        assert!(ser_err.to_string().contains("serialization error"));
+    }
+}
