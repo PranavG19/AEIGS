@@ -1,5 +1,11 @@
-pub mod node;
+pub mod audit;
+pub mod capability;
 pub mod edge;
 pub mod finding;
+pub mod ipc;
+pub mod node;
 pub mod operation;
-pub mod capability;
+
+#[cfg(test)]
+#[path = "protocol_test.rs"]
+mod protocol_test;
