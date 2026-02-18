@@ -14,3 +14,7 @@ mod hmac_signer_test;
 #[cfg(test)]
 #[path = "log_writer_test.rs"]
 mod log_writer_test;
+
+#[cfg(test)]
+#[path = "log_verifier_test.rs"]
+mod log_verifier_test;
