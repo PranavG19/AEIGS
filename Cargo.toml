@@ -32,3 +32,4 @@ petgraph = "0.7"
 reqwest = { version = "0.12", features = ["json"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 semver = "1"
+rand = "0.9"
