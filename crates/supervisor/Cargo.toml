@@ -1,0 +1,13 @@
+[package]
+name = "aegis-supervisor"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+aegis-audit-log = { path = "../audit-log" }
+tokio = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }

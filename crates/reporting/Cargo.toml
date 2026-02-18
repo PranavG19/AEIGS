@@ -1,0 +1,13 @@
+[package]
+name = "aegis-reporting"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+aegis-knowledge-graph = { path = "../knowledge-graph" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+ciborium = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

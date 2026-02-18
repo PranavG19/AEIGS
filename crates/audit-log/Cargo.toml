@@ -1,0 +1,13 @@
+[package]
+name = "aegis-audit-log"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+serde = { workspace = true }
+ciborium = { workspace = true }
+sha3 = { workspace = true }
+hmac = { workspace = true }
+uuid = { workspace = true }
+tracing = { workspace = true }
