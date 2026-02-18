@@ -2,6 +2,7 @@ pub mod edge_store;
 pub mod finding_store;
 pub mod node_store;
 pub mod operation_log;
+pub mod query;
 
 #[cfg(test)]
 #[path = "node_store_test.rs"]
