@@ -1,5 +1,6 @@
 pub mod hash_chain;
 pub mod hmac_signer;
+pub mod log_verifier;
 pub mod log_writer;
 
 #[cfg(test)]
