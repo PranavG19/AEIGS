@@ -20,3 +20,7 @@ mod finding_store_test;
 #[cfg(test)]
 #[path = "operation_log_test.rs"]
 mod operation_log_test;
+
+#[cfg(test)]
+#[path = "graph_test.rs"]
+mod graph_test;
