@@ -1,4 +1,5 @@
 pub mod edge_store;
+pub mod finding_store;
 pub mod node_store;
 
 #[cfg(test)]
