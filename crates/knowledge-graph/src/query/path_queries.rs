@@ -29,7 +29,7 @@ pub fn find_paths_between(
     let mut stack: Vec<(u64, Vec<u64>)> = vec![(from, vec![from])];
 
     while let Some((current, path)) = stack.pop() {
-        if path.len() > max_hops as usize + 1 {
+        if path.len() > max_hops as usize {
             continue;
         }
 
@@ -41,7 +41,7 @@ pub fn find_paths_between(
                 let mut complete_path = path.clone();
                 complete_path.push(next);
                 paths.push(complete_path);
-            } else if !path.contains(&next) && path.len() < max_hops as usize + 1 {
+            } else if !path.contains(&next) && path.len() < max_hops as usize {
                 let mut new_path = path.clone();
                 new_path.push(next);
                 stack.push((next, new_path));
