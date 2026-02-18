@@ -281,4 +281,25 @@ mod tests {
         assert_eq!(log.total_applied(), 0);
         assert_eq!(log.current_sequence(ModuleIdentifier::Fuzzing), 0);
     }
+
+    #[test]
+    fn error_display_messages_are_descriptive() {
+        use crate::operation_log::OperationLogError;
+
+        let seq_err = OperationLogError::SequenceOutOfOrder {
+            module: ModuleIdentifier::PassiveRecon,
+            expected_min: 5,
+            received: 3,
+        };
+        let msg = seq_err.to_string();
+        assert!(msg.contains("sequence out of order"));
+        assert!(msg.contains("5"));
+        assert!(msg.contains("3"));
+
+        let node_err = OperationLogError::NodeNotFound(42);
+        assert!(node_err.to_string().contains("42"));
+
+        let edge_err = OperationLogError::EdgeNotFound(99);
+        assert!(edge_err.to_string().contains("99"));
+    }
 }
