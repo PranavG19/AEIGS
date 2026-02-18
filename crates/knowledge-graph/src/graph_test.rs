@@ -232,4 +232,29 @@ mod tests {
         assert_eq!(graph.edge_count(), 0);
         assert_eq!(graph.finding_count(), 0);
     }
+
+    #[test]
+    fn all_simple_paths_bounded_through_facade() {
+        let graph = build_small_attack_graph();
+        let paths = graph.all_simple_paths_bounded(0, 2, 5);
+
+        assert_eq!(paths.len(), 1);
+        assert_eq!(paths[0], vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn cut_vertices_through_facade() {
+        let graph = build_small_attack_graph();
+        let cuts = graph.cut_vertices();
+
+        assert!(cuts.contains(&1));
+    }
+
+    #[test]
+    fn betweenness_centrality_through_facade() {
+        let graph = build_small_attack_graph();
+        let centrality = graph.betweenness_centrality();
+
+        assert!(centrality.contains_key(&1));
+    }
 }
