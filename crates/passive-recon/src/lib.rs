@@ -1,4 +1,5 @@
 pub mod dependency_parser;
+pub mod filesystem_walker;
 pub mod vuln_database;
 
 #[cfg(test)]
@@ -8,3 +9,7 @@ mod dependency_parser_test;
 #[cfg(test)]
 #[path = "vuln_database_test.rs"]
 mod vuln_database_test;
+
+#[cfg(test)]
+#[path = "filesystem_walker_test.rs"]
+mod filesystem_walker_test;
