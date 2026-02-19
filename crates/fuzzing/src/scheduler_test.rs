@@ -403,7 +403,16 @@ mod tests {
     }
 
     #[test]
-    fn nan_priority_target_dequeues_after_finite_priority_target() {
+    fn enqueue_neg_infinite_priority_is_clamped_to_zero() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/neg-inf", f64::NEG_INFINITY));
+
+        let t = scheduler.next_target().unwrap();
+        assert_eq!(t.priority_score, 0.0);
+    }
+
+    #[test]
+    fn nan_input_priority_dequeues_last_with_clamped_zero() {
         let mut scheduler = FuzzScheduler::new();
         scheduler.enqueue(target("/nan", f64::NAN));
         scheduler.enqueue(target("/high", 5.0));

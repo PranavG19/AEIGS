@@ -60,6 +60,11 @@ impl FuzzScheduler {
         }
     }
 
+    /// Adds `target` to the scheduling queue.
+    ///
+    /// If `priority_score` is non-finite (NaN, ±∞), it is clamped to `0.0`
+    /// before insertion. Callers relying on a computed score should verify
+    /// finiteness before calling this function if they need the raw value preserved.
     pub fn enqueue(&mut self, mut target: FuzzTarget) {
         if !target.priority_score.is_finite() {
             target.priority_score = 0.0;
