@@ -230,4 +230,36 @@ mod tests {
         let result = other_manager.validate_token(&token, Permission::ReadGraph, 2000);
         assert!(matches!(result, Err(CapabilityError::InvalidToken)));
     }
+
+    #[test]
+    fn constant_time_comparison_accepts_valid_token() {
+        let mut manager = CapabilityManager::new(b"ct-key".to_vec());
+        manager.register_policy(recon_policy());
+
+        let token = manager
+            .issue_token(ModuleIdentifier::PassiveRecon, 1000)
+            .unwrap();
+
+        assert!(
+            manager
+                .validate_token(&token, Permission::ReadGraph, 2000)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn constant_time_comparison_rejects_single_byte_flip() {
+        let mut manager = CapabilityManager::new(b"ct-key".to_vec());
+        manager.register_policy(recon_policy());
+
+        let mut token = manager
+            .issue_token(ModuleIdentifier::PassiveRecon, 1000)
+            .unwrap();
+
+        let last = token.token_bytes.len() - 1;
+        token.token_bytes[last] ^= 0x01;
+
+        let result = manager.validate_token(&token, Permission::ReadGraph, 2000);
+        assert!(matches!(result, Err(CapabilityError::InvalidToken)));
+    }
 }

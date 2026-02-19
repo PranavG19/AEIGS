@@ -2,6 +2,7 @@ use aegis_protocol::capability::{CapabilityToken, Permission};
 use aegis_protocol::operation::ModuleIdentifier;
 use std::collections::HashMap;
 use std::time::Duration;
+use subtle::ConstantTimeEq;
 
 #[derive(Debug)]
 pub enum CapabilityError {
@@ -85,7 +86,8 @@ impl CapabilityManager {
         }
 
         let expected_bytes = self.compute_token_bytes(token.module, token.expires_at_unix_ms);
-        if token.token_bytes != expected_bytes {
+        let token_valid = bool::from(token.token_bytes.ct_eq(&expected_bytes));
+        if !token_valid {
             return Err(CapabilityError::InvalidToken);
         }
 
