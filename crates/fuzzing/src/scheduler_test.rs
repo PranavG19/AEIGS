@@ -364,10 +364,7 @@ mod tests {
         let mut scheduler = FuzzScheduler::new();
         scheduler.enqueue(target("/existing", 5.0));
 
-        scheduler.inject_targets(vec![
-            target("/new1", 8.0),
-            target("/new2", 3.0),
-        ]);
+        scheduler.inject_targets(vec![target("/new1", 8.0), target("/new2", 3.0)]);
 
         assert_eq!(scheduler.pending_count(), 3);
         let first = scheduler.next_target().unwrap();
@@ -385,5 +382,38 @@ mod tests {
 
         let second = scheduler.next_target().unwrap();
         assert_eq!(second.endpoint, "/a");
+    }
+
+    #[test]
+    fn enqueue_nan_priority_is_clamped_to_zero() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/nan", f64::NAN));
+
+        let t = scheduler.next_target().unwrap();
+        assert_eq!(t.priority_score, 0.0);
+    }
+
+    #[test]
+    fn enqueue_infinite_priority_is_clamped_to_zero() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/inf", f64::INFINITY));
+
+        let t = scheduler.next_target().unwrap();
+        assert_eq!(t.priority_score, 0.0);
+    }
+
+    #[test]
+    fn nan_priority_target_dequeues_after_finite_priority_target() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/nan", f64::NAN));
+        scheduler.enqueue(target("/high", 5.0));
+
+        let first = scheduler.next_target().unwrap();
+        assert_eq!(first.endpoint, "/high");
+        assert_eq!(first.priority_score, 5.0);
+
+        let second = scheduler.next_target().unwrap();
+        assert_eq!(second.endpoint, "/nan");
+        assert_eq!(second.priority_score, 0.0);
     }
 }

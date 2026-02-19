@@ -60,7 +60,10 @@ impl FuzzScheduler {
         }
     }
 
-    pub fn enqueue(&mut self, target: FuzzTarget) {
+    pub fn enqueue(&mut self, mut target: FuzzTarget) {
+        if !target.priority_score.is_finite() {
+            target.priority_score = 0.0;
+        }
         self.queue.push(PrioritizedTarget { target });
     }
 
