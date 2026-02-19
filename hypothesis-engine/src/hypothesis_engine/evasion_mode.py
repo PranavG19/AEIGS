@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import warnings
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -64,9 +65,17 @@ class EvasionHypothesisGenerator(BedrockClient):
         self._bypass_examples = self._load_bypass_examples()
 
     def _load_bypass_examples(self) -> dict:
-        examples_path = Path(__file__).parent / "bypass_examples.json"
-        with open(examples_path) as f:
-            return json.load(f)
+        import hypothesis_engine.evasion_mode as _self_module
+
+        corpus_path = Path(_self_module.__file__).parent / "bypass_examples.json"
+        if corpus_path.exists():
+            return json.loads(corpus_path.read_text())
+        warnings.warn(
+            "bypass_examples.json not found — using generic payloads",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        return {}
 
     def _get_relevant_examples(self, vulnerability_class: str) -> list[dict]:
         normalized = vulnerability_class.lower().replace(" ", "_")

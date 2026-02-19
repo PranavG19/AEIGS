@@ -198,6 +198,39 @@ class TestBypassExamplesLoading:
         assert "sqli" in generator._bypass_examples
         assert "xss" in generator._bypass_examples
 
+    def test_missing_file_emits_warning_and_returns_empty_dict(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        import hypothesis_engine.evasion_mode as evasion_module
+
+        monkeypatch.setattr(
+            evasion_module.Path,
+            "exists",
+            lambda self: False,
+        )
+        generator = EvasionHypothesisGenerator.__new__(
+            EvasionHypothesisGenerator
+        )
+        with pytest.warns(RuntimeWarning, match="bypass_examples.json not found"):
+            generator._bypass_examples = generator._load_bypass_examples()
+        assert generator._bypass_examples == {}
+
+    def test_existing_file_populates_bypass_examples(self, tmp_path: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+        import hypothesis_engine.evasion_mode as evasion_module
+
+        fake_corpus = {"sqli": [{"payload": "1 OR 1=1", "technique": "tautology"}]}
+        corpus_file = tmp_path / "bypass_examples.json"
+        corpus_file.write_text(json.dumps(fake_corpus))
+
+        monkeypatch.setattr(evasion_module, "__file__", str(tmp_path / "evasion_mode.py"))
+
+        generator = EvasionHypothesisGenerator.__new__(
+            EvasionHypothesisGenerator
+        )
+        generator._bypass_examples = generator._load_bypass_examples()
+
+        assert generator._bypass_examples == fake_corpus
+
 
 class TestGetRelevantExamples:
     def setup_method(self) -> None:
