@@ -75,6 +75,10 @@ impl CapabilityManager {
         })
     }
 
+    /// Validates a capability token using constant-time byte comparison to prevent
+    /// timing oracle attacks. Returns `Err(InvalidToken)` if the HMAC-derived bytes
+    /// do not match, `Err(TokenExpired)` if the current time is at or past expiry,
+    /// and `Err(InsufficientPermissions)` if the required permission is absent.
     pub fn validate_token(
         &self,
         token: &CapabilityToken,
