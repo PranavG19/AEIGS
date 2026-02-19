@@ -104,6 +104,42 @@ mod tests {
         let store = NodeStore::default();
         assert_eq!(store.count(), 0);
     }
+
+    #[test]
+    fn snapshot_restore_roundtrip() {
+        let mut store = NodeStore::new();
+        store.insert(NodeType::Endpoint, props(&[("path", "/api/users")]));
+        store.insert(NodeType::Function, props(&[("name", "handle_request")]));
+        store.insert(NodeType::Endpoint, empty_props());
+
+        let bytes = store.snapshot();
+        let restored = NodeStore::restore(&bytes).unwrap();
+
+        assert_eq!(restored.count(), 3);
+        let n0 = restored.get(0).unwrap();
+        assert_eq!(n0.node_type, NodeType::Endpoint);
+        assert_eq!(n0.properties.get("path").unwrap(), "/api/users");
+        let n1 = restored.get(1).unwrap();
+        assert_eq!(n1.node_type, NodeType::Function);
+        assert_eq!(n1.properties.get("name").unwrap(), "handle_request");
+        assert_eq!(restored.nodes_by_type(NodeType::Endpoint), &[0, 2]);
+        assert_eq!(restored.nodes_by_type(NodeType::Function), &[1]);
+    }
+
+    #[test]
+    fn restore_corrupted_data_returns_error() {
+        let result = NodeStore::restore(b"not valid json{{{");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn empty_store_snapshot_restore() {
+        let store = NodeStore::new();
+        let bytes = store.snapshot();
+        let restored = NodeStore::restore(&bytes).unwrap();
+        assert_eq!(restored.count(), 0);
+        assert!(restored.nodes_by_type(NodeType::Endpoint).is_empty());
+    }
 }
 
 #[cfg(test)]

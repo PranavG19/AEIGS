@@ -29,7 +29,6 @@ pub enum GraphOperation {
 pub enum ModuleIdentifier {
     PassiveRecon,
     Enumeration,
-    TaintAnalysis,
     Fuzzing,
     HypothesisEngine,
     ChainSynthesis,

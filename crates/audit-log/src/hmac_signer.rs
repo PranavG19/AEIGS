@@ -1,5 +1,6 @@
 use hmac::{Hmac, Mac};
-use sha3::Sha3_256;
+use sha3::{Digest, Sha3_256};
+use std::path::Path;
 
 type HmacSha3_256 = Hmac<Sha3_256>;
 
@@ -12,6 +13,30 @@ pub struct HmacSigner {
 
 impl HmacSigner {
     pub fn new(key: &[u8]) -> Self {
+        Self { key: key.to_vec() }
+    }
+
+    pub fn with_key_file(path: &Path) -> Result<Self, std::io::Error> {
+        let key = std::fs::read(path)?;
+        Ok(Self { key })
+    }
+
+    pub fn save_key_to_file(&self, path: &Path) -> Result<(), std::io::Error> {
+        std::fs::write(path, &self.key)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let perms = std::fs::Permissions::from_mode(0o600);
+            std::fs::set_permissions(path, perms)?;
+        }
+        Ok(())
+    }
+
+    pub fn with_derived_key(passphrase: &[u8]) -> Self {
+        let mut hasher = Sha3_256::new();
+        hasher.update(b"aegis-hmac-key-derivation-v1");
+        hasher.update(passphrase);
+        let key: [u8; 32] = hasher.finalize().into();
         Self { key: key.to_vec() }
     }
 

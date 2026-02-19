@@ -163,6 +163,61 @@ mod tests {
         let ids: Vec<u64> = store.iter().map(|e| e.id).collect();
         assert_eq!(ids, vec![0, 1, 2]);
     }
+
+    #[test]
+    fn has_edge_returns_true_for_existing_edge() {
+        let store = make_store_with_edges();
+        assert!(store.has_edge(0, 1, EdgeLabel::Calls));
+        assert!(store.has_edge(0, 2, EdgeLabel::Reads));
+        assert!(store.has_edge(1, 2, EdgeLabel::Writes));
+    }
+
+    #[test]
+    fn has_edge_returns_false_for_nonexistent_edge() {
+        let store = make_store_with_edges();
+        assert!(!store.has_edge(0, 1, EdgeLabel::Writes));
+        assert!(!store.has_edge(2, 0, EdgeLabel::Calls));
+        assert!(!store.has_edge(5, 6, EdgeLabel::Calls));
+    }
+
+    #[test]
+    fn has_edge_returns_false_on_empty_store() {
+        let store = EdgeStore::new();
+        assert!(!store.has_edge(0, 1, EdgeLabel::Calls));
+    }
+
+    #[test]
+    fn snapshot_restore_roundtrip() {
+        let store = make_store_with_edges();
+
+        let bytes = store.snapshot();
+        let restored = EdgeStore::restore(&bytes).unwrap();
+
+        assert_eq!(restored.count(), 3);
+        let e0 = restored.get(0).unwrap();
+        assert_eq!(e0.source_node_id, 0);
+        assert_eq!(e0.target_node_id, 1);
+        assert_eq!(e0.label, EdgeLabel::Calls);
+        assert!(restored.has_edge(0, 2, EdgeLabel::Reads));
+        assert!(restored.has_edge(1, 2, EdgeLabel::Writes));
+        assert_eq!(restored.outgoing_edges(0).len(), 2);
+        assert_eq!(restored.incoming_edges(2).len(), 2);
+    }
+
+    #[test]
+    fn restore_corrupted_data_returns_error() {
+        let result = EdgeStore::restore(b"not valid json{{{");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn empty_store_snapshot_restore() {
+        let store = EdgeStore::new();
+        let bytes = store.snapshot();
+        let restored = EdgeStore::restore(&bytes).unwrap();
+        assert_eq!(restored.count(), 0);
+        assert!(restored.outgoing_edges(0).is_empty());
+    }
 }
 
 #[cfg(test)]

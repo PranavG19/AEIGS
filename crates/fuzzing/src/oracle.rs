@@ -61,7 +61,7 @@ pub struct Anomaly {
     pub description: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AnomalyType {
     StatusCodeAnomaly,
     TimingAnomaly,
@@ -141,6 +141,29 @@ impl FuzzOracle {
             .collect()
     }
 
+    pub fn analyze_response_with_control(
+        &self,
+        treatment: &FuzzResponse,
+        control: &FuzzResponse,
+        payload: &str,
+        endpoint: &str,
+        method: &str,
+    ) -> Vec<Anomaly> {
+        let treatment_anomalies = self.analyze_response(treatment, payload, endpoint, method);
+        let control_anomalies = self.analyze_response(control, "benign", endpoint, method);
+
+        let control_types: std::collections::HashSet<AnomalyType> =
+            control_anomalies.iter().map(|a| a.anomaly_type).collect();
+
+        treatment_anomalies
+            .into_iter()
+            .filter(|a| {
+                a.anomaly_type == AnomalyType::ReflectionDetected
+                    || !control_types.contains(&a.anomaly_type)
+            })
+            .collect()
+    }
+
     pub fn baseline_count(&self) -> usize {
         self.baselines.len()
     }
@@ -167,6 +190,7 @@ fn check_status_code_anomaly(
         Some(Anomaly {
             request_id: response.request_id,
             anomaly_type: AnomalyType::StatusCodeAnomaly,
+            // Strong indicator but not max: unexpected status can have benign causes
             score: 0.8,
             description: format!(
                 "unexpected status code {} (expected {:?})",
@@ -180,6 +204,7 @@ fn check_status_code_anomaly(
 
 fn check_timing_anomaly(response: &FuzzResponse, baseline: &BaselineProfile) -> Option<Anomaly> {
     let response_ms = response.response_time.as_secs_f64() * 1000.0;
+    // >3x p99 baseline indicates server-side anomaly (e.g., injected sleep, heavy query)
     let threshold = baseline.p99_response_time_ms * 3.0;
 
     if baseline.p99_response_time_ms > 0.0 && response_ms > threshold {
@@ -206,6 +231,7 @@ fn check_size_anomaly(response: &FuzzResponse, baseline: &BaselineProfile) -> Op
     let z_score = (response.body_size_bytes as f64 - baseline.mean_body_size).abs()
         / baseline.body_size_std_dev;
 
+    // >3 std devs from mean suggests altered server output (e.g., error dump, data leak)
     if z_score > 3.0 {
         Some(Anomaly {
             request_id: response.request_id,
@@ -229,6 +255,7 @@ fn check_content_anomaly(response: &FuzzResponse, error_patterns: &[String]) -> 
             return Some(Anomaly {
                 request_id: response.request_id,
                 anomaly_type: AnomalyType::ContentAnomaly,
+                // Higher than status: error patterns in body are more specific injection indicators
                 score: 0.9,
                 description: format!("error pattern detected: {pattern}"),
             });
@@ -243,6 +270,7 @@ fn check_reflection(response: &FuzzResponse, payload: &str) -> Option<Anomaly> {
         Some(Anomaly {
             request_id: response.request_id,
             anomaly_type: AnomalyType::ReflectionDetected,
+            // Strong XSS/injection indicator but payload reflection may be intentional echo
             score: 0.85,
             description: format!(
                 "payload reflected in response body ({} chars)",
@@ -251,6 +279,46 @@ fn check_reflection(response: &FuzzResponse, payload: &str) -> Option<Anomaly> {
         })
     } else {
         None
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct VarianceReport {
+    pub response_codes: Vec<u16>,
+    pub body_similarity: f64,
+    pub is_deterministic: bool,
+}
+
+pub fn measure_endpoint_variance(responses: &[FuzzResponse]) -> VarianceReport {
+    if responses.len() <= 1 {
+        return VarianceReport {
+            response_codes: responses.iter().map(|r| r.status_code).collect(),
+            body_similarity: 1.0,
+            is_deterministic: true,
+        };
+    }
+
+    let mut codes: Vec<u16> = responses.iter().map(|r| r.status_code).collect();
+    codes.sort();
+
+    let all_same_code = codes.windows(2).all(|w| w[0] == w[1]);
+    let sizes: Vec<usize> = responses.iter().map(|r| r.body_size_bytes).collect();
+    let size_values: Vec<f64> = sizes.iter().map(|s| *s as f64).collect();
+    let size_deviation = std_dev(&size_values);
+    let mean_size = mean(&size_values);
+
+    let body_similarity = if mean_size > 0.0 {
+        (1.0 - (size_deviation / mean_size)).clamp(0.0, 1.0)
+    } else {
+        1.0
+    };
+
+    let is_deterministic = all_same_code && body_similarity > 0.95;
+
+    VarianceReport {
+        response_codes: codes,
+        body_similarity,
+        is_deterministic,
     }
 }
 

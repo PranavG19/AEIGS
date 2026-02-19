@@ -3,7 +3,7 @@ mod tests {
     use crate::edge_store::EdgeStore;
     use crate::finding_store::FindingStore;
     use crate::node_store::NodeStore;
-    use crate::operation_log::OperationLog;
+    use crate::operation_log::{OperationLog, OperationLogError, ValidationError};
     use aegis_protocol::edge::EdgeLabel;
     use aegis_protocol::finding::VulnerabilityClass;
     use aegis_protocol::node::NodeType;
@@ -343,8 +343,6 @@ mod tests {
 
     #[test]
     fn error_display_messages_are_descriptive() {
-        use crate::operation_log::OperationLogError;
-
         let seq_err = OperationLogError::SequenceOutOfOrder {
             module: ModuleIdentifier::PassiveRecon,
             expected_min: 5,
@@ -360,5 +358,460 @@ mod tests {
 
         let edge_err = OperationLogError::EdgeNotFound(99);
         assert!(edge_err.to_string().contains("99"));
+    }
+
+    #[test]
+    fn validate_batch_accepts_valid_add_nodes() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddNode {
+                node_type: NodeType::Function,
+                properties: vec![],
+            },
+        ];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_accepts_edge_referencing_batch_nodes() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddNode {
+                node_type: NodeType::Function,
+                properties: vec![],
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 0,
+                target_node_id: 1,
+                label: EdgeLabel::Calls,
+                weight: 1.0,
+            },
+        ];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_accepts_edge_referencing_existing_nodes() {
+        let mut log = OperationLog::new();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+        ];
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
+
+        let ops = vec![GraphOperation::AddEdge {
+            source_node_id: 0,
+            target_node_id: 1,
+            label: EdgeLabel::Calls,
+            weight: 1.0,
+        }];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_rejects_dangling_edge_source() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 99,
+                target_node_id: 0,
+                label: EdgeLabel::Calls,
+                weight: 1.0,
+            },
+        ];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(result, Err(ValidationError::DanglingEdgeSource(99)));
+    }
+
+    #[test]
+    fn validate_batch_rejects_dangling_edge_target() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 0,
+                target_node_id: 99,
+                label: EdgeLabel::Calls,
+                weight: 1.0,
+            },
+        ];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(result, Err(ValidationError::DanglingEdgeTarget(99)));
+    }
+
+    #[test]
+    fn validate_batch_rejects_update_weight_for_nonexistent_edge() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![GraphOperation::UpdateWeight {
+            edge_id: 42,
+            new_weight: 5.0,
+        }];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(result, Err(ValidationError::EdgeNotFound(42)));
+    }
+
+    #[test]
+    fn validate_batch_accepts_update_weight_for_batch_edge() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddNode {
+                node_type: NodeType::Function,
+                properties: vec![],
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 0,
+                target_node_id: 1,
+                label: EdgeLabel::Calls,
+                weight: 1.0,
+            },
+            GraphOperation::UpdateWeight {
+                edge_id: 0,
+                new_weight: 5.0,
+            },
+        ];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_accepts_update_weight_for_existing_edge() {
+        let mut log = OperationLog::new();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                2,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddEdge {
+                    source_node_id: 0,
+                    target_node_id: 1,
+                    label: EdgeLabel::Calls,
+                    weight: 1.0,
+                },
+            ),
+        ];
+        log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
+
+        let ops = vec![GraphOperation::UpdateWeight {
+            edge_id: 0,
+            new_weight: 9.0,
+        }];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_rejects_finding_with_nonexistent_node() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![GraphOperation::AddFinding {
+            linked_node_ids: vec![7],
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+            severity: 8.0,
+            confidence: 0.9,
+            certificate: vec![],
+        }];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(result, Err(ValidationError::NodeNotFoundForFinding(7)));
+    }
+
+    #[test]
+    fn validate_batch_accepts_finding_linked_to_batch_node() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddFinding {
+                linked_node_ids: vec![0],
+                vulnerability_class: VulnerabilityClass::CrossSiteScripting,
+                severity: 7.0,
+                confidence: 0.8,
+                certificate: vec![],
+            },
+        ];
+
+        assert!(log.validate_batch(&ops, &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_accepts_empty_batch() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        assert!(log.validate_batch(&[], &nodes, &edges).is_ok());
+    }
+
+    #[test]
+    fn validate_batch_does_not_mutate_log() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![GraphOperation::AddNode {
+            node_type: NodeType::Endpoint,
+            properties: vec![],
+        }];
+
+        log.validate_batch(&ops, &nodes, &edges).unwrap();
+        assert_eq!(log.total_applied(), 0);
+    }
+
+    #[test]
+    fn strict_mode_rejects_sequence_gap() {
+        let mut log = OperationLog::new_strict();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                2,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+        ];
+
+        let result = log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn strict_mode_allows_consecutive_sequences() {
+        let mut log = OperationLog::new_strict();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                1,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                2,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Service,
+                    properties: vec![],
+                },
+            ),
+        ];
+
+        let applied = log
+            .apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
+        assert_eq!(applied, 3);
+        assert_eq!(log.current_sequence(ModuleIdentifier::PassiveRecon), 3);
+    }
+
+    #[test]
+    fn relaxed_mode_allows_sequence_gaps() {
+        let mut log = OperationLog::new();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                5,
+                ModuleIdentifier::PassiveRecon,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+        ];
+
+        let applied = log
+            .apply_batch(&entries, &mut nodes, &mut edges, &mut findings)
+            .unwrap();
+        assert_eq!(applied, 2);
+        assert_eq!(log.current_sequence(ModuleIdentifier::PassiveRecon), 6);
+    }
+
+    #[test]
+    fn sequence_gap_error_contains_correct_values() {
+        let mut log = OperationLog::new_strict();
+        let (mut nodes, mut edges, mut findings) = make_stores();
+
+        let entries = vec![
+            make_entry(
+                0,
+                ModuleIdentifier::Fuzzing,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![],
+                },
+            ),
+            make_entry(
+                3,
+                ModuleIdentifier::Fuzzing,
+                GraphOperation::AddNode {
+                    node_type: NodeType::Function,
+                    properties: vec![],
+                },
+            ),
+        ];
+
+        let result = log.apply_batch(&entries, &mut nodes, &mut edges, &mut findings);
+        match result {
+            Err(OperationLogError::SequenceGap {
+                module,
+                expected,
+                actual,
+            }) => {
+                assert_eq!(module, ModuleIdentifier::Fuzzing);
+                assert_eq!(expected, 1);
+                assert_eq!(actual, 3);
+            }
+            other => panic!("expected SequenceGap error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn validate_batch_rejects_finding_with_partial_invalid_nodes() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddFinding {
+                linked_node_ids: vec![0, 99],
+                vulnerability_class: VulnerabilityClass::SqlInjection,
+                severity: 8.0,
+                confidence: 0.9,
+                certificate: vec![],
+            },
+        ];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(result, Err(ValidationError::NodeNotFoundForFinding(99)));
+    }
+
+    #[test]
+    fn validation_error_display_messages() {
+        let dup = ValidationError::DuplicateNodeInBatch(5);
+        assert!(dup.to_string().contains("duplicate"));
+        assert!(dup.to_string().contains("5"));
+
+        let src = ValidationError::DanglingEdgeSource(10);
+        assert!(src.to_string().contains("source"));
+        assert!(src.to_string().contains("10"));
+
+        let tgt = ValidationError::DanglingEdgeTarget(11);
+        assert!(tgt.to_string().contains("target"));
+        assert!(tgt.to_string().contains("11"));
+
+        let edge = ValidationError::EdgeNotFound(42);
+        assert!(edge.to_string().contains("edge"));
+        assert!(edge.to_string().contains("42"));
+
+        let finding = ValidationError::NodeNotFoundForFinding(7);
+        assert!(finding.to_string().contains("finding"));
+        assert!(finding.to_string().contains("7"));
     }
 }

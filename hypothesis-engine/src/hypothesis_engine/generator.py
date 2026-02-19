@@ -4,8 +4,10 @@ import json
 import time
 from typing import Any
 
-import boto3
 from pydantic import BaseModel, Field
+
+from hypothesis_engine.bedrock_client import BedrockClient, LlmBackend
+from hypothesis_engine.openai_client import OpenAiClient
 
 
 class ScanContext(BaseModel):
@@ -15,6 +17,7 @@ class ScanContext(BaseModel):
     high_risk_functions: list[dict[str, str]] = Field(default_factory=list)
     authorization_matrix_summary: str = ""
     known_vulnerable_dependencies: list[str] = Field(default_factory=list)
+    feedback_summary: list[dict[str, object]] = Field(default_factory=list)
 
 
 class Hypothesis(BaseModel):
@@ -29,16 +32,21 @@ class GenerationResult(BaseModel):
     hypotheses: list[Hypothesis]
     model_id: str
     generation_time_ms: float
+    reasoning_trace: str = ""
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 SYSTEM_PROMPT = (
     "You are a security researcher analyzing a web application for vulnerabilities. "
-    "Generate hypotheses about potential vulnerabilities based on the provided context. "
+    "First, analyze the context and reason about potential vulnerabilities step by step. "
+    "Then output your hypotheses as a JSON array.\n\n"
     "Each hypothesis must follow this exact JSON format:\n"
     '{"condition": "IF ...", "vulnerability_class": "...", '
     '"reasoning": "BECAUSE ...", "test_approach": "CAN BE TESTED BY ...", '
     '"confidence": 0.0-1.0}\n'
-    "Return a JSON array of hypothesis objects. Be specific and actionable."
+    "Return your reasoning as plain text first, followed by the JSON array. "
+    "Be specific and actionable."
 )
 
 
@@ -74,23 +82,34 @@ def build_user_prompt(context: ScanContext) -> str:
             + "\n".join(f"  - {d}" for d in context.known_vulnerable_dependencies)
         )
 
+    if context.feedback_summary:
+        feedback_lines = [
+            f"  - {fb.get('condition', '?')}: {fb.get('outcome', '?')} "
+            f"(anomaly_score: {fb.get('anomaly_score', 0.0)})"
+            for fb in context.feedback_summary
+        ]
+        parts.append("## Prior Round Feedback\n" + "\n".join(feedback_lines))
+
     return "\n\n".join(parts) if parts else "No context available. Generate general hypotheses."
 
 
-def parse_hypotheses_from_response(response_text: str) -> list[Hypothesis]:
+def parse_hypotheses_from_response(
+    response_text: str,
+) -> tuple[str, list[Hypothesis]]:
     cleaned = response_text.strip()
 
     start = cleaned.find("[")
     end = cleaned.rfind("]")
     if start == -1 or end == -1:
-        return []
+        return ("", [])
 
+    reasoning_trace = cleaned[:start].strip()
     json_str = cleaned[start : end + 1]
 
     try:
         raw_list = json.loads(json_str)
     except json.JSONDecodeError:
-        return []
+        return (reasoning_trace, [])
 
     hypotheses: list[Hypothesis] = []
     for item in raw_list:
@@ -109,84 +128,75 @@ def parse_hypotheses_from_response(response_text: str) -> list[Hypothesis]:
         except (ValueError, TypeError):
             continue
 
-    return hypotheses
+    return (reasoning_trace, hypotheses)
+
+
+def create_backend(backend_type: str, **kwargs: Any) -> LlmBackend:
+    if backend_type == "bedrock":
+        return BedrockClient(**kwargs)
+    elif backend_type in ("openai", "ollama"):
+        if backend_type == "ollama":
+            kwargs.setdefault("base_url", "http://localhost:11434/v1")
+        return OpenAiClient(**kwargs)
+    else:
+        raise ValueError(f"Unknown backend type: {backend_type}")
 
 
 class HypothesisGenerator:
     def __init__(
         self,
         model_id: str = "global.anthropic.claude-sonnet-4-6",
-        aws_profile: str = "ziya",
+        aws_profile: str | None = None,
         max_retries: int = 3,
         timeout_seconds: int = 120,
+        client: LlmBackend | None = None,
     ) -> None:
-        self._model_id = model_id
-        self._aws_profile = aws_profile
-        self._max_retries = max_retries
-        self._timeout_seconds = timeout_seconds
-        self._client: Any = None
-
-    def _get_client(self) -> Any:
-        if self._client is None:
-            session = boto3.Session(profile_name=self._aws_profile)
-            self._client = session.client(
-                "bedrock-runtime",
-                region_name="us-east-1",
+        if client is not None:
+            self._client = client
+        else:
+            self._client = BedrockClient(
+                model_id=model_id,
+                aws_profile=aws_profile,
+                max_retries=max_retries,
+                timeout_seconds=timeout_seconds,
             )
-        return self._client
+        self._model_id = model_id
+
+    def invoke(
+        self,
+        messages: list[dict[str, str]],
+        system: str = "",
+        max_tokens: int = 4096,
+    ) -> tuple[str, Any]:
+        return self._client.invoke(messages=messages, system=system, max_tokens=max_tokens)
 
     def generate(self, context: ScanContext, max_hypotheses: int = 20) -> GenerationResult:
         user_prompt = build_user_prompt(context)
         start_time = time.monotonic()
 
-        body = json.dumps(
+        messages = [
             {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 4096,
-                "system": SYSTEM_PROMPT,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": f"Generate up to {max_hypotheses} vulnerability hypotheses "
-                        f"for this application:\n\n{user_prompt}",
-                    }
-                ],
+                "role": "user",
+                "content": f"Generate up to {max_hypotheses} vulnerability hypotheses "
+                f"for this application:\n\n{user_prompt}",
             }
-        )
+        ]
 
-        response_text = self._invoke_with_retry(body)
+        response_text, usage = self.invoke(
+            messages=messages,
+            system=SYSTEM_PROMPT,
+            max_tokens=8192,
+        )
         elapsed_ms = (time.monotonic() - start_time) * 1000
 
-        hypotheses = parse_hypotheses_from_response(response_text)
+        reasoning_trace, hypotheses = parse_hypotheses_from_response(response_text)
         hypotheses = hypotheses[:max_hypotheses]
 
         return GenerationResult(
             hypotheses=hypotheses,
             model_id=self._model_id,
             generation_time_ms=elapsed_ms,
+            reasoning_trace=reasoning_trace,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
         )
-
-    def _invoke_with_retry(self, body: str) -> str:
-        client = self._get_client()
-        delays = [1.0, 2.0, 4.0]
-
-        last_error: Exception | None = None
-        for attempt in range(self._max_retries):
-            try:
-                response = client.invoke_model(
-                    modelId=self._model_id,
-                    contentType="application/json",
-                    accept="application/json",
-                    body=body,
-                )
-                response_body = json.loads(response["body"].read())
-                return str(response_body.get("content", [{}])[0].get("text", ""))
-            except Exception as e:
-                last_error = e
-                if attempt < self._max_retries - 1:
-                    delay = delays[min(attempt, len(delays) - 1)]
-                    time.sleep(delay)
-
-        raise RuntimeError(
-            f"Failed after {self._max_retries} retries: {last_error}"
-        ) from last_error

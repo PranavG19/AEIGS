@@ -187,5 +187,37 @@ mod tests {
 
         let ser_err = LogWriterError::SerializationError("bad data".to_string());
         assert!(ser_err.to_string().contains("serialization error"));
+
+        let creation_err = LogWriterError::LogCreationFailed("permission denied".to_string());
+        assert!(creation_err.to_string().contains("audit log creation failed"));
+    }
+
+    #[test]
+    fn create_with_invalid_path_returns_error() {
+        let result = AuditLogWriter::create(
+            std::path::Path::new("/nonexistent/dir/that/does/not/exist/audit.log"),
+            b"test-key",
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn noop_writer_accepts_events_silently() {
+        use crate::log_writer::NoOpAuditLogWriter;
+
+        let mut writer = NoOpAuditLogWriter::new();
+        let result = writer.append_event(AuditEventType::ScanStarted {
+            target_description: "test".to_string(),
+        });
+        assert!(result.is_ok());
+        assert_eq!(writer.sequence_number(), 0);
+    }
+
+    #[test]
+    fn noop_writer_default_trait() {
+        use crate::log_writer::NoOpAuditLogWriter;
+
+        let writer = NoOpAuditLogWriter::default();
+        assert_eq!(writer.sequence_number(), 0);
     }
 }

@@ -2,8 +2,8 @@
 mod tests {
     use crate::attack_graph::{AttackGraph, AttackNodeType};
     use crate::path_analysis::{
-        all_simple_paths, betweenness_centrality, critical_fix_targets, reachable_assets,
-        shortest_attack_path,
+        MAX_TOTAL_PATHS, all_simple_paths, betweenness_centrality, causal_influence_ranking,
+        critical_fix_targets, reachable_assets, shortest_attack_path,
     };
 
     fn linear_graph() -> AttackGraph {
@@ -149,5 +149,83 @@ mod tests {
         let result = reachable_assets(&g);
         assert_eq!(result.len(), 1);
         assert!(result.values().next().unwrap().is_empty());
+    }
+
+    #[test]
+    fn all_simple_paths_dense_graph_capped_at_max() {
+        let mut g = AttackGraph::new();
+        let entry = g.add_node("entry".to_string(), AttackNodeType::EntryPoint);
+
+        let layers = 6;
+        let width = 8;
+        let mut prev_layer = vec![entry];
+
+        for layer in 0..layers {
+            let mut current_layer = Vec::new();
+            for w in 0..width {
+                let label = format!("L{layer}N{w}");
+                let node = g.add_node(label, AttackNodeType::Vulnerability);
+                current_layer.push(node);
+            }
+            for &src in &prev_layer {
+                for &dst in &current_layer {
+                    g.add_edge(src, dst, 0.1, None);
+                }
+            }
+            prev_layer = current_layer;
+        }
+
+        let asset = g.add_node("asset".to_string(), AttackNodeType::Asset);
+        for &src in &prev_layer {
+            g.add_edge(src, asset, 0.1, None);
+        }
+
+        let paths = all_simple_paths(&g, entry, asset, layers + 3);
+        assert!(paths.len() <= MAX_TOTAL_PATHS);
+    }
+
+    #[test]
+    fn causal_influence_ranking_chokepoint_first() {
+        let mut g = AttackGraph::new();
+        let entry = g.add_node("entry".to_string(), AttackNodeType::EntryPoint);
+        let chokepoint = g.add_node("chokepoint".to_string(), AttackNodeType::Vulnerability);
+        let bypass = g.add_node("bypass".to_string(), AttackNodeType::SecurityBoundary);
+        let asset = g.add_node("asset".to_string(), AttackNodeType::Asset);
+
+        g.add_edge(entry, chokepoint, 0.3, None);
+        g.add_edge(chokepoint, asset, 0.5, None);
+        g.add_edge(entry, bypass, 0.2, None);
+
+        let ranking = causal_influence_ranking(&g);
+        assert!(!ranking.is_empty());
+        let first_node = ranking[0].0;
+        assert_eq!(g.inner_graph()[first_node].label, "chokepoint");
+        assert!(ranking[0].1.impact_score > 0.0);
+    }
+
+    #[test]
+    fn causal_influence_ranking_no_assets_empty() {
+        let mut g = AttackGraph::new();
+        g.add_node("entry".to_string(), AttackNodeType::EntryPoint);
+        g.add_node("vuln".to_string(), AttackNodeType::Vulnerability);
+
+        let ranking = causal_influence_ranking(&g);
+        assert_eq!(ranking.len(), 1);
+        assert_eq!(ranking[0].1.impact_score, 0.0);
+        assert!(ranking[0].1.removed_findings.is_empty());
+    }
+
+    #[test]
+    fn causal_influence_ranking_deterministic() {
+        let g = diamond_graph();
+        let first = causal_influence_ranking(&g);
+        let second = causal_influence_ranking(&g);
+
+        assert_eq!(first.len(), second.len());
+        for (a, b) in first.iter().zip(second.iter()) {
+            assert_eq!(a.0, b.0);
+            assert_eq!(a.1.impact_score, b.1.impact_score);
+            assert_eq!(a.1.findings_remaining, b.1.findings_remaining);
+        }
     }
 }

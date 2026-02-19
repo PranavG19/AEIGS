@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
 
-import boto3
 from pydantic import BaseModel, Field
 
+from hypothesis_engine.bedrock_client import BedrockClient
 from hypothesis_engine.generator import Hypothesis
 
 
@@ -122,7 +121,7 @@ def parse_test_specifications(response_text: str, hypothesis: Hypothesis) -> lis
     return specs
 
 
-class HypothesisCompiler:
+class HypothesisCompiler(BedrockClient):
     def __init__(
         self,
         model_id: str = "global.anthropic.claude-sonnet-4-6",
@@ -130,34 +129,21 @@ class HypothesisCompiler:
         max_retries: int = 3,
         timeout_seconds: int = 120,
     ) -> None:
-        self._model_id = model_id
-        self._aws_profile = aws_profile
-        self._max_retries = max_retries
-        self._timeout_seconds = timeout_seconds
-        self._client: Any = None
-
-    def _get_client(self) -> Any:
-        if self._client is None:
-            session = boto3.Session(profile_name=self._aws_profile)
-            self._client = session.client(
-                "bedrock-runtime",
-                region_name="us-east-1",
-            )
-        return self._client
+        super().__init__(
+            model_id=model_id,
+            aws_profile=aws_profile,
+            max_retries=max_retries,
+            timeout_seconds=timeout_seconds,
+        )
 
     def compile_hypothesis(self, hypothesis: Hypothesis) -> list[TestSpecification]:
         prompt = build_compilation_prompt(hypothesis)
-
-        body = json.dumps(
-            {
-                "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 2048,
-                "system": COMPILER_SYSTEM_PROMPT,
-                "messages": [{"role": "user", "content": prompt}],
-            }
+        messages = [{"role": "user", "content": prompt}]
+        response_text, _usage = self.invoke(
+            messages=messages,
+            system=COMPILER_SYSTEM_PROMPT,
+            max_tokens=2048,
         )
-
-        response_text = self._invoke_with_retry(body)
         return parse_test_specifications(response_text, hypothesis)
 
     def compile_batch(self, hypotheses: list[Hypothesis]) -> CompilationResult:
@@ -179,28 +165,3 @@ class HypothesisCompiler:
             compilation_time_ms=elapsed_ms,
             failed_compilations=failed,
         )
-
-    def _invoke_with_retry(self, body: str) -> str:
-        client = self._get_client()
-        delays = [1.0, 2.0, 4.0]
-
-        last_error: Exception | None = None
-        for attempt in range(self._max_retries):
-            try:
-                response = client.invoke_model(
-                    modelId=self._model_id,
-                    contentType="application/json",
-                    accept="application/json",
-                    body=body,
-                )
-                response_body = json.loads(response["body"].read())
-                return str(response_body.get("content", [{}])[0].get("text", ""))
-            except Exception as e:
-                last_error = e
-                if attempt < self._max_retries - 1:
-                    delay = delays[min(attempt, len(delays) - 1)]
-                    time.sleep(delay)
-
-        raise RuntimeError(
-            f"Failed after {self._max_retries} retries: {last_error}"
-        ) from last_error

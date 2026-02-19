@@ -1,0 +1,32 @@
+[package]
+name = "aegis-orchestrator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aegis"
+path = "src/main.rs"
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+aegis-knowledge-graph = { path = "../knowledge-graph" }
+aegis-audit-log = { path = "../audit-log" }
+aegis-supervisor = { path = "../supervisor" }
+aegis-passive-recon = { path = "../passive-recon" }
+aegis-enumeration = { path = "../enumeration" }
+aegis-fuzzing = { path = "../fuzzing" }
+aegis-chain-synthesis = { path = "../chain-synthesis" }
+aegis-reporting = { path = "../reporting" }
+aegis-evasion-engine = { path = "../evasion-engine" }
+clap = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+tempfile = "3"

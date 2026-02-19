@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from hypothesis_engine.feedback import (
+    DEFAULT_CLASS_THRESHOLDS,
     FeedbackManager,
     HypothesisOutcome,
     LabeledHypothesis,
@@ -164,3 +165,83 @@ class TestHypothesisOutcome:
             anomaly_details="SQL error detected",
         )
         assert lh.anomaly_details == "SQL error detected"
+
+
+class TestEvasionAttempt:
+    def test_evasion_attempt_defaults_false(self) -> None:
+        fm = FeedbackManager()
+        labeled = fm.label_hypothesis(make_hypothesis(), anomaly_detected=True, anomaly_score=0.8)
+        assert labeled.evasion_attempt is False
+
+    def test_evasion_attempt_set_true(self) -> None:
+        fm = FeedbackManager()
+        labeled = fm.label_hypothesis(
+            make_hypothesis(), anomaly_detected=True, anomaly_score=0.8, evasion_attempt=True
+        )
+        assert labeled.evasion_attempt is True
+
+    def test_evasion_attempt_in_export(self, tmp_path: Path) -> None:
+        fm = FeedbackManager()
+        fm.label_hypothesis(
+            make_hypothesis(), anomaly_detected=True, anomaly_score=0.8, evasion_attempt=True
+        )
+        fm.label_hypothesis(make_hypothesis(), anomaly_detected=False, evasion_attempt=False)
+        output = tmp_path / "training.json"
+        fm.export_training_data(output)
+
+        data = json.loads(output.read_text())
+        assert data[0]["evasion_attempt"] is True
+        assert data[1]["evasion_attempt"] is False
+
+    def test_evasion_attempt_roundtrip(self, tmp_path: Path) -> None:
+        fm1 = FeedbackManager()
+        fm1.label_hypothesis(
+            make_hypothesis(), anomaly_detected=True, anomaly_score=0.8, evasion_attempt=True
+        )
+        output = tmp_path / "training.json"
+        fm1.export_training_data(output)
+
+        fm2 = FeedbackManager()
+        fm2.load_training_data(output)
+        assert fm2.labeled_hypotheses()[0].evasion_attempt is True
+
+    def test_evasion_labeled_hypothesis_model(self) -> None:
+        h = make_hypothesis()
+        lh = LabeledHypothesis(
+            hypothesis=h,
+            outcome=HypothesisOutcome.CONFIRMED,
+            evasion_attempt=True,
+        )
+        assert lh.evasion_attempt is True
+
+
+class TestPerClassThresholds:
+    def test_sql_injection_confirmed_at_lower_threshold(self) -> None:
+        fm = FeedbackManager()
+        h = make_hypothesis("SqlInjection")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.45)
+        assert labeled.outcome == HypothesisOutcome.CONFIRMED
+
+    def test_xss_confirmed_at_lower_threshold(self) -> None:
+        fm = FeedbackManager()
+        h = make_hypothesis("CrossSiteScripting")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.35)
+        assert labeled.outcome == HypothesisOutcome.CONFIRMED
+
+    def test_broken_auth_inconclusive_below_threshold(self) -> None:
+        fm = FeedbackManager()
+        h = make_hypothesis("BrokenAuthentication")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.6)
+        assert labeled.outcome == HypothesisOutcome.INCONCLUSIVE
+
+    def test_unknown_class_uses_default_threshold(self) -> None:
+        fm = FeedbackManager()
+        h = make_hypothesis("UnknownVulnClass")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.5)
+        assert labeled.outcome == HypothesisOutcome.CONFIRMED
+
+    def test_backwards_compat_confirmation_threshold(self) -> None:
+        fm = FeedbackManager(confirmation_threshold=0.9)
+        h = make_hypothesis("UnknownVulnClass")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.85)
+        assert labeled.outcome == HypothesisOutcome.INCONCLUSIVE

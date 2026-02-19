@@ -81,14 +81,19 @@ mod tests {
 
     #[test]
     fn parse_cargo_lock() {
-        let content = r#"
+        let content = r#"version = 3
+
 [[package]]
 name = "serde"
 version = "1.0.200"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 [[package]]
 name = "tokio"
 version = "1.37.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1"
 "#;
 
         let deps = parse_lock_file_content("Cargo.lock", content).unwrap();
@@ -235,19 +240,32 @@ BUNDLED WITH
 
     #[test]
     fn cargo_lock_with_extra_fields_still_parses() {
-        let content = r#"
+        let content = r#"version = 3
+
+[[package]]
+name = "proc-macro2"
+version = "1.0.80"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+
+[[package]]
+name = "quote"
+version = "1.0.35"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+
 [[package]]
 name = "syn"
 version = "2.0.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abc123"
+checksum = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
 dependencies = ["proc-macro2", "quote"]
 "#;
 
         let deps = parse_lock_file_content("Cargo.lock", content).unwrap();
-        assert_eq!(deps.len(), 1);
-        assert_eq!(deps[0].name, "syn");
-        assert_eq!(deps[0].version, "2.0.50");
+        assert_eq!(deps.len(), 3);
+        let syn_dep = deps.iter().find(|d| d.name == "syn").unwrap();
+        assert_eq!(syn_dep.version, "2.0.50");
     }
 
     #[test]

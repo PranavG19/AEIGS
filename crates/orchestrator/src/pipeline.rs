@@ -1,0 +1,315 @@
+use std::path::PathBuf;
+
+use aegis_audit_log::log_writer::AuditLogWriter;
+use aegis_fuzzing::DefenseProfile;
+use aegis_knowledge_graph::graph::KnowledgeGraph;
+use aegis_protocol::audit::AuditEventType;
+use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+
+use crate::phase_analyze::run_analyze;
+use crate::phase_fingerprint::defense_properties;
+use crate::phase_fuzz::run_fuzz;
+use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
+use crate::phase_report::run_report;
+use crate::scan_config::{
+    ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, validate_localhost,
+};
+
+pub struct ScanContext {
+    pub config: ScanConfig,
+    pub graph: KnowledgeGraph,
+    pub defense_profile: Option<DefenseProfile>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PhaseResult {
+    pub operations_applied: u64,
+    pub findings_count: u64,
+}
+
+#[derive(Debug)]
+pub struct ScanSummary {
+    pub total_findings: u64,
+    pub total_operations: u64,
+    pub phases_completed: u32,
+    pub sarif_path: String,
+    pub audit_log_path: Option<String>,
+    pub hmac_key_hex: Option<String>,
+    pub metrics: ScanMetrics,
+}
+
+#[derive(Debug)]
+pub enum PipelineError {
+    Config(ConfigError),
+    Recon(String),
+    Fingerprint(String),
+    Fuzz(String),
+    Analysis(String),
+    Report(String),
+}
+
+impl std::fmt::Display for PipelineError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Config(e) => write!(f, "config: {e}"),
+            Self::Recon(e) => write!(f, "recon: {e}"),
+            Self::Fingerprint(e) => write!(f, "fingerprint: {e}"),
+            Self::Fuzz(e) => write!(f, "fuzz: {e}"),
+            Self::Analysis(e) => write!(f, "analysis: {e}"),
+            Self::Report(e) => write!(f, "report: {e}"),
+        }
+    }
+}
+
+impl std::error::Error for PipelineError {}
+
+impl From<ConfigError> for PipelineError {
+    fn from(e: ConfigError) -> Self {
+        Self::Config(e)
+    }
+}
+
+fn derive_audit_log_path(config: &ScanConfig) -> std::path::PathBuf {
+    config
+        .output
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("aegis-audit.cbor")
+}
+
+fn create_audit_writer(
+    config: &ScanConfig,
+) -> Option<(AuditLogWriter, std::path::PathBuf, [u8; 32])> {
+    let audit_path = derive_audit_log_path(config);
+    let hmac_key: [u8; 32] = rand::random();
+    match AuditLogWriter::create(&audit_path, &hmac_key) {
+        Ok(writer) => Some((writer, audit_path, hmac_key)),
+        Err(_) => None,
+    }
+}
+
+fn emit_event(writer: &mut Option<AuditLogWriter>, event: AuditEventType) {
+    if let Some(w) = writer.as_mut() {
+        let _ = w.append_event(event);
+    }
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+pub fn collect_recon_ops(
+    source_dir: &Option<PathBuf>,
+) -> Result<Vec<OperationLogEntry>, String> {
+    let Some(source_dir) = source_dir else {
+        return Ok(Vec::new());
+    };
+
+    let walk = aegis_passive_recon::filesystem_walker::walk_directory(source_dir)
+        .map_err(|e| e.to_string())?;
+    let lock_files: Vec<_> = walk
+        .files
+        .iter()
+        .filter(|f| {
+            f.classification == aegis_passive_recon::filesystem_walker::FileClassification::LockFile
+        })
+        .collect();
+
+    let mut all_deps = Vec::new();
+    for lock_file in &lock_files {
+        if let Ok(deps) = aegis_passive_recon::dependency_parser::parse_lock_file(&lock_file.path) {
+            all_deps.extend(deps);
+        }
+    }
+
+    let mut sequence = 0u64;
+    let mut entries = Vec::new();
+    entries.extend(deps_to_operations(&all_deps, &mut sequence));
+    entries.extend(vuln_lookup(&all_deps, &mut sequence));
+    entries.extend(walk_to_operations(&walk.files, &mut sequence));
+    Ok(entries)
+}
+
+pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfile) {
+    let ts = pipeline_timestamp_ms();
+    let profile = DefenseProfile::empty(ts);
+    let entry = OperationLogEntry {
+        sequence_number: 1,
+        module: ModuleIdentifier::Enumeration,
+        operation: aegis_protocol::operation::GraphOperation::AddNode {
+            node_type: aegis_protocol::node::NodeType::Defense,
+            properties: defense_properties(&profile),
+        },
+        timestamp_unix_ms: ts,
+    };
+    (vec![entry], profile)
+}
+
+fn pipeline_timestamp_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
+    validate_localhost(&config.target)?;
+    parse_stealth_level(&config.stealth_level)?;
+
+    let (mut audit_writer, audit_path, hmac_key) = match create_audit_writer(&config) {
+        Some((writer, path, key)) => (Some(writer), Some(path), Some(key)),
+        None => (None, None, None),
+    };
+
+    emit_event(
+        &mut audit_writer,
+        AuditEventType::ScanStarted {
+            target_description: config.target.clone(),
+        },
+    );
+
+    let graph = KnowledgeGraph::new();
+    let mut ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+    };
+    let mut total_ops = 0u64;
+    let mut total_findings = 0u64;
+    let mut phases = 0u32;
+    let mut scan_metrics = ScanMetrics::default();
+
+    emit_event(
+        &mut audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::PassiveRecon,
+        },
+    );
+    if !ctx.config.skip_fingerprint {
+        emit_event(
+            &mut audit_writer,
+            AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::Enumeration,
+            },
+        );
+    }
+
+    let source_dir = ctx.config.source_dir.clone();
+    let skip_fingerprint = ctx.config.skip_fingerprint;
+
+    let recon_start = std::time::Instant::now();
+    let (recon_result, fp_result) = tokio::join!(async { collect_recon_ops(&source_dir) }, async {
+        if skip_fingerprint {
+            None
+        } else {
+            Some(collect_fingerprint_ops())
+        }
+    },);
+
+    let recon_ops = recon_result.map_err(PipelineError::Recon)?;
+    let recon_ops_count = recon_ops.len() as u64;
+    if !recon_ops.is_empty() {
+        ctx.graph
+            .apply_operations(&recon_ops)
+            .map_err(|e| PipelineError::Recon(format!("{e:?}")))?;
+    }
+    total_ops += recon_ops_count;
+    phases += 1;
+    scan_metrics
+        .phase_timings
+        .record("recon", recon_start.elapsed());
+
+    let fingerprint_start = std::time::Instant::now();
+    if let Some((fp_ops, profile)) = fp_result {
+        let fp_ops_count = fp_ops.len() as u64;
+        if !fp_ops.is_empty() {
+            ctx.graph
+                .apply_operations(&fp_ops)
+                .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+        }
+        ctx.defense_profile = Some(profile);
+        total_ops += fp_ops_count;
+        phases += 1;
+        scan_metrics
+            .phase_timings
+            .record("fingerprint", fingerprint_start.elapsed());
+    }
+
+    let max_iterations = ctx.config.max_iterations;
+    let convergence_threshold = ctx.config.convergence_threshold;
+    let mut consecutive_zero_findings = 0u32;
+    let mut fuzz_cumulative = std::time::Duration::ZERO;
+    let mut analyze_cumulative = std::time::Duration::ZERO;
+
+    for iteration in 0..max_iterations {
+        emit_event(
+            &mut audit_writer,
+            AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::Fuzzing,
+            },
+        );
+        let fuzz_start = std::time::Instant::now();
+        let fuzz_result = run_fuzz(&mut ctx).await.map_err(PipelineError::Fuzz)?;
+        total_ops += fuzz_result.phase.operations_applied;
+        total_findings += fuzz_result.phase.findings_count;
+        phases += 1;
+        fuzz_cumulative += fuzz_start.elapsed();
+
+        emit_event(
+            &mut audit_writer,
+            AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::ChainSynthesis,
+            },
+        );
+        let analyze_start = std::time::Instant::now();
+        let analysis = run_analyze(&mut ctx).map_err(PipelineError::Analysis)?;
+        total_ops += analysis.operations_applied;
+        total_findings += analysis.findings_count;
+        phases += 1;
+        analyze_cumulative += analyze_start.elapsed();
+
+        if fuzz_result.phase.findings_count == 0 && analysis.findings_count == 0 {
+            consecutive_zero_findings += 1;
+        } else {
+            consecutive_zero_findings = 0;
+        }
+
+        if consecutive_zero_findings >= convergence_threshold && iteration + 1 < max_iterations {
+            break;
+        }
+    }
+    scan_metrics.phase_timings.record("fuzz", fuzz_cumulative);
+    scan_metrics
+        .phase_timings
+        .record("analyze", analyze_cumulative);
+
+    emit_event(
+        &mut audit_writer,
+        AuditEventType::KeyEvent {
+            description: "report phase started".to_string(),
+        },
+    );
+    let report_start = std::time::Instant::now();
+    let report = run_report(&mut ctx, Some(&scan_metrics)).map_err(PipelineError::Report)?;
+    total_ops += report.operations_applied;
+    total_findings += report.findings_count;
+    phases += 1;
+    scan_metrics
+        .phase_timings
+        .record("report", report_start.elapsed());
+
+    emit_event(
+        &mut audit_writer,
+        AuditEventType::ScanCompleted { total_findings },
+    );
+
+    Ok(ScanSummary {
+        total_findings,
+        total_operations: total_ops,
+        phases_completed: phases,
+        sarif_path: ctx.config.output.to_string_lossy().to_string(),
+        audit_log_path: audit_path.map(|p| p.to_string_lossy().to_string()),
+        hmac_key_hex: hmac_key.map(|k| hex_encode(&k)),
+        metrics: scan_metrics,
+    })
+}

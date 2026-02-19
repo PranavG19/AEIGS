@@ -20,6 +20,7 @@ class LabeledHypothesis(BaseModel):
     outcome: HypothesisOutcome
     anomaly_score: float = 0.0
     anomaly_details: str = ""
+    evasion_attempt: bool = False
 
 
 class FeedbackStats(BaseModel):
@@ -31,10 +32,31 @@ class FeedbackStats(BaseModel):
     class_accuracy: dict[str, float] = Field(default_factory=dict)
 
 
+DEFAULT_CLASS_THRESHOLDS: dict[str, float] = {
+    "SqlInjection": 0.4,
+    "CrossSiteScripting": 0.3,
+    "CommandInjection": 0.6,
+    "BrokenAuthentication": 0.7,
+    "BrokenAuthorization": 0.7,
+}
+
+
 class FeedbackManager:
-    def __init__(self, confirmation_threshold: float = 0.5) -> None:
+    def __init__(
+        self,
+        confirmation_threshold: float = 0.5,
+        class_thresholds: dict[str, float] | None = None,
+        default_threshold: float | None = None,
+    ) -> None:
         self._labeled: list[LabeledHypothesis] = []
-        self._confirmation_threshold = confirmation_threshold
+        self._default_threshold = default_threshold if default_threshold is not None else confirmation_threshold
+        if class_thresholds is not None:
+            self._class_thresholds = dict(class_thresholds)
+        else:
+            self._class_thresholds = dict(DEFAULT_CLASS_THRESHOLDS)
+
+    def _threshold_for(self, vulnerability_class: str) -> float:
+        return self._class_thresholds.get(vulnerability_class, self._default_threshold)
 
     def label_hypothesis(
         self,
@@ -42,8 +64,10 @@ class FeedbackManager:
         anomaly_detected: bool,
         anomaly_score: float = 0.0,
         anomaly_details: str = "",
+        evasion_attempt: bool = False,
     ) -> LabeledHypothesis:
-        if anomaly_detected and anomaly_score >= self._confirmation_threshold:
+        threshold = self._threshold_for(hypothesis.vulnerability_class)
+        if anomaly_detected and anomaly_score >= threshold:
             outcome = HypothesisOutcome.CONFIRMED
         elif anomaly_detected:
             outcome = HypothesisOutcome.INCONCLUSIVE
@@ -55,6 +79,7 @@ class FeedbackManager:
             outcome=outcome,
             anomaly_score=anomaly_score,
             anomaly_details=anomaly_details,
+            evasion_attempt=evasion_attempt,
         )
         self._labeled.append(labeled)
         return labeled
@@ -112,6 +137,7 @@ class FeedbackManager:
                     "confidence": lh.hypothesis.confidence,
                     "outcome": lh.outcome.value,
                     "anomaly_score": lh.anomaly_score,
+                    "evasion_attempt": lh.evasion_attempt,
                 }
             )
 
@@ -137,6 +163,7 @@ class FeedbackManager:
                     hypothesis=hypothesis,
                     outcome=outcome,
                     anomaly_score=float(item.get("anomaly_score", 0.0)),
+                    evasion_attempt=bool(item.get("evasion_attempt", False)),
                 )
                 self._labeled.append(labeled)
                 count += 1

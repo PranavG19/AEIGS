@@ -188,4 +188,60 @@ mod tests {
         let store = FindingStore::default();
         assert_eq!(store.count(), 0);
     }
+
+    #[test]
+    fn snapshot_restore_roundtrip() {
+        let mut store = FindingStore::new();
+        store.insert(
+            vec![1, 2],
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.95,
+            b"proof".to_vec(),
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        );
+        store.insert(
+            vec![2],
+            VulnerabilityClass::CrossSiteScripting,
+            7.0,
+            0.90,
+            vec![],
+            ModuleIdentifier::Fuzzing,
+            1700000000001,
+        );
+
+        let bytes = store.snapshot();
+        let restored = FindingStore::restore(&bytes).unwrap();
+
+        assert_eq!(restored.count(), 2);
+        let f0 = restored.get(0).unwrap();
+        assert_eq!(f0.vulnerability_class, VulnerabilityClass::SqlInjection);
+        assert_eq!(f0.linked_node_ids, vec![1, 2]);
+        assert_eq!(f0.certificate, b"proof");
+        assert_eq!(restored.findings_for_node(2), &[0, 1]);
+        assert_eq!(
+            restored.findings_by_class(VulnerabilityClass::SqlInjection),
+            &[0]
+        );
+        assert_eq!(
+            restored.findings_by_class(VulnerabilityClass::CrossSiteScripting),
+            &[1]
+        );
+    }
+
+    #[test]
+    fn restore_corrupted_data_returns_error() {
+        let result = FindingStore::restore(b"not valid json{{{");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn empty_store_snapshot_restore() {
+        let store = FindingStore::new();
+        let bytes = store.snapshot();
+        let restored = FindingStore::restore(&bytes).unwrap();
+        assert_eq!(restored.count(), 0);
+        assert!(restored.findings_for_node(0).is_empty());
+    }
 }

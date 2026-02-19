@@ -1,10 +1,15 @@
 #[cfg(test)]
 mod tests {
-    use crate::edge::{EdgeData, EdgeLabel};
-    use crate::finding::{FindingData, VulnerabilityClass};
+    use crate::defense_context::DefenseContext;
+    use crate::edge::{EdgeData, EdgeLabel, is_valid_edge};
+    use crate::finding::{
+        EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence_and_variance,
+    };
     use crate::ipc::{GraphQuery, IpcFrame, IpcMessage};
     use crate::node::{NodeData, NodeType};
     use crate::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+    use crate::request::{FuzzRequest, FuzzResponse};
+    use crate::target_validation::{TargetValidationError, validate_target_is_localhost};
 
     #[test]
     fn node_data_builder_sets_properties() {
@@ -175,6 +180,7 @@ mod tests {
             NodeType::Config,
             NodeType::User,
             NodeType::Service,
+            NodeType::Defense,
         ];
 
         for node_type in types {
@@ -194,6 +200,7 @@ mod tests {
             EdgeLabel::Writes,
             EdgeLabel::DependsOn,
             EdgeLabel::Exposes,
+            EdgeLabel::ProtectedBy,
         ];
 
         for label in labels {
@@ -250,5 +257,816 @@ mod tests {
             }
             _ => panic!("expected Heartbeat"),
         }
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_calls_triples() {
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::Calls,
+            NodeType::Function
+        ));
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::Calls,
+            NodeType::Function
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Calls,
+            NodeType::Service
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Calls,
+            NodeType::Function
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_trusts_triples() {
+        assert!(is_valid_edge(
+            NodeType::Role,
+            EdgeLabel::Trusts,
+            NodeType::Role
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Trusts,
+            NodeType::Service
+        ));
+        assert!(is_valid_edge(
+            NodeType::User,
+            EdgeLabel::Trusts,
+            NodeType::Service
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_authenticates_triples() {
+        assert!(is_valid_edge(
+            NodeType::Role,
+            EdgeLabel::Authenticates,
+            NodeType::Endpoint
+        ));
+        assert!(is_valid_edge(
+            NodeType::User,
+            EdgeLabel::Authenticates,
+            NodeType::Endpoint
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Authenticates,
+            NodeType::Endpoint
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_reads_triples() {
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::Reads,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::Reads,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Reads,
+            NodeType::DataStore
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_writes_triples() {
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::Writes,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::Writes,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Writes,
+            NodeType::DataStore
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_depends_on_triples() {
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::DependsOn,
+            NodeType::Dependency
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::DependsOn,
+            NodeType::Service
+        ));
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::DependsOn,
+            NodeType::Dependency
+        ));
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::DependsOn,
+            NodeType::Dependency
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_exposes_triples() {
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::Exposes,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::Exposes,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::Exposes,
+            NodeType::DataStore
+        ));
+        assert!(is_valid_edge(
+            NodeType::Config,
+            EdgeLabel::Exposes,
+            NodeType::DataStore
+        ));
+    }
+
+    #[test]
+    fn valid_edge_accepts_all_protected_by_triples() {
+        assert!(is_valid_edge(
+            NodeType::Endpoint,
+            EdgeLabel::ProtectedBy,
+            NodeType::Defense
+        ));
+        assert!(is_valid_edge(
+            NodeType::DataStore,
+            EdgeLabel::ProtectedBy,
+            NodeType::Defense
+        ));
+        assert!(is_valid_edge(
+            NodeType::Service,
+            EdgeLabel::ProtectedBy,
+            NodeType::Defense
+        ));
+        assert!(is_valid_edge(
+            NodeType::Function,
+            EdgeLabel::ProtectedBy,
+            NodeType::Defense
+        ));
+    }
+
+    #[test]
+    fn valid_edge_rejects_nonsensical_triples() {
+        assert!(!is_valid_edge(
+            NodeType::DataStore,
+            EdgeLabel::Calls,
+            NodeType::Function
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Defense,
+            EdgeLabel::Exposes,
+            NodeType::DataStore
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Defense,
+            EdgeLabel::ProtectedBy,
+            NodeType::Defense
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Dependency,
+            EdgeLabel::Writes,
+            NodeType::DataStore
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Config,
+            EdgeLabel::Calls,
+            NodeType::Function
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Role,
+            EdgeLabel::Reads,
+            NodeType::DataStore
+        ));
+        assert!(!is_valid_edge(
+            NodeType::User,
+            EdgeLabel::Writes,
+            NodeType::DataStore
+        ));
+        assert!(!is_valid_edge(
+            NodeType::DataStore,
+            EdgeLabel::Trusts,
+            NodeType::Service
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Defense,
+            EdgeLabel::Calls,
+            NodeType::Service
+        ));
+        assert!(!is_valid_edge(
+            NodeType::Dependency,
+            EdgeLabel::DependsOn,
+            NodeType::Dependency
+        ));
+    }
+
+    #[test]
+    fn every_edge_label_has_at_least_one_valid_combination() {
+        let all_node_types = [
+            NodeType::Endpoint,
+            NodeType::Function,
+            NodeType::DataStore,
+            NodeType::Role,
+            NodeType::Dependency,
+            NodeType::Config,
+            NodeType::User,
+            NodeType::Service,
+            NodeType::Defense,
+        ];
+        let all_labels = [
+            EdgeLabel::Calls,
+            EdgeLabel::Trusts,
+            EdgeLabel::Authenticates,
+            EdgeLabel::Reads,
+            EdgeLabel::Writes,
+            EdgeLabel::DependsOn,
+            EdgeLabel::Exposes,
+            EdgeLabel::ProtectedBy,
+        ];
+
+        for label in all_labels {
+            let has_valid = all_node_types.iter().any(|src| {
+                all_node_types
+                    .iter()
+                    .any(|tgt| is_valid_edge(*src, label, *tgt))
+            });
+            assert!(has_valid, "EdgeLabel {:?} has no valid combinations", label);
+        }
+    }
+
+    #[test]
+    fn test_localhost_accepted() {
+        assert!(validate_target_is_localhost("http://localhost:8080/api").is_ok());
+    }
+
+    #[test]
+    fn test_127_accepted() {
+        assert!(validate_target_is_localhost("http://127.0.0.1:3000").is_ok());
+    }
+
+    #[test]
+    fn test_ipv6_loopback_accepted() {
+        assert!(validate_target_is_localhost("http://[::1]:8080").is_ok());
+    }
+
+    #[test]
+    fn test_bare_localhost_accepted() {
+        assert!(validate_target_is_localhost("localhost:8080").is_ok());
+    }
+
+    #[test]
+    fn test_public_ip_rejected() {
+        let err = validate_target_is_localhost("http://8.8.8.8").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "8.8.8.8".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_domain_rejected() {
+        let err = validate_target_is_localhost("http://example.com").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "example.com".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_rfc1918_rejected() {
+        let err = validate_target_is_localhost("http://192.168.1.1").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "192.168.1.1".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_rfc1918_10_rejected() {
+        let err = validate_target_is_localhost("http://10.0.0.1").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "10.0.0.1".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_empty_url_rejected() {
+        let err = validate_target_is_localhost("").unwrap_err();
+        assert_eq!(err, TargetValidationError::InvalidUrl { url: "".into() });
+    }
+
+    #[test]
+    fn test_localhost_with_path() {
+        assert!(validate_target_is_localhost("http://localhost/api/users").is_ok());
+    }
+
+    #[test]
+    fn all_evidence_levels_serialize() {
+        let levels = [
+            EvidenceLevel::Statistical,
+            EvidenceLevel::Counterfactual,
+            EvidenceLevel::Confirmed,
+            EvidenceLevel::Chained,
+        ];
+
+        for level in levels {
+            let json = serde_json::to_string(&level).unwrap();
+            let deserialized: EvidenceLevel = serde_json::from_str(&json).unwrap();
+            assert_eq!(deserialized, level);
+        }
+    }
+
+    #[test]
+    fn finding_data_builder_with_evidence_level() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.5,
+            0.95,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_evidence_level(EvidenceLevel::Confirmed);
+
+        assert_eq!(finding.evidence_level, EvidenceLevel::Confirmed);
+    }
+
+    #[test]
+    fn finding_data_default_evidence_level_is_statistical() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::CrossSiteScripting,
+            7.0,
+            0.80,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        );
+
+        assert_eq!(finding.evidence_level, EvidenceLevel::Statistical);
+    }
+
+    #[test]
+    fn fuzz_request_construction_and_field_access() {
+        let request = FuzzRequest {
+            request_id: 42,
+            endpoint: "http://localhost:8080/api/users".to_string(),
+            method: "POST".to_string(),
+            parameter_name: "username".to_string(),
+            payload: "' OR 1=1 --".to_string(),
+            headers: vec![
+                ("Content-Type".to_string(), "application/json".to_string()),
+                ("Accept".to_string(), "*/*".to_string()),
+            ],
+        };
+
+        assert_eq!(request.request_id, 42);
+        assert_eq!(request.endpoint, "http://localhost:8080/api/users");
+        assert_eq!(request.method, "POST");
+        assert_eq!(request.parameter_name, "username");
+        assert_eq!(request.payload, "' OR 1=1 --");
+        assert_eq!(request.headers.len(), 2);
+        assert_eq!(request.headers[0].0, "Content-Type");
+    }
+
+    #[test]
+    fn fuzz_response_construction_and_field_access() {
+        let response = FuzzResponse {
+            request_id: 42,
+            status_code: 200,
+            body: "{\"status\":\"ok\"}".to_string(),
+            headers: vec![("Content-Type".to_string(), "application/json".to_string())],
+            response_time: std::time::Duration::from_millis(150),
+            body_size_bytes: 15,
+        };
+
+        assert_eq!(response.request_id, 42);
+        assert_eq!(response.status_code, 200);
+        assert_eq!(response.body, "{\"status\":\"ok\"}");
+        assert_eq!(response.headers.len(), 1);
+        assert_eq!(response.response_time, std::time::Duration::from_millis(150));
+        assert_eq!(response.body_size_bytes, 15);
+    }
+
+    #[test]
+    fn fuzz_request_clone() {
+        let request = FuzzRequest {
+            request_id: 1,
+            endpoint: "http://localhost/test".to_string(),
+            method: "GET".to_string(),
+            parameter_name: "q".to_string(),
+            payload: "<script>alert(1)</script>".to_string(),
+            headers: vec![],
+        };
+
+        let cloned = request.clone();
+        assert_eq!(cloned.request_id, request.request_id);
+        assert_eq!(cloned.endpoint, request.endpoint);
+        assert_eq!(cloned.payload, request.payload);
+    }
+
+    #[test]
+    fn fuzz_response_clone() {
+        let response = FuzzResponse {
+            request_id: 7,
+            status_code: 500,
+            body: "Internal Server Error".to_string(),
+            headers: vec![],
+            response_time: std::time::Duration::from_secs(2),
+            body_size_bytes: 21,
+        };
+
+        let cloned = response.clone();
+        assert_eq!(cloned.request_id, response.request_id);
+        assert_eq!(cloned.status_code, response.status_code);
+        assert_eq!(cloned.response_time, response.response_time);
+    }
+
+    #[test]
+    fn defense_context_default_has_no_defenses() {
+        let ctx = DefenseContext::default();
+
+        assert!(!ctx.has_waf);
+        assert!(ctx.waf_vendor.is_none());
+        assert!(ctx.waf_blocked_categories.is_empty());
+        assert!(ctx.rate_limit_rps.is_none());
+        assert!(!ctx.bot_detection_present);
+        assert!(!ctx.bot_detection_evaded);
+    }
+
+    #[test]
+    fn defense_context_with_all_fields_populated() {
+        let ctx = DefenseContext {
+            has_waf: true,
+            waf_vendor: Some("Cloudflare".to_string()),
+            waf_blocked_categories: vec![
+                VulnerabilityClass::SqlInjection,
+                VulnerabilityClass::CrossSiteScripting,
+            ],
+            rate_limit_rps: Some(50.0),
+            bot_detection_present: true,
+            bot_detection_evaded: false,
+        };
+
+        assert!(ctx.has_waf);
+        assert_eq!(ctx.waf_vendor.as_deref(), Some("Cloudflare"));
+        assert_eq!(ctx.waf_blocked_categories.len(), 2);
+        assert_eq!(
+            ctx.waf_blocked_categories[0],
+            VulnerabilityClass::SqlInjection
+        );
+        assert!((ctx.rate_limit_rps.unwrap() - 50.0).abs() < f64::EPSILON);
+        assert!(ctx.bot_detection_present);
+        assert!(!ctx.bot_detection_evaded);
+    }
+
+    #[test]
+    fn defense_context_serializes_roundtrip() {
+        let ctx = DefenseContext {
+            has_waf: true,
+            waf_vendor: Some("ModSecurity".to_string()),
+            waf_blocked_categories: vec![VulnerabilityClass::CommandInjection],
+            rate_limit_rps: Some(100.0),
+            bot_detection_present: true,
+            bot_detection_evaded: true,
+        };
+
+        let json = serde_json::to_string(&ctx).unwrap();
+        let deserialized: DefenseContext = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(deserialized.has_waf, ctx.has_waf);
+        assert_eq!(deserialized.waf_vendor, ctx.waf_vendor);
+        assert_eq!(deserialized.waf_blocked_categories.len(), 1);
+        assert_eq!(
+            deserialized.waf_blocked_categories[0],
+            VulnerabilityClass::CommandInjection
+        );
+        assert_eq!(deserialized.rate_limit_rps, ctx.rate_limit_rps);
+        assert_eq!(deserialized.bot_detection_present, ctx.bot_detection_present);
+        assert_eq!(deserialized.bot_detection_evaded, ctx.bot_detection_evaded);
+    }
+
+    #[test]
+    fn defense_context_default_serializes_roundtrip() {
+        let ctx = DefenseContext::default();
+        let json = serde_json::to_string(&ctx).unwrap();
+        let deserialized: DefenseContext = serde_json::from_str(&json).unwrap();
+
+        assert!(!deserialized.has_waf);
+        assert!(deserialized.waf_vendor.is_none());
+        assert!(deserialized.waf_blocked_categories.is_empty());
+        assert!(deserialized.rate_limit_rps.is_none());
+        assert!(!deserialized.bot_detection_present);
+        assert!(!deserialized.bot_detection_evaded);
+    }
+
+    #[test]
+    fn node_type_display_produces_human_readable_output() {
+        let types = [
+            (NodeType::Endpoint, "Endpoint"),
+            (NodeType::Function, "Function"),
+            (NodeType::DataStore, "Data Store"),
+            (NodeType::Role, "Role"),
+            (NodeType::Dependency, "Dependency"),
+            (NodeType::Config, "Configuration"),
+            (NodeType::User, "User"),
+            (NodeType::Service, "Service"),
+            (NodeType::Defense, "Defense"),
+        ];
+
+        let mut seen = std::collections::HashSet::new();
+        for (variant, expected) in types {
+            let display = format!("{}", variant);
+            assert_eq!(display, expected);
+            assert!(!display.is_empty());
+            assert!(seen.insert(display), "Display strings must be unique per variant");
+        }
+    }
+
+    #[test]
+    fn node_type_display_differs_from_debug_for_multiword_variants() {
+        assert_ne!(format!("{}", NodeType::DataStore), format!("{:?}", NodeType::DataStore));
+        assert_ne!(format!("{}", NodeType::Config), format!("{:?}", NodeType::Config));
+    }
+
+    #[test]
+    fn edge_label_display_produces_human_readable_output() {
+        let labels = [
+            (EdgeLabel::Calls, "Calls"),
+            (EdgeLabel::Trusts, "Trusts"),
+            (EdgeLabel::Authenticates, "Authenticates"),
+            (EdgeLabel::Reads, "Reads"),
+            (EdgeLabel::Writes, "Writes"),
+            (EdgeLabel::DependsOn, "Depends On"),
+            (EdgeLabel::Exposes, "Exposes"),
+            (EdgeLabel::ProtectedBy, "Protected By"),
+        ];
+
+        let mut seen = std::collections::HashSet::new();
+        for (variant, expected) in labels {
+            let display = format!("{}", variant);
+            assert_eq!(display, expected);
+            assert!(!display.is_empty());
+            assert!(seen.insert(display), "Display strings must be unique per variant");
+        }
+    }
+
+    #[test]
+    fn vulnerability_class_display_produces_human_readable_output() {
+        let classes = [
+            (VulnerabilityClass::SqlInjection, "SQL Injection"),
+            (VulnerabilityClass::CrossSiteScripting, "Cross-Site Scripting"),
+            (VulnerabilityClass::CommandInjection, "Command Injection"),
+            (VulnerabilityClass::PathTraversal, "Path Traversal"),
+            (VulnerabilityClass::ServerSideRequestForgery, "Server-Side Request Forgery"),
+            (VulnerabilityClass::InsecureDeserialization, "Insecure Deserialization"),
+            (VulnerabilityClass::BrokenAuthentication, "Broken Authentication"),
+            (VulnerabilityClass::BrokenAuthorization, "Broken Authorization"),
+            (VulnerabilityClass::SecurityMisconfiguration, "Security Misconfiguration"),
+            (VulnerabilityClass::SensitiveDataExposure, "Sensitive Data Exposure"),
+            (VulnerabilityClass::ServerSideTemplateInjection, "Server-Side Template Injection"),
+            (VulnerabilityClass::HeaderInjection, "Header Injection"),
+            (VulnerabilityClass::OpenRedirect, "Open Redirect"),
+            (VulnerabilityClass::CrlfInjection, "CRLF Injection"),
+            (VulnerabilityClass::KnownVulnerableDependency, "Known Vulnerable Dependency"),
+            (VulnerabilityClass::InsufficientInputValidation, "Insufficient Input Validation"),
+        ];
+
+        let mut seen = std::collections::HashSet::new();
+        for (variant, expected) in classes {
+            let display = format!("{}", variant);
+            assert_eq!(display, expected);
+            assert!(!display.is_empty());
+            assert!(seen.insert(display), "Display strings must be unique per variant");
+        }
+    }
+
+    #[test]
+    fn vulnerability_class_display_differs_from_debug() {
+        assert_ne!(
+            format!("{}", VulnerabilityClass::SqlInjection),
+            format!("{:?}", VulnerabilityClass::SqlInjection)
+        );
+        assert_ne!(
+            format!("{}", VulnerabilityClass::CrossSiteScripting),
+            format!("{:?}", VulnerabilityClass::CrossSiteScripting)
+        );
+    }
+
+    #[test]
+    fn evidence_level_display_produces_human_readable_output() {
+        let levels = [
+            (EvidenceLevel::Statistical, "Statistical"),
+            (EvidenceLevel::Counterfactual, "Counterfactual"),
+            (EvidenceLevel::Confirmed, "Confirmed"),
+            (EvidenceLevel::Chained, "Chained"),
+        ];
+
+        let mut seen = std::collections::HashSet::new();
+        for (variant, expected) in levels {
+            let display = format!("{}", variant);
+            assert_eq!(display, expected);
+            assert!(!display.is_empty());
+            assert!(seen.insert(display), "Display strings must be unique per variant");
+        }
+    }
+
+    #[test]
+    fn confidence_score_clamps_to_bounds() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.9,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_confidence_score(1.5);
+
+        assert!((finding.confidence_score.unwrap() - 1.0).abs() < f64::EPSILON);
+
+        let finding2 = finding.with_confidence_score(-0.5);
+        assert!((finding2.confidence_score.unwrap() - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_from_evidence_confirmed_low_variance_is_high() {
+        let score = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 0.0);
+        assert!((score - 0.9).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_from_evidence_statistical_high_variance_is_low() {
+        let score = confidence_from_evidence_and_variance(EvidenceLevel::Statistical, 0.8);
+        assert!(score < 0.2);
+    }
+
+    #[test]
+    fn confidence_from_evidence_variance_clamped() {
+        let score_neg = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, -1.0);
+        let score_zero = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 0.0);
+        assert!((score_neg - score_zero).abs() < f64::EPSILON);
+
+        let score_over = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 2.0);
+        let score_one = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 1.0);
+        assert!((score_over - score_one).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn effective_confidence_uses_score_when_set() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.9,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_confidence_score(0.75);
+
+        assert!((finding.effective_confidence() - 0.75).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn effective_confidence_falls_back_to_evidence_level() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.9,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_evidence_level(EvidenceLevel::Confirmed);
+
+        assert!((finding.effective_confidence() - 0.9).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_score_serializes_roundtrip() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.9,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_confidence_score(0.85);
+
+        let json = serde_json::to_string(&finding).unwrap();
+        let deserialized: FindingData = serde_json::from_str(&json).unwrap();
+        assert!((deserialized.confidence_score.unwrap() - 0.85).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_score_absent_deserializes_as_none() {
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.9,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        );
+
+        let json = serde_json::to_string(&finding).unwrap();
+        let deserialized: FindingData = serde_json::from_str(&json).unwrap();
+        assert!(deserialized.confidence_score.is_none());
+    }
+
+    #[test]
+    fn is_valid_edge_exhaustive_all_triples_covered() {
+        let all_node_types = [
+            NodeType::Endpoint,
+            NodeType::Function,
+            NodeType::DataStore,
+            NodeType::Role,
+            NodeType::Dependency,
+            NodeType::Config,
+            NodeType::User,
+            NodeType::Service,
+            NodeType::Defense,
+        ];
+        let all_labels = [
+            EdgeLabel::Calls,
+            EdgeLabel::Trusts,
+            EdgeLabel::Authenticates,
+            EdgeLabel::Reads,
+            EdgeLabel::Writes,
+            EdgeLabel::DependsOn,
+            EdgeLabel::Exposes,
+            EdgeLabel::ProtectedBy,
+        ];
+
+        let mut valid_count = 0;
+        let total = all_node_types.len() * all_labels.len() * all_node_types.len();
+
+        for src in &all_node_types {
+            for label in &all_labels {
+                for tgt in &all_node_types {
+                    if is_valid_edge(*src, *label, *tgt) {
+                        valid_count += 1;
+                    }
+                }
+            }
+        }
+
+        assert_eq!(valid_count, 28, "Expected exactly 28 valid triples, found {}", valid_count);
+        assert_eq!(total, 9 * 8 * 9, "Total triple space should be 648");
+    }
+
+    #[test]
+    fn defense_context_clone_is_independent() {
+        let original = DefenseContext {
+            has_waf: true,
+            waf_vendor: Some("AwsWaf".to_string()),
+            waf_blocked_categories: vec![VulnerabilityClass::PathTraversal],
+            rate_limit_rps: Some(25.0),
+            bot_detection_present: false,
+            bot_detection_evaded: false,
+        };
+
+        let mut cloned = original.clone();
+        cloned.has_waf = false;
+        cloned.waf_blocked_categories.push(VulnerabilityClass::SqlInjection);
+
+        assert!(original.has_waf);
+        assert_eq!(original.waf_blocked_categories.len(), 1);
+        assert!(!cloned.has_waf);
+        assert_eq!(cloned.waf_blocked_categories.len(), 2);
     }
 }

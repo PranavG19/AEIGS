@@ -1,10 +1,118 @@
-use crate::scheduler::VulnerabilityClassTarget;
+use std::fs;
+use std::path::Path;
+
+use aegis_protocol::finding::VulnerabilityClass;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StealthRating {
+    High,
+    Medium,
+    Low,
+}
+
+#[derive(Debug, Clone)]
+pub struct BypassPayload {
+    pub raw: String,
+    pub waf_targets: Vec<String>,
+    pub technique: String,
+    pub stealth_rating: StealthRating,
+}
+
+pub fn load_bypass_corpus(
+    path: &Path,
+) -> Result<Vec<(VulnerabilityClass, Vec<BypassPayload>)>, String> {
+    let content = fs::read_to_string(path).map_err(|e| format!("failed to read file: {e}"))?;
+    let root: Value =
+        serde_json::from_str(&content).map_err(|e| format!("failed to parse JSON: {e}"))?;
+    let payloads_obj = root
+        .get("payloads")
+        .and_then(|v| v.as_object())
+        .ok_or_else(|| "missing or invalid 'payloads' object".to_string())?;
+
+    let mut result = Vec::new();
+    for (key, entries) in payloads_obj {
+        let class = map_key_to_vulnerability_class(key)?;
+        let items = entries
+            .as_array()
+            .ok_or_else(|| format!("expected array for key '{key}'"))?;
+        let mut bypass_payloads = Vec::new();
+        for item in items {
+            bypass_payloads.push(parse_bypass_payload(item)?);
+        }
+        result.push((class, bypass_payloads));
+    }
+    Ok(result)
+}
+
+fn map_key_to_vulnerability_class(key: &str) -> Result<VulnerabilityClass, String> {
+    match key {
+        "SqlInjection" => Ok(VulnerabilityClass::SqlInjection),
+        "CrossSiteScripting" => Ok(VulnerabilityClass::CrossSiteScripting),
+        "CommandInjection" => Ok(VulnerabilityClass::CommandInjection),
+        "PathTraversal" => Ok(VulnerabilityClass::PathTraversal),
+        "ServerSideRequestForgery" => Ok(VulnerabilityClass::ServerSideRequestForgery),
+        "InsecureDeserialization" => Ok(VulnerabilityClass::InsecureDeserialization),
+        "BrokenAuthentication" => Ok(VulnerabilityClass::BrokenAuthentication),
+        "BrokenAuthorization" => Ok(VulnerabilityClass::BrokenAuthorization),
+        "SecurityMisconfiguration" => Ok(VulnerabilityClass::SecurityMisconfiguration),
+        "SensitiveDataExposure" => Ok(VulnerabilityClass::SensitiveDataExposure),
+        "ServerSideTemplateInjection" => Ok(VulnerabilityClass::ServerSideTemplateInjection),
+        "HeaderInjection" => Ok(VulnerabilityClass::HeaderInjection),
+        "OpenRedirect" => Ok(VulnerabilityClass::OpenRedirect),
+        "CrlfInjection" => Ok(VulnerabilityClass::CrlfInjection),
+        "KnownVulnerableDependency" => Ok(VulnerabilityClass::KnownVulnerableDependency),
+        "InsufficientInputValidation" => Ok(VulnerabilityClass::InsufficientInputValidation),
+        other => Err(format!("unknown vulnerability class: '{other}'")),
+    }
+}
+
+fn parse_stealth_rating(value: &str) -> Result<StealthRating, String> {
+    match value {
+        "high" => Ok(StealthRating::High),
+        "medium" => Ok(StealthRating::Medium),
+        "low" => Ok(StealthRating::Low),
+        other => Err(format!("unknown stealth_rating: '{other}'")),
+    }
+}
+
+fn parse_bypass_payload(item: &Value) -> Result<BypassPayload, String> {
+    let raw = item
+        .get("raw")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "missing 'raw' field".to_string())?
+        .to_string();
+    let waf_targets = item
+        .get("waf_targets")
+        .and_then(|v| v.as_array())
+        .ok_or_else(|| "missing 'waf_targets' field".to_string())?
+        .iter()
+        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+        .collect();
+    let technique = item
+        .get("technique")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "missing 'technique' field".to_string())?
+        .to_string();
+    let stealth_str = item
+        .get("stealth_rating")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "missing 'stealth_rating' field".to_string())?;
+    let stealth_rating = parse_stealth_rating(stealth_str)?;
+    Ok(BypassPayload {
+        raw,
+        waf_targets,
+        technique,
+        stealth_rating,
+    })
+}
 
 #[derive(Debug, Clone)]
 pub struct MutatedPayload {
     pub raw: String,
-    pub vulnerability_class: VulnerabilityClassTarget,
+    pub vulnerability_class: VulnerabilityClass,
     pub mutation_strategy: MutationStrategy,
 }
 
@@ -28,20 +136,45 @@ impl std::fmt::Display for MutationStrategy {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MutationOrigin {
+    Template,
+    Generative,
+    BitFlip,
+    Boundary,
+    BypassCorpus,
+}
+
+#[derive(Debug, Clone)]
+pub struct TaggedPayload {
+    pub payload: String,
+    pub origin: MutationOrigin,
+}
+
 pub struct PayloadMutator {
-    templates: Vec<(VulnerabilityClassTarget, Vec<String>)>,
+    templates: Vec<(VulnerabilityClass, Vec<String>)>,
+    bypass_corpus: Vec<(VulnerabilityClass, Vec<BypassPayload>)>,
 }
 
 impl PayloadMutator {
     pub fn new() -> Self {
         Self {
             templates: build_default_templates(),
+            bypass_corpus: Vec::new(),
         }
+    }
+
+    pub fn with_bypass_corpus(
+        mut self,
+        corpus: Vec<(VulnerabilityClass, Vec<BypassPayload>)>,
+    ) -> Self {
+        self.bypass_corpus = corpus;
+        self
     }
 
     pub fn generate_payloads(
         &self,
-        class: VulnerabilityClassTarget,
+        class: VulnerabilityClass,
         count: usize,
     ) -> Vec<MutatedPayload> {
         let mut payloads = Vec::new();
@@ -59,6 +192,10 @@ impl PayloadMutator {
                 vulnerability_class: class,
                 mutation_strategy: MutationStrategy::Template,
             });
+        }
+
+        if payloads.len() < count {
+            append_corpus_payloads(&self.bypass_corpus, class, count, &mut payloads);
         }
 
         if payloads.len() < count {
@@ -108,13 +245,104 @@ impl PayloadMutator {
             .into_iter()
             .map(|raw| MutatedPayload {
                 raw,
-                vulnerability_class: VulnerabilityClassTarget::SqlInjection,
+                vulnerability_class: VulnerabilityClass::SqlInjection,
                 mutation_strategy: MutationStrategy::Boundary,
             })
             .collect()
     }
 
-    pub fn template_count(&self, class: VulnerabilityClassTarget) -> usize {
+    pub fn generate_stealth_payloads(
+        &self,
+        class: VulnerabilityClass,
+        count: usize,
+    ) -> Vec<MutatedPayload> {
+        let class_templates: Vec<&str> = self
+            .templates
+            .iter()
+            .filter(|(c, _)| *c == class)
+            .flat_map(|(_, t)| t.iter().map(|s| s.as_str()))
+            .collect();
+
+        let mut rated: Vec<(String, StealthRating)> = class_templates
+            .iter()
+            .map(|t| (t.to_string(), stealth_rating_for_template(t, class)))
+            .collect();
+
+        for (c, bypasses) in &self.bypass_corpus {
+            if *c == class {
+                for bp in bypasses {
+                    rated.push((bp.raw.clone(), bp.stealth_rating));
+                }
+            }
+        }
+
+        rated.sort_by_key(|(_, r)| stealth_sort_key(*r));
+
+        let mut payloads = Vec::new();
+        for (raw, _) in rated.iter().take(count) {
+            payloads.push(MutatedPayload {
+                raw: raw.clone(),
+                vulnerability_class: class,
+                mutation_strategy: MutationStrategy::Template,
+            });
+        }
+
+        if payloads.len() < count {
+            let high_stealth: Vec<&str> = rated
+                .iter()
+                .filter(|(_, r)| *r == StealthRating::High)
+                .map(|(t, _)| t.as_str())
+                .collect();
+            fill_stealth_overflow(&mut payloads, &high_stealth, class, count);
+        }
+
+        payloads
+    }
+
+    pub fn generate_tagged_payloads(
+        &self,
+        class: VulnerabilityClass,
+        count: usize,
+    ) -> Vec<TaggedPayload> {
+        let mut payloads = Vec::new();
+
+        let class_templates: Vec<&str> = self
+            .templates
+            .iter()
+            .filter(|(c, _)| *c == class)
+            .flat_map(|(_, t)| t.iter().map(|s| s.as_str()))
+            .collect();
+
+        for template in class_templates.iter().take(count) {
+            payloads.push(TaggedPayload {
+                payload: template.to_string(),
+                origin: MutationOrigin::Template,
+            });
+        }
+
+        if payloads.len() < count {
+            append_tagged_corpus_payloads(&self.bypass_corpus, class, count, &mut payloads);
+        }
+
+        if payloads.len() < count {
+            let remaining = count - payloads.len();
+            for _ in 0..remaining {
+                let base = if class_templates.is_empty() {
+                    "FUZZ"
+                } else {
+                    class_templates[payloads.len() % class_templates.len()]
+                };
+                payloads.push(TaggedPayload {
+                    payload: mutate_string(base),
+                    origin: MutationOrigin::BitFlip,
+                });
+            }
+        }
+
+        payloads
+    }
+
+    pub fn template_count(&self, class: VulnerabilityClass) -> usize {
         self.templates
             .iter()
             .filter(|(c, _)| *c == class)
@@ -156,10 +384,10 @@ fn mutate_string(input: &str) -> String {
     chars.into_iter().collect()
 }
 
-fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
+fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
     vec![
         (
-            VulnerabilityClassTarget::SqlInjection,
+            VulnerabilityClass::SqlInjection,
             vec![
                 "' OR '1'='1".to_string(),
                 "' OR '1'='1' --".to_string(),
@@ -172,7 +400,7 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::CrossSiteScripting,
+            VulnerabilityClass::CrossSiteScripting,
             vec![
                 "<script>alert(1)</script>".to_string(),
                 "<img src=x onerror=alert(1)>".to_string(),
@@ -183,7 +411,7 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::CommandInjection,
+            VulnerabilityClass::CommandInjection,
             vec![
                 "; id".to_string(),
                 "| id".to_string(),
@@ -194,7 +422,7 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::PathTraversal,
+            VulnerabilityClass::PathTraversal,
             vec![
                 "../../../etc/passwd".to_string(),
                 "..\\..\\..\\windows\\system32\\config\\sam".to_string(),
@@ -204,7 +432,7 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::ServerSideRequestForgery,
+            VulnerabilityClass::ServerSideRequestForgery,
             vec![
                 "http://127.0.0.1".to_string(),
                 "http://localhost".to_string(),
@@ -214,7 +442,7 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::ServerSideTemplateInjection,
+            VulnerabilityClass::ServerSideTemplateInjection,
             vec![
                 "{{7*7}}".to_string(),
                 "${7*7}".to_string(),
@@ -224,14 +452,14 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::HeaderInjection,
+            VulnerabilityClass::HeaderInjection,
             vec![
                 "value\r\nInjected-Header: true".to_string(),
                 "value\nX-Injected: yes".to_string(),
             ],
         ),
         (
-            VulnerabilityClassTarget::OpenRedirect,
+            VulnerabilityClass::OpenRedirect,
             vec![
                 "//evil.com".to_string(),
                 "https://evil.com".to_string(),
@@ -240,14 +468,14 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
         (
-            VulnerabilityClassTarget::CrlfInjection,
+            VulnerabilityClass::CrlfInjection,
             vec![
                 "%0d%0aSet-Cookie:evil=true".to_string(),
                 "\r\nLocation: http://evil.com".to_string(),
             ],
         ),
         (
-            VulnerabilityClassTarget::Deserialization,
+            VulnerabilityClass::InsecureDeserialization,
             vec![
                 "rO0ABXNyABFqYXZhLnV0aWwuSGFzaFNldA==".to_string(),
                 "O:8:\"stdClass\":0:{}".to_string(),
@@ -255,4 +483,126 @@ fn build_default_templates() -> Vec<(VulnerabilityClassTarget, Vec<String>)> {
             ],
         ),
     ]
+}
+
+pub fn stealth_rating_for_template(template: &str, _class: VulnerabilityClass) -> StealthRating {
+    let lower = template.to_lowercase();
+    if is_high_stealth(&lower) {
+        return StealthRating::High;
+    }
+    if is_medium_stealth(template) {
+        return StealthRating::Medium;
+    }
+    StealthRating::Low
+}
+
+fn is_high_stealth(lower: &str) -> bool {
+    let blind_keywords = [
+        "sleep",
+        "waitfor",
+        "pg_sleep",
+        "benchmark",
+        "delay",
+        "ping",
+        "dns",
+        "oob",
+        "time-based",
+    ];
+    blind_keywords.iter().any(|kw| lower.contains(kw))
+}
+
+fn is_medium_stealth(template: &str) -> bool {
+    let lower = template.to_lowercase();
+    let encoding_patterns = ["%2e", "%2f", "%0d", "%0a", "%00", "%25"];
+    if encoding_patterns.iter().any(|p| lower.contains(p)) {
+        return true;
+    }
+    has_mixed_case_keywords(template)
+}
+
+fn has_mixed_case_keywords(template: &str) -> bool {
+    let keywords = ["select", "union", "script", "alert", "sleep"];
+    for kw in &keywords {
+        if let Some(pos) = template.to_lowercase().find(kw) {
+            let original_fragment = &template[pos..pos + kw.len()];
+            let has_upper = original_fragment.chars().any(|c| c.is_uppercase());
+            let has_lower = original_fragment.chars().any(|c| c.is_lowercase());
+            if has_upper && has_lower {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn stealth_sort_key(rating: StealthRating) -> u8 {
+    match rating {
+        StealthRating::High => 0,
+        StealthRating::Medium => 1,
+        StealthRating::Low => 2,
+    }
+}
+
+fn fill_stealth_overflow(
+    payloads: &mut Vec<MutatedPayload>,
+    high_stealth: &[&str],
+    class: VulnerabilityClass,
+    count: usize,
+) {
+    let remaining = count - payloads.len();
+    for i in 0..remaining {
+        let base = if high_stealth.is_empty() {
+            "FUZZ"
+        } else {
+            high_stealth[i % high_stealth.len()]
+        };
+        payloads.push(MutatedPayload {
+            raw: mutate_string(base),
+            vulnerability_class: class,
+            mutation_strategy: MutationStrategy::Generative,
+        });
+    }
+}
+
+fn append_corpus_payloads(
+    bypass_corpus: &[(VulnerabilityClass, Vec<BypassPayload>)],
+    class: VulnerabilityClass,
+    count: usize,
+    payloads: &mut Vec<MutatedPayload>,
+) {
+    for (c, bypasses) in bypass_corpus {
+        if *c == class {
+            for bp in bypasses {
+                if payloads.len() >= count {
+                    return;
+                }
+                payloads.push(MutatedPayload {
+                    raw: bp.raw.clone(),
+                    vulnerability_class: class,
+                    mutation_strategy: MutationStrategy::Template,
+                });
+            }
+        }
+    }
+}
+
+fn append_tagged_corpus_payloads(
+    bypass_corpus: &[(VulnerabilityClass, Vec<BypassPayload>)],
+    class: VulnerabilityClass,
+    count: usize,
+    payloads: &mut Vec<TaggedPayload>,
+) {
+    for (c, bypasses) in bypass_corpus {
+        if *c == class {
+            for bp in bypasses {
+                if payloads.len() >= count {
+                    return;
+                }
+                payloads.push(TaggedPayload {
+                    payload: bp.raw.clone(),
+                    origin: MutationOrigin::BypassCorpus,
+                });
+            }
+        }
+    }
 }

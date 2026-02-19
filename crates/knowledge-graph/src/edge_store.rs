@@ -1,7 +1,9 @@
 use aegis_protocol::edge::{EdgeData, EdgeLabel};
 use aegis_protocol::operation::ModuleIdentifier;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub struct EdgeStore {
     edges: Vec<EdgeData>,
     outgoing: HashMap<u64, Vec<u64>>,
@@ -41,7 +43,10 @@ impl EdgeStore {
         let outgoing_list = self.outgoing.entry(source_node_id).or_default();
         let insert_pos = outgoing_list
             .binary_search_by_key(&target_node_id, |eid| {
-                self.edges[*eid as usize].target_node_id
+                self.edges
+                    .get(*eid as usize)
+                    .map(|e| e.target_node_id)
+                    .unwrap_or(u64::MAX)
             })
             .unwrap_or_else(|pos| pos);
         outgoing_list.insert(insert_pos, id);
@@ -77,6 +82,14 @@ impl EdgeStore {
         self.edges.iter()
     }
 
+    pub fn has_edge(&self, source: u64, target: u64, label: EdgeLabel) -> bool {
+        self.outgoing_edges(source).iter().any(|eid| {
+            self.edges
+                .get(*eid as usize)
+                .is_some_and(|edge| edge.target_node_id == target && edge.label == label)
+        })
+    }
+
     pub fn update_weight(&mut self, edge_id: u64, new_weight: f64) -> bool {
         if let Some(edge) = self.edges.get_mut(edge_id as usize) {
             edge.weight = new_weight;
@@ -84,6 +97,14 @@ impl EdgeStore {
         } else {
             false
         }
+    }
+
+    pub fn snapshot(&self) -> Vec<u8> {
+        serde_json::to_vec(self).expect("EdgeStore serialization should not fail")
+    }
+
+    pub fn restore(data: &[u8]) -> Result<Self, String> {
+        serde_json::from_slice(data).map_err(|e| e.to_string())
     }
 }
 

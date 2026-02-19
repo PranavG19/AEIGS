@@ -1,7 +1,9 @@
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::operation::ModuleIdentifier;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub struct FindingStore {
     findings: Vec<FindingData>,
     node_index: HashMap<u64, Vec<u64>>,
@@ -38,6 +40,8 @@ impl FindingStore {
             certificate,
             provenance_module,
             timestamp_unix_ms,
+            evidence_level: aegis_protocol::finding::EvidenceLevel::Statistical,
+            confidence_score: None,
         };
 
         for node_id in &linked_node_ids {
@@ -76,6 +80,14 @@ impl FindingStore {
 
     pub fn iter(&self) -> impl Iterator<Item = &FindingData> {
         self.findings.iter()
+    }
+
+    pub fn snapshot(&self) -> Vec<u8> {
+        serde_json::to_vec(self).expect("FindingStore serialization should not fail")
+    }
+
+    pub fn restore(data: &[u8]) -> Result<Self, String> {
+        serde_json::from_slice(data).map_err(|e| e.to_string())
     }
 }
 

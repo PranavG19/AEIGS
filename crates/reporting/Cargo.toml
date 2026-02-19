@@ -9,6 +9,7 @@ aegis-knowledge-graph = { path = "../knowledge-graph" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 ciborium = { workspace = true }
-tracing = { workspace = true }
 sha3 = { workspace = true }
 uuid = { workspace = true }
+sarif_rust = { workspace = true }
+aegis-fuzzing = { path = "../fuzzing" }

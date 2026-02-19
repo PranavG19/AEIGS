@@ -13,3 +13,7 @@ reqwest = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
 rand = { workspace = true }
+regex = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

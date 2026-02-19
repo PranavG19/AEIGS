@@ -1,6 +1,8 @@
 use aegis_protocol::node::{NodeData, NodeType};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+#[derive(Serialize, Deserialize)]
 pub struct NodeStore {
     nodes: Vec<NodeData>,
     type_index: HashMap<NodeType, Vec<u64>>,
@@ -47,6 +49,14 @@ impl NodeStore {
             .get(&node_type)
             .map(Vec::as_slice)
             .unwrap_or(&[])
+    }
+
+    pub fn snapshot(&self) -> Vec<u8> {
+        serde_json::to_vec(self).expect("NodeStore serialization should not fail")
+    }
+
+    pub fn restore(data: &[u8]) -> Result<Self, String> {
+        serde_json::from_slice(data).map_err(|e| e.to_string())
     }
 }
 

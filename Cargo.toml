@@ -9,6 +9,8 @@ members = [
     "crates/fuzzing",
     "crates/chain-synthesis",
     "crates/reporting",
+    "crates/evasion-engine",
+    "crates/orchestrator",
 ]
 resolver = "2"
 
@@ -33,3 +35,9 @@ reqwest = { version = "0.12", features = ["json"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 semver = "1"
 rand = "0.9"
+cargo-lock = "10"
+sarif_rust = "0.3"
+openapiv3 = "2"
+graphql-parser = "0.4"
+regex = "1"
+clap = { version = "4", features = ["derive"] }

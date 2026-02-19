@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
+use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParsedDependency {
@@ -157,46 +158,21 @@ fn parse_package_lock_json(content: &str) -> Result<Vec<ParsedDependency>, Parse
 }
 
 fn parse_cargo_lock(content: &str) -> Result<Vec<ParsedDependency>, ParseError> {
-    let mut deps = Vec::new();
-    let mut current_name: Option<String> = None;
-    let mut current_version: Option<String> = None;
+    let lockfile = cargo_lock::Lockfile::from_str(content)
+        .map_err(|e| ParseError::MalformedContent(e.to_string()))?;
 
-    for line in content.lines() {
-        let trimmed = line.trim();
-
-        if trimmed == "[[package]]" {
-            if let (Some(name), Some(version)) = (current_name.take(), current_version.take()) {
-                deps.push(ParsedDependency {
-                    name,
-                    version,
-                    ecosystem: Ecosystem::Cargo,
-                });
-            }
-            current_name = None;
-            current_version = None;
-            continue;
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("name = ") {
-            current_name = Some(unquote_toml_string(rest));
-        } else if let Some(rest) = trimmed.strip_prefix("version = ") {
-            current_version = Some(unquote_toml_string(rest));
-        }
-    }
-
-    if let (Some(name), Some(version)) = (current_name, current_version) {
-        deps.push(ParsedDependency {
-            name,
-            version,
+    let deps = lockfile
+        .packages
+        .into_iter()
+        .filter(|p| p.source.as_ref().is_some_and(|s| s.is_default_registry()))
+        .map(|p| ParsedDependency {
+            name: p.name.as_str().to_string(),
+            version: p.version.to_string(),
             ecosystem: Ecosystem::Cargo,
-        });
-    }
+        })
+        .collect();
 
     Ok(deps)
-}
-
-fn unquote_toml_string(s: &str) -> String {
-    s.trim_matches('"').to_string()
 }
 
 fn parse_requirements_txt(content: &str) -> Result<Vec<ParsedDependency>, ParseError> {

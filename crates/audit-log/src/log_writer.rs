@@ -9,6 +9,7 @@ use std::path::Path;
 pub enum LogWriterError {
     IoError(io::Error),
     SerializationError(String),
+    LogCreationFailed(String),
 }
 
 impl std::fmt::Display for LogWriterError {
@@ -16,6 +17,7 @@ impl std::fmt::Display for LogWriterError {
         match self {
             Self::IoError(e) => write!(f, "io error: {e}"),
             Self::SerializationError(e) => write!(f, "serialization error: {e}"),
+            Self::LogCreationFailed(e) => write!(f, "audit log creation failed: {e}"),
         }
     }
 }
@@ -98,6 +100,28 @@ impl AuditLogWriter {
 
     pub fn sequence_number(&self) -> u64 {
         self.sequence
+    }
+}
+
+pub struct NoOpAuditLogWriter;
+
+impl NoOpAuditLogWriter {
+    pub fn new() -> Self {
+        Self
+    }
+
+    pub fn append_event(&mut self, _event: AuditEventType) -> Result<(), LogWriterError> {
+        Ok(())
+    }
+
+    pub fn sequence_number(&self) -> u64 {
+        0
+    }
+}
+
+impl Default for NoOpAuditLogWriter {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

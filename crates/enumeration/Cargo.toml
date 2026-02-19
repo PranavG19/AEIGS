@@ -11,3 +11,5 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 reqwest = { workspace = true }
 tokio = { workspace = true }
+openapiv3 = { workspace = true }
+graphql-parser = { workspace = true }

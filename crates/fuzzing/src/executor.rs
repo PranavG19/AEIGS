@@ -1,30 +1,16 @@
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Clone)]
-pub struct FuzzRequest {
-    pub request_id: u64,
-    pub endpoint: String,
-    pub method: String,
-    pub parameter_name: String,
-    pub payload: String,
-    pub headers: Vec<(String, String)>,
-}
+use crate::stealth_config::StealthConfig;
+use aegis_protocol::target_validation;
 
-#[derive(Debug, Clone)]
-pub struct FuzzResponse {
-    pub request_id: u64,
-    pub status_code: u16,
-    pub body: String,
-    pub headers: Vec<(String, String)>,
-    pub response_time: Duration,
-    pub body_size_bytes: usize,
-}
+pub use aegis_protocol::request::{FuzzRequest, FuzzResponse};
 
 #[derive(Debug)]
 pub enum ExecutorError {
     NetworkError(String),
     Timeout(String),
     RateLimited,
+    TargetNotAllowed(String),
 }
 
 impl std::fmt::Display for ExecutorError {
@@ -33,6 +19,7 @@ impl std::fmt::Display for ExecutorError {
             Self::NetworkError(msg) => write!(f, "network error: {msg}"),
             Self::Timeout(msg) => write!(f, "timeout: {msg}"),
             Self::RateLimited => write!(f, "rate limited"),
+            Self::TargetNotAllowed(msg) => write!(f, "target not allowed: {msg}"),
         }
     }
 }
@@ -84,21 +71,48 @@ pub struct RequestExecutor {
     base_url: String,
     rate_limiter: RateLimiter,
     timeout: Duration,
+    default_headers: Vec<(String, String)>,
     next_request_id: u64,
     total_requests: u64,
     total_errors: u64,
+    stealth_config: Option<StealthConfig>,
+}
+
+pub(crate) fn browser_default_headers() -> Vec<(String, String)> {
+    vec![
+        ("User-Agent".to_string(), "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36".to_string()),
+        ("Accept".to_string(), "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8".to_string()),
+        ("Accept-Language".to_string(), "en-US,en;q=0.5".to_string()),
+        ("Accept-Encoding".to_string(), "gzip, deflate, br".to_string()),
+        ("Connection".to_string(), "keep-alive".to_string()),
+    ]
 }
 
 impl RequestExecutor {
-    pub fn new(base_url: String, max_rps: u32, timeout: Duration) -> Self {
-        Self {
+    pub fn new(base_url: String, max_rps: u32, timeout: Duration) -> Result<Self, ExecutorError> {
+        target_validation::validate_target_is_localhost(&base_url)
+            .map_err(|e| ExecutorError::TargetNotAllowed(e.to_string()))?;
+
+        Ok(Self {
             base_url,
             rate_limiter: RateLimiter::new(max_rps),
             timeout,
+            default_headers: browser_default_headers(),
             next_request_id: 1,
             total_requests: 0,
             total_errors: 0,
-        }
+            stealth_config: None,
+        })
+    }
+
+    pub fn with_default_headers(mut self, headers: Vec<(String, String)>) -> Self {
+        self.default_headers = headers;
+        self
+    }
+
+    pub fn with_stealth_config(mut self, config: StealthConfig) -> Self {
+        self.stealth_config = Some(config);
+        self
     }
 
     pub fn build_request(
@@ -117,7 +131,7 @@ impl RequestExecutor {
             method: method.to_string(),
             parameter_name: parameter_name.to_string(),
             payload: payload.to_string(),
-            headers: Vec::new(),
+            headers: self.default_headers.clone(),
         }
     }
 
@@ -155,5 +169,9 @@ impl RequestExecutor {
 
     pub fn timeout(&self) -> Duration {
         self.timeout
+    }
+
+    pub fn stealth_config(&self) -> Option<&StealthConfig> {
+        self.stealth_config.as_ref()
     }
 }

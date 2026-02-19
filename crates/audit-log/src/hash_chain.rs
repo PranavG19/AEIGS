@@ -1,8 +1,31 @@
+//! SHA3-256 hash chain for tamper-evident audit logging.
+//!
+//! # Threat Model
+//!
+//! This hash chain provides tamper **evidence**, not tamper **resistance**.
+//! It detects: reordered entries, deleted entries, and modified entry content.
+//! It does **not** protect against an attacker with access to the HMAC key,
+//! who could rewrite the entire chain and recompute all hashes.
+//!
+//! The chain is designed for detecting accidental corruption and providing
+//! a verifiable timeline of scan operations. The HMAC key should be stored
+//! separately from the audit log data (see `HmacSigner`).
+//!
+//! # Chain Invariant
+//!
+//! Each entry's hash = SHA3-256(previous_hash ‖ entry_content).
+//! The chain is valid iff recomputing all hashes from entry 0 with the
+//! genesis hash matches the stored hashes at every position.
+
 use sha3::{Digest, Sha3_256};
 
 pub const HASH_SIZE: usize = 32;
 pub type Hash = [u8; HASH_SIZE];
 
+/// Append-only hash chain where each entry is chained to the previous via SHA3-256.
+///
+/// The chain starts from a deterministic genesis hash (SHA3-256 of empty input).
+/// Each `append` call produces a new hash that commits to the full chain history.
 pub struct HashChain {
     current_hash: Hash,
 }
