@@ -271,3 +271,94 @@ class TestRetryLogic:
 
         delays = [call.args[0] for call in mock_sleep.call_args_list]
         assert delays == [1.0, 2.0]
+
+    @patch("hypothesis_engine.openai_client.time.sleep")
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_retries_on_429_and_succeeds(
+        self, mock_urlopen: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        error_429 = urllib.error.HTTPError(
+            url="http://test", code=429, msg="Too Many Requests", hdrs=None, fp=BytesIO(b"")  # type: ignore[arg-type]
+        )
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response("ok")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        mock_urlopen.side_effect = [error_429, error_429, mock_resp]
+
+        client = OpenAiClient(max_retries=3)
+        text, _ = client.invoke(messages=[{"role": "user", "content": "test"}])
+
+        assert text == "ok"
+        assert mock_urlopen.call_count == 3
+        delays = [call.args[0] for call in mock_sleep.call_args_list]
+        assert delays == [1.0, 2.0]
+
+    @patch("hypothesis_engine.openai_client.time.sleep")
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_raises_after_all_retries_exhausted_on_429(
+        self, mock_urlopen: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        error_429 = urllib.error.HTTPError(
+            url="http://test", code=429, msg="Too Many Requests", hdrs=None, fp=BytesIO(b"")  # type: ignore[arg-type]
+        )
+        mock_urlopen.side_effect = error_429
+
+        client = OpenAiClient(max_retries=3)
+        with pytest.raises(RuntimeError, match="HTTP 429"):
+            client.invoke(messages=[{"role": "user", "content": "test"}])
+
+        assert mock_urlopen.call_count == 3
+        assert mock_sleep.call_count == 2
+
+    @patch("hypothesis_engine.openai_client.time.sleep")
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_raises_immediately_on_400(
+        self, mock_urlopen: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        error_400 = urllib.error.HTTPError(
+            url="http://test", code=400, msg="Bad Request", hdrs=None, fp=BytesIO(b"")  # type: ignore[arg-type]
+        )
+        mock_urlopen.side_effect = error_400
+
+        client = OpenAiClient(max_retries=3)
+        with pytest.raises(RuntimeError, match="HTTP 400"):
+            client.invoke(messages=[{"role": "user", "content": "test"}])
+
+        assert mock_urlopen.call_count == 1
+        mock_sleep.assert_not_called()
+
+    @patch("hypothesis_engine.openai_client.time.sleep")
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_generic_exception_retries_then_succeeds(
+        self, mock_urlopen: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response("recovered")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        mock_urlopen.side_effect = [OSError("connection reset"), OSError("connection reset"), mock_resp]
+
+        client = OpenAiClient(max_retries=3)
+        text, _ = client.invoke(messages=[{"role": "user", "content": "test"}])
+
+        assert text == "recovered"
+        assert mock_urlopen.call_count == 3
+        delays = [call.args[0] for call in mock_sleep.call_args_list]
+        assert delays == [1.0, 2.0]
+
+    @patch("hypothesis_engine.openai_client.time.sleep")
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_generic_exception_exhausts_retries(
+        self, mock_urlopen: MagicMock, mock_sleep: MagicMock
+    ) -> None:
+        mock_urlopen.side_effect = OSError("connection refused")
+
+        client = OpenAiClient(max_retries=3)
+        with pytest.raises(RuntimeError, match="Failed after.*retries"):
+            client.invoke(messages=[{"role": "user", "content": "test"}])
+
+        assert mock_urlopen.call_count == 3
+        assert mock_sleep.call_count == 2
