@@ -102,12 +102,6 @@ pub struct ScanConfig {
     pub no_audit: bool,
 
     #[arg(long)]
-    pub resume_from: Option<PathBuf>,
-
-    #[arg(long)]
-    pub save_state: Option<PathBuf>,
-
-    #[arg(long)]
     pub include_endpoints: Option<Vec<String>>,
 
     #[arg(long)]

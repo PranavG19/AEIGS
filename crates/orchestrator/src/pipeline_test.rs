@@ -19,8 +19,6 @@ fn localhost_config() -> ScanConfig {
         max_iterations: 1,
         convergence_threshold: 2,
         no_audit: false,
-        resume_from: None,
-        save_state: None,
         include_endpoints: None,
         exclude_endpoints: None,
     }

@@ -166,6 +166,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         },
     );
 
+    // state persistence planned: see docs/plans/2026-02-19-aegis-improvements.md Task 16
     let graph = KnowledgeGraph::new();
     let mut ctx = ScanContext {
         config,

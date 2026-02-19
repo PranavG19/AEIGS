@@ -418,52 +418,6 @@ fn scan_config_no_audit_flag_sets_true() {
 }
 
 #[test]
-fn scan_config_default_resume_from_is_none() {
-    let config =
-        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(config.resume_from.is_none());
-}
-
-#[test]
-fn scan_config_default_save_state_is_none() {
-    let config =
-        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(config.save_state.is_none());
-}
-
-#[test]
-fn scan_config_resume_from_flag_parses() {
-    let config = ScanConfig::try_parse_from([
-        "aegis",
-        "--target",
-        "http://localhost:8080",
-        "--resume-from",
-        "/tmp/aegis-state.cbor",
-    ])
-    .unwrap();
-    assert_eq!(
-        config.resume_from.unwrap(),
-        Path::new("/tmp/aegis-state.cbor")
-    );
-}
-
-#[test]
-fn scan_config_save_state_flag_parses() {
-    let config = ScanConfig::try_parse_from([
-        "aegis",
-        "--target",
-        "http://localhost:8080",
-        "--save-state",
-        "/tmp/aegis-checkpoint.cbor",
-    ])
-    .unwrap();
-    assert_eq!(
-        config.save_state.unwrap(),
-        Path::new("/tmp/aegis-checkpoint.cbor")
-    );
-}
-
-#[test]
 fn scan_config_default_include_endpoints_is_none() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
