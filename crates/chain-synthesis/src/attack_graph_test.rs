@@ -311,10 +311,7 @@ mod tests {
 
         assert_eq!(neighbors1.len(), neighbors2.len());
         for (n1, n2) in neighbors1.iter().zip(neighbors2.iter()) {
-            assert_eq!(
-                g1.inner_graph()[*n1].label,
-                g2.inner_graph()[*n2].label
-            );
+            assert_eq!(g1.inner_graph()[*n1].label, g2.inner_graph()[*n2].label);
         }
     }
 

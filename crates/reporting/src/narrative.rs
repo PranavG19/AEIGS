@@ -100,9 +100,7 @@ pub fn summarize_attack_paths(
 }
 
 pub fn describe_defense_impact(defense_name: &str, score_reduction_pct: f64) -> String {
-    format!(
-        "{defense_name} reduces risk by {score_reduction_pct:.0}%."
-    )
+    format!("{defense_name} reduces risk by {score_reduction_pct:.0}%.")
 }
 
 fn vulnerability_explanation(vulnerability_class: &str) -> &'static str {

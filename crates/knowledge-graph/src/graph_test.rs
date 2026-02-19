@@ -818,7 +818,9 @@ mod tests {
 
     #[test]
     fn load_from_nonexistent_file_returns_error() {
-        let result = KnowledgeGraph::load_from_file(std::path::Path::new("/tmp/does_not_exist_aegis_test.json"));
+        let result = KnowledgeGraph::load_from_file(std::path::Path::new(
+            "/tmp/does_not_exist_aegis_test.json",
+        ));
         assert!(result.is_err());
     }
 

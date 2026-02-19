@@ -189,7 +189,11 @@ mod tests {
         assert!(ser_err.to_string().contains("serialization error"));
 
         let creation_err = LogWriterError::LogCreationFailed("permission denied".to_string());
-        assert!(creation_err.to_string().contains("audit log creation failed"));
+        assert!(
+            creation_err
+                .to_string()
+                .contains("audit log creation failed")
+        );
     }
 
     #[test]

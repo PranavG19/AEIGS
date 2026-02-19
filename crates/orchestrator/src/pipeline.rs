@@ -98,9 +98,7 @@ fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-pub fn collect_recon_ops(
-    source_dir: &Option<PathBuf>,
-) -> Result<Vec<OperationLogEntry>, String> {
+pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
     let Some(source_dir) = source_dir else {
         return Ok(Vec::new());
     };

@@ -358,10 +358,7 @@ fn build_result(finding: &SarifFinding) -> sarif_rust::types::Result {
         props.insert("cveId".to_string(), serde_json::Value::from(cve.clone()));
     }
     if let Some(rank) = finding.mitigation_rank {
-        props.insert(
-            "mitigationRank".to_string(),
-            serde_json::Value::from(rank),
-        );
+        props.insert("mitigationRank".to_string(), serde_json::Value::from(rank));
     }
     if let Some(score) = finding.confidence_score {
         props.insert(

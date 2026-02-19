@@ -131,9 +131,8 @@ impl FindingData {
     }
 
     pub fn effective_confidence(&self) -> f64 {
-        self.confidence_score.unwrap_or_else(|| {
-            confidence_from_evidence_and_variance(self.evidence_level, 0.0)
-        })
+        self.confidence_score
+            .unwrap_or_else(|| confidence_from_evidence_and_variance(self.evidence_level, 0.0))
     }
 }
 

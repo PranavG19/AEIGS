@@ -126,7 +126,9 @@ pub(crate) fn timestamp_ms() -> u64 {
         .as_millis() as u64
 }
 
-pub fn run_recon_standalone(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
+pub fn run_recon_standalone(
+    source_dir: &Option<PathBuf>,
+) -> Result<Vec<OperationLogEntry>, String> {
     let Some(source_dir) = source_dir else {
         return Ok(Vec::new());
     };

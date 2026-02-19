@@ -287,11 +287,15 @@ impl KnowledgeGraph {
             serde_json::from_slice(&bytes).map_err(|e| GraphError::Io(e.to_string()))?;
 
         let nodes_bytes = serde_json::to_vec(
-            bundle.get("nodes").ok_or_else(|| GraphError::Io("missing 'nodes' key".into()))?,
+            bundle
+                .get("nodes")
+                .ok_or_else(|| GraphError::Io("missing 'nodes' key".into()))?,
         )
         .map_err(|e| GraphError::Io(e.to_string()))?;
         let edges_bytes = serde_json::to_vec(
-            bundle.get("edges").ok_or_else(|| GraphError::Io("missing 'edges' key".into()))?,
+            bundle
+                .get("edges")
+                .ok_or_else(|| GraphError::Io("missing 'edges' key".into()))?,
         )
         .map_err(|e| GraphError::Io(e.to_string()))?;
         let findings_bytes = serde_json::to_vec(

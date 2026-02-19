@@ -677,7 +677,10 @@ mod tests {
         assert_eq!(response.status_code, 200);
         assert_eq!(response.body, "{\"status\":\"ok\"}");
         assert_eq!(response.headers.len(), 1);
-        assert_eq!(response.response_time, std::time::Duration::from_millis(150));
+        assert_eq!(
+            response.response_time,
+            std::time::Duration::from_millis(150)
+        );
         assert_eq!(response.body_size_bytes, 15);
     }
 
@@ -775,7 +778,10 @@ mod tests {
             VulnerabilityClass::CommandInjection
         );
         assert_eq!(deserialized.rate_limit_rps, ctx.rate_limit_rps);
-        assert_eq!(deserialized.bot_detection_present, ctx.bot_detection_present);
+        assert_eq!(
+            deserialized.bot_detection_present,
+            ctx.bot_detection_present
+        );
         assert_eq!(deserialized.bot_detection_evaded, ctx.bot_detection_evaded);
     }
 
@@ -812,14 +818,23 @@ mod tests {
             let display = format!("{}", variant);
             assert_eq!(display, expected);
             assert!(!display.is_empty());
-            assert!(seen.insert(display), "Display strings must be unique per variant");
+            assert!(
+                seen.insert(display),
+                "Display strings must be unique per variant"
+            );
         }
     }
 
     #[test]
     fn node_type_display_differs_from_debug_for_multiword_variants() {
-        assert_ne!(format!("{}", NodeType::DataStore), format!("{:?}", NodeType::DataStore));
-        assert_ne!(format!("{}", NodeType::Config), format!("{:?}", NodeType::Config));
+        assert_ne!(
+            format!("{}", NodeType::DataStore),
+            format!("{:?}", NodeType::DataStore)
+        );
+        assert_ne!(
+            format!("{}", NodeType::Config),
+            format!("{:?}", NodeType::Config)
+        );
     }
 
     #[test]
@@ -840,7 +855,10 @@ mod tests {
             let display = format!("{}", variant);
             assert_eq!(display, expected);
             assert!(!display.is_empty());
-            assert!(seen.insert(display), "Display strings must be unique per variant");
+            assert!(
+                seen.insert(display),
+                "Display strings must be unique per variant"
+            );
         }
     }
 
@@ -848,21 +866,51 @@ mod tests {
     fn vulnerability_class_display_produces_human_readable_output() {
         let classes = [
             (VulnerabilityClass::SqlInjection, "SQL Injection"),
-            (VulnerabilityClass::CrossSiteScripting, "Cross-Site Scripting"),
+            (
+                VulnerabilityClass::CrossSiteScripting,
+                "Cross-Site Scripting",
+            ),
             (VulnerabilityClass::CommandInjection, "Command Injection"),
             (VulnerabilityClass::PathTraversal, "Path Traversal"),
-            (VulnerabilityClass::ServerSideRequestForgery, "Server-Side Request Forgery"),
-            (VulnerabilityClass::InsecureDeserialization, "Insecure Deserialization"),
-            (VulnerabilityClass::BrokenAuthentication, "Broken Authentication"),
-            (VulnerabilityClass::BrokenAuthorization, "Broken Authorization"),
-            (VulnerabilityClass::SecurityMisconfiguration, "Security Misconfiguration"),
-            (VulnerabilityClass::SensitiveDataExposure, "Sensitive Data Exposure"),
-            (VulnerabilityClass::ServerSideTemplateInjection, "Server-Side Template Injection"),
+            (
+                VulnerabilityClass::ServerSideRequestForgery,
+                "Server-Side Request Forgery",
+            ),
+            (
+                VulnerabilityClass::InsecureDeserialization,
+                "Insecure Deserialization",
+            ),
+            (
+                VulnerabilityClass::BrokenAuthentication,
+                "Broken Authentication",
+            ),
+            (
+                VulnerabilityClass::BrokenAuthorization,
+                "Broken Authorization",
+            ),
+            (
+                VulnerabilityClass::SecurityMisconfiguration,
+                "Security Misconfiguration",
+            ),
+            (
+                VulnerabilityClass::SensitiveDataExposure,
+                "Sensitive Data Exposure",
+            ),
+            (
+                VulnerabilityClass::ServerSideTemplateInjection,
+                "Server-Side Template Injection",
+            ),
             (VulnerabilityClass::HeaderInjection, "Header Injection"),
             (VulnerabilityClass::OpenRedirect, "Open Redirect"),
             (VulnerabilityClass::CrlfInjection, "CRLF Injection"),
-            (VulnerabilityClass::KnownVulnerableDependency, "Known Vulnerable Dependency"),
-            (VulnerabilityClass::InsufficientInputValidation, "Insufficient Input Validation"),
+            (
+                VulnerabilityClass::KnownVulnerableDependency,
+                "Known Vulnerable Dependency",
+            ),
+            (
+                VulnerabilityClass::InsufficientInputValidation,
+                "Insufficient Input Validation",
+            ),
         ];
 
         let mut seen = std::collections::HashSet::new();
@@ -870,7 +918,10 @@ mod tests {
             let display = format!("{}", variant);
             assert_eq!(display, expected);
             assert!(!display.is_empty());
-            assert!(seen.insert(display), "Display strings must be unique per variant");
+            assert!(
+                seen.insert(display),
+                "Display strings must be unique per variant"
+            );
         }
     }
 
@@ -900,7 +951,10 @@ mod tests {
             let display = format!("{}", variant);
             assert_eq!(display, expected);
             assert!(!display.is_empty());
-            assert!(seen.insert(display), "Display strings must be unique per variant");
+            assert!(
+                seen.insert(display),
+                "Display strings must be unique per variant"
+            );
         }
     }
 
@@ -1045,7 +1099,11 @@ mod tests {
             }
         }
 
-        assert_eq!(valid_count, 28, "Expected exactly 28 valid triples, found {}", valid_count);
+        assert_eq!(
+            valid_count, 28,
+            "Expected exactly 28 valid triples, found {}",
+            valid_count
+        );
         assert_eq!(total, 9 * 8 * 9, "Total triple space should be 648");
     }
 
@@ -1062,7 +1120,9 @@ mod tests {
 
         let mut cloned = original.clone();
         cloned.has_waf = false;
-        cloned.waf_blocked_categories.push(VulnerabilityClass::SqlInjection);
+        cloned
+            .waf_blocked_categories
+            .push(VulnerabilityClass::SqlInjection);
 
         assert!(original.has_waf);
         assert_eq!(original.waf_blocked_categories.len(), 1);
