@@ -30,6 +30,7 @@ class Hypothesis(BaseModel):
     reasoning: str
     test_approach: str
     confidence: float = Field(ge=0.0, le=1.0)
+    insufficient_data: bool = False
 
 
 class GenerationResult(BaseModel):

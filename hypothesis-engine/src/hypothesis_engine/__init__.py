@@ -9,6 +9,11 @@ from hypothesis_engine.evasion_mode import (
     EvasionPayload,
     EvasionResult,
 )
+from hypothesis_engine.uncertainty import (
+    adjust_confidence,
+    extract_uncertainty_score,
+    prioritize_hypotheses,
+)
 
 __all__ = [
     "HypothesisGenerator",
@@ -26,4 +31,7 @@ __all__ = [
     "EvasionHypothesisGenerator",
     "EvasionPayload",
     "EvasionResult",
+    "adjust_confidence",
+    "extract_uncertainty_score",
+    "prioritize_hypotheses",
 ]
