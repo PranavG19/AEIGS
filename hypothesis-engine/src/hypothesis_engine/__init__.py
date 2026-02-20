@@ -1,6 +1,6 @@
 from hypothesis_engine.generator import HypothesisGenerator, create_backend
 from hypothesis_engine.compiler import HypothesisCompiler
-from hypothesis_engine.feedback import FeedbackManager
+from hypothesis_engine.feedback import BiasDetector, BiasReport, FeedbackManager, build_diversity_prompt
 from hypothesis_engine.bedrock_client import BedrockClient, LlmBackend, TokenUsage
 from hypothesis_engine.openai_client import OpenAiClient
 from hypothesis_engine.evasion_mode import (
@@ -13,7 +13,10 @@ from hypothesis_engine.evasion_mode import (
 __all__ = [
     "HypothesisGenerator",
     "HypothesisCompiler",
+    "BiasDetector",
+    "BiasReport",
     "FeedbackManager",
+    "build_diversity_prompt",
     "BedrockClient",
     "LlmBackend",
     "OpenAiClient",

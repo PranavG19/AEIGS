@@ -3,9 +3,12 @@ from pathlib import Path
 
 from hypothesis_engine.feedback import (
     DEFAULT_CLASS_THRESHOLDS,
+    BiasDetector,
+    BiasReport,
     FeedbackManager,
     HypothesisOutcome,
     LabeledHypothesis,
+    build_diversity_prompt,
 )
 from hypothesis_engine.generator import Hypothesis
 
@@ -245,3 +248,110 @@ class TestPerClassThresholds:
         h = make_hypothesis("UnknownVulnClass")
         labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=0.85)
         assert labeled.outcome == HypothesisOutcome.INCONCLUSIVE
+
+
+class TestBiasDetector:
+    def test_bias_detector_empty_rounds(self) -> None:
+        bd = BiasDetector()
+        report = bd.detect_skew()
+        assert report.is_skewed is False
+        assert report.rounds_tracked == 0
+        assert report.dominant_class is None
+        assert report.class_distribution == {}
+
+    def test_bias_detector_uniform_distribution(self) -> None:
+        bd = BiasDetector()
+        bd.record_round([
+            make_hypothesis("SQLi"),
+            make_hypothesis("XSS"),
+            make_hypothesis("IDOR"),
+            make_hypothesis("SSRF"),
+        ])
+        report = bd.detect_skew()
+        assert report.is_skewed is False
+        assert report.dominant_class is None
+        assert report.dominant_fraction == 0.25
+        assert report.rounds_tracked == 1
+
+    def test_bias_detector_skewed_distribution(self) -> None:
+        bd = BiasDetector()
+        bd.record_round([
+            make_hypothesis("SQLi"),
+            make_hypothesis("SQLi"),
+            make_hypothesis("SQLi"),
+            make_hypothesis("XSS"),
+        ])
+        report = bd.detect_skew()
+        assert report.is_skewed is True
+        assert report.dominant_class == "SQLi"
+        assert report.dominant_fraction == 0.75
+        assert report.class_distribution == {"SQLi": 3, "XSS": 1}
+
+    def test_bias_detector_custom_threshold(self) -> None:
+        bd = BiasDetector()
+        bd.record_round([
+            make_hypothesis("SQLi"),
+            make_hypothesis("SQLi"),
+            make_hypothesis("XSS"),
+        ])
+        report_strict = bd.detect_skew(threshold=0.6)
+        assert report_strict.is_skewed is True
+        assert report_strict.dominant_class == "SQLi"
+
+        report_lenient = bd.detect_skew(threshold=0.8)
+        assert report_lenient.is_skewed is False
+        assert report_lenient.dominant_class is None
+
+    def test_suggest_diversity_classes(self) -> None:
+        bd = BiasDetector()
+        all_classes = ["SQLi", "XSS", "IDOR", "SSRF"]
+        confirmed = {"SQLi", "IDOR"}
+        result = bd.suggest_diversity_classes(confirmed, all_classes)
+        assert result == ["XSS", "SSRF"]
+
+    def test_suggest_diversity_classes_all_confirmed(self) -> None:
+        bd = BiasDetector()
+        all_classes = ["SQLi", "XSS"]
+        confirmed = {"SQLi", "XSS"}
+        result = bd.suggest_diversity_classes(confirmed, all_classes)
+        assert result == []
+
+    def test_build_diversity_prompt_with_skew(self) -> None:
+        report = BiasReport(
+            is_skewed=True,
+            dominant_class="SQLi",
+            dominant_fraction=0.75,
+            class_distribution={"SQLi": 6, "XSS": 2},
+            rounds_tracked=2,
+        )
+        prompt = build_diversity_prompt(report, ["IDOR", "SSRF"])
+        assert "WARNING" in prompt
+        assert "SQLi" in prompt
+        assert "75%" in prompt
+        assert "XSS" in prompt
+        assert "IDOR" in prompt
+        assert "SSRF" in prompt
+
+    def test_build_diversity_prompt_no_skew(self) -> None:
+        report = BiasReport(
+            is_skewed=False,
+            dominant_fraction=0.25,
+            class_distribution={"SQLi": 1, "XSS": 1},
+            rounds_tracked=1,
+        )
+        prompt = build_diversity_prompt(report, [])
+        assert "WARNING" not in prompt
+        assert prompt == ""
+
+    def test_bias_detector_multiple_rounds(self) -> None:
+        bd = BiasDetector()
+        bd.record_round([make_hypothesis("SQLi"), make_hypothesis("XSS")])
+        bd.record_round([make_hypothesis("SQLi"), make_hypothesis("SQLi")])
+        bd.record_round([make_hypothesis("IDOR")])
+
+        report = bd.detect_skew()
+        assert report.rounds_tracked == 3
+        assert report.class_distribution == {"SQLi": 3, "XSS": 1, "IDOR": 1}
+        assert report.dominant_fraction == 3 / 5
+        assert report.is_skewed is True
+        assert report.dominant_class == "SQLi"

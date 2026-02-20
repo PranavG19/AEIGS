@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from hypothesis_engine.generator import Hypothesis
 
 MAX_FEEDBACK_CHARS = 2000
+_TRUNCATION_NOTICE = "[truncated — further findings omitted]"
 
 
 class HypothesisOutcome(str, Enum):
@@ -175,6 +176,80 @@ class FeedbackManager:
         return count
 
 
+class BiasReport(BaseModel):
+    is_skewed: bool
+    dominant_class: str | None = None
+    dominant_fraction: float = 0.0
+    class_distribution: dict[str, int] = Field(default_factory=dict)
+    rounds_tracked: int = 0
+
+
+class BiasDetector:
+    def __init__(self) -> None:
+        self._round_distributions: list[dict[str, int]] = []
+
+    @property
+    def round_distributions(self) -> list[dict[str, int]]:
+        return list(self._round_distributions)
+
+    def record_round(self, hypotheses: list[Hypothesis]) -> None:
+        counts: dict[str, int] = {}
+        for h in hypotheses:
+            counts[h.vulnerability_class] = counts.get(h.vulnerability_class, 0) + 1
+        self._round_distributions.append(counts)
+
+    def detect_skew(self, threshold: float = 0.5) -> BiasReport:
+        if not self._round_distributions:
+            return BiasReport(is_skewed=False, rounds_tracked=0)
+
+        totals: dict[str, int] = {}
+        for dist in self._round_distributions:
+            for cls, count in dist.items():
+                totals[cls] = totals.get(cls, 0) + count
+
+        grand_total = sum(totals.values())
+        if grand_total == 0:
+            return BiasReport(
+                is_skewed=False,
+                class_distribution=totals,
+                rounds_tracked=len(self._round_distributions),
+            )
+
+        dominant_class = max(totals, key=lambda c: totals[c])
+        dominant_fraction = totals[dominant_class] / grand_total
+
+        return BiasReport(
+            is_skewed=dominant_fraction > threshold,
+            dominant_class=dominant_class if dominant_fraction > threshold else None,
+            dominant_fraction=dominant_fraction,
+            class_distribution=totals,
+            rounds_tracked=len(self._round_distributions),
+        )
+
+    def suggest_diversity_classes(
+        self, confirmed_classes: set[str], all_classes: list[str]
+    ) -> list[str]:
+        return [c for c in all_classes if c not in confirmed_classes]
+
+
+def build_diversity_prompt(bias_report: BiasReport, diversity_classes: list[str]) -> str:
+    parts: list[str] = []
+    if bias_report.is_skewed and bias_report.dominant_class is not None:
+        pct = bias_report.dominant_fraction * 100
+        parts.append(
+            f"WARNING: Hypothesis generation shows distributional skew toward "
+            f"{bias_report.dominant_class} ({pct:.0f}%). "
+            f"Prioritize hypotheses for under-represented classes: "
+            f"{', '.join(c for c in bias_report.class_distribution if c != bias_report.dominant_class)}"
+        )
+    if diversity_classes:
+        parts.append(
+            "The following vulnerability classes have not yet been confirmed "
+            f"and should be explored: {', '.join(diversity_classes)}"
+        )
+    return "\n".join(parts)
+
+
 def build_feedback_summary(confirmed_findings: list[LabeledHypothesis]) -> str:
     """Build a prompt-safe feedback string from confirmed findings.
 
@@ -191,8 +266,8 @@ def build_feedback_summary(confirmed_findings: list[LabeledHypothesis]) -> str:
             f"  - {lh.hypothesis.vulnerability_class} [{lh.outcome.value}]"
             f" score={lh.anomaly_score:.2f}\n"
         )
-        if len(summary) + len(entry) > MAX_FEEDBACK_CHARS:
-            summary += "[truncated — further findings omitted]"
+        if len(summary) + len(entry) > MAX_FEEDBACK_CHARS - len(_TRUNCATION_NOTICE):
+            summary += _TRUNCATION_NOTICE
             break
         summary += entry
     return summary
