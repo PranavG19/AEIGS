@@ -152,6 +152,10 @@ pub struct ScopeOptions {
     /// similarity analysis.
     #[arg(long, value_name = "PATH")]
     pub history_db: Option<PathBuf>,
+
+    /// Export the attack graph in the specified format (dot or d3json).
+    #[arg(long, value_name = "FORMAT")]
+    pub export_graph: Option<String>,
 }
 
 #[derive(Parser, Debug, Clone)]

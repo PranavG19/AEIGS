@@ -14,11 +14,11 @@ use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPo
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
 use crate::convergence::RefutedTracker;
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
-use crate::phase_analyze::run_analyze;
+use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
 use crate::phase_fingerprint::defense_properties;
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
-use crate::phase_report::run_report_with_previous;
+use crate::phase_report::{export_attack_graph, run_report_with_previous};
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, resolve_report_format,
     validate_localhost,
@@ -565,6 +565,13 @@ async fn run_scan_phases(
     scan_metrics
         .phase_timings
         .record("report", report_start.elapsed());
+
+    if ctx.config.scope.export_graph.is_some() {
+        let mut ag = aegis_chain_synthesis::attack_graph::AttackGraph::new();
+        let mut kg_to_ag = std::collections::HashMap::new();
+        build_attack_graph_from_knowledge_graph(ctx, &mut ag, &mut kg_to_ag);
+        export_attack_graph(ctx, &ag).map_err(PipelineError::Report)?;
+    }
 
     emit_event(
         audit_writer,

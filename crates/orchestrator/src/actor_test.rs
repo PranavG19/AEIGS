@@ -121,6 +121,7 @@ fn localhost_config() -> scan_config::ScanConfig {
             context_file: None,
             graph_db: None,
             history_db: None,
+            export_graph: None,
         },
     }
 }

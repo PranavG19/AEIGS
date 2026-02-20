@@ -1,3 +1,5 @@
+use aegis_chain_synthesis::attack_graph::AttackGraph;
+use aegis_chain_synthesis::graph_export;
 use aegis_protocol::finding::{FindingData, FindingId, VulnerabilityClass};
 use aegis_reporting::report_format::{DefenseSummary, ReportFormat, ReportMetadata, format_report};
 use aegis_reporting::risk_scorer::{RiskInput, compute_risk_score};
@@ -370,4 +372,35 @@ pub(crate) fn inject_diff_stats_into_sarif(
         serde_json::Value::from(previously_known),
     );
     props.insert("diffStats".to_string(), serde_json::Value::Object(diff_map));
+}
+
+/// Writes attack graph export files alongside the SARIF output when `--export-graph` is set.
+///
+/// Supported formats: `"dot"` (Graphviz DOT) and `"d3json"` (D3.js-compatible JSON).
+/// Returns `Err` if the format is unrecognized or the file cannot be written.
+pub(crate) fn export_attack_graph(
+    ctx: &ScanContext,
+    attack_graph: &AttackGraph,
+) -> Result<(), String> {
+    let Some(ref format) = ctx.config.scope.export_graph else {
+        return Ok(());
+    };
+
+    let output_base = ctx.config.output.with_extension("");
+
+    match format.as_str() {
+        "dot" => {
+            let dot = graph_export::export_dot(attack_graph);
+            let path = output_base.with_extension("dot");
+            std::fs::write(&path, dot).map_err(|e| format!("write DOT export: {e}"))?;
+        }
+        "d3json" => {
+            let json = graph_export::export_d3_json(attack_graph);
+            let path = output_base.with_extension("d3.json");
+            std::fs::write(&path, json).map_err(|e| format!("write D3 JSON export: {e}"))?;
+        }
+        other => return Err(format!("unknown graph export format: {other}")),
+    }
+
+    Ok(())
 }
