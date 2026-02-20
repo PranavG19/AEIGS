@@ -26,8 +26,8 @@ pub fn load_or_create_graph(path: Option<&Path>) -> (KnowledgeGraph, u64) {
 
 /// Saves the graph to `path` with updated metadata.
 ///
-/// No-op if `path` is `None`. Save failures are silently ignored — the scan
-/// result is not invalidated by a persistence error.
+/// No-op if `path` is `None`. Save failures are printed as warnings to stderr
+/// but do not invalidate the scan result.
 ///
 /// Accepts `&dyn GraphStore` so the pipeline can call this directly on
 /// `ScanContext.graph` without downcasting. The `GraphStore::save_to_file`
@@ -51,5 +51,10 @@ pub fn save_graph_if_configured(
         aegis_version: env!("CARGO_PKG_VERSION").to_string(),
         scan_count,
     };
-    let _ = graph.save_to_file(p, &metadata);
+    if let Err(e) = graph.save_to_file(p, &metadata) {
+        eprintln!(
+            "aegis: warning: failed to save graph to {}: {e}",
+            p.display()
+        );
+    }
 }
