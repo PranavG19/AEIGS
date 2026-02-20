@@ -9,6 +9,7 @@ pub mod operation;
 pub mod request;
 pub mod scan_event;
 pub mod scope_attestation;
+pub mod signed_config;
 pub mod target_validation;
 
 #[cfg(test)]

@@ -133,6 +133,12 @@ pub struct AuditOptions {
     /// matches, and the document has not expired.
     #[arg(long, value_name = "PATH")]
     pub scope_attestation: Option<PathBuf>,
+
+    /// Path to a signed scan configuration JSON file. When provided, the scan
+    /// verifies the Ed25519 signature on the config, checks its SHA3-256 hash,
+    /// and ensures it matches the actual CLI parameters before proceeding.
+    #[arg(long, value_name = "PATH")]
+    pub signed_config: Option<PathBuf>,
 }
 
 /// Scope filtering options.

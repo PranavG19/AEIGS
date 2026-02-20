@@ -9,6 +9,7 @@ use aegis_protocol::audit::AuditEventType;
 use aegis_protocol::capability::Permission;
 use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::signed_config::SignableConfig;
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
@@ -89,6 +90,18 @@ impl std::error::Error for PipelineError {}
 impl From<ConfigError> for PipelineError {
     fn from(e: ConfigError) -> Self {
         Self::Config(e)
+    }
+}
+
+fn extract_signable_config(config: &ScanConfig) -> SignableConfig {
+    SignableConfig {
+        target: config.target.clone(),
+        stealth_level: config.stealth.stealth_level.clone(),
+        max_iterations: config.pipeline.max_iterations,
+        convergence_threshold: config.pipeline.convergence_threshold,
+        no_llm: config.llm.no_llm,
+        include_endpoints: config.scope.include_endpoints.clone(),
+        exclude_endpoints: config.scope.exclude_endpoints.clone(),
     }
 }
 
@@ -633,6 +646,23 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             })?;
     }
 
+    let signed_config_hash = if let Some(signed_config_path) = &config.audit.signed_config {
+        let signed = aegis_protocol::signed_config::load_signed_config(signed_config_path)
+            .map_err(|e| {
+                PipelineError::Config(ConfigError::InvalidTarget(format!("signed config: {e}")))
+            })?;
+        aegis_protocol::signed_config::verify_signed_config(&signed).map_err(|e| {
+            PipelineError::Config(ConfigError::InvalidTarget(format!("signed config: {e}")))
+        })?;
+        let actual = extract_signable_config(&config);
+        aegis_protocol::signed_config::verify_config_matches(&signed.config, &actual).map_err(
+            |e| PipelineError::Config(ConfigError::InvalidTarget(format!("signed config: {e}"))),
+        )?;
+        Some(signed.config_hash)
+    } else {
+        None
+    };
+
     let (mut audit_writer, audit_path, hmac_key_path): (
         Box<dyn AuditWriter>,
         Option<std::path::PathBuf>,
@@ -650,6 +680,15 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             target_description: config.target.clone(),
         },
     );
+
+    if let Some(hash) = &signed_config_hash {
+        emit_event(
+            audit_writer.as_mut(),
+            AuditEventType::KeyEvent {
+                description: format!("signed config hash: {hash}"),
+            },
+        );
+    }
 
     let graph_db_path = config.scope.graph_db.clone();
     let (loaded_graph, previous_scan_count) = load_or_create_graph(graph_db_path.as_deref());
