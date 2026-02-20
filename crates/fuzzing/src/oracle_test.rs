@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::executor::FuzzResponse;
-    use crate::oracle::{AnomalyType, BaselineProfile, FuzzOracle};
+    use crate::oracle::{AnomalyType, BaselineProfile, CounterfactualOrder, FuzzOracle};
     use std::time::Duration;
 
     fn baseline() -> BaselineProfile {
@@ -366,5 +366,105 @@ mod tests {
         let report = measure_endpoint_variance(&[]);
         assert!(report.is_deterministic);
         assert!(report.response_codes.is_empty());
+    }
+
+    #[test]
+    fn randomize_order_defaults_to_true() {
+        let oracle = FuzzOracle::new(0.5);
+        assert!(oracle.randomize_order());
+    }
+
+    #[test]
+    fn inter_request_spacing_defaults_to_100ms() {
+        let oracle = FuzzOracle::new(0.5);
+        assert_eq!(oracle.inter_request_spacing(), Duration::from_millis(100));
+    }
+
+    #[test]
+    fn with_randomize_order_builder() {
+        let oracle = FuzzOracle::new(0.5).with_randomize_order(false);
+        assert!(!oracle.randomize_order());
+    }
+
+    #[test]
+    fn with_inter_request_spacing_builder() {
+        let oracle = FuzzOracle::new(0.5).with_inter_request_spacing(Duration::from_millis(250));
+        assert_eq!(oracle.inter_request_spacing(), Duration::from_millis(250));
+    }
+
+    #[test]
+    fn plan_counterfactual_order_fixed_returns_control_first() {
+        let oracle = FuzzOracle::new(0.5).with_randomize_order(false);
+        for _ in 0..50 {
+            assert_eq!(
+                oracle.plan_counterfactual_order(),
+                CounterfactualOrder::ControlFirst
+            );
+        }
+    }
+
+    #[test]
+    fn plan_counterfactual_order_randomized_produces_both_orderings() {
+        let oracle = FuzzOracle::new(0.5).with_randomize_order(true);
+        let mut saw_control_first = false;
+        let mut saw_treatment_first = false;
+
+        // 200 trials: probability of never seeing one ordering is 2^-200
+        for _ in 0..200 {
+            match oracle.plan_counterfactual_order() {
+                CounterfactualOrder::ControlFirst => saw_control_first = true,
+                CounterfactualOrder::TreatmentFirst => saw_treatment_first = true,
+            }
+            if saw_control_first && saw_treatment_first {
+                break;
+            }
+        }
+
+        assert!(
+            saw_control_first && saw_treatment_first,
+            "randomized ordering should produce both ControlFirst and TreatmentFirst"
+        );
+    }
+
+    #[test]
+    fn counterfactual_analysis_independent_of_request_order() {
+        let mut oracle = FuzzOracle::new(0.5);
+        oracle.add_baseline(baseline());
+
+        let treatment = response(500, "error", 50, 500);
+        let control = response(200, "ok", 50, 500);
+
+        let anomalies_control_first = oracle.analyze_response_with_control(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "GET",
+        );
+        let anomalies_treatment_first = oracle.analyze_response_with_control(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "GET",
+        );
+
+        assert_eq!(
+            anomalies_control_first.len(),
+            anomalies_treatment_first.len()
+        );
+        for (a, b) in anomalies_control_first
+            .iter()
+            .zip(&anomalies_treatment_first)
+        {
+            assert_eq!(a.anomaly_type, b.anomaly_type);
+        }
+    }
+
+    #[test]
+    fn default_oracle_has_randomize_and_spacing() {
+        let oracle = FuzzOracle::default();
+        assert!(oracle.randomize_order());
+        assert_eq!(oracle.inter_request_spacing(), Duration::from_millis(100));
     }
 }

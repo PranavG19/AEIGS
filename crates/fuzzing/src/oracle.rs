@@ -1,5 +1,7 @@
 use crate::executor::FuzzResponse;
+use rand::Rng;
 use std::collections::HashMap;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct BaselineProfile {
@@ -83,10 +85,19 @@ impl std::fmt::Display for AnomalyType {
     }
 }
 
+/// Indicates which request the caller should send first in a counterfactual pair.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CounterfactualOrder {
+    ControlFirst,
+    TreatmentFirst,
+}
+
 pub struct FuzzOracle {
     baselines: HashMap<(String, String), BaselineProfile>,
     anomaly_threshold: f64,
     error_patterns: Vec<String>,
+    randomize_order: bool,
+    inter_request_spacing: Duration,
 }
 
 impl FuzzOracle {
@@ -95,6 +106,43 @@ impl FuzzOracle {
             baselines: HashMap::new(),
             anomaly_threshold,
             error_patterns: build_default_error_patterns(),
+            randomize_order: true,
+            // 100ms default spacing between control/treatment requests
+            inter_request_spacing: Duration::from_millis(100),
+        }
+    }
+
+    pub fn with_randomize_order(mut self, randomize: bool) -> Self {
+        self.randomize_order = randomize;
+        self
+    }
+
+    pub fn with_inter_request_spacing(mut self, spacing: Duration) -> Self {
+        self.inter_request_spacing = spacing;
+        self
+    }
+
+    pub fn randomize_order(&self) -> bool {
+        self.randomize_order
+    }
+
+    pub fn inter_request_spacing(&self) -> Duration {
+        self.inter_request_spacing
+    }
+
+    /// Returns the order in which the caller should send counterfactual requests.
+    /// When `randomize_order` is true, randomly picks control-first or treatment-first.
+    /// When false, always returns `ControlFirst` (legacy behavior).
+    pub fn plan_counterfactual_order(&self) -> CounterfactualOrder {
+        if self.randomize_order {
+            let mut rng = rand::rng();
+            if rng.random_bool(0.5) {
+                CounterfactualOrder::ControlFirst
+            } else {
+                CounterfactualOrder::TreatmentFirst
+            }
+        } else {
+            CounterfactualOrder::ControlFirst
         }
     }
 
@@ -366,7 +414,7 @@ fn percentile(values: &[f64], pct: f64) -> f64 {
         return 0.0;
     }
     let mut sorted = values.to_vec();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let idx = ((pct / 100.0) * (sorted.len() - 1) as f64).round() as usize;
     sorted[idx.min(sorted.len() - 1)]
 }
