@@ -2,6 +2,7 @@ pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
+pub mod endpoint_similarity;
 mod graph_persistence;
 mod phase_analyze;
 mod phase_fingerprint;
@@ -15,6 +16,7 @@ mod util;
 
 pub use checkpoint::*;
 pub use convergence::*;
+pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use phase_analyze::*;
 pub use phase_fingerprint::*;
@@ -68,3 +70,7 @@ mod checkpoint_test;
 #[cfg(test)]
 #[path = "convergence_test.rs"]
 mod convergence_test;
+
+#[cfg(test)]
+#[path = "endpoint_similarity_test.rs"]
+mod endpoint_similarity_test;
