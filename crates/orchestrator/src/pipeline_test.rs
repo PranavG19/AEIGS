@@ -420,3 +420,74 @@ async fn run_scan_convergence_stops_early() {
     let summary = run_scan(config).await.unwrap();
     assert!(summary.phases_completed >= 3);
 }
+
+#[test]
+fn collect_recon_ops_with_empty_real_dir_returns_empty() {
+    let tmp = tempfile::tempdir().unwrap();
+    let result = pipeline::collect_recon_ops(&Some(tmp.path().to_path_buf()));
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_empty());
+}
+
+#[test]
+fn collect_recon_ops_with_config_file_returns_one_entry() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("settings.toml"), b"[db]\nhost = localhost").unwrap();
+    let result = pipeline::collect_recon_ops(&Some(tmp.path().to_path_buf()));
+    assert!(result.is_ok());
+    assert_eq!(result.unwrap().len(), 1);
+}
+
+#[test]
+fn collect_recon_ops_nonexistent_dir_returns_error() {
+    let result =
+        pipeline::collect_recon_ops(&Some(std::path::PathBuf::from("/nonexistent/aegis-ops")));
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn run_scan_with_source_dir_exercises_recon_path() {
+    let tmp = tempfile::tempdir().unwrap();
+    std::fs::write(tmp.path().join("app.toml"), b"[server]\nport = 8080").unwrap();
+
+    let mut config = localhost_config();
+    config.source_dir = Some(tmp.path().to_path_buf());
+    config.output = std::env::temp_dir().join("aegis-pipeline-source-dir.sarif");
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "run_scan with source_dir failed: {:?}",
+        result.err()
+    );
+    let summary = result.unwrap();
+    assert!(summary.total_operations >= 2);
+}
+
+#[tokio::test]
+async fn run_scan_multiple_iterations_convergence_threshold_two() {
+    let mut config = localhost_config();
+    config.pipeline.max_iterations = 3;
+    config.pipeline.convergence_threshold = 2;
+    config.output = std::env::temp_dir().join("aegis-pipeline-multi-iter.sarif");
+    let summary = run_scan(config).await.unwrap();
+    assert!(summary.phases_completed >= 3);
+}
+
+#[test]
+fn hex_encode_is_not_tested_directly_but_hmac_key_hex_length_confirms_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("hex-test.sarif");
+    let config = {
+        let mut c = localhost_config();
+        c.output = sarif_path;
+        c
+    };
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    let summary = rt.block_on(run_scan(config)).unwrap();
+    let hex = summary.hmac_key_hex.unwrap();
+    assert_eq!(hex.len(), 64);
+    assert!(hex.chars().all(|c| c.is_ascii_hexdigit()));
+}

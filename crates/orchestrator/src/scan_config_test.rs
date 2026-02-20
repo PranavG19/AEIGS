@@ -470,3 +470,34 @@ fn scan_config_exclude_endpoints_flag_parses() {
         vec!["/health".to_string()]
     );
 }
+
+#[test]
+fn config_error_display_context_file_read() {
+    let err = ConfigError::ContextFileRead("permission denied".to_string());
+    assert_eq!(
+        err.to_string(),
+        "cannot read context file: permission denied"
+    );
+}
+
+#[test]
+fn config_error_display_context_file_parse() {
+    let err = ConfigError::ContextFileParse("unexpected token at line 3".to_string());
+    assert_eq!(
+        err.to_string(),
+        "cannot parse context file: unexpected token at line 3"
+    );
+}
+
+#[test]
+fn load_business_context_invalid_json_returns_parse_error() {
+    use std::io::Write;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{{ not valid json !!").unwrap();
+    let result = load_business_context(tmp.path());
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::ContextFileParse(_)
+    ));
+}

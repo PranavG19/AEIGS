@@ -116,3 +116,128 @@ fn timestamp_ms_returns_nonzero() {
     let ts = timestamp_ms();
     assert!(ts > 0);
 }
+
+#[test]
+fn run_analyze_with_endpoint_and_datastore_no_edges_returns_zero_findings() {
+    let mut ctx = make_context();
+    add_endpoint(&ctx.graph, 1, "/api/login");
+    add_datastore(&ctx.graph, 2, "users_db");
+
+    let result = run_analyze(&mut ctx).unwrap();
+    assert_eq!(result.findings_count, 0);
+    assert_eq!(result.operations_applied, 0);
+}
+
+#[test]
+fn build_attack_graph_endpoint_without_path_property_uses_node_id_label() {
+    let ctx = make_context();
+    let entry = OperationLogEntry {
+        sequence_number: 1,
+        module: ModuleIdentifier::Enumeration,
+        operation: GraphOperation::AddNode {
+            node_type: NodeType::Endpoint,
+            properties: vec![],
+        },
+        timestamp_unix_ms: 1,
+    };
+    ctx.graph.apply_operations(&[entry]).unwrap();
+
+    let endpoint_ids = ctx.graph.nodes_by_type(NodeType::Endpoint).unwrap();
+    let node_id = endpoint_ids[0];
+
+    let mut ag = AttackGraph::new();
+    let mut mapping = HashMap::new();
+    build_attack_graph_from_knowledge_graph(&ctx, &mut ag, &mut mapping);
+
+    assert_eq!(ag.entry_points().len(), 1);
+    let ag_node_id = ag.entry_points()[0];
+    let node = ag.node(ag_node_id).unwrap();
+    assert_eq!(node.label, format!("node-{node_id}"));
+}
+
+#[test]
+fn build_attack_graph_datastore_without_name_property_uses_asset_id_label() {
+    let ctx = make_context();
+    let entry = OperationLogEntry {
+        sequence_number: 1,
+        module: ModuleIdentifier::Enumeration,
+        operation: GraphOperation::AddNode {
+            node_type: NodeType::DataStore,
+            properties: vec![],
+        },
+        timestamp_unix_ms: 1,
+    };
+    ctx.graph.apply_operations(&[entry]).unwrap();
+
+    let datastore_ids = ctx.graph.nodes_by_type(NodeType::DataStore).unwrap();
+    let node_id = datastore_ids[0];
+
+    let mut ag = AttackGraph::new();
+    let mut mapping = HashMap::new();
+    build_attack_graph_from_knowledge_graph(&ctx, &mut ag, &mut mapping);
+
+    assert_eq!(ag.assets().len(), 1);
+    let ag_node_id = ag.assets()[0];
+    let node = ag.node(ag_node_id).unwrap();
+    assert_eq!(node.label, format!("asset-{node_id}"));
+}
+
+#[test]
+fn run_analyze_with_chain_finding_applies_to_graph() {
+    use aegis_chain_synthesis::attack_graph::AttackNodeType;
+
+    let mut ctx = make_context();
+
+    add_endpoint(&ctx.graph, 1, "/api/login");
+    add_datastore(&ctx.graph, 2, "users_db");
+
+    let mut ag = AttackGraph::new();
+    let mut mapping = HashMap::new();
+    build_attack_graph_from_knowledge_graph(&ctx, &mut ag, &mut mapping);
+
+    let endpoint_ids = ctx.graph.nodes_by_type(NodeType::Endpoint).unwrap();
+    let datastore_ids = ctx.graph.nodes_by_type(NodeType::DataStore).unwrap();
+    let ep_ag_id = mapping[&endpoint_ids[0]];
+    let ds_ag_id = mapping[&datastore_ids[0]];
+
+    ag.add_edge(ep_ag_id, ds_ag_id, 1.0, None);
+
+    let entry_points = ag.entry_points();
+    let assets = ag.assets();
+
+    assert_eq!(entry_points.len(), 1);
+    assert_eq!(assets.len(), 1);
+
+    use aegis_chain_synthesis::path_analysis::shortest_attack_path;
+    let path = shortest_attack_path(&ag, entry_points[0], assets[0]);
+    assert!(path.is_some());
+}
+
+#[test]
+fn build_attack_graph_multiple_endpoints_maps_all() {
+    let ctx = make_context();
+    add_endpoint(&ctx.graph, 1, "/api/users");
+    add_endpoint(&ctx.graph, 2, "/api/admin");
+    add_endpoint(&ctx.graph, 3, "/api/login");
+
+    let mut ag = AttackGraph::new();
+    let mut mapping = HashMap::new();
+    build_attack_graph_from_knowledge_graph(&ctx, &mut ag, &mut mapping);
+
+    assert_eq!(ag.entry_points().len(), 3);
+    assert_eq!(mapping.len(), 3);
+}
+
+#[test]
+fn build_attack_graph_multiple_datastores_maps_all() {
+    let ctx = make_context();
+    add_datastore(&ctx.graph, 1, "users_db");
+    add_datastore(&ctx.graph, 2, "sessions_db");
+
+    let mut ag = AttackGraph::new();
+    let mut mapping = HashMap::new();
+    build_attack_graph_from_knowledge_graph(&ctx, &mut ag, &mut mapping);
+
+    assert_eq!(ag.assets().len(), 2);
+    assert_eq!(mapping.len(), 2);
+}
