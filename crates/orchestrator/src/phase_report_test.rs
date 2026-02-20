@@ -435,3 +435,122 @@ fn inject_metrics_into_sarif_no_runs_returns_early() {
     // No "properties" key added since there are no runs — early-return path executed.
     assert!(json_value.get("properties").is_none());
 }
+
+// --- compute_new_findings diff-mode tests ---
+
+fn make_finding_with_stable_id(
+    id: u64,
+    class: VulnerabilityClass,
+    endpoint: &str,
+    parameter: &str,
+) -> aegis_protocol::finding::FindingData {
+    aegis_protocol::finding::FindingData::new(
+        id,
+        class,
+        5.0,
+        0.7,
+        aegis_protocol::operation::ModuleIdentifier::Fuzzing,
+        1700000000000,
+    )
+    .with_stable_id(endpoint, parameter)
+}
+
+#[test]
+fn compute_new_findings_no_previous_returns_all() {
+    use aegis_protocol::finding::FindingData;
+    let current: Vec<FindingData> = vec![
+        make_finding_with_stable_id(0, VulnerabilityClass::SqlInjection, "/api/users", "id"),
+        make_finding_with_stable_id(
+            1,
+            VulnerabilityClass::CrossSiteScripting,
+            "/api/search",
+            "q",
+        ),
+    ];
+    let result = phase_report::compute_new_findings(&current, &[]);
+    assert_eq!(result.len(), 2);
+}
+
+#[test]
+fn compute_new_findings_filters_known() {
+    use aegis_protocol::finding::FindingData;
+    let f1 = make_finding_with_stable_id(0, VulnerabilityClass::SqlInjection, "/api/users", "id");
+    let f2 = make_finding_with_stable_id(
+        1,
+        VulnerabilityClass::CrossSiteScripting,
+        "/api/search",
+        "q",
+    );
+
+    let previous: Vec<FindingData> = vec![f1.clone()];
+    let current: Vec<FindingData> = vec![f1, f2];
+
+    let result = phase_report::compute_new_findings(&current, &previous);
+    assert_eq!(result.len(), 1);
+    assert_eq!(result[0].id, 1);
+}
+
+#[test]
+fn compute_new_findings_no_stable_id_always_new() {
+    use aegis_protocol::finding::FindingData;
+    let no_stable_id = FindingData::new(
+        0,
+        VulnerabilityClass::PathTraversal,
+        5.0,
+        0.7,
+        aegis_protocol::operation::ModuleIdentifier::Fuzzing,
+        1700000000000,
+    );
+    let some_finding =
+        make_finding_with_stable_id(1, VulnerabilityClass::SqlInjection, "/api/users", "id");
+
+    let previous = vec![some_finding.clone()];
+    let current = vec![no_stable_id, some_finding];
+
+    let result = phase_report::compute_new_findings(&current, &previous);
+    // The one without stable_id is always new; the one with stable_id matching previous is filtered
+    assert_eq!(result.len(), 1);
+    assert!(result[0].stable_id.is_none());
+}
+
+#[test]
+fn compute_new_findings_all_known_returns_empty() {
+    let f1 = make_finding_with_stable_id(0, VulnerabilityClass::SqlInjection, "/api/users", "id");
+    let f2 = make_finding_with_stable_id(
+        1,
+        VulnerabilityClass::CrossSiteScripting,
+        "/api/search",
+        "q",
+    );
+    let previous = vec![f1.clone(), f2.clone()];
+    let current = vec![f1, f2];
+    let result = phase_report::compute_new_findings(&current, &previous);
+    assert!(result.is_empty());
+}
+
+#[test]
+fn run_report_with_previous_filters_known_findings() {
+    let output = std::env::temp_dir().join("test_report_diff_mode.sarif");
+    let mut ctx = test_context(&output);
+
+    let entries = vec![
+        add_finding_entry(0, VulnerabilityClass::SqlInjection, 0.9),
+        add_finding_entry(1, VulnerabilityClass::CrossSiteScripting, 0.6),
+    ];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    let all_findings = ctx.graph.all_findings().unwrap();
+    let previous: Vec<aegis_protocol::finding::FindingData> = vec![all_findings[0].clone()];
+
+    let result = phase_report::run_report_with_previous(&mut ctx, None, Some(&previous)).unwrap();
+    // findings without stable_id: both are "new" because stable_id is None → always new
+    assert_eq!(result.findings_count, 2);
+    let _ = std::fs::remove_file(&output);
+}
+
+#[test]
+fn inject_diff_stats_into_sarif_no_runs_returns_early() {
+    let mut json_value = serde_json::json!({"version": "2.1.0"});
+    phase_report::inject_diff_stats_into_sarif(&mut json_value, 3, 1);
+    assert!(json_value.get("properties").is_none());
+}
