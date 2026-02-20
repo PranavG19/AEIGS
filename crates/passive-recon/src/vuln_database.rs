@@ -187,24 +187,27 @@ pub fn version_in_range(version: &str, start: &str, end: &str) -> bool {
         semver::Version::parse(end),
     ) {
         (Ok(v), Ok(s), Ok(e)) => v >= s && v <= e,
-        _ => naive_version_compare(version, start) >= 0 && naive_version_compare(version, end) <= 0,
+        _ => {
+            compare_versions(version, start) != std::cmp::Ordering::Less
+                && compare_versions(version, end) != std::cmp::Ordering::Greater
+        }
     }
 }
 
-fn naive_version_compare(a: &str, b: &str) -> i32 {
-    let a_parts: Vec<u64> = a.split('.').filter_map(|p| p.parse().ok()).collect();
-    let b_parts: Vec<u64> = b.split('.').filter_map(|p| p.parse().ok()).collect();
-
-    let max_len = a_parts.len().max(b_parts.len());
-    for i in 0..max_len {
-        let av = a_parts.get(i).copied().unwrap_or(0);
-        let bv = b_parts.get(i).copied().unwrap_or(0);
-        if av < bv {
-            return -1;
-        }
-        if av > bv {
-            return 1;
+/// Compare two version strings, preferring semver semantics when both parse.
+/// Falls back to lexicographic comparison for non-semver strings (e.g. "r2022a").
+/// Lexicographic correctly orders pre-release suffixes ("beta" < "rc1") whereas
+/// the old numeric-split approach silently dropped them, causing false negatives.
+fn compare_versions(a: &str, b: &str) -> std::cmp::Ordering {
+    match (semver::Version::parse(a), semver::Version::parse(b)) {
+        (Ok(av), Ok(bv)) => av.cmp(&bv),
+        _ => {
+            tracing::debug!(
+                "Non-semver version strings: '{}' vs '{}', using lexicographic fallback",
+                a,
+                b
+            );
+            a.cmp(b)
         }
     }
-    0
 }

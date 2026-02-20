@@ -235,4 +235,37 @@ mod tests {
         assert_eq!(id1, 1);
         assert_eq!(id2, 2);
     }
+
+    /// Semver spec: release > pre-release, so "1.0.0-rc1" < "1.0.0".
+    /// The old numeric-split fallback dropped the pre-release suffix and compared them equal,
+    /// causing a false negative (rc1 appeared outside the vulnerable range).
+    #[test]
+    fn version_in_range_prerelease_not_equal_to_release() {
+        // "1.0.0-rc1" should be less than "1.0.0" per semver.
+        // If the range end is "1.0.0-rc1", version "1.0.0" must NOT be considered in-range.
+        assert!(!version_in_range("1.0.0", "1.0.0-alpha", "1.0.0-rc1"));
+    }
+
+    /// Pre-release strings in lexicographic order: "beta" < "rc1" because 'b' < 'r'.
+    #[test]
+    fn version_in_range_prerelease_lexicographic_ordering() {
+        assert!(version_in_range("1.0.0-beta", "1.0.0-alpha", "1.0.0-rc1"));
+        assert!(!version_in_range("1.0.0-rc2", "1.0.0-alpha", "1.0.0-rc1"));
+    }
+
+    /// Semver numeric patch: "2.1.10" > "2.1.3" (numeric, not lexicographic digit order).
+    #[test]
+    fn version_in_range_semver_numeric_patch_ordering() {
+        // 2.1.5 falls in [2.1.3, 2.1.10]
+        assert!(version_in_range("2.1.5", "2.1.3", "2.1.10"));
+        // 2.1.11 is above end
+        assert!(!version_in_range("2.1.11", "2.1.3", "2.1.10"));
+    }
+
+    /// Non-semver strings like MATLAB-style release names fall through to lexicographic fallback.
+    #[test]
+    fn version_in_range_non_semver_lexicographic_fallback() {
+        assert!(version_in_range("r2022b", "r2022a", "r2023b"));
+        assert!(!version_in_range("r2024a", "r2022a", "r2023b"));
+    }
 }
