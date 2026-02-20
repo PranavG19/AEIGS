@@ -8,6 +8,7 @@ pub mod node;
 pub mod operation;
 pub mod request;
 pub mod scan_event;
+pub mod scope_attestation;
 pub mod target_validation;
 
 #[cfg(test)]

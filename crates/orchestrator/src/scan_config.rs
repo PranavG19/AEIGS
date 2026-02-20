@@ -127,6 +127,12 @@ pub struct LlmOptions {
 pub struct AuditOptions {
     #[arg(long, default_value_t = false)]
     pub no_audit: bool,
+
+    /// Path to a signed scope attestation JSON file. When provided, the scan
+    /// will only proceed if the attestation signature is valid, the target
+    /// matches, and the document has not expired.
+    #[arg(long, value_name = "PATH")]
+    pub scope_attestation: Option<PathBuf>,
 }
 
 /// Scope filtering options.

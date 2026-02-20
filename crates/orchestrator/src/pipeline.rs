@@ -618,6 +618,21 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     parse_stealth_level(&config.stealth.stealth_level)?;
     resolve_report_format(&config.report_format)?;
 
+    if let Some(attestation_path) = &config.audit.scope_attestation {
+        let attestation = aegis_protocol::scope_attestation::load_attestation(attestation_path)
+            .map_err(|e| {
+                PipelineError::Config(ConfigError::InvalidTarget(format!(
+                    "scope attestation: {e}"
+                )))
+            })?;
+        aegis_protocol::scope_attestation::verify_attestation(&attestation, &config.target)
+            .map_err(|e| {
+                PipelineError::Config(ConfigError::InvalidTarget(format!(
+                    "scope attestation: {e}"
+                )))
+            })?;
+    }
+
     let (mut audit_writer, audit_path, hmac_key_path): (
         Box<dyn AuditWriter>,
         Option<std::path::PathBuf>,

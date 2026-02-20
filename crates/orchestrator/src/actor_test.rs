@@ -114,7 +114,10 @@ fn localhost_config() -> scan_config::ScanConfig {
             no_llm: false,
             bypass_corpus: None,
         },
-        audit: scan_config::AuditOptions { no_audit: false },
+        audit: scan_config::AuditOptions {
+            no_audit: false,
+            scope_attestation: None,
+        },
         scope: scan_config::ScopeOptions {
             include_endpoints: None,
             exclude_endpoints: None,
