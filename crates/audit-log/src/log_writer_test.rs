@@ -2,7 +2,7 @@
 mod tests {
     use crate::hash_chain::{compute_next_hash, genesis_hash};
     use crate::hmac_signer::HmacSigner;
-    use crate::log_writer::{AuditLogWriter, serialize_event};
+    use crate::log_writer::{AuditLogWriter, AuditWriter, serialize_event};
     use aegis_protocol::audit::AuditEventType;
     use aegis_protocol::finding::VulnerabilityClass;
     use aegis_protocol::operation::ModuleIdentifier;
@@ -20,7 +20,7 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
 
         let entry = writer
-            .append_event(AuditEventType::ScanStarted {
+            .append_event_full(AuditEventType::ScanStarted {
                 target_description: "test-app".to_string(),
             })
             .unwrap();
@@ -39,13 +39,13 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
 
         let entry1 = writer
-            .append_event(AuditEventType::ScanStarted {
+            .append_event_full(AuditEventType::ScanStarted {
                 target_description: "app1".to_string(),
             })
             .unwrap();
 
         let entry2 = writer
-            .append_event(AuditEventType::ModuleStarted {
+            .append_event_full(AuditEventType::ModuleStarted {
                 module: ModuleIdentifier::PassiveRecon,
             })
             .unwrap();
@@ -64,13 +64,13 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, b"test-key").unwrap();
 
         let entry1 = writer
-            .append_event(AuditEventType::ScanStarted {
+            .append_event_full(AuditEventType::ScanStarted {
                 target_description: "app".to_string(),
             })
             .unwrap();
 
         let entry2 = writer
-            .append_event(AuditEventType::ScanCompleted { total_findings: 5 })
+            .append_event_full(AuditEventType::ScanCompleted { total_findings: 5 })
             .unwrap();
 
         let expected_hash = compute_next_hash(&entry1.previous_hash, &entry1.payload_cbor);
@@ -86,7 +86,7 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, key).unwrap();
 
         let entry = writer
-            .append_event(AuditEventType::KeyEvent {
+            .append_event_full(AuditEventType::KeyEvent {
                 description: "test event".to_string(),
             })
             .unwrap();
@@ -103,7 +103,7 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, b"key").unwrap();
 
         writer
-            .append_event(AuditEventType::ScanStarted {
+            .append_event_full(AuditEventType::ScanStarted {
                 target_description: "app".to_string(),
             })
             .unwrap();
@@ -112,7 +112,7 @@ mod tests {
         assert!(size1 > 0);
 
         writer
-            .append_event(AuditEventType::ScanCompleted { total_findings: 0 })
+            .append_event_full(AuditEventType::ScanCompleted { total_findings: 0 })
             .unwrap();
 
         let size2 = fs::metadata(&path).unwrap().len();
@@ -149,7 +149,7 @@ mod tests {
         let mut writer = AuditLogWriter::create(&path, b"key").unwrap();
 
         for event in events {
-            writer.append_event(event).unwrap();
+            writer.append_event_full(event).unwrap();
         }
 
         assert_eq!(writer.sequence_number(), 6);
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn noop_writer_accepts_events_silently() {
-        use crate::log_writer::NoOpAuditLogWriter;
+        use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
 
         let mut writer = NoOpAuditLogWriter::new();
         let result = writer.append_event(AuditEventType::ScanStarted {
@@ -219,7 +219,7 @@ mod tests {
 
     #[test]
     fn noop_writer_default_trait() {
-        use crate::log_writer::NoOpAuditLogWriter;
+        use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
 
         let writer = NoOpAuditLogWriter::default();
         assert_eq!(writer.sequence_number(), 0);

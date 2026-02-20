@@ -30,6 +30,18 @@ impl From<io::Error> for LogWriterError {
     }
 }
 
+/// Common interface for audit event writers.
+///
+/// Both `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter`
+/// (intentionally discards events) implement this trait, allowing
+/// pipeline code to use `Box<dyn AuditWriter>` without branching.
+pub trait AuditWriter {
+    /// Appends an audit event. For real writers, this persists to disk.
+    /// For no-op writers, this intentionally discards the event.
+    fn append_event(&mut self, event: AuditEventType) -> Result<(), LogWriterError>;
+    fn sequence_number(&self) -> u64;
+}
+
 pub struct AuditLogWriter {
     chain: HashChain,
     signer: HmacSigner,
@@ -53,7 +65,13 @@ impl AuditLogWriter {
         })
     }
 
-    pub fn append_event(&mut self, event: AuditEventType) -> Result<AuditEntry, LogWriterError> {
+    /// Appends an event and returns the full `AuditEntry` including
+    /// hash chain data and HMAC. Use this when the caller needs the
+    /// entry metadata (e.g. for verification tests).
+    pub fn append_event_full(
+        &mut self,
+        event: AuditEventType,
+    ) -> Result<AuditEntry, LogWriterError> {
         let timestamp_unix_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -97,31 +115,45 @@ impl AuditLogWriter {
 
         Ok(())
     }
+}
 
-    pub fn sequence_number(&self) -> u64 {
+impl AuditWriter for AuditLogWriter {
+    fn append_event(&mut self, event: AuditEventType) -> Result<(), LogWriterError> {
+        self.append_event_full(event)?;
+        Ok(())
+    }
+
+    fn sequence_number(&self) -> u64 {
         self.sequence
     }
 }
 
+/// Intentionally discards all audit events. Used when `--no-audit` is set.
+///
+/// This is not a broken implementation — the behavioral contract explicitly
+/// states that events are silently dropped. Callers opt into this by
+/// constructing a `NoOpAuditLogWriter` instead of an `AuditLogWriter`.
 pub struct NoOpAuditLogWriter;
 
 impl NoOpAuditLogWriter {
     pub fn new() -> Self {
         Self
     }
-
-    pub fn append_event(&mut self, _event: AuditEventType) -> Result<(), LogWriterError> {
-        Ok(())
-    }
-
-    pub fn sequence_number(&self) -> u64 {
-        0
-    }
 }
 
 impl Default for NoOpAuditLogWriter {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl AuditWriter for NoOpAuditLogWriter {
+    fn append_event(&mut self, _event: AuditEventType) -> Result<(), LogWriterError> {
+        Ok(())
+    }
+
+    fn sequence_number(&self) -> u64 {
+        0
     }
 }
 

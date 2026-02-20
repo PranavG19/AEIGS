@@ -15,7 +15,7 @@ mod tests {
         let mut writer = AuditLogWriter::create(path, key).unwrap();
         for i in 0..count {
             writer
-                .append_event(AuditEventType::KeyEvent {
+                .append_event_full(AuditEventType::KeyEvent {
                     description: format!("event-{i}"),
                 })
                 .unwrap();
@@ -108,12 +108,12 @@ mod tests {
 
         let mut writer = AuditLogWriter::create(&path, key).unwrap();
         writer
-            .append_event(AuditEventType::ScanStarted {
+            .append_event_full(AuditEventType::ScanStarted {
                 target_description: "test-app".to_string(),
             })
             .unwrap();
         writer
-            .append_event(AuditEventType::ScanCompleted { total_findings: 42 })
+            .append_event_full(AuditEventType::ScanCompleted { total_findings: 42 })
             .unwrap();
 
         let report = verify_log(&path, key).unwrap();

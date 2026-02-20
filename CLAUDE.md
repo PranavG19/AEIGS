@@ -114,7 +114,9 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **PhaseTimings / LlmMetrics / ScanMetrics** — Per-phase timing and LLM call tracking in scan pipeline.
 - **VarianceReport** — Endpoint response variance measurement: response_codes, body_similarity, is_deterministic.
 - **LlmBackend** — (Python) Abstract base class for LLM providers. Implementations: BedrockClient, OpenAiClient.
-- **NoOpAuditLogWriter** — Silent audit writer for `--no-audit` mode.
+- **AuditWriter** — Trait with `append_event(&mut self, event) -> Result<(), LogWriterError>` and `sequence_number(&self) -> u64`. Implemented by `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter` (intentionally discards). Pipeline uses `Box<dyn AuditWriter>`.
+- **NoOpAuditLogWriter** — Implements `AuditWriter`; intentionally discards all events. Used when `--no-audit` is set.
+- **AuditLogWriter::append_event_full()** — Returns `Result<AuditEntry, LogWriterError>` with full hash chain/HMAC data. Use when caller needs the entry metadata (e.g. verification tests). The trait method `append_event()` delegates to this but discards the entry.
 - **CertificateType** — 6 variants: Fuzzing, Taint, Chain, Config, Dependency, Evasion. Envelope versioned (current: v2).
 - **BusinessContext** — JSON-loadable business annotations: excluded_endpoints, critical_assets, pii_endpoints, known_issues.
 - **TokenUsage** — Pydantic model tracking input_tokens and output_tokens from Bedrock API calls.
@@ -217,7 +219,6 @@ The knowledge graph enforces these constraints during batch validation:
 - Stores (`NodeStore`, `EdgeStore`, `FindingStore`) serialize full struct including index HashMaps — indexes are redundant with Vec data but ensures correctness on restore
 - `run_recon_standalone(source_dir)` in `phase_recon.rs` — standalone entry point returning `Vec<OperationLogEntry>` without requiring a `ScanContext`; near-duplicate of `collect_recon_ops` in `pipeline.rs`
 - Endpoint filtering is wired via `filter_scheduler_by_endpoints()` in `phase_fuzz.rs` — drains + re-enqueues scheduler; only called on freshly-enqueued targets (attempts=0); do not call after targets have been partially consumed
-- `--resume-from` / `--save-state` CLI flags parse correctly but their logic is **not implemented** — `ScanConfig` stores the values; pipeline ignores them
 - `timestamp_ms()` is defined in `util.rs` and imported via `crate::util::timestamp_ms` by all orchestrator phases — do not add duplicate definitions
 - Intra-batch duplicate edge detection uses `HashSet<(u64, u64, EdgeLabel)>` in `operation_log.rs` `validate_batch()` — catches duplicates within the same batch, not just against existing store
 - `EvasionResult` now has `input_tokens` and `output_tokens` fields — matches `GenerationResult` and `CompilationResult` patterns

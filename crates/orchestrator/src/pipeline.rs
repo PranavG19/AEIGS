@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
-use aegis_audit_log::log_writer::AuditLogWriter;
+use aegis_audit_log::AuditWriter;
+use aegis_audit_log::log_writer::{AuditLogWriter, NoOpAuditLogWriter};
 use aegis_fuzzing::DefenseProfile;
 use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::audit::AuditEventType;
@@ -116,10 +117,8 @@ fn create_audit_writer(
     Ok((writer, audit_path, key_path))
 }
 
-fn emit_event(writer: &mut Option<AuditLogWriter>, event: AuditEventType) {
-    if let Some(w) = writer.as_mut() {
-        let _ = w.append_event(event);
-    }
+fn emit_event(writer: &mut dyn AuditWriter, event: AuditEventType) {
+    let _ = writer.append_event(event);
 }
 
 pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
@@ -196,7 +195,7 @@ struct PhasesResult {
 
 async fn run_scan_phases(
     ctx: &mut ScanContext,
-    audit_writer: &mut Option<AuditLogWriter>,
+    audit_writer: &mut dyn AuditWriter,
     previous_findings: Option<&[FindingData]>,
 ) -> Result<PhasesResult, PipelineError> {
     let mut total_ops = 0u64;
@@ -358,15 +357,19 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     validate_localhost(&config.target)?;
     parse_stealth_level(&config.stealth.stealth_level)?;
 
-    let (mut audit_writer, audit_path, hmac_key_path) = if config.audit.no_audit {
-        (None, None, None)
+    let (mut audit_writer, audit_path, hmac_key_path): (
+        Box<dyn AuditWriter>,
+        Option<std::path::PathBuf>,
+        Option<std::path::PathBuf>,
+    ) = if config.audit.no_audit {
+        (Box::new(NoOpAuditLogWriter::new()), None, None)
     } else {
         let (writer, path, key_path) = create_audit_writer(&config)?;
-        (Some(writer), Some(path), Some(key_path))
+        (Box::new(writer), Some(path), Some(key_path))
     };
 
     emit_event(
-        &mut audit_writer,
+        audit_writer.as_mut(),
         AuditEventType::ScanStarted {
             target_description: config.target.clone(),
         },
@@ -388,8 +391,12 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         defense_profile: None,
     };
 
-    let phases_result =
-        run_scan_phases(&mut ctx, &mut audit_writer, previous_findings.as_deref()).await;
+    let phases_result = run_scan_phases(
+        &mut ctx,
+        audit_writer.as_mut(),
+        previous_findings.as_deref(),
+    )
+    .await;
 
     // Save graph on BOTH success and error paths — T16 spec requirement.
     save_graph_if_configured(

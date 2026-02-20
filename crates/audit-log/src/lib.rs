@@ -3,6 +3,8 @@ pub mod hmac_signer;
 pub mod log_verifier;
 pub mod log_writer;
 
+pub use log_writer::AuditWriter;
+
 #[cfg(test)]
 #[path = "hash_chain_test.rs"]
 mod hash_chain_test;
