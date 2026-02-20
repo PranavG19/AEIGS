@@ -7,6 +7,7 @@ use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
 use crate::pipeline::{PhaseResult, ScanContext};
+use crate::util::timestamp_ms;
 
 pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
     let mut entries = Vec::new();
@@ -117,13 +118,6 @@ pub(crate) fn walk_to_operations(
             }
         })
         .collect()
-}
-
-pub(crate) fn timestamp_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
 }
 
 pub fn run_recon_standalone(

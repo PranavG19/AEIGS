@@ -143,7 +143,7 @@ fn walk_to_operations_filters_config_files() {
 
 #[test]
 fn timestamp_ms_returns_nonzero() {
-    let ts = phase_recon::timestamp_ms();
+    let ts = util::timestamp_ms();
     assert!(ts > 0);
 }
 

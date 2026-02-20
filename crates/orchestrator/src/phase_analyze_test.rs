@@ -1,14 +1,15 @@
 use super::*;
 
 use aegis_chain_synthesis::attack_graph::{AttackGraph, AttackNodeType};
+use aegis_knowledge_graph::GraphStore;
 use aegis_knowledge_graph::graph::KnowledgeGraph;
-use aegis_knowledge_graph::graph_store::GraphStore;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use clap::Parser;
 use std::collections::HashMap;
 
-use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, timestamp_ms};
+use crate::phase_analyze::build_attack_graph_from_knowledge_graph;
+use crate::util::timestamp_ms;
 
 fn make_context() -> ScanContext {
     let config =
@@ -185,8 +186,6 @@ fn build_attack_graph_datastore_without_name_property_uses_asset_id_label() {
 
 #[test]
 fn run_analyze_with_chain_finding_applies_to_graph() {
-    use aegis_chain_synthesis::attack_graph::AttackNodeType;
-
     let mut ctx = make_context();
 
     add_endpoint(&mut *ctx.graph, 1, "/api/login");

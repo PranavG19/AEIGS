@@ -12,6 +12,7 @@ use crate::phase_analyze::run_analyze;
 use crate::phase_fingerprint::defense_properties;
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
+use crate::util::timestamp_ms;
 use crate::phase_report::run_report_with_previous;
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, validate_localhost,
@@ -137,7 +138,7 @@ pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLo
 }
 
 pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfile) {
-    let ts = pipeline_timestamp_ms();
+    let ts = timestamp_ms();
     let profile = DefenseProfile::empty(ts);
     let entry = OperationLogEntry {
         sequence_number: 1,
@@ -149,13 +150,6 @@ pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfi
         timestamp_unix_ms: ts,
     };
     (vec![entry], profile)
-}
-
-fn pipeline_timestamp_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
 }
 
 /// Aggregated output of all scan phases, threaded back to `run_scan`
@@ -330,9 +324,13 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     validate_localhost(&config.target)?;
     parse_stealth_level(&config.stealth.stealth_level)?;
 
-    let (mut audit_writer, audit_path, hmac_key) = match create_audit_writer(&config) {
-        Some((writer, path, key)) => (Some(writer), Some(path), Some(key)),
-        None => (None, None, None),
+    let (mut audit_writer, audit_path, hmac_key) = if config.audit.no_audit {
+        (None, None, None)
+    } else {
+        match create_audit_writer(&config) {
+            Some((writer, path, key)) => (Some(writer), Some(path), Some(key)),
+            None => (None, None, None),
+        }
     };
 
     emit_event(

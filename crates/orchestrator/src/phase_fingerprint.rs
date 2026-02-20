@@ -3,6 +3,7 @@ use aegis_protocol::edge::EdgeLabel;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::util::timestamp_ms;
 use crate::pipeline::{PhaseResult, ScanContext};
 
 pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
@@ -79,11 +80,4 @@ pub fn build_protected_by_edges(
             timestamp_unix_ms: timestamp_ms(),
         })
         .collect()
-}
-
-fn timestamp_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
 }

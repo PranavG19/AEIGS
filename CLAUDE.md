@@ -1,14 +1,14 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 12 Rust crates + 1 Python package. 1,136 Rust tests, 161 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 1,267 Rust tests, 187 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 1,133 tests across 12 crates
+cargo test --workspace                                                # 1,267 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --check                                                     # formatting gate
-cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 161 Python tests
+cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 187 Python tests
 ```
 
 ## Architecture
@@ -27,12 +27,12 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
     ├── passive-recon          Lock file parsing (cargo-lock), vuln DB (SQLite), filesystem walking
     ├── enumeration            Route discovery, OpenAPI (openapiv3), GraphQL (graphql-parser), auth matrix
     ├── fuzzing                Priority scheduler (novelty-based), payload mutation (tagged), stealth mode,
-    │                          rate-limited execution, anomaly oracle (counterfactual testing)
+    │                          rate-limited execution, anomaly oracle (counterfactual testing),
+    │                          WAF detection, rate limit probing, bot detection (merged from defense-fingerprinting)
     ├── chain-synthesis        Attack graph (petgraph DiGraph), shortest paths, centrality analysis (capped),
     │                          causal mitigation impact analysis, priority-bounded DFS path enumeration
     ├── reporting              Risk scoring (defense-aware, confidence-weighted), SARIF 2.1.0 (CWE + ATT&CK),
     │                          CBOR certificates, human-readable narratives, CVE references, mitigation priority
-    ├── defense-fingerprinting WAF detection, rate limit probing, bot detection
     ├── evasion-engine         Persona-based HTTP transport (10 personas, rotation), header/encoding transforms,
     │                          timing jitter, session rotation, localhost enforcement
     └── orchestrator           CLI binary (clap), concurrent recon+fingerprint, audit logging,
@@ -57,9 +57,9 @@ crates/
 ├── passive-recon/src/      dependency_parser.rs  vuln_database.rs  filesystem_walker.rs
 ├── enumeration/src/        route_parser.rs  introspection.rs  auth_matrix.rs
 ├── fuzzing/src/            scheduler.rs  mutator.rs  executor.rs  oracle.rs  stealth_config.rs
+│                           defense_profile.rs  waf_fingerprinter.rs  rate_limit_detector.rs  bot_detection_probe.rs
 ├── chain-synthesis/src/    attack_graph.rs  path_analysis.rs
 ├── reporting/src/          risk_scorer.rs  sarif_emitter.rs  certificate_serializer.rs  narrative.rs
-├── defense-fingerprinting/src/  defense_profile.rs  waf_fingerprinter.rs  rate_limit_detector.rs  bot_detection_probe.rs
 ├── evasion-engine/src/     persona.rs  header_transformer.rs  encoding_transformer.rs  timing_controller.rs
 │                           session_manager.rs  transport.rs
 └── orchestrator/src/       scan_config.rs  pipeline.rs  phase_recon.rs  phase_fingerprint.rs
@@ -76,16 +76,15 @@ Every source file has an adjacent test file: `{module}_test.rs` for Rust, `test_
 
 | Crate | Notable Deps |
 |---|---|
-| protocol | serde, uuid |
+| protocol | serde, serde_json, sha3 |
 | knowledge-graph | parking_lot, serde_json, proptest (dev), tempfile (dev) |
 | audit-log | sha3, hmac, ciborium |
-| supervisor | tokio, sha3 |
+| supervisor | tokio, sha3, subtle |
 | passive-recon | rusqlite (bundled), semver, cargo-lock |
 | enumeration | reqwest, openapiv3, graphql-parser |
-| fuzzing | rand, reqwest, uuid, aegis-protocol |
+| fuzzing | rand, reqwest, uuid, regex, aegis-protocol |
 | chain-synthesis | petgraph |
-| reporting | sarif_rust, ciborium, sha3, aegis-defense-fingerprinting |
-| defense-fingerprinting | reqwest, regex |
+| reporting | sarif_rust, ciborium, sha3, aegis-fuzzing |
 | evasion-engine | reqwest, rand, aegis-protocol (no longer depends on aegis-fuzzing) |
 | orchestrator | clap, tracing, rand, tempfile (dev), all workspace crates |
 | hypothesis-engine | boto3, botocore, pydantic |
@@ -171,6 +170,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Causal mitigation impact — `mitigation_impact(node)` computes which findings become unreachable if a node is fixed; `causal_influence_ranking()` sorts nodes by mitigation value; complements betweenness centrality with actionable prioritization
 - Endpoint response variance detection — `measure_endpoint_variance()` sends N identical requests and measures status code/body size variance; high-variance endpoints flagged as non-deterministic to reduce false positives in counterfactual testing
 - Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence_and_variance()` combines evidence strength with endpoint stability; `effective_confidence()` resolves to score or falls back to evidence-based calculation
+- Defense-fingerprinting merged into fuzzing crate — eliminates a leaf crate with no consumers other than orchestrator and reporting; reduces workspace crate count from 12 to 11; WAF/rate-limit/bot-detection types now re-exported from `aegis_fuzzing` root alongside scheduler/mutator types
 
 ## Graph Validation Rules
 
@@ -199,8 +199,9 @@ The knowledge graph enforces these constraints during batch validation:
 - `cargo fmt` reorders imports alphabetically
 - VulnerabilityClass, NodeType, EdgeLabel, EvidenceLevel all implement Display — prefer `{}` over `{:?}` for user-facing output
 - sarif_rust fields are `Option<Vec<...>>` — access via `.as_ref().unwrap()`
-- Defense-fingerprinting modules are private with wildcard re-exports — import from crate root, not module path
+- Defense-fingerprinting types live in `aegis-fuzzing` (merged) — `use aegis_fuzzing::DefenseProfile` not `aegis_defense_fingerprinting::DefenseProfile`; same wildcard re-export pattern as before
 - Evasion-engine modules same pattern — `use aegis_evasion_engine::PersonaId` not `::persona::PersonaId`
+- `crates/defense-fingerprinting/` directory still exists on disk but is excluded from workspace members — dead code, safe to delete
 - `invoke()` returns `(str, TokenUsage)` tuple — all callers must unpack
 - `parse_hypotheses_from_response()` returns `(str, list[Hypothesis])` tuple — reasoning trace is the first element
 - KnowledgeGraph methods return `Result` — `GraphError::LockPoisoned` removed (parking_lot doesn't poison); `GraphError::Io` added for persistence errors
@@ -214,3 +215,17 @@ The knowledge graph enforces these constraints during batch validation:
 - `KnowledgeGraph::save_to_file()` takes `&GraphMetadata` — caller provides metadata at save time
 - `KnowledgeGraph::load_from_file()` returns fresh `OperationLog` — operation history not persisted, only store state
 - Stores (`NodeStore`, `EdgeStore`, `FindingStore`) serialize full struct including index HashMaps — indexes are redundant with Vec data but ensures correctness on restore
+- `run_recon_standalone(source_dir)` in `phase_recon.rs` — standalone entry point returning `Vec<OperationLogEntry>` without requiring a `ScanContext`; near-duplicate of `collect_recon_ops` in `pipeline.rs`
+- Endpoint filtering is wired via `filter_scheduler_by_endpoints()` in `phase_fuzz.rs` — drains + re-enqueues scheduler; only called on freshly-enqueued targets (attempts=0); do not call after targets have been partially consumed
+- `--resume-from` / `--save-state` CLI flags parse correctly but their logic is **not implemented** — `ScanConfig` stores the values; pipeline ignores them
+- `timestamp_ms()` is defined in `util.rs` and imported via `crate::util::timestamp_ms` by all orchestrator phases — do not add duplicate definitions
+- Intra-batch duplicate edge detection uses `HashSet<(u64, u64, EdgeLabel)>` in `operation_log.rs` `validate_batch()` — catches duplicates within the same batch, not just against existing store
+- `EvasionResult` now has `input_tokens` and `output_tokens` fields — matches `GenerationResult` and `CompilationResult` patterns
+- `CapabilityManager::validate_token()` — RESOLVED: now uses `subtle::ConstantTimeEq` (`ct_eq`) for timing-safe token comparison
+- `EvasionHypothesisGenerator` and `HypothesisCompiler` — RESOLVED: both now use composition via `LlmBackend`
+- `OpenAiClient` 429 handling — RESOLVED: now retries with exponential backoff, same as 5xx
+- `CompilationResult` (Python) — RESOLVED: `input_tokens` and `output_tokens` fields added and propagated from `HypothesisCompiler`
+- OpenAPI `requestBody` is not extracted in `enumeration` crate — only path/query/header parameters are parsed; POST body parameters are invisible to the fuzzer
+- `FuzzScheduler` NaN handling — RESOLVED: `enqueue()` now clamps non-finite `priority_score` to `0.0` before insertion
+- `bypass_examples.json` loading — RESOLVED: `_load_bypass_examples()` now checks `corpus_path.exists()` and emits `RuntimeWarning` + returns `{}` if missing
+- `cargo fmt --check` — RESOLVED: formatting is now clean workspace-wide; gate is enforced

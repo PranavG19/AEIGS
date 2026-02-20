@@ -6,6 +6,7 @@ use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::util::timestamp_ms;
 use crate::pipeline::{PhaseResult, ScanContext};
 
 pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
@@ -94,11 +95,4 @@ pub(crate) fn build_attack_graph_from_knowledge_graph(
             kg_to_ag.insert(id, ag_id);
         }
     }
-}
-
-pub(crate) fn timestamp_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
 }

@@ -532,7 +532,7 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
 
 #[test]
 fn timestamp_ms_returns_nonzero_value() {
-    let ts = phase_fuzz::timestamp_ms();
+    let ts = util::timestamp_ms();
     assert!(
         ts > 0,
         "timestamp_ms must return a positive unix timestamp in ms"

@@ -6,6 +6,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod scan_config;
+mod util;
 
 pub use graph_persistence::*;
 pub use phase_analyze::*;

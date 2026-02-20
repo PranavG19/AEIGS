@@ -6,6 +6,7 @@ use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::util::timestamp_ms;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{load_business_context, parse_stealth_level};
 
@@ -222,17 +223,10 @@ pub(crate) fn append_anomaly_entries(
                 linked_node_ids: vec![],
                 vulnerability_class,
                 severity: anomaly.score,
-                confidence: anomaly.score * 0.8,
+                confidence: (anomaly.score * 0.8).min(1.0),
                 certificate: Vec::new(),
             },
             timestamp_unix_ms: timestamp_ms(),
         });
     }
-}
-
-pub(crate) fn timestamp_ms() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64
 }
