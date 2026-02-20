@@ -11,6 +11,7 @@ use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
+use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::phase_analyze::run_analyze;
 use crate::phase_fingerprint::defense_properties;
@@ -246,6 +247,32 @@ struct PhasesResult {
     previously_known_count: Option<u64>,
 }
 
+/// Mutable scan progress state threaded through `run_scan_phases`.
+struct ScanProgress {
+    total_ops: u64,
+    total_findings: u64,
+    phases: u32,
+    consecutive_zero_findings: u32,
+    completed_phases: Vec<String>,
+}
+
+fn try_save_checkpoint(progress: &ScanProgress, iteration: u32, graph_db_path: Option<&Path>) {
+    let Some(db_path) = graph_db_path else {
+        return;
+    };
+    let cp = ScanCheckpoint {
+        completed_phases: progress.completed_phases.clone(),
+        current_iteration: iteration,
+        total_operations: progress.total_ops,
+        total_findings: progress.total_findings,
+        consecutive_zero_findings: progress.consecutive_zero_findings,
+        timestamp_unix_ms: timestamp_ms(),
+    };
+    if let Err(e) = save_checkpoint(&cp, db_path) {
+        tracing::warn!(error = %e, "failed to save scan checkpoint");
+    }
+}
+
 fn issue_phase_token(
     manager: &mut CapabilityManager,
     module: ModuleIdentifier,
@@ -274,129 +301,118 @@ fn validate_phase_token(
     }
 }
 
-async fn run_scan_phases(
+fn run_recon_phase(
     ctx: &mut ScanContext,
     audit_writer: &mut dyn AuditWriter,
-    previous_findings: Option<&[FindingData]>,
-) -> Result<PhasesResult, PipelineError> {
-    let mut total_ops = 0u64;
-    let mut total_findings = 0u64;
-    let mut phases = 0u32;
-    let mut scan_metrics = ScanMetrics::default();
-
+    progress: &mut ScanProgress,
+    scan_metrics: &mut ScanMetrics,
+) -> Result<(), PipelineError> {
     let recon_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::PassiveRecon);
-
     emit_event(
         audit_writer,
         AuditEventType::ModuleStarted {
             module: ModuleIdentifier::PassiveRecon,
         },
     );
-
-    let enumeration_token = if !ctx.config.pipeline.skip_fingerprint {
-        emit_event(
-            audit_writer,
-            AuditEventType::ModuleStarted {
-                module: ModuleIdentifier::Enumeration,
-            },
-        );
-        issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Enumeration)
-    } else {
-        None
-    };
-
     let source_dir = ctx.config.source_dir.clone();
-    let skip_fingerprint = ctx.config.pipeline.skip_fingerprint;
-
     let recon_start = std::time::Instant::now();
-    let (recon_result, fp_result) = tokio::join!(async { collect_recon_ops(&source_dir) }, async {
-        if skip_fingerprint {
-            None
-        } else {
-            Some(collect_fingerprint_ops())
-        }
-    },);
-
-    let recon_ops = recon_result.map_err(PipelineError::Recon)?;
+    let recon_ops = collect_recon_ops(&source_dir).map_err(PipelineError::Recon)?;
     let recon_ops_count = recon_ops.len() as u64;
     if !recon_ops.is_empty() {
         ctx.graph
             .apply_operations(&recon_ops)
             .map_err(|e| PipelineError::Recon(format!("{e:?}")))?;
     }
-    total_ops += recon_ops_count;
-    phases += 1;
+    progress.total_ops += recon_ops_count;
+    progress.phases += 1;
+    progress.completed_phases.push("recon".to_string());
     scan_metrics
         .phase_timings
         .record("recon", recon_start.elapsed());
     validate_phase_token(&ctx.capabilities, &recon_token, "recon");
+    Ok(())
+}
 
+fn run_fingerprint_phase(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    scan_metrics: &mut ScanMetrics,
+) -> Result<(), PipelineError> {
+    let enumeration_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Enumeration);
+    emit_event(
+        audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::Enumeration,
+        },
+    );
     let fingerprint_start = std::time::Instant::now();
-    if let Some((fp_ops, profile)) = fp_result {
-        let fp_ops_count = fp_ops.len() as u64;
-        if !fp_ops.is_empty() {
-            ctx.graph
-                .apply_operations(&fp_ops)
-                .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
-        }
-        ctx.defense_profile = Some(profile);
-        total_ops += fp_ops_count;
-        phases += 1;
-        scan_metrics
-            .phase_timings
-            .record("fingerprint", fingerprint_start.elapsed());
-        validate_phase_token(&ctx.capabilities, &enumeration_token, "fingerprint");
+    let (fp_ops, profile) = collect_fingerprint_ops();
+    let fp_ops_count = fp_ops.len() as u64;
+    if !fp_ops.is_empty() {
+        ctx.graph
+            .apply_operations(&fp_ops)
+            .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
     }
+    ctx.defense_profile = Some(profile);
+    progress.total_ops += fp_ops_count;
+    progress.phases += 1;
+    progress.completed_phases.push("fingerprint".to_string());
+    scan_metrics
+        .phase_timings
+        .record("fingerprint", fingerprint_start.elapsed());
+    validate_phase_token(&ctx.capabilities, &enumeration_token, "fingerprint");
+    Ok(())
+}
 
+async fn run_fuzz_analyze_loop(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    scan_metrics: &mut ScanMetrics,
+    checkpoint: Option<&ScanCheckpoint>,
+    graph_db_path: Option<&Path>,
+) -> Result<(), PipelineError> {
     let mut transport = build_fuzz_transport(ctx);
-
     let max_iterations = ctx.config.pipeline.max_iterations;
     let convergence_threshold = ctx.config.pipeline.convergence_threshold;
-    let mut consecutive_zero_findings = 0u32;
+    let start_iteration = checkpoint.map_or(0, |cp| cp.current_iteration);
     let mut fuzz_cumulative = std::time::Duration::ZERO;
     let mut analyze_cumulative = std::time::Duration::ZERO;
 
-    for iteration in 0..max_iterations {
-        let fuzz_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Fuzzing);
-        emit_event(
-            audit_writer,
-            AuditEventType::ModuleStarted {
-                module: ModuleIdentifier::Fuzzing,
-            },
-        );
-        let fuzz_start = std::time::Instant::now();
-        let fuzz_result = run_fuzz(ctx, &mut transport)
-            .await
-            .map_err(PipelineError::Fuzz)?;
-        total_ops += fuzz_result.phase.operations_applied;
-        total_findings += fuzz_result.phase.findings_count;
-        phases += 1;
-        fuzz_cumulative += fuzz_start.elapsed();
-        validate_phase_token(&ctx.capabilities, &fuzz_token, "fuzz");
+    for iteration in start_iteration..max_iterations {
+        let fuzz_phase = format!("fuzz:{iteration}");
+        let analyze_phase = format!("analyze:{iteration}");
 
-        let analyze_token =
-            issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::ChainSynthesis);
-        emit_event(
-            audit_writer,
-            AuditEventType::ModuleStarted {
-                module: ModuleIdentifier::ChainSynthesis,
-            },
-        );
-        let analyze_start = std::time::Instant::now();
-        let analysis = run_analyze(ctx).map_err(PipelineError::Analysis)?;
-        total_ops += analysis.operations_applied;
-        total_findings += analysis.findings_count;
-        phases += 1;
-        analyze_cumulative += analyze_start.elapsed();
-        validate_phase_token(&ctx.capabilities, &analyze_token, "analyze");
+        let mut fuzz_findings = 0u64;
+        let mut analyze_findings = 0u64;
 
-        if fuzz_result.phase.findings_count == 0 && analysis.findings_count == 0 {
-            consecutive_zero_findings += 1;
-        } else {
-            consecutive_zero_findings = 0;
+        if !should_skip_phase_from_checkpoint(checkpoint, &fuzz_phase) {
+            let result = run_single_fuzz(
+                ctx,
+                audit_writer,
+                progress,
+                &mut transport,
+                &mut fuzz_cumulative,
+            )
+            .await?;
+            fuzz_findings = result.findings_count;
+            progress.completed_phases.push(fuzz_phase);
+            try_save_checkpoint(progress, iteration, graph_db_path);
         }
 
-        if consecutive_zero_findings >= convergence_threshold && iteration + 1 < max_iterations {
+        if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase) {
+            let result = run_single_analyze(ctx, audit_writer, progress, &mut analyze_cumulative)?;
+            analyze_findings = result.findings_count;
+            progress.completed_phases.push(analyze_phase);
+        }
+
+        update_convergence(progress, fuzz_findings, analyze_findings);
+        try_save_checkpoint(progress, iteration + 1, graph_db_path);
+
+        if progress.consecutive_zero_findings >= convergence_threshold
+            && iteration + 1 < max_iterations
+        {
             break;
         }
     }
@@ -404,6 +420,127 @@ async fn run_scan_phases(
     scan_metrics
         .phase_timings
         .record("analyze", analyze_cumulative);
+    Ok(())
+}
+
+async fn run_single_fuzz(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    transport: &mut aegis_evasion_engine::EvasionTransport,
+    cumulative: &mut std::time::Duration,
+) -> Result<PhaseResult, PipelineError> {
+    let fuzz_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Fuzzing);
+    emit_event(
+        audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::Fuzzing,
+        },
+    );
+    let fuzz_start = std::time::Instant::now();
+    let fuzz_result = run_fuzz(ctx, transport)
+        .await
+        .map_err(PipelineError::Fuzz)?;
+    progress.total_ops += fuzz_result.phase.operations_applied;
+    progress.total_findings += fuzz_result.phase.findings_count;
+    progress.phases += 1;
+    *cumulative += fuzz_start.elapsed();
+    validate_phase_token(&ctx.capabilities, &fuzz_token, "fuzz");
+    Ok(fuzz_result.phase)
+}
+
+fn run_single_analyze(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    cumulative: &mut std::time::Duration,
+) -> Result<PhaseResult, PipelineError> {
+    let analyze_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::ChainSynthesis);
+    emit_event(
+        audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::ChainSynthesis,
+        },
+    );
+    let analyze_start = std::time::Instant::now();
+    let analysis = run_analyze(ctx).map_err(PipelineError::Analysis)?;
+    progress.total_ops += analysis.operations_applied;
+    progress.total_findings += analysis.findings_count;
+    progress.phases += 1;
+    *cumulative += analyze_start.elapsed();
+    validate_phase_token(&ctx.capabilities, &analyze_token, "analyze");
+    Ok(analysis)
+}
+
+fn update_convergence(progress: &mut ScanProgress, fuzz_findings: u64, analyze_findings: u64) {
+    if fuzz_findings == 0 && analyze_findings == 0 {
+        progress.consecutive_zero_findings += 1;
+    } else {
+        progress.consecutive_zero_findings = 0;
+    }
+}
+
+fn should_skip_phase_from_checkpoint(
+    checkpoint: Option<&ScanCheckpoint>,
+    phase_name: &str,
+) -> bool {
+    checkpoint.is_some_and(|cp| should_skip_phase(cp, phase_name))
+}
+
+fn compute_diff_counts(
+    ctx: &ScanContext,
+    previous_findings: Option<&[FindingData]>,
+) -> (Option<u64>, Option<u64>) {
+    if let Some(prev) = previous_findings {
+        let all_current = ctx.graph.all_findings().unwrap_or_default();
+        let new_refs = crate::phase_report::compute_new_findings(&all_current, prev);
+        let new_count = new_refs.len() as u64;
+        let known_count = (all_current.len() as u64).saturating_sub(new_count);
+        (Some(new_count), Some(known_count))
+    } else {
+        (None, None)
+    }
+}
+
+async fn run_scan_phases(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    previous_findings: Option<&[FindingData]>,
+    checkpoint: Option<&ScanCheckpoint>,
+    graph_db_path: Option<&Path>,
+) -> Result<PhasesResult, PipelineError> {
+    let mut scan_metrics = ScanMetrics::default();
+    let mut progress = ScanProgress {
+        total_ops: checkpoint.map_or(0, |cp| cp.total_operations),
+        total_findings: checkpoint.map_or(0, |cp| cp.total_findings),
+        phases: 0,
+        consecutive_zero_findings: checkpoint.map_or(0, |cp| cp.consecutive_zero_findings),
+        completed_phases: checkpoint
+            .map(|cp| cp.completed_phases.clone())
+            .unwrap_or_default(),
+    };
+
+    if !should_skip_phase_from_checkpoint(checkpoint, "recon") {
+        run_recon_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
+        try_save_checkpoint(&progress, 0, graph_db_path);
+    }
+
+    if !ctx.config.pipeline.skip_fingerprint
+        && !should_skip_phase_from_checkpoint(checkpoint, "fingerprint")
+    {
+        run_fingerprint_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
+        try_save_checkpoint(&progress, 0, graph_db_path);
+    }
+
+    run_fuzz_analyze_loop(
+        ctx,
+        audit_writer,
+        &mut progress,
+        &mut scan_metrics,
+        checkpoint,
+        graph_db_path,
+    )
+    .await?;
 
     emit_event(
         audit_writer,
@@ -414,37 +551,51 @@ async fn run_scan_phases(
     let report_start = std::time::Instant::now();
     let report = run_report_with_previous(ctx, Some(&scan_metrics), previous_findings)
         .map_err(PipelineError::Report)?;
-    total_ops += report.operations_applied;
-    total_findings += report.findings_count;
-    phases += 1;
+    progress.total_ops += report.operations_applied;
+    progress.total_findings += report.findings_count;
+    progress.phases += 1;
     scan_metrics
         .phase_timings
         .record("report", report_start.elapsed());
 
     emit_event(
         audit_writer,
-        AuditEventType::ScanCompleted { total_findings },
+        AuditEventType::ScanCompleted {
+            total_findings: progress.total_findings,
+        },
     );
 
-    let (new_findings_count, previously_known_count) = if let Some(prev) = previous_findings {
-        let all_current = ctx.graph.all_findings().unwrap_or_default();
-        let new_refs = crate::phase_report::compute_new_findings(&all_current, prev);
-        let new_count = new_refs.len() as u64;
-        let known_count = (all_current.len() as u64).saturating_sub(new_count);
-        (Some(new_count), Some(known_count))
-    } else {
-        (None, None)
-    };
+    let (new_findings_count, previously_known_count) = compute_diff_counts(ctx, previous_findings);
 
     Ok(PhasesResult {
-        total_findings,
-        total_operations: total_ops,
-        phases_completed: phases,
+        total_findings: progress.total_findings,
+        total_operations: progress.total_ops,
+        phases_completed: progress.phases,
         sarif_path: ctx.config.output.to_string_lossy().to_string(),
         scan_metrics,
         new_findings_count,
         previously_known_count,
     })
+}
+
+fn load_resume_checkpoint(
+    config: &ScanConfig,
+    graph_db_path: Option<&Path>,
+) -> Option<ScanCheckpoint> {
+    if !config.pipeline.resume {
+        return None;
+    }
+    let Some(db_path) = graph_db_path else {
+        tracing::warn!("--resume requires --graph-db; proceeding without checkpoint");
+        return None;
+    };
+    match crate::checkpoint::load_checkpoint(db_path) {
+        Ok(cp) => cp,
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to load checkpoint; starting fresh");
+            None
+        }
+    }
 }
 
 pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
@@ -478,6 +629,8 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         None
     };
 
+    let checkpoint = load_resume_checkpoint(&config, graph_db_path.as_deref());
+
     let graph: Box<dyn GraphStore> = Box::new(loaded_graph);
     let master_key: [u8; 32] = rand::random();
     let mut capabilities = CapabilityManager::new(master_key.to_vec());
@@ -494,16 +647,23 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         &mut ctx,
         audit_writer.as_mut(),
         previous_findings.as_deref(),
+        checkpoint.as_ref(),
+        graph_db_path.as_deref(),
     )
     .await;
 
-    // Save graph on BOTH success and error paths — T16 spec requirement.
     save_graph_if_configured(
         ctx.graph.as_ref(),
         graph_db_path.as_deref(),
         &ctx.config.target,
         previous_scan_count + 1,
     );
+
+    if phases_result.is_ok()
+        && let Some(db_path) = graph_db_path.as_deref()
+    {
+        let _ = delete_checkpoint(db_path);
+    }
 
     let phases = phases_result?;
 

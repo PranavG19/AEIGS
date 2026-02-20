@@ -1,5 +1,6 @@
 pub mod benchmark;
 pub mod calibration;
+pub mod checkpoint;
 mod graph_persistence;
 mod phase_analyze;
 mod phase_fingerprint;
@@ -10,6 +11,7 @@ pub mod pipeline;
 pub mod scan_config;
 mod util;
 
+pub use checkpoint::*;
 pub use graph_persistence::*;
 pub use phase_analyze::*;
 pub use phase_fingerprint::*;
@@ -50,3 +52,7 @@ mod phase_report_test;
 #[cfg(test)]
 #[path = "graph_persistence_test.rs"]
 mod graph_persistence_test;
+
+#[cfg(test)]
+#[path = "checkpoint_test.rs"]
+mod checkpoint_test;

@@ -93,6 +93,7 @@ fn localhost_config() -> ScanConfig {
             convergence_threshold: 2,
             skip_fingerprint: false,
             paranoia_sweep: false,
+            resume: false,
         },
         llm: scan_config::LlmOptions {
             no_llm: false,
@@ -923,4 +924,82 @@ fn issued_token_validates_successfully() {
     let token = manager.issue_token(ModuleIdentifier::Fuzzing, now).unwrap();
     let result = manager.validate_token(&token, Permission::WriteGraph, now);
     assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn run_scan_with_resume_and_graph_db_deletes_checkpoint_on_success() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db_path = dir.path().join("resume-graph.json");
+    let sarif_path = dir.path().join("resume-test.sarif");
+
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.scope.graph_db = Some(graph_db_path.clone());
+    config.pipeline.resume = true;
+
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "run_scan with --resume failed: {:?}",
+        result.err()
+    );
+
+    let cp_path = crate::checkpoint::checkpoint_path(&graph_db_path);
+    assert!(
+        !cp_path.exists(),
+        "checkpoint file should be deleted after successful scan"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_resume_without_graph_db_proceeds_normally() {
+    let mut config = localhost_config();
+    config.pipeline.resume = true;
+    config.output = std::env::temp_dir().join("aegis-resume-no-db.sarif");
+
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "resume without graph_db should proceed normally: {:?}",
+        result.err()
+    );
+}
+
+#[tokio::test]
+async fn run_scan_saves_and_resumes_from_checkpoint() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db_path = dir.path().join("checkpoint-roundtrip.json");
+
+    let mut config1 = localhost_config();
+    config1.output = dir.path().join("scan1.sarif");
+    config1.scope.graph_db = Some(graph_db_path.clone());
+
+    let _summary1 = run_scan(config1).await.unwrap();
+    assert!(graph_db_path.exists());
+
+    let cp = crate::checkpoint::ScanCheckpoint {
+        completed_phases: vec!["recon".to_string(), "fingerprint".to_string()],
+        current_iteration: 0,
+        total_operations: 5,
+        total_findings: 0,
+        consecutive_zero_findings: 0,
+        timestamp_unix_ms: 1700000000000,
+    };
+    crate::checkpoint::save_checkpoint(&cp, &graph_db_path).unwrap();
+
+    let mut config2 = localhost_config();
+    config2.output = dir.path().join("scan2.sarif");
+    config2.scope.graph_db = Some(graph_db_path.clone());
+    config2.pipeline.resume = true;
+
+    let summary2 = run_scan(config2).await.unwrap();
+    assert!(
+        summary2.total_operations >= cp.total_operations,
+        "resumed scan should accumulate operations from checkpoint"
+    );
+    let cp_path = crate::checkpoint::checkpoint_path(&graph_db_path);
+    assert!(
+        !cp_path.exists(),
+        "checkpoint should be deleted after successful resume"
+    );
 }

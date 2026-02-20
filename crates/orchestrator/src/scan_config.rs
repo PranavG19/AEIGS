@@ -97,6 +97,11 @@ pub struct PipelineOptions {
 
     #[arg(long, default_value_t = false)]
     pub paranoia_sweep: bool,
+
+    /// Resume a previously interrupted scan from its last checkpoint.
+    /// Requires `--graph-db` to locate the checkpoint file.
+    #[arg(long, default_value_t = false)]
+    pub resume: bool,
 }
 
 /// LLM hypothesis engine options.
