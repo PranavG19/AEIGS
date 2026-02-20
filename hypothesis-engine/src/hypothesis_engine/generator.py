@@ -196,7 +196,7 @@ class HypothesisGenerator:
             )
             raw_list = json.loads(json_text)
             hypotheses = [Hypothesis.model_validate(h) for h in raw_list]
-        except (json.JSONDecodeError, ValidationError, Exception):
+        except Exception:
             raw_text, usage = self.invoke(
                 messages=messages,
                 system=SYSTEM_PROMPT,
