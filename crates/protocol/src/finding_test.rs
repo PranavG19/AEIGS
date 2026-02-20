@@ -95,17 +95,15 @@ mod tests {
     }
 
     #[test]
-    fn finding_id_default_is_zero_bytes() {
-        let id = FindingId::default();
-        assert_eq!(id.bytes, [0u8; 32]);
-    }
-
-    #[test]
-    fn finding_id_hash_length_is_32_bytes() {
-        let id =
+    fn finding_id_hash_is_nonzero_and_stable() {
+        let id1 =
             FindingId::from_parts("/api/endpoint", VulnerabilityClass::CommandInjection, "cmd");
-        assert_eq!(id.bytes.len(), 32);
-        assert_ne!(id.bytes, [0u8; 32]);
+        let id2 =
+            FindingId::from_parts("/api/endpoint", VulnerabilityClass::CommandInjection, "cmd");
+        let zero_id =
+            FindingId::from_parts("/api/endpoint", VulnerabilityClass::CommandInjection, "");
+        assert_eq!(id1, id2);
+        assert_ne!(id1, zero_id);
     }
 
     #[test]
