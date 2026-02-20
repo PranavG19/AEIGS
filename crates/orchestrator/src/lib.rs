@@ -1,3 +1,4 @@
+pub mod benchmark;
 mod graph_persistence;
 mod phase_analyze;
 mod phase_fingerprint;
