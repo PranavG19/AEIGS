@@ -131,7 +131,7 @@ fn scan_summary_debug() {
         phases_completed: 5,
         sarif_path: "/tmp/test.sarif".to_string(),
         audit_log_path: Some("/tmp/aegis-audit.cbor".to_string()),
-        hmac_key_hex: Some("aa".repeat(32)),
+        hmac_key_path: Some("/tmp/aegis-audit.key".to_string()),
         metrics: ScanMetrics::default(),
         new_findings_count: None,
         previously_known_count: None,
@@ -142,7 +142,7 @@ fn scan_summary_debug() {
     assert!(dbg.contains("phases_completed"));
     assert!(dbg.contains("sarif_path"));
     assert!(dbg.contains("audit_log_path"));
-    assert!(dbg.contains("hmac_key_hex"));
+    assert!(dbg.contains("hmac_key_path"));
 }
 
 #[test]
@@ -372,7 +372,7 @@ fn scan_summary_sarif_path_is_string() {
         phases_completed: 0,
         sarif_path: String::new(),
         audit_log_path: None,
-        hmac_key_hex: None,
+        hmac_key_path: None,
         metrics: ScanMetrics::default(),
         new_findings_count: None,
         previously_known_count: None,
@@ -395,8 +395,23 @@ async fn run_scan_sets_audit_log_path() {
         .expect("audit_log_path should be set");
     assert!(audit_path.contains("aegis-audit.cbor"));
     assert!(std::path::Path::new(audit_path).exists());
-    assert!(summary.hmac_key_hex.is_some());
-    assert_eq!(summary.hmac_key_hex.as_ref().unwrap().len(), 64);
+    let key_path = summary
+        .hmac_key_path
+        .as_ref()
+        .expect("hmac_key_path should be set");
+    assert!(key_path.contains("aegis-audit.key"));
+    assert!(
+        std::path::Path::new(key_path).exists(),
+        "HMAC key file should exist on disk"
+    );
+    let key_bytes = std::fs::read(key_path).unwrap();
+    assert_eq!(key_bytes.len(), 32, "HMAC key should be 32 bytes");
+    let audit_parent = std::path::Path::new(audit_path).parent().unwrap();
+    let key_parent = std::path::Path::new(key_path).parent().unwrap();
+    assert_eq!(
+        audit_parent, key_parent,
+        "key file should be adjacent to audit log"
+    );
 }
 
 #[tokio::test]
@@ -667,9 +682,9 @@ async fn pipeline_second_scan_reports_previously_known() {
 }
 
 #[test]
-fn hex_encode_is_not_tested_directly_but_hmac_key_hex_length_confirms_it() {
+fn hmac_key_file_contains_valid_32_byte_key() {
     let dir = tempfile::tempdir().unwrap();
-    let sarif_path = dir.path().join("hex-test.sarif");
+    let sarif_path = dir.path().join("key-file-test.sarif");
     let config = {
         let mut c = localhost_config();
         c.output = sarif_path;
@@ -680,9 +695,9 @@ fn hex_encode_is_not_tested_directly_but_hmac_key_hex_length_confirms_it() {
         .build()
         .unwrap();
     let summary = rt.block_on(run_scan(config)).unwrap();
-    let hex = summary.hmac_key_hex.unwrap();
-    assert_eq!(hex.len(), 64);
-    assert!(hex.chars().all(|c| c.is_ascii_hexdigit()));
+    let key_path = summary.hmac_key_path.unwrap();
+    let key_bytes = std::fs::read(&key_path).unwrap();
+    assert_eq!(key_bytes.len(), 32, "HMAC key file should contain 32 bytes");
 }
 
 #[tokio::test]
@@ -699,10 +714,15 @@ async fn run_scan_no_audit_skips_audit_file_creation() {
     assert!(result.is_ok(), "run_scan failed: {:?}", result.err());
     let summary = result.unwrap();
     assert!(summary.audit_log_path.is_none());
-    assert!(summary.hmac_key_hex.is_none());
+    assert!(summary.hmac_key_path.is_none());
     assert!(
         !expected_audit_path.exists(),
         "audit file should not exist when --no-audit is set"
+    );
+    let expected_key_path = dir.path().join("aegis-audit.key");
+    assert!(
+        !expected_key_path.exists(),
+        "HMAC key file should not exist when --no-audit is set"
     );
 }
 

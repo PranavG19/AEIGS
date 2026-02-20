@@ -37,7 +37,7 @@ pub struct ScanSummary {
     pub phases_completed: u32,
     pub sarif_path: String,
     pub audit_log_path: Option<String>,
-    pub hmac_key_hex: Option<String>,
+    pub hmac_key_path: Option<String>,
     pub metrics: ScanMetrics,
     /// When `--graph-db` is configured, the number of findings that are new vs the previous scan.
     /// `None` when no previous scan data is available (first scan or no `--graph-db`).
@@ -90,7 +90,7 @@ fn derive_audit_log_path(config: &ScanConfig) -> std::path::PathBuf {
 
 fn create_audit_writer(
     config: &ScanConfig,
-) -> Result<(AuditLogWriter, std::path::PathBuf, [u8; 32]), PipelineError> {
+) -> Result<(AuditLogWriter, std::path::PathBuf, std::path::PathBuf), PipelineError> {
     let audit_path = derive_audit_log_path(config);
     let hmac_key: [u8; 32] = rand::random();
     let writer = AuditLogWriter::create(&audit_path, &hmac_key).map_err(|e| {
@@ -99,17 +99,27 @@ fn create_audit_writer(
             audit_path.display()
         ))
     })?;
-    Ok((writer, audit_path, hmac_key))
+
+    let key_path = audit_path
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("aegis-audit.key");
+    aegis_audit_log::hmac_signer::HmacSigner::new(&hmac_key)
+        .save_key_to_file(&key_path)
+        .map_err(|e| {
+            PipelineError::AuditLog(format!(
+                "failed to write HMAC key to {}: {e}",
+                key_path.display()
+            ))
+        })?;
+
+    Ok((writer, audit_path, key_path))
 }
 
 fn emit_event(writer: &mut Option<AuditLogWriter>, event: AuditEventType) {
     if let Some(w) = writer.as_mut() {
         let _ = w.append_event(event);
     }
-}
-
-fn hex_encode(bytes: &[u8]) -> String {
-    bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
@@ -329,11 +339,11 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     validate_localhost(&config.target)?;
     parse_stealth_level(&config.stealth.stealth_level)?;
 
-    let (mut audit_writer, audit_path, hmac_key) = if config.audit.no_audit {
+    let (mut audit_writer, audit_path, hmac_key_path) = if config.audit.no_audit {
         (None, None, None)
     } else {
-        let (writer, path, key) = create_audit_writer(&config)?;
-        (Some(writer), Some(path), Some(key))
+        let (writer, path, key_path) = create_audit_writer(&config)?;
+        (Some(writer), Some(path), Some(key_path))
     };
 
     emit_event(
@@ -377,7 +387,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         phases_completed: phases.phases_completed,
         sarif_path: phases.sarif_path,
         audit_log_path: audit_path.map(|p| p.to_string_lossy().to_string()),
-        hmac_key_hex: hmac_key.map(|k| hex_encode(&k)),
+        hmac_key_path: hmac_key_path.map(|p| p.to_string_lossy().to_string()),
         metrics: phases.scan_metrics,
         new_findings_count: phases.new_findings_count,
         previously_known_count: phases.previously_known_count,
