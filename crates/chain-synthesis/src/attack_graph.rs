@@ -85,9 +85,9 @@ impl AttackGraph {
         target: u64,
         difficulty: f64,
         vulnerability_id: Option<u64>,
-    ) {
-        let source_idx = self.index_map[&source];
-        let target_idx = self.index_map[&target];
+    ) -> Option<()> {
+        let source_idx = *self.index_map.get(&source)?;
+        let target_idx = *self.index_map.get(&target)?;
         let edge = AttackEdge {
             source,
             target,
@@ -95,6 +95,7 @@ impl AttackGraph {
             exploitation_difficulty: difficulty,
         };
         self.graph.add_edge(source_idx, target_idx, edge);
+        Some(())
     }
 
     pub fn node(&self, id: u64) -> Option<&AttackNode> {
@@ -160,7 +161,11 @@ impl AttackGraph {
         self.index_map.get(&id).copied()
     }
 
-    pub fn mitigation_impact(&self, node_idx: NodeIndex) -> MitigationResult {
+    /// Graph-theoretic estimate of mitigation impact. Computes which asset
+    /// nodes become unreachable from entry points when `node_idx` is removed.
+    /// Actual impact depends on factors not represented in the graph (e.g.,
+    /// runtime configuration, defense effectiveness, attacker capability).
+    pub fn estimated_mitigation_impact(&self, node_idx: NodeIndex) -> MitigationResult {
         let asset_indices: Vec<NodeIndex> = self
             .graph
             .node_indices()

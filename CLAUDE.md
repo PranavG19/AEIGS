@@ -107,7 +107,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **StealthConfig** — 4 presets: `default()`, `aggressive()`, `paranoid()`, `benchmark()`. Builder pattern with `with_*` methods.
 - **PersonaId** — 10 variants: ChromeDesktop, FirefoxDesktop, SafariDesktop, ChromeMobile, Googlebot, EdgeDesktop, OperaDesktop, SafariMobile, CurlClient, PythonRequests. Persona rotation supported.
 - **SarifFinding** — input struct for SARIF emission. Includes optional `defense_context`, `vulnerability_class`, `evidence_level`, `cve_id`, `mitigation_rank`, `confidence_score`.
-- **MitigationResult** — Result of causal mitigation impact analysis: removed_findings, findings_remaining, impact_score.
+- **MitigationResult** — Result of graph-theoretic mitigation impact estimate: removed_findings, findings_remaining, impact_score.
 - **FindingOrigin** — 3-variant enum: LlmHypothesis, StaticRule, Mutation. Tags fuzz findings by origin.
 - **FuzzPhaseResult** — Wraps PhaseResult + origin_counts + discovered_endpoints.
 - **GraphMetadata** — Scan metadata for graph persistence: scan_timestamp_unix_ms, target_url, aegis_version.
@@ -169,7 +169,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Mandatory audit logging by default — scan fails if audit log cannot be created; `--no-audit` flag for explicit opt-out; HMAC key stored separately from audit data via `save_key_to_file()` or `with_derived_key(passphrase)`
 - Iterative fuzz→analyze loop — `--max-iterations` (default 1) and `--convergence-threshold` (default 2) control repeated scanning; convergence stops when N consecutive rounds find zero new findings
 - Pluggable LLM backends — `LlmBackend` ABC with `BedrockClient` and `OpenAiClient` implementations; `create_backend("bedrock"|"openai"|"ollama")` factory; `HypothesisGenerator` uses composition over inheritance
-- Causal mitigation impact — `mitigation_impact(node)` computes which findings become unreachable if a node is fixed; `causal_influence_ranking()` sorts nodes by mitigation value; complements betweenness centrality with actionable prioritization
+- Graph-theoretic mitigation estimation — `estimated_mitigation_impact(node)` computes which findings become unreachable if a node is removed; `graph_influence_ranking()` sorts nodes by estimated mitigation value; complements betweenness centrality with actionable prioritization. These are structural graph estimates, not causal claims.
 - Endpoint response variance detection — `measure_endpoint_variance()` sends N identical requests and measures status code/body size variance; high-variance endpoints flagged as non-deterministic to reduce false positives in counterfactual testing
 - Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence()` maps EvidenceLevel to base confidence; `effective_confidence()` resolves to score or falls back to evidence-based calculation
 - Defense-fingerprinting merged into fuzzing crate — eliminates a leaf crate with no consumers other than orchestrator and reporting; reduces workspace crate count from 12 to 11; WAF/rate-limit/bot-detection types now re-exported from `aegis_fuzzing` root alongside scheduler/mutator types

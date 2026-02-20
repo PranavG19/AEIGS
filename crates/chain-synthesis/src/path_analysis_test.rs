@@ -2,8 +2,8 @@
 mod tests {
     use crate::attack_graph::{AttackGraph, AttackNodeType};
     use crate::path_analysis::{
-        MAX_TOTAL_PATHS, all_simple_paths, betweenness_centrality, causal_influence_ranking,
-        critical_fix_targets, reachable_assets, shortest_attack_path,
+        MAX_TOTAL_PATHS, all_simple_paths, betweenness_centrality, critical_fix_targets,
+        graph_influence_ranking, reachable_assets, shortest_attack_path,
     };
 
     fn linear_graph() -> AttackGraph {
@@ -185,7 +185,7 @@ mod tests {
     }
 
     #[test]
-    fn causal_influence_ranking_chokepoint_first() {
+    fn graph_influence_ranking_chokepoint_first() {
         let mut g = AttackGraph::new();
         let entry = g.add_node("entry".to_string(), AttackNodeType::EntryPoint);
         let chokepoint = g.add_node("chokepoint".to_string(), AttackNodeType::Vulnerability);
@@ -196,7 +196,7 @@ mod tests {
         g.add_edge(chokepoint, asset, 0.5, None);
         g.add_edge(entry, bypass, 0.2, None);
 
-        let ranking = causal_influence_ranking(&g);
+        let ranking = graph_influence_ranking(&g);
         assert!(!ranking.is_empty());
         let first_node = ranking[0].0;
         assert_eq!(g.inner_graph()[first_node].label, "chokepoint");
@@ -204,22 +204,22 @@ mod tests {
     }
 
     #[test]
-    fn causal_influence_ranking_no_assets_empty() {
+    fn graph_influence_ranking_no_assets_empty() {
         let mut g = AttackGraph::new();
         g.add_node("entry".to_string(), AttackNodeType::EntryPoint);
         g.add_node("vuln".to_string(), AttackNodeType::Vulnerability);
 
-        let ranking = causal_influence_ranking(&g);
+        let ranking = graph_influence_ranking(&g);
         assert_eq!(ranking.len(), 1);
         assert_eq!(ranking[0].1.impact_score, 0.0);
         assert!(ranking[0].1.removed_findings.is_empty());
     }
 
     #[test]
-    fn causal_influence_ranking_deterministic() {
+    fn graph_influence_ranking_deterministic() {
         let g = diamond_graph();
-        let first = causal_influence_ranking(&g);
-        let second = causal_influence_ranking(&g);
+        let first = graph_influence_ranking(&g);
+        let second = graph_influence_ranking(&g);
 
         assert_eq!(first.len(), second.len());
         for (a, b) in first.iter().zip(second.iter()) {

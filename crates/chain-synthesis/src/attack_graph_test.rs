@@ -230,7 +230,7 @@ mod tests {
     }
 
     #[test]
-    fn mitigation_impact_chokepoint_eliminates_downstream() {
+    fn estimated_mitigation_impact_chokepoint_eliminates_downstream() {
         let mut graph = AttackGraph::new();
         let entry = graph.add_node("entry".to_string(), AttackNodeType::EntryPoint);
         let chokepoint = graph.add_node("choke".to_string(), AttackNodeType::Vulnerability);
@@ -242,7 +242,7 @@ mod tests {
         graph.add_edge(chokepoint, asset2, 0.7, None);
 
         let choke_idx = graph.node_index(chokepoint).unwrap();
-        let result = graph.mitigation_impact(choke_idx);
+        let result = graph.estimated_mitigation_impact(choke_idx);
 
         assert_eq!(result.removed_findings.len(), 2);
         assert_eq!(result.findings_remaining, 0);
@@ -250,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn mitigation_impact_leaf_affects_only_direct() {
+    fn estimated_mitigation_impact_leaf_affects_only_direct() {
         let mut graph = AttackGraph::new();
         let entry = graph.add_node("entry".to_string(), AttackNodeType::EntryPoint);
         let vuln = graph.add_node("vuln".to_string(), AttackNodeType::Vulnerability);
@@ -262,7 +262,7 @@ mod tests {
         graph.add_edge(vuln, asset_b, 0.5, None);
 
         let vuln_idx = graph.node_index(vuln).unwrap();
-        let result = graph.mitigation_impact(vuln_idx);
+        let result = graph.estimated_mitigation_impact(vuln_idx);
 
         assert_eq!(result.removed_findings.len(), 1);
         assert_eq!(result.findings_remaining, 1);
@@ -273,10 +273,10 @@ mod tests {
     }
 
     #[test]
-    fn mitigation_impact_empty_graph_zero_impact() {
+    fn estimated_mitigation_impact_empty_graph_zero_impact() {
         let graph = AttackGraph::new();
         let dummy_idx = petgraph::graph::NodeIndex::new(0);
-        let result = graph.mitigation_impact(dummy_idx);
+        let result = graph.estimated_mitigation_impact(dummy_idx);
 
         assert!(result.removed_findings.is_empty());
         assert_eq!(result.findings_remaining, 0);

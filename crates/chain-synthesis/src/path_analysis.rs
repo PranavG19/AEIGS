@@ -233,7 +233,11 @@ pub fn critical_fix_targets(graph: &AttackGraph, budget: usize) -> Vec<(u64, f64
     ranked
 }
 
-pub fn causal_influence_ranking(graph: &AttackGraph) -> Vec<(NodeIndex, MitigationResult)> {
+/// Graph-theoretic estimate of node influence on asset reachability. Ranks
+/// intermediate nodes by the fraction of assets that become unreachable when
+/// each node is removed. This is a structural analysis — actual mitigation
+/// impact depends on factors not represented in the graph.
+pub fn graph_influence_ranking(graph: &AttackGraph) -> Vec<(NodeIndex, MitigationResult)> {
     let inner = graph.inner_graph();
     let mut results: Vec<(NodeIndex, MitigationResult)> = inner
         .node_indices()
@@ -242,7 +246,7 @@ pub fn causal_influence_ranking(graph: &AttackGraph) -> Vec<(NodeIndex, Mitigati
             node_type != AttackNodeType::EntryPoint && node_type != AttackNodeType::Asset
         })
         .map(|idx| {
-            let mitigation = graph.mitigation_impact(idx);
+            let mitigation = graph.estimated_mitigation_impact(idx);
             (idx, mitigation)
         })
         .collect();
