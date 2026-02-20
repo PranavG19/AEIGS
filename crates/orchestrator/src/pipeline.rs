@@ -2,16 +2,17 @@ use std::path::PathBuf;
 
 use aegis_audit_log::log_writer::AuditLogWriter;
 use aegis_fuzzing::DefenseProfile;
-use aegis_knowledge_graph::graph::KnowledgeGraph;
-use aegis_knowledge_graph::graph_store::GraphStore;
+use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::audit::AuditEventType;
+use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 
+use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::phase_analyze::run_analyze;
 use crate::phase_fingerprint::defense_properties;
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
-use crate::phase_report::run_report;
+use crate::phase_report::run_report_with_previous;
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, validate_localhost,
 };
@@ -37,6 +38,12 @@ pub struct ScanSummary {
     pub audit_log_path: Option<String>,
     pub hmac_key_hex: Option<String>,
     pub metrics: ScanMetrics,
+    /// When `--graph-db` is configured, the number of findings that are new vs the previous scan.
+    /// `None` when no previous scan data is available (first scan or no `--graph-db`).
+    pub new_findings_count: Option<u64>,
+    /// When `--graph-db` is configured, the number of findings already seen in the previous scan.
+    /// `None` when no previous scan data is available.
+    pub previously_known_count: Option<u64>,
 }
 
 #[derive(Debug)]
@@ -167,8 +174,16 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         },
     );
 
-    // state persistence planned: see docs/plans/2026-02-19-aegis-improvements.md Task 16
-    let graph: Box<dyn GraphStore> = Box::new(KnowledgeGraph::new());
+    let graph_db_path = config.scope.graph_db.clone();
+    let (loaded_graph, previous_scan_count) = load_or_create_graph(graph_db_path.as_deref());
+
+    let previous_findings: Option<Vec<FindingData>> = if graph_db_path.is_some() {
+        Some(loaded_graph.all_findings().unwrap_or_default())
+    } else {
+        None
+    };
+
+    let graph: Box<dyn GraphStore> = Box::new(loaded_graph);
     let mut ctx = ScanContext {
         config,
         graph,
@@ -290,7 +305,9 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         },
     );
     let report_start = std::time::Instant::now();
-    let report = run_report(&mut ctx, Some(&scan_metrics)).map_err(PipelineError::Report)?;
+    let report =
+        run_report_with_previous(&mut ctx, Some(&scan_metrics), previous_findings.as_deref())
+            .map_err(PipelineError::Report)?;
     total_ops += report.operations_applied;
     total_findings += report.findings_count;
     phases += 1;
@@ -303,6 +320,24 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         AuditEventType::ScanCompleted { total_findings },
     );
 
+    let new_scan_count = previous_scan_count + 1;
+    save_graph_if_configured(
+        ctx.graph.as_ref(),
+        graph_db_path.as_deref(),
+        &ctx.config.target,
+        new_scan_count,
+    );
+
+    let (new_findings_count, previously_known_count) = if let Some(ref prev) = previous_findings {
+        let all_current = ctx.graph.all_findings().unwrap_or_default();
+        let new_refs = crate::phase_report::compute_new_findings(&all_current, prev);
+        let new_count = new_refs.len() as u64;
+        let known_count = (all_current.len() as u64).saturating_sub(new_count);
+        (Some(new_count), Some(known_count))
+    } else {
+        (None, None)
+    };
+
     Ok(ScanSummary {
         total_findings,
         total_operations: total_ops,
@@ -311,5 +346,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         audit_log_path: audit_path.map(|p| p.to_string_lossy().to_string()),
         hmac_key_hex: hmac_key.map(|k| hex_encode(&k)),
         metrics: scan_metrics,
+        new_findings_count,
+        previously_known_count,
     })
 }
