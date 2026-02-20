@@ -1,6 +1,37 @@
 use crate::operation::ModuleIdentifier;
 use serde::{Deserialize, Serialize};
+use sha3::{Digest, Sha3_256};
 use std::fmt;
+
+/// A content-addressed stable identity for a finding, computed from its
+/// intrinsic properties. Two findings representing the same vulnerability
+/// at the same location have equal `FindingId` values even across scans.
+///
+/// Computed as SHA3-256(endpoint + ":" + vulnerability_class + ":" + parameter).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub struct FindingId {
+    pub bytes: [u8; 32],
+}
+
+impl FindingId {
+    /// Computes a stable identity from the finding's intrinsic location properties.
+    pub fn from_parts(
+        endpoint: &str,
+        vulnerability_class: VulnerabilityClass,
+        parameter: &str,
+    ) -> Self {
+        let mut hasher = Sha3_256::new();
+        hasher.update(endpoint.as_bytes());
+        hasher.update(b":");
+        hasher.update(vulnerability_class.to_string().as_bytes());
+        hasher.update(b":");
+        hasher.update(parameter.as_bytes());
+        let result = hasher.finalize();
+        let mut bytes = [0u8; 32];
+        bytes.copy_from_slice(&result);
+        Self { bytes }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EvidenceLevel {
@@ -85,6 +116,8 @@ pub struct FindingData {
     pub evidence_level: EvidenceLevel,
     #[serde(default)]
     pub confidence_score: Option<f64>,
+    #[serde(default)]
+    pub stable_id: Option<FindingId>,
 }
 
 impl FindingData {
@@ -107,7 +140,21 @@ impl FindingData {
             timestamp_unix_ms,
             evidence_level: EvidenceLevel::Statistical,
             confidence_score: None,
+            stable_id: None,
         }
+    }
+
+    /// Computes and attaches a stable content-addressed identity to this finding.
+    ///
+    /// The identity is derived from the endpoint, vulnerability class, and parameter name,
+    /// enabling cross-scan deduplication without relying on mutable store indices.
+    pub fn with_stable_id(mut self, endpoint: &str, parameter: &str) -> Self {
+        self.stable_id = Some(FindingId::from_parts(
+            endpoint,
+            self.vulnerability_class,
+            parameter,
+        ));
+        self
     }
 
     pub fn with_linked_nodes(mut self, node_ids: Vec<u64>) -> Self {

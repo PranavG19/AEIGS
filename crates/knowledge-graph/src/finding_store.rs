@@ -42,6 +42,7 @@ impl FindingStore {
             timestamp_unix_ms,
             evidence_level: aegis_protocol::finding::EvidenceLevel::Statistical,
             confidence_score: None,
+            stable_id: None,
         };
 
         for node_id in &linked_node_ids {

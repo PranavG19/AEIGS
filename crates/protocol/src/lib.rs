@@ -12,3 +12,7 @@ pub mod target_validation;
 #[cfg(test)]
 #[path = "protocol_test.rs"]
 mod protocol_test;
+
+#[cfg(test)]
+#[path = "finding_test.rs"]
+mod finding_test;
