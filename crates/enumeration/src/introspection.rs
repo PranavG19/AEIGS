@@ -98,7 +98,7 @@ pub fn parse_openapi_json(
 }
 
 fn extract_parameters(operation: &openapiv3::Operation) -> Vec<EndpointParameter> {
-    operation
+    let mut params: Vec<EndpointParameter> = operation
         .parameters
         .iter()
         .filter_map(|ref_or_param| ref_or_param.as_item())
@@ -110,6 +110,58 @@ fn extract_parameters(operation: &openapiv3::Operation) -> Vec<EndpointParameter
                 param_type: extract_schema_type(&data.format),
                 required: data.required,
             }
+        })
+        .collect();
+
+    params.extend(extract_body_parameters(operation));
+    params
+}
+
+fn extract_body_parameters(operation: &openapiv3::Operation) -> Vec<EndpointParameter> {
+    let Some(ref_or_body) = &operation.request_body else {
+        return Vec::new();
+    };
+    let Some(body) = ref_or_body.as_item() else {
+        return Vec::new();
+    };
+    // `body.required` reflects whether the request body itself is mandatory.
+    // Per-property `required` arrays inside the schema are not traversed;
+    // all extracted properties inherit this body-level required flag.
+    let required = body.required;
+
+    body.content
+        .iter()
+        .filter(|(media_type, _)| media_type.contains("json"))
+        .flat_map(|(_, media_obj)| {
+            extract_object_property_names(media_obj.schema.as_ref())
+                .into_iter()
+                .map(move |(name, type_name)| EndpointParameter {
+                    name,
+                    location: ParameterLocation::Body,
+                    param_type: type_name,
+                    required,
+                })
+        })
+        .collect()
+}
+
+fn extract_object_property_names(
+    schema_ref: Option<&openapiv3::ReferenceOr<openapiv3::Schema>>,
+) -> Vec<(String, String)> {
+    let Some(schema) = schema_ref.and_then(|r| r.as_item()) else {
+        return Vec::new();
+    };
+    let openapiv3::SchemaKind::Type(openapiv3::Type::Object(obj)) = &schema.schema_kind else {
+        return Vec::new();
+    };
+    obj.properties
+        .iter()
+        .map(|(name, prop_ref)| {
+            let type_name = prop_ref
+                .as_item()
+                .map(|s| schema_kind_to_type_name(&s.schema_kind))
+                .unwrap_or_else(|| "string".to_string());
+            (name.clone(), type_name)
         })
         .collect()
 }
