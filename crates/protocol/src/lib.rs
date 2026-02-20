@@ -7,6 +7,7 @@ pub mod ipc;
 pub mod node;
 pub mod operation;
 pub mod request;
+pub mod scan_event;
 pub mod target_validation;
 
 #[cfg(test)]
@@ -16,3 +17,7 @@ mod protocol_test;
 #[cfg(test)]
 #[path = "finding_test.rs"]
 mod finding_test;
+
+#[cfg(test)]
+#[path = "scan_event_test.rs"]
+mod scan_event_test;
