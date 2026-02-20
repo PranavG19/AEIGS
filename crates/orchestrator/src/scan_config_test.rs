@@ -538,3 +538,22 @@ fn scope_options_with_graph_db_some() {
         std::path::PathBuf::from("/tmp/test.json")
     );
 }
+
+#[test]
+fn scan_config_default_accept_self_signed_is_false() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!config.stealth.accept_self_signed);
+}
+
+#[test]
+fn scan_config_accept_self_signed_flag_sets_true() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--accept-self-signed",
+    ])
+    .unwrap();
+    assert!(config.stealth.accept_self_signed);
+}

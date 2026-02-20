@@ -49,6 +49,7 @@ impl EvasionTransport {
             max_requests_per_session: 50,
             timing_seed: 0,
             persona_rotation_interval: None,
+            accept_self_signed: false,
         }
     }
 
@@ -258,6 +259,7 @@ pub struct EvasionTransportBuilder {
     max_requests_per_session: u32,
     timing_seed: u64,
     persona_rotation_interval: Option<u32>,
+    accept_self_signed: bool,
 }
 
 impl EvasionTransportBuilder {
@@ -281,14 +283,26 @@ impl EvasionTransportBuilder {
         self
     }
 
+    /// Accept invalid TLS certificates (e.g. self-signed) when connecting.
+    /// Only safe because `send()` enforces localhost-only via `validate_target_is_localhost`.
+    pub fn with_accept_self_signed(mut self, accept: bool) -> Self {
+        self.accept_self_signed = accept;
+        self
+    }
+
     pub fn build(self) -> EvasionTransport {
         let catalog = crate::persona::persona_catalog();
         let persona = self.persona.unwrap_or_else(|| catalog[0].clone());
 
         let timing = TimingController::from_persona(&persona, self.timing_seed);
 
+        let client = Client::builder()
+            .danger_accept_invalid_certs(self.accept_self_signed)
+            .build()
+            .expect("failed to build reqwest client");
+
         EvasionTransport {
-            client: Client::new(),
+            client,
             header_transformer: HeaderTransformer::new(),
             timing,
             session: SessionManager::new(self.max_requests_per_session),

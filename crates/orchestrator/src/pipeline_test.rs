@@ -78,6 +78,7 @@ fn localhost_config() -> ScanConfig {
             stealth_level: "default".to_string(),
             max_rps: None,
             skip_evasion: false,
+            accept_self_signed: false,
         },
         pipeline: scan_config::PipelineOptions {
             max_iterations: 1,

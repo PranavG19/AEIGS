@@ -181,6 +181,7 @@ fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTrans
 
     aegis_evasion_engine::EvasionTransport::builder()
         .with_persona(&persona)
+        .with_accept_self_signed(ctx.config.stealth.accept_self_signed)
         .build()
 }
 

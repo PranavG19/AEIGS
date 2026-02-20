@@ -76,6 +76,11 @@ pub struct StealthOptions {
 
     #[arg(long, default_value_t = false)]
     pub skip_evasion: bool,
+
+    /// Accept self-signed TLS certificates when connecting to localhost targets.
+    /// Safe because target validation enforces localhost-only at request time.
+    #[arg(long, default_value_t = false)]
+    pub accept_self_signed: bool,
 }
 
 /// Pipeline execution control options.

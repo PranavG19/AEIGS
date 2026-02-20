@@ -820,3 +820,36 @@ async fn persona_changes_after_rotation_interval() {
     assert_eq!(transport.session_id(), 2);
     assert_eq!(transport.persona_id(), second_persona_id);
 }
+
+#[test]
+fn builder_with_accept_self_signed_false_builds_successfully() {
+    let transport = EvasionTransport::builder()
+        .with_accept_self_signed(false)
+        .build();
+    assert_eq!(transport.session_id(), 0);
+}
+
+#[test]
+fn builder_with_accept_self_signed_true_builds_successfully() {
+    let transport = EvasionTransport::builder()
+        .with_accept_self_signed(true)
+        .build();
+    assert_eq!(transport.session_id(), 0);
+}
+
+#[test]
+fn builder_accept_self_signed_chains_with_other_options() {
+    let persona = Persona::custom(PersonaId::FirefoxDesktop)
+        .with_user_agent("Firefox/Test")
+        .with_accept_header("*/*")
+        .build();
+
+    let transport = EvasionTransport::builder()
+        .with_persona(&persona)
+        .with_max_requests_per_session(25)
+        .with_timing_seed(999)
+        .with_accept_self_signed(true)
+        .build();
+
+    assert_eq!(transport.session_id(), 0);
+}
