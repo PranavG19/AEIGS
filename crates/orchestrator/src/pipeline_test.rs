@@ -1,5 +1,5 @@
+use aegis_knowledge_graph::GraphStore;
 use aegis_knowledge_graph::graph::GraphError;
-use aegis_knowledge_graph::graph_store::GraphStore;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};
 use aegis_protocol::operation::OperationLogEntry;
@@ -7,6 +7,8 @@ use aegis_protocol::operation::OperationLogEntry;
 use super::*;
 
 /// Lightweight in-memory graph for tests that do not need full KnowledgeGraph.
+///
+/// Findings are intentionally not stored; this fake only tracks node counts and operation counts for pipeline wiring tests.
 struct FakeGraphStore {
     ops_applied: u64,
     nodes: Vec<NodeData>,
@@ -92,6 +94,7 @@ fn localhost_config() -> ScanConfig {
             include_endpoints: None,
             exclude_endpoints: None,
             context_file: None,
+            graph_db: None,
         },
     }
 }
@@ -130,6 +133,8 @@ fn scan_summary_debug() {
         audit_log_path: Some("/tmp/aegis-audit.cbor".to_string()),
         hmac_key_hex: Some("aa".repeat(32)),
         metrics: ScanMetrics::default(),
+        new_findings_count: None,
+        previously_known_count: None,
     };
     let dbg = format!("{summary:?}");
     assert!(dbg.contains("total_findings"));
@@ -289,8 +294,8 @@ async fn run_scan_with_paranoid_stealth_level() {
 #[test]
 fn scan_context_fields_accessible() {
     let config = localhost_config();
-    let graph: Box<dyn aegis_knowledge_graph::graph_store::GraphStore> =
-        Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new());
+    let graph: Box<dyn aegis_knowledge_graph::GraphStore> =
+        Box::new(aegis_knowledge_graph::KnowledgeGraph::new());
     let ctx = ScanContext {
         config,
         graph,
@@ -303,8 +308,8 @@ fn scan_context_fields_accessible() {
 #[test]
 fn scan_context_with_defense_profile() {
     let config = localhost_config();
-    let graph: Box<dyn aegis_knowledge_graph::graph_store::GraphStore> =
-        Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new());
+    let graph: Box<dyn aegis_knowledge_graph::GraphStore> =
+        Box::new(aegis_knowledge_graph::KnowledgeGraph::new());
     let profile = aegis_fuzzing::DefenseProfile::empty(1000);
     let ctx = ScanContext {
         config,
@@ -369,6 +374,8 @@ fn scan_summary_sarif_path_is_string() {
         audit_log_path: None,
         hmac_key_hex: None,
         metrics: ScanMetrics::default(),
+        new_findings_count: None,
+        previously_known_count: None,
     };
     assert!(summary.sarif_path.is_empty());
 }
@@ -588,6 +595,75 @@ fn fake_graph_store_apply_operations_increments_count() {
     ];
     store.apply_operations(&ops).unwrap();
     assert_eq!(store.total_operations_applied().unwrap(), 2);
+}
+
+#[tokio::test]
+async fn run_scan_without_graph_db_has_none_diff_counts() {
+    let config = localhost_config();
+    let summary = run_scan(config).await.unwrap();
+    assert!(summary.new_findings_count.is_none());
+    assert!(summary.previously_known_count.is_none());
+}
+
+#[tokio::test]
+async fn pipeline_saves_graph_when_graph_db_configured() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("test.sarif");
+    let graph_db_path = dir.path().join("aegis-graph.json");
+
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.scope.graph_db = Some(graph_db_path.clone());
+
+    let result = run_scan(config).await;
+    assert!(result.is_ok(), "run_scan failed: {:?}", result.err());
+    assert!(
+        graph_db_path.exists(),
+        "graph db file should have been created"
+    );
+}
+
+#[tokio::test]
+async fn pipeline_with_graph_db_provides_diff_counts() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("test-diff.sarif");
+    let graph_db_path = dir.path().join("aegis-graph-diff.json");
+
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.scope.graph_db = Some(graph_db_path.clone());
+
+    let summary = run_scan(config).await.unwrap();
+    assert!(
+        summary.new_findings_count.is_some(),
+        "new_findings_count should be Some when graph_db is configured"
+    );
+    assert!(
+        summary.previously_known_count.is_some(),
+        "previously_known_count should be Some when graph_db is configured"
+    );
+}
+
+#[tokio::test]
+async fn pipeline_second_scan_reports_previously_known() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db_path = dir.path().join("aegis-persistent.json");
+
+    let mut config1 = localhost_config();
+    config1.output = dir.path().join("scan1.sarif");
+    config1.scope.graph_db = Some(graph_db_path.clone());
+
+    run_scan(config1).await.unwrap();
+    assert!(graph_db_path.exists());
+
+    let mut config2 = localhost_config();
+    config2.output = dir.path().join("scan2.sarif");
+    config2.scope.graph_db = Some(graph_db_path.clone());
+
+    let summary2 = run_scan(config2).await.unwrap();
+    // Both counts should be populated for the second scan
+    assert!(summary2.new_findings_count.is_some());
+    assert!(summary2.previously_known_count.is_some());
 }
 
 #[test]

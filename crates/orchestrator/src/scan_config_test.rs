@@ -501,3 +501,40 @@ fn load_business_context_invalid_json_returns_parse_error() {
         ConfigError::ContextFileParse(_)
     ));
 }
+
+#[test]
+fn scan_config_default_graph_db_is_none() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.scope.graph_db.is_none());
+}
+
+#[test]
+fn scan_config_graph_db_flag_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--graph-db",
+        "/tmp/test.json",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.scope.graph_db.unwrap(),
+        std::path::PathBuf::from("/tmp/test.json")
+    );
+}
+
+#[test]
+fn scope_options_with_graph_db_some() {
+    let scope = ScopeOptions {
+        include_endpoints: None,
+        exclude_endpoints: None,
+        context_file: None,
+        graph_db: Some(std::path::PathBuf::from("/tmp/test.json")),
+    };
+    assert_eq!(
+        scope.graph_db.unwrap(),
+        std::path::PathBuf::from("/tmp/test.json")
+    );
+}

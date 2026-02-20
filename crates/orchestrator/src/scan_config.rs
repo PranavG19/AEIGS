@@ -122,6 +122,12 @@ pub struct ScopeOptions {
 
     #[arg(long)]
     pub context_file: Option<PathBuf>,
+
+    /// Path to persistent graph database file. When provided, the graph is loaded
+    /// on scan start and saved on completion. Enables incremental scanning and
+    /// diff-mode reporting.
+    #[arg(long, value_name = "PATH")]
+    pub graph_db: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug, Clone)]
