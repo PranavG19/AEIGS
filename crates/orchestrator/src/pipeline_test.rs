@@ -135,6 +135,7 @@ fn scan_summary_debug() {
         metrics: ScanMetrics::default(),
         new_findings_count: None,
         previously_known_count: None,
+        audit_verified: Some(true),
     };
     let dbg = format!("{summary:?}");
     assert!(dbg.contains("total_findings"));
@@ -376,6 +377,7 @@ fn scan_summary_sarif_path_is_string() {
         metrics: ScanMetrics::default(),
         new_findings_count: None,
         previously_known_count: None,
+        audit_verified: None,
     };
     assert!(summary.sarif_path.is_empty());
 }
@@ -775,4 +777,35 @@ fn pipeline_error_debug_audit_log() {
     let dbg = format!("{err:?}");
     assert!(dbg.contains("AuditLog"));
     assert!(dbg.contains("disk full"));
+}
+
+#[tokio::test]
+async fn run_scan_with_audit_returns_verified_true() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("audit-verify-test.sarif");
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.audit.no_audit = false;
+
+    let summary = run_scan(config).await.unwrap();
+    assert_eq!(
+        summary.audit_verified,
+        Some(true),
+        "audit log should pass integrity verification after a normal scan"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_no_audit_returns_verified_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("no-audit-verify-test.sarif");
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.audit.no_audit = true;
+
+    let summary = run_scan(config).await.unwrap();
+    assert_eq!(
+        summary.audit_verified, None,
+        "audit_verified should be None when --no-audit is set"
+    );
 }

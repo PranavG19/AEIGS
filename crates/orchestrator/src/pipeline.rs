@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use aegis_audit_log::AuditWriter;
 use aegis_audit_log::log_writer::{AuditLogWriter, NoOpAuditLogWriter};
@@ -46,6 +46,9 @@ pub struct ScanSummary {
     /// When `--graph-db` is configured, the number of findings already seen in the previous scan.
     /// `None` when no previous scan data is available.
     pub previously_known_count: Option<u64>,
+    /// Audit log integrity verification result.
+    /// `None` when `--no-audit` is set, `Some(true)` when verified, `Some(false)` when tampered/corrupted.
+    pub audit_verified: Option<bool>,
 }
 
 #[derive(Debug)]
@@ -407,6 +410,32 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     );
 
     let phases = phases_result?;
+
+    let audit_verified = if let (Some(log_path), Some(key_path)) = (&audit_path, &hmac_key_path) {
+        let key = std::fs::read(key_path).ok();
+        if let Some(key_bytes) = key {
+            match aegis_audit_log::log_verifier::verify_log(Path::new(log_path), &key_bytes) {
+                Ok(report) => {
+                    if report.tamper_detected {
+                        tracing::warn!(
+                            "audit log integrity check FAILED: possible tampering or disk corruption"
+                        );
+                    }
+                    Some(!report.tamper_detected)
+                }
+                Err(e) => {
+                    tracing::warn!("audit log verification error: {e}");
+                    Some(false)
+                }
+            }
+        } else {
+            tracing::warn!("cannot read HMAC key file for audit verification");
+            Some(false)
+        }
+    } else {
+        None
+    };
+
     Ok(ScanSummary {
         total_findings: phases.total_findings,
         total_operations: phases.total_operations,
@@ -417,5 +446,6 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         metrics: phases.scan_metrics,
         new_findings_count: phases.new_findings_count,
         previously_known_count: phases.previously_known_count,
+        audit_verified,
     })
 }
