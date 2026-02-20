@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::collections::BinaryHeap;
+use std::collections::{BinaryHeap, HashSet};
 
 use aegis_protocol::finding::VulnerabilityClass;
 
@@ -43,8 +43,11 @@ impl Ord for PrioritizedTarget {
     }
 }
 
+type DeduplicationKey = (String, String, VulnerabilityClass);
+
 pub struct FuzzScheduler {
     queue: BinaryHeap<PrioritizedTarget>,
+    enqueued: HashSet<DeduplicationKey>,
     completed_count: u64,
     skipped_count: u64,
     avoid_signatures: bool,
@@ -54,22 +57,36 @@ impl FuzzScheduler {
     pub fn new() -> Self {
         Self {
             queue: BinaryHeap::new(),
+            enqueued: HashSet::new(),
             completed_count: 0,
             skipped_count: 0,
             avoid_signatures: false,
         }
     }
 
-    /// Adds `target` to the scheduling queue.
+    /// Adds `target` to the scheduling queue, deduplicating by
+    /// `(endpoint, parameter, vulnerability_class)`.
+    ///
+    /// Returns `true` if the target was enqueued, `false` if a target with the
+    /// same deduplication key was already present.
     ///
     /// If `priority_score` is non-finite (NaN, ±∞), it is clamped to `0.0`
     /// before insertion. Callers relying on a computed score should verify
     /// finiteness before calling this function if they need the raw value preserved.
-    pub fn enqueue(&mut self, mut target: FuzzTarget) {
+    pub fn enqueue(&mut self, mut target: FuzzTarget) -> bool {
         if !target.priority_score.is_finite() {
             target.priority_score = 0.0;
         }
+        let key = (
+            target.endpoint.clone(),
+            target.parameter.clone(),
+            target.vulnerability_class,
+        );
+        if !self.enqueued.insert(key) {
+            return false;
+        }
         self.queue.push(PrioritizedTarget { target });
+        true
     }
 
     pub fn enqueue_batch(&mut self, targets: Vec<FuzzTarget>) {
@@ -80,6 +97,12 @@ impl FuzzScheduler {
 
     pub fn next_target(&mut self) -> Option<FuzzTarget> {
         while let Some(prioritized) = self.queue.pop() {
+            let key = (
+                prioritized.target.endpoint.clone(),
+                prioritized.target.parameter.clone(),
+                prioritized.target.vulnerability_class,
+            );
+            self.enqueued.remove(&key);
             if prioritized.target.attempts >= prioritized.target.max_attempts {
                 self.skipped_count += 1;
                 continue;
@@ -201,4 +224,40 @@ pub fn is_fuzzable(class: VulnerabilityClass) -> bool {
             | VulnerabilityClass::OpenRedirect
             | VulnerabilityClass::CrlfInjection
     )
+}
+
+#[cfg(test)]
+mod private_tests {
+    use aegis_protocol::finding::VulnerabilityClass;
+
+    use super::PrioritizedTarget;
+    use crate::scheduler::FuzzTarget;
+
+    fn make_prioritized(priority: f64) -> PrioritizedTarget {
+        PrioritizedTarget {
+            target: FuzzTarget {
+                endpoint: "/test".to_string(),
+                method: "GET".to_string(),
+                parameter: "q".to_string(),
+                vulnerability_class: VulnerabilityClass::SqlInjection,
+                priority_score: priority,
+                attempts: 0,
+                max_attempts: 3,
+            },
+        }
+    }
+
+    #[test]
+    fn prioritized_target_eq_same_score() {
+        let a = make_prioritized(5.0);
+        let b = make_prioritized(5.0);
+        assert!(a == b);
+    }
+
+    #[test]
+    fn prioritized_target_eq_different_scores() {
+        let a = make_prioritized(5.0);
+        let b = make_prioritized(7.0);
+        assert!(a != b);
+    }
 }

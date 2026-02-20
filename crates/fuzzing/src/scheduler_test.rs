@@ -384,6 +384,142 @@ mod tests {
         assert_eq!(second.endpoint, "/a");
     }
 
+    fn target_with_param(endpoint: &str, param: &str, priority: f64) -> FuzzTarget {
+        FuzzTarget {
+            endpoint: endpoint.to_string(),
+            method: "GET".to_string(),
+            parameter: param.to_string(),
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+            priority_score: priority,
+            attempts: 0,
+            max_attempts: 3,
+        }
+    }
+
+    fn target_full(
+        endpoint: &str,
+        param: &str,
+        class: VulnerabilityClass,
+        priority: f64,
+    ) -> FuzzTarget {
+        FuzzTarget {
+            endpoint: endpoint.to_string(),
+            method: "GET".to_string(),
+            parameter: param.to_string(),
+            vulnerability_class: class,
+            priority_score: priority,
+            attempts: 0,
+            max_attempts: 3,
+        }
+    }
+
+    #[test]
+    fn duplicate_target_is_rejected() {
+        let mut scheduler = FuzzScheduler::new();
+        assert!(scheduler.enqueue(target("/api", 10.0)));
+        assert!(!scheduler.enqueue(target("/api", 5.0)));
+        assert_eq!(scheduler.pending_count(), 1);
+
+        let t = scheduler.next_target().unwrap();
+        assert_eq!(t.priority_score, 10.0);
+    }
+
+    #[test]
+    fn different_parameters_are_not_deduplicated() {
+        let mut scheduler = FuzzScheduler::new();
+        assert!(scheduler.enqueue(target_with_param("/api", "id", 10.0)));
+        assert!(scheduler.enqueue(target_with_param("/api", "name", 5.0)));
+        assert_eq!(scheduler.pending_count(), 2);
+    }
+
+    #[test]
+    fn different_vuln_classes_are_not_deduplicated() {
+        let mut scheduler = FuzzScheduler::new();
+        assert!(scheduler.enqueue(target_full(
+            "/api",
+            "q",
+            VulnerabilityClass::SqlInjection,
+            10.0
+        )));
+        assert!(scheduler.enqueue(target_full(
+            "/api",
+            "q",
+            VulnerabilityClass::CrossSiteScripting,
+            5.0
+        )));
+        assert_eq!(scheduler.pending_count(), 2);
+    }
+
+    #[test]
+    fn after_mark_completed_can_reenqueue_same_target() {
+        let mut scheduler = FuzzScheduler::new();
+        let mut t = target("/api", 10.0);
+        t.max_attempts = 1;
+        scheduler.enqueue(t);
+
+        let t = scheduler.next_target().unwrap();
+        scheduler.mark_completed(t);
+
+        assert!(scheduler.is_empty());
+        assert!(scheduler.enqueue(target("/api", 7.0)));
+        assert_eq!(scheduler.pending_count(), 1);
+    }
+
+    #[test]
+    fn pending_count_reflects_deduplication() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/a", 10.0));
+        scheduler.enqueue(target("/b", 5.0));
+        scheduler.enqueue(target("/a", 3.0));
+        assert_eq!(scheduler.pending_count(), 2);
+    }
+
+    #[test]
+    fn enqueue_returns_true_on_first_insert() {
+        let mut scheduler = FuzzScheduler::new();
+        assert!(scheduler.enqueue(target("/api", 10.0)));
+    }
+
+    #[test]
+    fn enqueue_returns_false_on_duplicate() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/api", 10.0));
+        assert!(!scheduler.enqueue(target("/api", 20.0)));
+    }
+
+    #[test]
+    fn enqueue_batch_deduplicates() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue_batch(vec![
+            target("/api", 10.0),
+            target("/api", 5.0),
+            target("/other", 3.0),
+        ]);
+        assert_eq!(scheduler.pending_count(), 2);
+    }
+
+    #[test]
+    fn next_target_clears_dedup_key() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/api", 10.0));
+
+        let _t = scheduler.next_target().unwrap();
+        assert!(scheduler.enqueue(target("/api", 5.0)));
+        assert_eq!(scheduler.pending_count(), 1);
+    }
+
+    #[test]
+    fn mark_completed_reenqueue_then_duplicate_rejected() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/api", 10.0));
+
+        let t = scheduler.next_target().unwrap();
+        scheduler.mark_completed(t);
+
+        assert!(!scheduler.enqueue(target("/api", 20.0)));
+        assert_eq!(scheduler.pending_count(), 1);
+    }
+
     #[test]
     fn enqueue_nan_priority_is_clamped_to_zero() {
         let mut scheduler = FuzzScheduler::new();
