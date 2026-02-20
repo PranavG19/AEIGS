@@ -138,6 +138,12 @@ pub struct ScopeOptions {
     /// diff-mode reporting.
     #[arg(long, value_name = "PATH")]
     pub graph_db: Option<PathBuf>,
+
+    /// Path to SQLite scan history database. When provided, payload outcomes are
+    /// persisted across scans to enable adaptive payload selection and endpoint
+    /// similarity analysis.
+    #[arg(long, value_name = "PATH")]
+    pub history_db: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug, Clone)]

@@ -10,6 +10,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod scan_config;
+pub mod scan_history;
 mod util;
 
 pub use checkpoint::*;
@@ -22,6 +23,11 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use scan_config::*;
+pub use scan_history::*;
+
+#[cfg(test)]
+#[path = "scan_history_test.rs"]
+mod scan_history_test;
 
 #[cfg(test)]
 #[path = "scan_config_test.rs"]

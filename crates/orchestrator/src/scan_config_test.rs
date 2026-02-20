@@ -532,6 +532,7 @@ fn scope_options_with_graph_db_some() {
         exclude_endpoints: None,
         context_file: None,
         graph_db: Some(std::path::PathBuf::from("/tmp/test.json")),
+        history_db: None,
     };
     assert_eq!(
         scope.graph_db.unwrap(),

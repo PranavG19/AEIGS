@@ -105,6 +105,7 @@ fn localhost_config() -> ScanConfig {
             exclude_endpoints: None,
             context_file: None,
             graph_db: None,
+            history_db: None,
         },
     }
 }
