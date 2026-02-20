@@ -57,6 +57,9 @@ pub struct GraphMetadata {
     pub scan_timestamp_unix_ms: u64,
     pub target_url: String,
     pub aegis_version: String,
+    /// Incremented each time the graph is saved. Zero for the first save.
+    #[serde(default)]
+    pub scan_count: u64,
 }
 
 /// Thread-safe knowledge graph facade with atomic validate-then-apply semantics.
@@ -230,9 +233,14 @@ impl KnowledgeGraph {
         Ok(inner.finding_store.findings_for_node(node_id).to_vec())
     }
 
-    pub fn node_count(&self) -> Result<usize, GraphError> {
+    pub fn all_findings(&self) -> Result<Vec<FindingData>, GraphError> {
         let inner = self.inner.read();
-        Ok(inner.node_store.count())
+        Ok(inner.finding_store.iter().cloned().collect())
+    }
+
+    pub fn node_count(&self) -> Result<u64, GraphError> {
+        let inner = self.inner.read();
+        Ok(inner.node_store.count() as u64)
     }
 
     pub fn edge_count(&self) -> Result<usize, GraphError> {
@@ -281,7 +289,12 @@ impl KnowledgeGraph {
         std::fs::write(path, bytes).map_err(|e| GraphError::Io(e.to_string()))
     }
 
-    pub fn load_from_file(path: &Path) -> Result<Self, GraphError> {
+    /// Loads a `KnowledgeGraph` from a JSON file and returns it alongside the
+    /// metadata stored in the file, if present.
+    ///
+    /// The operation log is not persisted — the returned graph starts with a
+    /// fresh `OperationLog`. Only node, edge, and finding store state is restored.
+    pub fn load_from_file(path: &Path) -> Result<(Self, Option<GraphMetadata>), GraphError> {
         let bytes = std::fs::read(path).map_err(|e| GraphError::Io(e.to_string()))?;
         let bundle: serde_json::Value =
             serde_json::from_slice(&bytes).map_err(|e| GraphError::Io(e.to_string()))?;
@@ -312,14 +325,21 @@ impl KnowledgeGraph {
         let finding_store =
             FindingStore::restore(&findings_bytes).map_err(|e| GraphError::Io(e.to_string()))?;
 
-        Ok(Self {
-            inner: RwLock::new(KnowledgeGraphInner {
-                node_store,
-                edge_store,
-                finding_store,
-                operation_log: OperationLog::new(),
-            }),
-        })
+        let metadata = bundle
+            .get("metadata")
+            .and_then(|m| serde_json::from_value::<GraphMetadata>(m.clone()).ok());
+
+        Ok((
+            Self {
+                inner: RwLock::new(KnowledgeGraphInner {
+                    node_store,
+                    edge_store,
+                    finding_store,
+                    operation_log: OperationLog::new(),
+                }),
+            },
+            metadata,
+        ))
     }
 }
 
@@ -334,14 +354,11 @@ impl crate::graph_store::GraphStore for KnowledgeGraph {
         KnowledgeGraph::apply_operations(self, ops).map(|_| ())
     }
 
-    fn nodes_by_type(
-        &self,
-        node_type: aegis_protocol::node::NodeType,
-    ) -> Result<Vec<u64>, GraphError> {
+    fn nodes_by_type(&self, node_type: NodeType) -> Result<Vec<u64>, GraphError> {
         KnowledgeGraph::nodes_by_type(self, node_type)
     }
 
-    fn get_node(&self, id: u64) -> Result<Option<aegis_protocol::node::NodeData>, GraphError> {
+    fn get_node(&self, id: u64) -> Result<Option<NodeData>, GraphError> {
         KnowledgeGraph::get_node(self, id)
     }
 
@@ -349,26 +366,30 @@ impl crate::graph_store::GraphStore for KnowledgeGraph {
         KnowledgeGraph::total_operations_applied(self)
     }
 
-    fn all_findings(&self) -> Result<Vec<aegis_protocol::finding::FindingData>, GraphError> {
-        let inner = self.inner.read();
-        Ok(inner.finding_store.iter().cloned().collect())
+    fn all_findings(&self) -> Result<Vec<FindingData>, GraphError> {
+        KnowledgeGraph::all_findings(self)
     }
 
     fn node_count(&self) -> Result<u64, GraphError> {
-        KnowledgeGraph::node_count(self).map(|n| n as u64)
+        KnowledgeGraph::node_count(self)
     }
 
     fn findings_by_class(
         &self,
-        vulnerability_class: aegis_protocol::finding::VulnerabilityClass,
+        vulnerability_class: VulnerabilityClass,
     ) -> Result<Vec<u64>, GraphError> {
         KnowledgeGraph::findings_by_class(self, vulnerability_class)
     }
 
-    fn get_finding(
-        &self,
-        id: u64,
-    ) -> Result<Option<aegis_protocol::finding::FindingData>, GraphError> {
+    fn get_finding(&self, id: u64) -> Result<Option<FindingData>, GraphError> {
         KnowledgeGraph::get_finding(self, id)
+    }
+
+    fn save_to_file(
+        &self,
+        path: &std::path::Path,
+        metadata: &crate::graph::GraphMetadata,
+    ) -> Result<(), crate::graph::GraphError> {
+        KnowledgeGraph::save_to_file(self, path, metadata)
     }
 }

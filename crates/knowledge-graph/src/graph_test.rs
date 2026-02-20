@@ -796,6 +796,7 @@ mod tests {
             scan_timestamp_unix_ms: 1700000000000,
             target_url: "http://127.0.0.1:8080".into(),
             aegis_version: "0.1.0".into(),
+            scan_count: 0,
         }
     }
 
@@ -807,7 +808,8 @@ mod tests {
 
         graph.save_to_file(&path, &test_metadata()).unwrap();
 
-        let loaded = KnowledgeGraph::load_from_file(&path).unwrap();
+        let (loaded, meta) = KnowledgeGraph::load_from_file(&path).unwrap();
+        assert!(meta.is_some());
         assert_eq!(loaded.node_count().unwrap(), graph.node_count().unwrap());
         assert_eq!(loaded.edge_count().unwrap(), graph.edge_count().unwrap());
         assert_eq!(
@@ -832,5 +834,49 @@ mod tests {
 
         let result = KnowledgeGraph::load_from_file(&path);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn load_from_file_returns_metadata_with_scan_count() {
+        let graph = build_small_attack_graph();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("graph_with_count.json");
+        let meta = GraphMetadata {
+            scan_timestamp_unix_ms: 1700000000000,
+            target_url: "http://127.0.0.1:8080".into(),
+            aegis_version: "0.1.0".into(),
+            scan_count: 3,
+        };
+        graph.save_to_file(&path, &meta).unwrap();
+
+        let (_, loaded_meta) = KnowledgeGraph::load_from_file(&path).unwrap();
+        let loaded_meta = loaded_meta.unwrap();
+        assert_eq!(loaded_meta.scan_count, 3);
+        assert_eq!(loaded_meta.target_url, "http://127.0.0.1:8080");
+    }
+
+    #[test]
+    fn load_from_file_old_format_without_scan_count_defaults_to_zero() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("old_format.json");
+        // Build a minimal valid graph file without scan_count in metadata.
+        // The node/edge/finding store fields match their actual Serde field names.
+        let graph = KnowledgeGraph::new();
+        let meta_with_count = GraphMetadata {
+            scan_timestamp_unix_ms: 1700000000000,
+            target_url: "http://127.0.0.1:8080".into(),
+            aegis_version: "0.1.0".into(),
+            scan_count: 0,
+        };
+        graph.save_to_file(&path, &meta_with_count).unwrap();
+
+        // Patch the file to remove scan_count from metadata.
+        let raw = std::fs::read_to_string(&path).unwrap();
+        let patched = raw.replace(r#","scan_count":0"#, "");
+        std::fs::write(&path, patched).unwrap();
+
+        let (_, meta) = KnowledgeGraph::load_from_file(&path).unwrap();
+        let meta = meta.unwrap();
+        assert_eq!(meta.scan_count, 0);
     }
 }

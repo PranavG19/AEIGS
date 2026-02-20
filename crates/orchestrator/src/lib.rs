@@ -1,3 +1,4 @@
+mod graph_persistence;
 mod phase_analyze;
 mod phase_fingerprint;
 mod phase_fuzz;
@@ -6,6 +7,7 @@ mod phase_report;
 pub mod pipeline;
 pub mod scan_config;
 
+pub use graph_persistence::*;
 pub use phase_analyze::*;
 pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
@@ -41,3 +43,7 @@ mod phase_analyze_test;
 #[cfg(test)]
 #[path = "phase_report_test.rs"]
 mod phase_report_test;
+
+#[cfg(test)]
+#[path = "graph_persistence_test.rs"]
+mod graph_persistence_test;

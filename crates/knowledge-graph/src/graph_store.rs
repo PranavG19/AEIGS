@@ -1,8 +1,9 @@
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};
 use aegis_protocol::operation::OperationLogEntry;
+use std::path::Path;
 
-use crate::graph::GraphError;
+use crate::graph::{GraphError, GraphMetadata};
 
 /// Minimal graph access surface required by the scan pipeline.
 ///
@@ -14,6 +15,12 @@ use crate::graph::GraphError;
 /// Implementations must be `Send + Sync` so `ScanContext` can be moved across
 /// async boundaries. Methods that mutate state take `&mut self`; read-only
 /// queries take `&self`.
+///
+/// # Errors
+///
+/// Methods return `Err(GraphError)` on validation failure (e.g. invalid edge
+/// semantics, sequence gaps) or on internal store errors. Read-only methods
+/// return `Err` only if the implementation's internal state is inconsistent.
 pub trait GraphStore: Send + Sync {
     /// Validate and apply a batch of operations atomically.
     fn apply_operations(&mut self, ops: &[OperationLogEntry]) -> Result<(), GraphError>;
@@ -41,4 +48,12 @@ pub trait GraphStore: Send + Sync {
 
     /// Return the `FindingData` for `id`, or `None` if no such finding exists.
     fn get_finding(&self, id: u64) -> Result<Option<FindingData>, GraphError>;
+
+    /// Persist the graph to `path` with the provided metadata.
+    ///
+    /// The default implementation is a no-op, which is appropriate for test
+    /// fakes. The concrete `KnowledgeGraph` implementation writes a JSON bundle.
+    fn save_to_file(&self, _path: &Path, _metadata: &GraphMetadata) -> Result<(), GraphError> {
+        Ok(())
+    }
 }
