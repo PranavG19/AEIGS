@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::narrative::{
-        describe_defense_impact, generate_executive_summary, generate_finding_narrative,
+        NarrativeContext, describe_defense_impact, generate_actionable_narrative,
+        generate_executive_summary, generate_finding_narrative, remediation_advice,
         summarize_attack_paths, translate_centrality_to_narrative,
     };
 
@@ -82,5 +83,103 @@ mod tests {
         assert!(summary.contains("5 high"));
         assert!(summary.contains("Cloudflare WAF"));
         assert!(summary.contains("Rate Limiting"));
+    }
+
+    fn base_context() -> NarrativeContext {
+        NarrativeContext {
+            endpoint: "/api/users".to_string(),
+            method: "GET".to_string(),
+            parameter: "search".to_string(),
+            vulnerability_class: "SQL Injection".to_string(),
+            severity: 8.5,
+            confidence: 0.82,
+            is_authenticated: true,
+            accesses_pii: false,
+            defense_context: None,
+            calibration_note: None,
+        }
+    }
+
+    #[test]
+    fn test_actionable_narrative_with_parameter() {
+        let ctx = base_context();
+        let narrative = generate_actionable_narrative(&ctx);
+        assert_eq!(
+            narrative.what,
+            "SQL Injection in the search parameter of GET /api/users"
+        );
+    }
+
+    #[test]
+    fn test_actionable_narrative_without_parameter() {
+        let mut ctx = base_context();
+        ctx.parameter = String::new();
+        let narrative = generate_actionable_narrative(&ctx);
+        assert_eq!(narrative.what, "SQL Injection detected in GET /api/users");
+    }
+
+    #[test]
+    fn test_actionable_narrative_unauthenticated_pii() {
+        let mut ctx = base_context();
+        ctx.is_authenticated = false;
+        ctx.accesses_pii = true;
+        let narrative = generate_actionable_narrative(&ctx);
+        assert!(
+            narrative
+                .why_it_matters
+                .contains("accessible without authentication")
+        );
+        assert!(
+            narrative
+                .why_it_matters
+                .contains("personally identifiable information")
+        );
+    }
+
+    #[test]
+    fn test_actionable_narrative_with_defense_context() {
+        let mut ctx = base_context();
+        ctx.defense_context = Some("WAF (AWS WAF)".to_string());
+        let narrative = generate_actionable_narrative(&ctx);
+        assert!(
+            narrative
+                .why_it_matters
+                .contains("Active defense: WAF (AWS WAF)")
+        );
+        assert!(narrative.why_it_matters.contains("remains exploitable"));
+    }
+
+    #[test]
+    fn test_actionable_narrative_with_calibration() {
+        let mut ctx = base_context();
+        ctx.calibration_note = Some("82% of similar findings are true positives".to_string());
+        let narrative = generate_actionable_narrative(&ctx);
+        assert!(narrative.confidence_note.contains("82%"));
+        assert!(
+            narrative
+                .confidence_note
+                .contains("82% of similar findings are true positives")
+        );
+    }
+
+    #[test]
+    fn test_actionable_narrative_low_confidence_warning() {
+        let mut ctx = base_context();
+        ctx.confidence = 0.35;
+        let narrative = generate_actionable_narrative(&ctx);
+        assert!(narrative.confidence_note.contains("35%"));
+        assert!(narrative.confidence_note.contains("manually verified"));
+    }
+
+    #[test]
+    fn test_remediation_advice_known_class() {
+        let advice = remediation_advice("SQL Injection");
+        assert!(advice.contains("parameterized queries"));
+    }
+
+    #[test]
+    fn test_remediation_advice_unknown_class() {
+        let advice = remediation_advice("Some Unknown Vuln");
+        assert!(advice.contains("defense-in-depth"));
     }
 }

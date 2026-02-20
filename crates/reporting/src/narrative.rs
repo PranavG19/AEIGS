@@ -103,6 +103,147 @@ pub fn describe_defense_impact(defense_name: &str, score_reduction_pct: f64) -> 
     format!("{defense_name} reduces risk by {score_reduction_pct:.0}%.")
 }
 
+/// Structured actionable narrative for a single finding.
+#[derive(Debug, Clone)]
+pub struct ActionableNarrative {
+    pub what: String,
+    pub why_it_matters: String,
+    pub how_to_fix: String,
+    pub confidence_note: String,
+}
+
+/// Input context used to generate an actionable narrative.
+#[derive(Debug, Clone)]
+pub struct NarrativeContext {
+    pub endpoint: String,
+    pub method: String,
+    pub parameter: String,
+    pub vulnerability_class: String,
+    pub severity: f64,
+    pub confidence: f64,
+    pub is_authenticated: bool,
+    pub accesses_pii: bool,
+    pub defense_context: Option<String>,
+    pub calibration_note: Option<String>,
+}
+
+/// Generate a structured four-section narrative for a finding.
+pub fn generate_actionable_narrative(ctx: &NarrativeContext) -> ActionableNarrative {
+    let what = if ctx.parameter.is_empty() {
+        format!(
+            "{} detected in {} {}",
+            ctx.vulnerability_class, ctx.method, ctx.endpoint
+        )
+    } else {
+        format!(
+            "{} in the {} parameter of {} {}",
+            ctx.vulnerability_class, ctx.parameter, ctx.method, ctx.endpoint
+        )
+    };
+
+    let why_it_matters = build_why_it_matters(ctx);
+    let how_to_fix = remediation_advice(&ctx.vulnerability_class).to_string();
+    let confidence_note = build_confidence_note(ctx);
+
+    ActionableNarrative {
+        what,
+        why_it_matters,
+        how_to_fix,
+        confidence_note,
+    }
+}
+
+fn build_why_it_matters(ctx: &NarrativeContext) -> String {
+    let mut parts: Vec<String> = Vec::new();
+
+    if !ctx.is_authenticated {
+        parts.push("This endpoint is accessible without authentication.".to_string());
+    }
+    if ctx.accesses_pii {
+        parts.push(
+            "This endpoint accesses data containing personally identifiable information."
+                .to_string(),
+        );
+    }
+
+    let severity_label = severity_label_from_score(ctx.severity);
+    parts.push(format!(
+        "Severity: {:.1}/10 ({severity_label}).",
+        ctx.severity
+    ));
+
+    if let Some(ref defense) = ctx.defense_context {
+        parts.push(format!(
+            "Active defense: {defense}. Despite this, the endpoint remains exploitable."
+        ));
+    }
+
+    parts.join(" ")
+}
+
+fn build_confidence_note(ctx: &NarrativeContext) -> String {
+    let pct = (ctx.confidence * 100.0).round() as u64;
+    let mut note = format!("Confidence: {pct}%.");
+
+    if let Some(ref calibration) = ctx.calibration_note {
+        note.push(' ');
+        note.push_str(calibration);
+    }
+
+    if ctx.confidence < 0.5 {
+        note.push_str(" This finding has low confidence and should be manually verified.");
+    }
+
+    note
+}
+
+fn severity_label_from_score(score: f64) -> &'static str {
+    if score >= 9.0 {
+        "critical"
+    } else if score >= 7.0 {
+        "high"
+    } else if score >= 4.0 {
+        "medium"
+    } else {
+        "low"
+    }
+}
+
+/// Map a vulnerability class display name to remediation guidance.
+pub fn remediation_advice(vulnerability_class: &str) -> &'static str {
+    match vulnerability_class {
+        "SQL Injection" => {
+            "Use parameterized queries or prepared statements. \
+             Never concatenate user input into SQL strings."
+        }
+        "Cross-Site Scripting" => {
+            "Encode all user-controlled output. \
+             Use Content-Security-Policy headers. Sanitize HTML input."
+        }
+        "Command Injection" => {
+            "Avoid shell commands with user input. \
+             Use language-native APIs instead of system() calls."
+        }
+        "Path Traversal" => {
+            "Validate and canonicalize file paths. \
+             Use an allowlist of permitted directories."
+        }
+        "Server-Side Request Forgery" => {
+            "Validate and allowlist destination URLs. Block internal network ranges."
+        }
+        "Broken Authentication" => {
+            "Implement proper session management. Use secure, httpOnly cookies."
+        }
+        "Broken Authorization" => {
+            "Enforce access controls at the server side. \
+             Verify authorization for every request."
+        }
+        _ => {
+            "Review the implementation for security weaknesses. Apply defense-in-depth principles."
+        }
+    }
+}
+
 fn vulnerability_explanation(vulnerability_class: &str) -> &'static str {
     match vulnerability_class {
         "SQL Injection" => {
