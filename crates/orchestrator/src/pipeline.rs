@@ -167,6 +167,21 @@ pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfi
     (vec![entry], profile)
 }
 
+fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTransport {
+    let persona_id = crate::scan_config::resolve_persona_id(&ctx.config.stealth.persona)
+        .unwrap_or(aegis_evasion_engine::PersonaId::ChromeDesktop);
+    let catalog = aegis_evasion_engine::persona_catalog();
+    let persona = catalog
+        .iter()
+        .find(|p| p.id == persona_id)
+        .cloned()
+        .unwrap_or_else(|| catalog[0].clone());
+
+    aegis_evasion_engine::EvasionTransport::builder()
+        .with_persona(&persona)
+        .build()
+}
+
 /// Aggregated output of all scan phases, threaded back to `run_scan`
 /// so persistence and error propagation happen outside the inner function.
 struct PhasesResult {
@@ -245,6 +260,8 @@ async fn run_scan_phases(
             .record("fingerprint", fingerprint_start.elapsed());
     }
 
+    let mut transport = build_fuzz_transport(ctx);
+
     let max_iterations = ctx.config.pipeline.max_iterations;
     let convergence_threshold = ctx.config.pipeline.convergence_threshold;
     let mut consecutive_zero_findings = 0u32;
@@ -259,7 +276,9 @@ async fn run_scan_phases(
             },
         );
         let fuzz_start = std::time::Instant::now();
-        let fuzz_result = run_fuzz(ctx).await.map_err(PipelineError::Fuzz)?;
+        let fuzz_result = run_fuzz(ctx, &mut transport)
+            .await
+            .map_err(PipelineError::Fuzz)?;
         total_ops += fuzz_result.phase.operations_applied;
         total_findings += fuzz_result.phase.findings_count;
         phases += 1;

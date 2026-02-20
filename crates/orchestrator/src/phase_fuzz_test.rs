@@ -2,7 +2,56 @@ use super::*;
 
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::request::{FuzzRequest, FuzzResponse};
 use clap::Parser;
+
+struct MockTransport {
+    response: FuzzResponse,
+}
+
+impl MockTransport {
+    fn ok_200() -> Self {
+        Self {
+            response: FuzzResponse {
+                request_id: 0,
+                status_code: 200,
+                body: String::new(),
+                headers: vec![],
+                response_time: std::time::Duration::from_millis(100),
+                body_size_bytes: 0,
+            },
+        }
+    }
+
+    fn with_body(body: &str) -> Self {
+        Self {
+            response: FuzzResponse {
+                request_id: 0,
+                status_code: 200,
+                body: body.to_string(),
+                headers: vec![],
+                response_time: std::time::Duration::from_millis(50),
+                body_size_bytes: body.len(),
+            },
+        }
+    }
+}
+
+impl phase_fuzz::FuzzTransport for MockTransport {
+    async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        let mut resp = self.response.clone();
+        resp.request_id = request.request_id;
+        Ok(resp)
+    }
+}
+
+struct FailingTransport;
+
+impl phase_fuzz::FuzzTransport for FailingTransport {
+    async fn send(&mut self, _request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        Err("connection refused".to_string())
+    }
+}
 
 fn make_context(args: &[&str]) -> ScanContext {
     let config = ScanConfig::try_parse_from(args).unwrap();
@@ -16,7 +65,10 @@ fn make_context(args: &[&str]) -> ScanContext {
 #[tokio::test]
 async fn run_fuzz_empty_graph_returns_zero_findings() {
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert_eq!(result.phase.findings_count, 0);
     assert_eq!(result.phase.operations_applied, 0);
 }
@@ -58,20 +110,6 @@ fn build_stealth_config_paranoid_level() {
 }
 
 #[test]
-fn build_placeholder_response_returns_200_with_defaults() {
-    let response = phase_fuzz::build_placeholder_response("/api/test".to_string());
-    assert_eq!(response.status_code, 200);
-    assert_eq!(response.request_id, 0);
-    assert!(response.body.is_empty());
-    assert!(response.headers.is_empty());
-    assert_eq!(response.body_size_bytes, 0);
-    assert_eq!(
-        response.response_time,
-        std::time::Duration::from_millis(100)
-    );
-}
-
-#[test]
 fn enqueue_targets_for_empty_endpoint_ids_does_nothing() {
     let ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
     let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
@@ -83,7 +121,10 @@ fn enqueue_targets_for_empty_endpoint_ids_does_nothing() {
 #[tokio::test]
 async fn run_fuzz_with_stealth_applies_stealth_config() {
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080", "--stealth"]);
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert_eq!(result.phase.findings_count, 0);
     assert_eq!(result.phase.operations_applied, 0);
 }
@@ -91,7 +132,10 @@ async fn run_fuzz_with_stealth_applies_stealth_config() {
 #[tokio::test]
 async fn finding_origin_counts_empty_when_no_findings() {
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert!(result.origin_counts.is_empty());
     assert_eq!(
         result
@@ -131,7 +175,10 @@ async fn finding_origin_all_mutation_when_no_llm() {
     };
     ctx.graph.apply_operations(&[entry]).unwrap();
 
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     let total_findings = result.phase.findings_count;
     let mutation_count = result
         .origin_counts
@@ -151,7 +198,10 @@ async fn finding_origin_all_mutation_when_no_llm() {
 #[tokio::test]
 async fn discovered_endpoints_empty_by_default() {
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert!(result.discovered_endpoints.is_empty());
 }
 
@@ -276,8 +326,6 @@ fn add_endpoint_node(ctx: &mut ScanContext, path: &str, seq: u64) {
 #[test]
 fn business_context_excluded_endpoints_filtered_from_scheduler() {
     use std::io::Write;
-    // Write a context JSON to a temp file and load it, then verify the scheduler
-    // has the excluded endpoint removed — mirrors the logic inside run_fuzz().
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
     write!(tmp, r#"{{"excluded_endpoints":["/api/health"]}}"#).unwrap();
 
@@ -321,26 +369,24 @@ fn business_context_excluded_endpoints_filtered_from_scheduler() {
 
 #[tokio::test]
 async fn run_fuzz_with_business_context_excluded_endpoint_succeeds() {
-    // Integration smoke test: run_fuzz must succeed and not panic when
-    // context_file excludes one of the three endpoints in the graph.
     let (mut ctx, _tmp) =
         make_context_with_context_file(r#"{"excluded_endpoints":["/api/health"]}"#);
     add_endpoint_node(&mut ctx, "/api/users", 0);
     add_endpoint_node(&mut ctx, "/api/admin", 1);
     add_endpoint_node(&mut ctx, "/api/health", 2);
 
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
-    // The function must complete without error.  The oracle produces no findings
-    // for placeholder 200/empty-body responses, so we only assert the invariant
-    // that counts are non-negative and consistent with 2 fuzzed endpoints.
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert_eq!(result.discovered_endpoints.len(), 0);
-    // findings_count is whatever the placeholder oracle decides (likely 0);
-    // the important invariant is that the total is the same as fuzzing exactly
-    // the two non-excluded endpoints.
     let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
     add_endpoint_node(&mut ctx2, "/api/users", 0);
     add_endpoint_node(&mut ctx2, "/api/admin", 1);
-    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+    let mut transport2 = MockTransport::ok_200();
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2, &mut transport2)
+        .await
+        .unwrap();
     assert_eq!(
         result.phase.findings_count, result2.phase.findings_count,
         "excluding /api/health should give same count as only fuzzing /api/users + /api/admin"
@@ -349,19 +395,22 @@ async fn run_fuzz_with_business_context_excluded_endpoint_succeeds() {
 
 #[tokio::test]
 async fn run_fuzz_no_context_file_is_noop() {
-    // Baseline: no context_file, all 3 endpoints fuzzed.
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
     add_endpoint_node(&mut ctx, "/api/a", 0);
     add_endpoint_node(&mut ctx, "/api/b", 1);
     add_endpoint_node(&mut ctx, "/api/c", 2);
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
-    // No exclusion — all endpoints are in scope; result must succeed.
-    // findings must match a second identical run (deterministic oracle)
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
     add_endpoint_node(&mut ctx2, "/api/a", 0);
     add_endpoint_node(&mut ctx2, "/api/b", 1);
     add_endpoint_node(&mut ctx2, "/api/c", 2);
-    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+    let mut transport2 = MockTransport::ok_200();
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2, &mut transport2)
+        .await
+        .unwrap();
     assert_eq!(result.phase.findings_count, result2.phase.findings_count);
 }
 
@@ -371,13 +420,18 @@ async fn run_fuzz_empty_excluded_endpoints_is_noop() {
     add_endpoint_node(&mut ctx, "/api/x", 0);
     add_endpoint_node(&mut ctx, "/api/y", 1);
 
-    // No exclusions — both endpoints fuzzed; result must succeed.
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
 
     let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
     add_endpoint_node(&mut ctx2, "/api/x", 0);
     add_endpoint_node(&mut ctx2, "/api/y", 1);
-    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+    let mut transport2 = MockTransport::ok_200();
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2, &mut transport2)
+        .await
+        .unwrap();
 
     assert_eq!(
         result.phase.findings_count, result2.phase.findings_count,
@@ -569,7 +623,10 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         defense_profile: None,
     };
 
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert_eq!(result.phase.findings_count, 0);
 }
 
@@ -596,9 +653,10 @@ async fn run_fuzz_with_stealth_and_endpoints_uses_stealth_payloads() {
         }])
         .unwrap();
 
-    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
-    // The placeholder oracle produces no anomalies, so findings_count is 0.
-    // The stealth payloads path (line 71 in original) is exercised.
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
     assert_eq!(result.phase.findings_count, 0);
     assert!(result.discovered_endpoints.is_empty());
 }
@@ -609,9 +667,76 @@ async fn run_fuzz_with_stealth_and_endpoints_uses_stealth_payloads() {
 fn enqueue_targets_for_nonexistent_node_id_skips_gracefully() {
     let ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
     let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
-    // Node ID 999 does not exist in the empty graph — get_node returns Ok(None).
-    // This exercises the else-branch of `if let Some(node)` in enqueue_targets_for_endpoints.
     phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &[999], &ctx);
     assert!(scheduler.is_empty());
     assert_eq!(scheduler.pending_count(), 0);
+}
+
+// --- transport error handling ---
+
+#[tokio::test]
+async fn run_fuzz_transport_errors_are_skipped_gracefully() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/test".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let mut transport = FailingTransport;
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert_eq!(result.phase.findings_count, 0);
+    assert_eq!(result.phase.operations_applied, 0);
+}
+
+// --- mock transport with response body triggers oracle ---
+
+#[tokio::test]
+async fn run_fuzz_with_reflective_body_may_produce_findings() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/search".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let mut transport = MockTransport::with_body("<html>SQL error: near syntax</html>");
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    // With a body containing SQL error text, the oracle may or may not flag it
+    // depending on the specific payloads generated. The key invariant is that the
+    // function completes without error and origin counts are consistent.
+    let mutation_count = result
+        .origin_counts
+        .get(&phase_fuzz::FindingOrigin::Mutation)
+        .copied()
+        .unwrap_or(0);
+    assert_eq!(mutation_count, result.phase.findings_count);
 }

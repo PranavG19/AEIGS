@@ -5,10 +5,18 @@ use aegis_fuzzing::oracle::FuzzOracle;
 use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::request::{FuzzRequest, FuzzResponse};
 
-use crate::util::timestamp_ms;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{load_business_context, parse_stealth_level};
+use crate::util::timestamp_ms;
+
+pub trait FuzzTransport {
+    fn send(
+        &mut self,
+        request: &FuzzRequest,
+    ) -> impl std::future::Future<Output = Result<FuzzResponse, String>> + Send;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FindingOrigin {
@@ -24,7 +32,10 @@ pub struct FuzzPhaseResult {
     pub discovered_endpoints: Vec<String>,
 }
 
-pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> {
+pub async fn run_fuzz<T: FuzzTransport>(
+    ctx: &mut ScanContext,
+    transport: &mut T,
+) -> Result<FuzzPhaseResult, String> {
     let mut scheduler = FuzzScheduler::new();
     let endpoints = ctx
         .graph
@@ -66,6 +77,8 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
         .map_err(|e| format!("{e:?}"))?;
     let mut findings_count = 0u64;
     let mut origin_counts: HashMap<FindingOrigin, u64> = HashMap::new();
+    let mut next_request_id = 0u64;
+    let target_base = ctx.config.target.clone();
 
     while let Some(target) = scheduler.next_target() {
         let payloads = if ctx.config.stealth.stealth {
@@ -75,12 +88,23 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
         };
 
         for payload in &payloads {
-            let anomalies = oracle.analyze_response(
-                &build_placeholder_response(target.endpoint.clone()),
-                &payload.raw,
-                &target.endpoint,
-                &target.method,
-            );
+            let request = FuzzRequest {
+                request_id: next_request_id,
+                endpoint: format!("{}{}", target_base, target.endpoint),
+                method: target.method.clone(),
+                parameter_name: target.parameter.clone(),
+                payload: payload.raw.clone(),
+                headers: vec![],
+            };
+            next_request_id += 1;
+
+            let response = match transport.send(&request).await {
+                Ok(resp) => resp,
+                Err(_) => continue,
+            };
+
+            let anomalies =
+                oracle.analyze_response(&response, &payload.raw, &target.endpoint, &target.method);
 
             append_anomaly_entries(
                 &anomalies,
@@ -190,17 +214,11 @@ pub(crate) fn build_stealth_config(
     }
 }
 
-pub(crate) fn build_placeholder_response(
-    _endpoint: String,
-) -> aegis_fuzzing::executor::FuzzResponse {
-    use std::time::Duration;
-    aegis_fuzzing::executor::FuzzResponse {
-        request_id: 0,
-        status_code: 200,
-        body: String::new(),
-        headers: vec![],
-        response_time: Duration::from_millis(100),
-        body_size_bytes: 0,
+impl FuzzTransport for aegis_evasion_engine::EvasionTransport {
+    async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        aegis_evasion_engine::EvasionTransport::send(self, request)
+            .await
+            .map_err(|e| e.to_string())
     }
 }
 
