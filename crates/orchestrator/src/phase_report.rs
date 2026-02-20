@@ -115,9 +115,9 @@ pub(crate) fn all_finding_ids(ctx: &ScanContext) -> Vec<u64> {
 }
 
 pub(crate) fn severity_to_level(composite: f64) -> SarifLevel {
-    if composite >= 0.7 {
+    if composite >= 70.0 {
         SarifLevel::Error
-    } else if composite >= 0.4 {
+    } else if composite >= 40.0 {
         SarifLevel::Warning
     } else {
         SarifLevel::Note
@@ -131,10 +131,10 @@ pub(crate) fn apply_business_context_multipliers(
 ) -> f64 {
     let mut multiplied = score;
     if biz_ctx.critical_assets.iter().any(|a| a == endpoint) {
-        multiplied = (multiplied * 1.5).min(10.0);
+        multiplied = (multiplied * 1.5).min(100.0);
     }
     if biz_ctx.pii_endpoints.iter().any(|p| p == endpoint) {
-        multiplied = (multiplied * 1.5).min(10.0);
+        multiplied = (multiplied * 1.5).min(100.0);
     }
     multiplied
 }

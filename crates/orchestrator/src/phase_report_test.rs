@@ -119,23 +119,23 @@ fn all_finding_ids_empty_graph_returns_empty() {
 }
 
 #[test]
-fn severity_to_level_error_at_0_7() {
-    assert_eq!(phase_report::severity_to_level(0.7), SarifLevel::Error);
-    assert_eq!(phase_report::severity_to_level(0.85), SarifLevel::Error);
-    assert_eq!(phase_report::severity_to_level(1.0), SarifLevel::Error);
+fn severity_to_level_error_at_70() {
+    assert_eq!(phase_report::severity_to_level(70.0), SarifLevel::Error);
+    assert_eq!(phase_report::severity_to_level(85.0), SarifLevel::Error);
+    assert_eq!(phase_report::severity_to_level(100.0), SarifLevel::Error);
 }
 
 #[test]
-fn severity_to_level_warning_at_0_4() {
-    assert_eq!(phase_report::severity_to_level(0.4), SarifLevel::Warning);
-    assert_eq!(phase_report::severity_to_level(0.5), SarifLevel::Warning);
-    assert_eq!(phase_report::severity_to_level(0.69), SarifLevel::Warning);
+fn severity_to_level_warning_at_40() {
+    assert_eq!(phase_report::severity_to_level(40.0), SarifLevel::Warning);
+    assert_eq!(phase_report::severity_to_level(50.0), SarifLevel::Warning);
+    assert_eq!(phase_report::severity_to_level(69.9), SarifLevel::Warning);
 }
 
 #[test]
-fn severity_to_level_note_below_0_4() {
-    assert_eq!(phase_report::severity_to_level(0.39), SarifLevel::Note);
-    assert_eq!(phase_report::severity_to_level(0.1), SarifLevel::Note);
+fn severity_to_level_note_below_40() {
+    assert_eq!(phase_report::severity_to_level(39.9), SarifLevel::Note);
+    assert_eq!(phase_report::severity_to_level(10.0), SarifLevel::Note);
     assert_eq!(phase_report::severity_to_level(0.0), SarifLevel::Note);
 }
 
@@ -197,28 +197,30 @@ fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
 #[test]
 fn apply_business_context_multipliers_critical_asset_multiplies_by_1_5() {
     let biz = make_biz_ctx(&["/api/payments"], &[]);
-    let result = apply_business_context_multipliers(4.0, "/api/payments", &biz);
-    assert!((result - 6.0).abs() < 1e-9);
+    // 50.0 × 1.5 = 75.0
+    let result = apply_business_context_multipliers(50.0, "/api/payments", &biz);
+    assert!((result - 75.0).abs() < 1e-9);
 }
 
 #[test]
 fn apply_business_context_multipliers_pii_endpoint_multiplies_by_1_5() {
     let biz = make_biz_ctx(&[], &["/api/users"]);
-    let result = apply_business_context_multipliers(4.0, "/api/users", &biz);
-    assert!((result - 6.0).abs() < 1e-9);
+    // 70.0 × 1.5 = 105.0 → capped at 100.0
+    let result = apply_business_context_multipliers(70.0, "/api/users", &biz);
+    assert!((result - 100.0).abs() < 1e-9);
 }
 
 #[test]
-fn apply_business_context_multipliers_stacking_caps_at_10() {
+fn apply_business_context_multipliers_stacking_caps_at_100() {
     let biz = make_biz_ctx(&["/api/payments"], &["/api/payments"]);
-    // 5.0 × 1.5 = 7.5 (critical_assets), then 7.5 × 1.5 = 11.25 → capped at 10.0 (pii_endpoints)
-    let result = apply_business_context_multipliers(5.0, "/api/payments", &biz);
-    assert!((result - 10.0).abs() < 1e-9);
+    // 50.0 × 1.5 = 75.0 (critical_assets), then 75.0 × 1.5 = 112.5 → capped at 100.0 (pii_endpoints)
+    let result = apply_business_context_multipliers(50.0, "/api/payments", &biz);
+    assert!((result - 100.0).abs() < 1e-9);
 }
 
 #[test]
 fn apply_business_context_multipliers_unmatched_endpoint_unchanged() {
     let biz = make_biz_ctx(&["/api/payments"], &["/api/users"]);
-    let result = apply_business_context_multipliers(7.0, "/api/other", &biz);
-    assert!((result - 7.0).abs() < 1e-9);
+    let result = apply_business_context_multipliers(70.0, "/api/other", &biz);
+    assert!((result - 70.0).abs() < 1e-9);
 }
