@@ -131,7 +131,11 @@ fn extract_body_parameters(operation: &openapiv3::Operation) -> Vec<EndpointPara
 
     body.content
         .iter()
-        .filter(|(media_type, _)| media_type.contains("json"))
+        .filter(|(media_type, _)| {
+            media_type.contains("json")
+                || media_type.contains("x-www-form-urlencoded")
+                || media_type.contains("multipart/form-data")
+        })
         .flat_map(|(_, media_obj)| {
             extract_object_property_names(media_obj.schema.as_ref())
                 .into_iter()

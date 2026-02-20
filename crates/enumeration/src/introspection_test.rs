@@ -571,4 +571,623 @@ mod tests {
         let result = parse_openapi_json(r#"{ "paths": {} }"#);
         assert!(matches!(result, Err(IntrospectionError::JsonParseError(_))));
     }
+
+    #[test]
+    fn openapi_request_body_json_object_yields_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/users": {
+                    "post": {
+                        "summary": "Create user",
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "username": { "type": "string" },
+                                            "password": { "type": "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "201": { "description": "created" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+
+        let body_params: Vec<_> = endpoints[0]
+            .parameters
+            .iter()
+            .filter(|p| p.location == ParameterLocation::Body)
+            .collect();
+        assert_eq!(body_params.len(), 2);
+
+        let mut names: Vec<&str> = body_params.iter().map(|p| p.name.as_str()).collect();
+        names.sort();
+        assert_eq!(names, vec!["password", "username"]);
+
+        for p in &body_params {
+            assert!(p.required);
+            assert_eq!(p.param_type, "string");
+        }
+    }
+
+    #[test]
+    fn openapi_no_request_body_yields_no_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/items": {
+                    "get": {
+                        "parameters": [
+                            {
+                                "name": "filter",
+                                "in": "query",
+                                "required": false,
+                                "schema": { "type": "string" }
+                            }
+                        ],
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(endpoints[0].parameters.len(), 1);
+        assert_eq!(
+            endpoints[0].parameters[0].location,
+            ParameterLocation::Query
+        );
+    }
+
+    #[test]
+    fn openapi_request_body_multipart_form_data_yields_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/upload": {
+                    "post": {
+                        "requestBody": {
+                            "required": false,
+                            "content": {
+                                "multipart/form-data": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "file": { "type": "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+
+        let body_params: Vec<_> = endpoints[0]
+            .parameters
+            .iter()
+            .filter(|p| p.location == ParameterLocation::Body)
+            .collect();
+        assert_eq!(body_params.len(), 1);
+        assert_eq!(body_params[0].name, "file");
+        assert_eq!(body_params[0].param_type, "string");
+        assert!(!body_params[0].required);
+    }
+
+    #[test]
+    fn openapi_request_body_form_urlencoded_yields_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/login": {
+                    "post": {
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/x-www-form-urlencoded": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "username": { "type": "string" },
+                                            "password": { "type": "string" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+
+        let body_params: Vec<_> = endpoints[0]
+            .parameters
+            .iter()
+            .filter(|p| p.location == ParameterLocation::Body)
+            .collect();
+        assert_eq!(body_params.len(), 2);
+
+        let mut names: Vec<&str> = body_params.iter().map(|p| p.name.as_str()).collect();
+        names.sort();
+        assert_eq!(names, vec!["password", "username"]);
+
+        for p in &body_params {
+            assert!(p.required);
+            assert_eq!(p.param_type, "string");
+        }
+    }
+
+    #[test]
+    fn openapi_request_body_multiple_content_types_extracts_all() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/submit": {
+                    "post": {
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": { "type": "string" },
+                                            "age": { "type": "integer" }
+                                        }
+                                    }
+                                },
+                                "application/x-www-form-urlencoded": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": { "type": "string" },
+                                            "age": { "type": "integer" }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+
+        let body_params: Vec<_> = endpoints[0]
+            .parameters
+            .iter()
+            .filter(|p| p.location == ParameterLocation::Body)
+            .collect();
+        assert_eq!(body_params.len(), 4);
+
+        let mut names: Vec<&str> = body_params.iter().map(|p| p.name.as_str()).collect();
+        names.sort();
+        assert_eq!(names, vec!["age", "age", "name", "name"]);
+    }
+
+    #[test]
+    fn openapi_request_body_unsupported_content_type_yields_no_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/raw": {
+                    "post": {
+                        "requestBody": {
+                            "required": false,
+                            "content": {
+                                "application/octet-stream": {
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert!(
+            endpoints[0]
+                .parameters
+                .iter()
+                .all(|p| p.location != ParameterLocation::Body)
+        );
+    }
+
+    #[test]
+    fn openapi_request_body_non_object_schema_yields_no_body_params() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/batch": {
+                    "post": {
+                        "requestBody": {
+                            "required": true,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "array",
+                                        "items": { "type": "string" }
+                                    }
+                                }
+                            }
+                        },
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert!(
+            endpoints[0]
+                .parameters
+                .iter()
+                .all(|p| p.location != ParameterLocation::Body)
+        );
+    }
+
+    #[test]
+    fn error_display_json_parse_error() {
+        let e: IntrospectionError = serde_json::from_str::<serde_json::Value>("{{bad")
+            .unwrap_err()
+            .into();
+        assert!(e.to_string().contains("json parse error"));
+    }
+
+    #[test]
+    fn openapi_cookie_parameter_location() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/session": {
+                    "get": {
+                        "parameters": [
+                            {
+                                "name": "session_id",
+                                "in": "cookie",
+                                "required": false,
+                                "schema": { "type": "string" }
+                            }
+                        ],
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(
+            endpoints[0].parameters[0].location,
+            ParameterLocation::Cookie
+        );
+    }
+
+    #[test]
+    fn openapi_schema_type_number_object_array_boolean() {
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/types": {
+                    "get": {
+                        "parameters": [
+                            {
+                                "name": "price",
+                                "in": "query",
+                                "required": false,
+                                "schema": { "type": "number" }
+                            },
+                            {
+                                "name": "meta",
+                                "in": "query",
+                                "required": false,
+                                "schema": { "type": "object" }
+                            },
+                            {
+                                "name": "tags",
+                                "in": "query",
+                                "required": false,
+                                "schema": { "type": "array" }
+                            },
+                            {
+                                "name": "active",
+                                "in": "query",
+                                "required": false,
+                                "schema": { "type": "boolean" }
+                            }
+                        ],
+                        "responses": { "200": { "description": "ok" } }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        let params = &endpoints[0].parameters;
+        assert_eq!(
+            params
+                .iter()
+                .find(|p| p.name == "price")
+                .unwrap()
+                .param_type,
+            "number"
+        );
+        assert_eq!(
+            params.iter().find(|p| p.name == "meta").unwrap().param_type,
+            "object"
+        );
+        assert_eq!(
+            params.iter().find(|p| p.name == "tags").unwrap().param_type,
+            "array"
+        );
+        assert_eq!(
+            params
+                .iter()
+                .find(|p| p.name == "active")
+                .unwrap()
+                .param_type,
+            "boolean"
+        );
+    }
+
+    #[test]
+    fn openapi_response_status_code_range_is_ignored() {
+        // The "2XX" range-style status code should be silently dropped;
+        // only the numeric "201" code should appear in the output.
+        let spec = r#"{
+            "openapi": "3.0.0",
+            "info": { "title": "Test", "version": "1.0" },
+            "paths": {
+                "/items": {
+                    "post": {
+                        "responses": {
+                            "201": { "description": "created" },
+                            "2XX": { "description": "other success" }
+                        }
+                    }
+                }
+            }
+        }"#;
+
+        let endpoints = parse_openapi_json(spec).unwrap();
+        assert_eq!(endpoints[0].response_status_codes, vec![201]);
+    }
+
+    #[test]
+    fn graphql_introspection_subscription_type_emitted() {
+        let response = r#"{
+            "data": {
+                "__schema": {
+                    "queryType": { "name": "Query" },
+                    "mutationType": null,
+                    "subscriptionType": { "name": "Subscription" },
+                    "types": [
+                        {
+                            "name": "Query",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "ping",
+                                    "args": [],
+                                    "type": { "kind": "SCALAR", "name": "String", "ofType": null }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Subscription",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "events",
+                                    "args": [],
+                                    "type": { "kind": "SCALAR", "name": "String", "ofType": null }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let endpoints = parse_graphql_introspection(response).unwrap();
+        let sub = endpoints.iter().find(|e| {
+            e.description
+                .as_deref()
+                .is_some_and(|d| d.contains("Subscription"))
+        });
+        assert!(sub.is_some());
+    }
+
+    #[test]
+    fn graphql_introspection_non_object_type_and_null_fields_skipped() {
+        // A SCALAR type and an OBJECT type with null fields must not appear as endpoints.
+        let response = r#"{
+            "data": {
+                "__schema": {
+                    "queryType": { "name": "Query" },
+                    "mutationType": null,
+                    "subscriptionType": null,
+                    "types": [
+                        {
+                            "name": "Query",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "version",
+                                    "args": [],
+                                    "type": { "kind": "SCALAR", "name": "String", "ofType": null }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "SomeScalar",
+                            "kind": "SCALAR",
+                            "fields": null
+                        },
+                        {
+                            "name": "EmptyObject",
+                            "kind": "OBJECT",
+                            "fields": null
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let endpoints = parse_graphql_introspection(response).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(endpoints[0].description.as_deref(), Some("Query: version"));
+    }
+
+    #[test]
+    fn graphql_introspection_builtin_and_dunder_types_skipped() {
+        // __Schema and String (builtin scalar) must be filtered out before SDL emission.
+        let response = r#"{
+            "data": {
+                "__schema": {
+                    "queryType": { "name": "Query" },
+                    "mutationType": null,
+                    "subscriptionType": null,
+                    "types": [
+                        {
+                            "name": "Query",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "ping",
+                                    "args": [],
+                                    "type": { "kind": "SCALAR", "name": "String", "ofType": null }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "__Schema",
+                            "kind": "OBJECT",
+                            "fields": []
+                        },
+                        {
+                            "name": "String",
+                            "kind": "SCALAR",
+                            "fields": null
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let endpoints = parse_graphql_introspection(response).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(endpoints[0].description.as_deref(), Some("Query: ping"));
+    }
+
+    #[test]
+    fn graphql_introspection_field_with_args_emitted() {
+        // A field that has arguments must produce parenthesised args in the SDL,
+        // exercising the emit_field args branch.
+        let response = r#"{
+            "data": {
+                "__schema": {
+                    "queryType": { "name": "Query" },
+                    "mutationType": null,
+                    "subscriptionType": null,
+                    "types": [
+                        {
+                            "name": "Query",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "user",
+                                    "args": [
+                                        {
+                                            "name": "id",
+                                            "type": {
+                                                "kind": "NON_NULL",
+                                                "name": null,
+                                                "ofType": { "kind": "SCALAR", "name": "ID", "ofType": null }
+                                            }
+                                        }
+                                    ],
+                                    "type": { "kind": "OBJECT", "name": "User", "ofType": null }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let endpoints = parse_graphql_introspection(response).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(endpoints[0].parameters[0].name, "id");
+        assert_eq!(endpoints[0].parameters[0].param_type, "ID!");
+        assert!(endpoints[0].parameters[0].required);
+    }
+
+    #[test]
+    fn graphql_introspection_field_type_null_defaults_to_string() {
+        // A field with a null type ref must not panic; type_ref_to_sdl returns "String".
+        let response = r#"{
+            "data": {
+                "__schema": {
+                    "queryType": { "name": "Query" },
+                    "mutationType": null,
+                    "subscriptionType": null,
+                    "types": [
+                        {
+                            "name": "Query",
+                            "kind": "OBJECT",
+                            "fields": [
+                                {
+                                    "name": "mystery",
+                                    "args": [],
+                                    "type": null
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }"#;
+
+        let endpoints = parse_graphql_introspection(response).unwrap();
+        assert_eq!(endpoints.len(), 1);
+        assert_eq!(endpoints[0].response_type.as_deref(), Some("String"));
+    }
 }

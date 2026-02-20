@@ -226,7 +226,7 @@ The knowledge graph enforces these constraints during batch validation:
 - `EvasionHypothesisGenerator` and `HypothesisCompiler` — RESOLVED: both now use composition via `LlmBackend`
 - `OpenAiClient` 429 handling — RESOLVED: now retries with exponential backoff, same as 5xx
 - `CompilationResult` (Python) — RESOLVED: `input_tokens` and `output_tokens` fields added and propagated from `HypothesisCompiler`
-- OpenAPI `requestBody` is not extracted in `enumeration` crate — only path/query/header parameters are parsed; POST body parameters are invisible to the fuzzer
+- OpenAPI `requestBody` extraction covers `application/json`, `application/x-www-form-urlencoded`, and `multipart/form-data` — per-property `required` arrays are not traversed; all properties inherit the body-level `required` flag
 - `FuzzScheduler` NaN handling — RESOLVED: `enqueue()` now clamps non-finite `priority_score` to `0.0` before insertion
 - `bypass_examples.json` loading — RESOLVED: `_load_bypass_examples()` now checks `corpus_path.exists()` and emits `RuntimeWarning` + returns `{}` if missing
 - `cargo fmt --check` — RESOLVED: formatting is now clean workspace-wide; gate is enforced
