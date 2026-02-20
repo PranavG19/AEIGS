@@ -3,7 +3,7 @@ mod tests {
     use crate::defense_context::DefenseContext;
     use crate::edge::{EdgeData, EdgeLabel, is_valid_edge};
     use crate::finding::{
-        EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence_and_variance,
+        EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence,
     };
     use crate::ipc::{GraphQuery, IpcFrame, IpcMessage};
     use crate::node::{NodeData, NodeType};
@@ -977,26 +977,23 @@ mod tests {
     }
 
     #[test]
-    fn confidence_from_evidence_confirmed_low_variance_is_high() {
-        let score = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 0.0);
+    fn confidence_from_evidence_confirmed_is_high() {
+        let score = confidence_from_evidence(EvidenceLevel::Confirmed);
         assert!((score - 0.9).abs() < f64::EPSILON);
     }
 
     #[test]
-    fn confidence_from_evidence_statistical_high_variance_is_low() {
-        let score = confidence_from_evidence_and_variance(EvidenceLevel::Statistical, 0.8);
-        assert!(score < 0.2);
+    fn confidence_from_evidence_statistical_is_low() {
+        let score = confidence_from_evidence(EvidenceLevel::Statistical);
+        assert!((score - 0.4).abs() < f64::EPSILON);
     }
 
     #[test]
-    fn confidence_from_evidence_variance_clamped() {
-        let score_neg = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, -1.0);
-        let score_zero = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 0.0);
-        assert!((score_neg - score_zero).abs() < f64::EPSILON);
-
-        let score_over = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 2.0);
-        let score_one = confidence_from_evidence_and_variance(EvidenceLevel::Confirmed, 1.0);
-        assert!((score_over - score_one).abs() < f64::EPSILON);
+    fn confidence_from_evidence_all_levels() {
+        assert!(
+            (confidence_from_evidence(EvidenceLevel::Counterfactual) - 0.7).abs() < f64::EPSILON
+        );
+        assert!((confidence_from_evidence(EvidenceLevel::Chained) - 0.95).abs() < f64::EPSILON);
     }
 
     #[test]

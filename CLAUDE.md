@@ -169,7 +169,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Pluggable LLM backends — `LlmBackend` ABC with `BedrockClient` and `OpenAiClient` implementations; `create_backend("bedrock"|"openai"|"ollama")` factory; `HypothesisGenerator` uses composition over inheritance
 - Causal mitigation impact — `mitigation_impact(node)` computes which findings become unreachable if a node is fixed; `causal_influence_ranking()` sorts nodes by mitigation value; complements betweenness centrality with actionable prioritization
 - Endpoint response variance detection — `measure_endpoint_variance()` sends N identical requests and measures status code/body size variance; high-variance endpoints flagged as non-deterministic to reduce false positives in counterfactual testing
-- Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence_and_variance()` combines evidence strength with endpoint stability; `effective_confidence()` resolves to score or falls back to evidence-based calculation
+- Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence()` maps EvidenceLevel to base confidence; `effective_confidence()` resolves to score or falls back to evidence-based calculation
 - Defense-fingerprinting merged into fuzzing crate — eliminates a leaf crate with no consumers other than orchestrator and reporting; reduces workspace crate count from 12 to 11; WAF/rate-limit/bot-detection types now re-exported from `aegis_fuzzing` root alongside scheduler/mutator types
 
 ## Graph Validation Rules

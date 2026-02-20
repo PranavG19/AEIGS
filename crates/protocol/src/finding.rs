@@ -8,9 +8,9 @@ use std::fmt;
 /// at the same location have equal `FindingId` values even across scans.
 ///
 /// Computed as SHA3-256(endpoint + ":" + vulnerability_class + ":" + parameter).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FindingId {
-    pub bytes: [u8; 32],
+    bytes: [u8; 32],
 }
 
 impl FindingId {
@@ -179,17 +179,15 @@ impl FindingData {
 
     pub fn effective_confidence(&self) -> f64 {
         self.confidence_score
-            .unwrap_or_else(|| confidence_from_evidence_and_variance(self.evidence_level, 0.0))
+            .unwrap_or_else(|| confidence_from_evidence(self.evidence_level))
     }
 }
 
-pub fn confidence_from_evidence_and_variance(evidence: EvidenceLevel, variance: f64) -> f64 {
-    let base = match evidence {
+pub fn confidence_from_evidence(evidence: EvidenceLevel) -> f64 {
+    match evidence {
         EvidenceLevel::Statistical => 0.4,
         EvidenceLevel::Counterfactual => 0.7,
         EvidenceLevel::Confirmed => 0.9,
         EvidenceLevel::Chained => 0.95,
-    };
-    let variance_penalty = variance.clamp(0.0, 1.0) * 0.5;
-    (base - variance_penalty).clamp(0.0, 1.0)
+    }
 }
