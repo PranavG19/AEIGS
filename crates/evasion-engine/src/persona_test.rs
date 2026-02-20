@@ -1,5 +1,6 @@
 use super::*;
 use std::collections::HashSet;
+use std::io::Write;
 
 #[test]
 fn persona_id_variants_exist() {
@@ -243,4 +244,203 @@ fn python_requests_persona_exists() {
     assert!(!python.user_agent.is_empty());
     assert!(python.user_agent.contains("python-requests/"));
     assert!(python.sec_fetch_headers.is_empty());
+}
+
+#[test]
+fn load_persona_catalog_default_returns_ten_personas() {
+    let catalog = load_persona_catalog(None).unwrap();
+    assert_eq!(catalog.len(), 10);
+}
+
+#[test]
+fn load_persona_catalog_from_file() {
+    let catalog = persona_catalog();
+    let json = serde_json::to_string_pretty(&catalog).unwrap();
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{json}").unwrap();
+
+    let loaded = load_persona_catalog(Some(tmp.path())).unwrap();
+    assert_eq!(loaded.len(), 10);
+    assert_eq!(loaded[0].id, PersonaId::ChromeDesktop);
+}
+
+#[test]
+fn load_persona_catalog_custom_single_persona() {
+    let json = r#"[{
+        "id": "CurlClient",
+        "user_agent": "MyCurl/9.0",
+        "accept_header": "*/*",
+        "accept_language": "en",
+        "accept_encoding": "gzip",
+        "sec_fetch_headers": [],
+        "header_order": ["Host", "User-Agent"],
+        "min_request_interval_ms": 100,
+        "max_request_interval_ms": 200,
+        "jitter_distribution": "Uniform"
+    }]"#;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{json}").unwrap();
+
+    let loaded = load_persona_catalog(Some(tmp.path())).unwrap();
+    assert_eq!(loaded.len(), 1);
+    assert_eq!(loaded[0].user_agent, "MyCurl/9.0");
+}
+
+#[test]
+fn load_persona_catalog_nonexistent_file_returns_io_error() {
+    let result = load_persona_catalog(Some(std::path::Path::new("/nonexistent/personas.json")));
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), CatalogError::Io(_)));
+}
+
+#[test]
+fn load_persona_catalog_invalid_json_returns_parse_error() {
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{{ not valid json !!").unwrap();
+    let result = load_persona_catalog(Some(tmp.path()));
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), CatalogError::Parse(_)));
+}
+
+#[test]
+fn load_persona_catalog_empty_array_returns_empty_catalog_error() {
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "[]").unwrap();
+    let result = load_persona_catalog(Some(tmp.path()));
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), CatalogError::EmptyCatalog));
+}
+
+#[test]
+fn load_persona_catalog_duplicate_ids_returns_error() {
+    let json = r#"[
+        {
+            "id": "CurlClient",
+            "user_agent": "curl/1.0",
+            "accept_header": "*/*",
+            "accept_language": "en",
+            "accept_encoding": "gzip",
+            "sec_fetch_headers": [],
+            "header_order": [],
+            "min_request_interval_ms": 100,
+            "max_request_interval_ms": 200,
+            "jitter_distribution": "Uniform"
+        },
+        {
+            "id": "CurlClient",
+            "user_agent": "curl/2.0",
+            "accept_header": "*/*",
+            "accept_language": "en",
+            "accept_encoding": "gzip",
+            "sec_fetch_headers": [],
+            "header_order": [],
+            "min_request_interval_ms": 100,
+            "max_request_interval_ms": 200,
+            "jitter_distribution": "Uniform"
+        }
+    ]"#;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{json}").unwrap();
+    let result = load_persona_catalog(Some(tmp.path()));
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        CatalogError::DuplicateId(PersonaId::CurlClient)
+    ));
+}
+
+#[test]
+fn load_persona_catalog_empty_user_agent_returns_error() {
+    let json = r#"[{
+        "id": "CurlClient",
+        "user_agent": "",
+        "accept_header": "*/*",
+        "accept_language": "en",
+        "accept_encoding": "gzip",
+        "sec_fetch_headers": [],
+        "header_order": [],
+        "min_request_interval_ms": 100,
+        "max_request_interval_ms": 200,
+        "jitter_distribution": "Uniform"
+    }]"#;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{json}").unwrap();
+    let result = load_persona_catalog(Some(tmp.path()));
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        CatalogError::EmptyUserAgent(PersonaId::CurlClient)
+    ));
+}
+
+#[test]
+fn load_persona_catalog_empty_accept_header_returns_error() {
+    let json = r#"[{
+        "id": "CurlClient",
+        "user_agent": "curl/1.0",
+        "accept_header": "",
+        "accept_language": "en",
+        "accept_encoding": "gzip",
+        "sec_fetch_headers": [],
+        "header_order": [],
+        "min_request_interval_ms": 100,
+        "max_request_interval_ms": 200,
+        "jitter_distribution": "Uniform"
+    }]"#;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{json}").unwrap();
+    let result = load_persona_catalog(Some(tmp.path()));
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        CatalogError::EmptyAcceptHeader(PersonaId::CurlClient)
+    ));
+}
+
+#[test]
+fn catalog_error_display_variants() {
+    let io_err = CatalogError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "gone"));
+    assert!(
+        io_err
+            .to_string()
+            .contains("failed to read persona catalog")
+    );
+
+    let parse_err = CatalogError::Parse(serde_json::from_str::<Vec<Persona>>("bad").unwrap_err());
+    assert!(
+        parse_err
+            .to_string()
+            .contains("failed to parse persona catalog")
+    );
+
+    let empty_err = CatalogError::EmptyCatalog;
+    assert!(empty_err.to_string().contains("at least one persona"));
+
+    let dup_err = CatalogError::DuplicateId(PersonaId::Googlebot);
+    assert!(dup_err.to_string().contains("duplicate persona id"));
+
+    let ua_err = CatalogError::EmptyUserAgent(PersonaId::ChromeDesktop);
+    assert!(ua_err.to_string().contains("empty user_agent"));
+
+    let accept_err = CatalogError::EmptyAcceptHeader(PersonaId::FirefoxDesktop);
+    assert!(accept_err.to_string().contains("empty accept_header"));
+}
+
+#[test]
+fn catalog_error_implements_std_error() {
+    let err: Box<dyn std::error::Error> = Box::new(CatalogError::EmptyCatalog);
+    assert!(!err.to_string().is_empty());
+}
+
+#[test]
+fn default_catalog_json_matches_persona_catalog() {
+    let from_json = load_persona_catalog(None).unwrap();
+    let from_fn = persona_catalog();
+    assert_eq!(from_json.len(), from_fn.len());
+    for (a, b) in from_json.iter().zip(from_fn.iter()) {
+        assert_eq!(a.id, b.id);
+        assert_eq!(a.user_agent, b.user_agent);
+        assert_eq!(a.accept_header, b.accept_header);
+        assert_eq!(a.header_order, b.header_order);
+    }
 }

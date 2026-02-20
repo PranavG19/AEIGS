@@ -81,6 +81,11 @@ pub struct StealthOptions {
     /// Safe because target validation enforces localhost-only at request time.
     #[arg(long, default_value_t = false)]
     pub accept_self_signed: bool,
+
+    /// Path to a custom persona catalog JSON file. When omitted, uses the
+    /// embedded default catalog compiled into the binary.
+    #[arg(long, value_name = "PATH")]
+    pub persona_catalog: Option<PathBuf>,
 }
 
 /// Pipeline execution control options.

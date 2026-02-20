@@ -46,6 +46,7 @@ impl EvasionTransport {
     pub fn builder() -> EvasionTransportBuilder {
         EvasionTransportBuilder {
             persona: None,
+            persona_catalog_path: None,
             max_requests_per_session: 50,
             timing_seed: 0,
             persona_rotation_interval: None,
@@ -256,6 +257,7 @@ mod transport_test;
 
 pub struct EvasionTransportBuilder {
     persona: Option<Persona>,
+    persona_catalog_path: Option<std::path::PathBuf>,
     max_requests_per_session: u32,
     timing_seed: u64,
     persona_rotation_interval: Option<u32>,
@@ -290,8 +292,15 @@ impl EvasionTransportBuilder {
         self
     }
 
+    /// Load personas from a custom JSON catalog file instead of the embedded default.
+    pub fn with_persona_catalog(mut self, path: &std::path::Path) -> Self {
+        self.persona_catalog_path = Some(path.to_path_buf());
+        self
+    }
+
     pub fn build(self) -> EvasionTransport {
-        let catalog = crate::persona::persona_catalog();
+        let catalog = crate::persona::load_persona_catalog(self.persona_catalog_path.as_deref())
+            .expect("persona catalog must be valid");
         let persona = self.persona.unwrap_or_else(|| catalog[0].clone());
 
         let timing = TimingController::from_persona(&persona, self.timing_seed);

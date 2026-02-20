@@ -1,0 +1,176 @@
+[
+  {
+    "id": "ChromeDesktop",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Connection", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+      "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Fetch-Site",
+      "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Accept-Encoding", "Accept-Language"
+    ],
+    "min_request_interval_ms": 800,
+    "max_request_interval_ms": 3000,
+    "jitter_distribution": "Normal"
+  },
+  {
+    "id": "FirefoxDesktop",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.5",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "User-Agent", "Accept", "Accept-Language", "Accept-Encoding",
+      "Connection", "Upgrade-Insecure-Requests", "Sec-Fetch-Dest",
+      "Sec-Fetch-Mode", "Sec-Fetch-Site"
+    ],
+    "min_request_interval_ms": 700,
+    "max_request_interval_ms": 2500,
+    "jitter_distribution": "Normal"
+  },
+  {
+    "id": "SafariDesktop",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Accept", "User-Agent", "Accept-Language", "Accept-Encoding",
+      "Connection", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site"
+    ],
+    "min_request_interval_ms": 900,
+    "max_request_interval_ms": 3500,
+    "jitter_distribution": "Exponential"
+  },
+  {
+    "id": "ChromeMobile",
+    "user_agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Connection", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+      "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Fetch-Site",
+      "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Accept-Encoding", "Accept-Language"
+    ],
+    "min_request_interval_ms": 1000,
+    "max_request_interval_ms": 4000,
+    "jitter_distribution": "Normal"
+  },
+  {
+    "id": "Googlebot",
+    "user_agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept_language": "en",
+    "accept_encoding": "gzip, deflate",
+    "sec_fetch_headers": [],
+    "header_order": ["Host", "User-Agent", "Accept", "Accept-Encoding"],
+    "min_request_interval_ms": 2000,
+    "max_request_interval_ms": 8000,
+    "jitter_distribution": "Exponential"
+  },
+  {
+    "id": "EdgeDesktop",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Connection", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+      "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Fetch-Site",
+      "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Accept-Encoding", "Accept-Language"
+    ],
+    "min_request_interval_ms": 800,
+    "max_request_interval_ms": 3000,
+    "jitter_distribution": "Normal"
+  },
+  {
+    "id": "OperaDesktop",
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br, zstd",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Connection", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform",
+      "Upgrade-Insecure-Requests", "User-Agent", "Accept", "Sec-Fetch-Site",
+      "Sec-Fetch-Mode", "Sec-Fetch-Dest", "Accept-Encoding", "Accept-Language"
+    ],
+    "min_request_interval_ms": 700,
+    "max_request_interval_ms": 2500,
+    "jitter_distribution": "Normal"
+  },
+  {
+    "id": "SafariMobile",
+    "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1",
+    "accept_header": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br",
+    "sec_fetch_headers": [
+      ["Sec-Fetch-Site", "none"],
+      ["Sec-Fetch-Mode", "navigate"],
+      ["Sec-Fetch-Dest", "document"]
+    ],
+    "header_order": [
+      "Host", "Accept", "User-Agent", "Accept-Language", "Accept-Encoding",
+      "Connection", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site"
+    ],
+    "min_request_interval_ms": 1000,
+    "max_request_interval_ms": 4000,
+    "jitter_distribution": "Exponential"
+  },
+  {
+    "id": "CurlClient",
+    "user_agent": "curl/8.4.0",
+    "accept_header": "*/*",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br",
+    "sec_fetch_headers": [],
+    "header_order": ["Host", "User-Agent", "Accept", "Accept-Encoding"],
+    "min_request_interval_ms": 500,
+    "max_request_interval_ms": 2000,
+    "jitter_distribution": "Uniform"
+  },
+  {
+    "id": "PythonRequests",
+    "user_agent": "python-requests/2.31.0",
+    "accept_header": "*/*",
+    "accept_language": "en-US,en;q=0.9",
+    "accept_encoding": "gzip, deflate, br",
+    "sec_fetch_headers": [],
+    "header_order": ["Host", "User-Agent", "Accept", "Accept-Encoding"],
+    "min_request_interval_ms": 500,
+    "max_request_interval_ms": 2000,
+    "jitter_distribution": "Uniform"
+  }
+]

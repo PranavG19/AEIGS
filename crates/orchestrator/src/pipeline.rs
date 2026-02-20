@@ -224,17 +224,22 @@ pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfi
 fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTransport {
     let persona_id = crate::scan_config::resolve_persona_id(&ctx.config.stealth.persona)
         .unwrap_or(aegis_evasion_engine::PersonaId::ChromeDesktop);
-    let catalog = aegis_evasion_engine::persona_catalog();
+    let catalog_path = ctx.config.stealth.persona_catalog.as_deref();
+    let catalog = aegis_evasion_engine::load_persona_catalog(catalog_path)
+        .expect("persona catalog must be valid");
     let persona = catalog
         .iter()
         .find(|p| p.id == persona_id)
         .cloned()
         .unwrap_or_else(|| catalog[0].clone());
 
-    aegis_evasion_engine::EvasionTransport::builder()
+    let mut builder = aegis_evasion_engine::EvasionTransport::builder()
         .with_persona(&persona)
-        .with_accept_self_signed(ctx.config.stealth.accept_self_signed)
-        .build()
+        .with_accept_self_signed(ctx.config.stealth.accept_self_signed);
+    if let Some(path) = catalog_path {
+        builder = builder.with_persona_catalog(path);
+    }
+    builder.build()
 }
 
 /// Aggregated output of all scan phases, threaded back to `run_scan`

@@ -1,3 +1,6 @@
+use std::collections::HashSet;
+use std::path::Path;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -123,264 +126,77 @@ impl PersonaBuilder {
     }
 }
 
+#[derive(Debug)]
+pub enum CatalogError {
+    Io(std::io::Error),
+    Parse(serde_json::Error),
+    EmptyCatalog,
+    DuplicateId(PersonaId),
+    EmptyUserAgent(PersonaId),
+    EmptyAcceptHeader(PersonaId),
+}
+
+impl std::fmt::Display for CatalogError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Io(e) => write!(f, "failed to read persona catalog: {e}"),
+            Self::Parse(e) => write!(f, "failed to parse persona catalog: {e}"),
+            Self::EmptyCatalog => write!(f, "persona catalog must contain at least one persona"),
+            Self::DuplicateId(id) => write!(f, "duplicate persona id in catalog: {id:?}"),
+            Self::EmptyUserAgent(id) => {
+                write!(f, "persona {id:?} has empty user_agent")
+            }
+            Self::EmptyAcceptHeader(id) => {
+                write!(f, "persona {id:?} has empty accept_header")
+            }
+        }
+    }
+}
+
+impl std::error::Error for CatalogError {}
+
+const DEFAULT_CATALOG_JSON: &str = include_str!("../data/default_personas.json");
+
+/// Loads the persona catalog from an optional file path.
+///
+/// When `path` is `Some`, reads and parses the file at that path.
+/// When `path` is `None`, uses the embedded default catalog compiled into the binary.
+/// In both cases, the loaded catalog is validated for non-emptiness, unique IDs,
+/// and non-empty required fields.
+pub fn load_persona_catalog(path: Option<&Path>) -> Result<Vec<Persona>, CatalogError> {
+    let json = match path {
+        Some(p) => std::fs::read_to_string(p).map_err(CatalogError::Io)?,
+        None => DEFAULT_CATALOG_JSON.to_string(),
+    };
+    let personas: Vec<Persona> = serde_json::from_str(&json).map_err(CatalogError::Parse)?;
+    validate_catalog(&personas)?;
+    Ok(personas)
+}
+
+fn validate_catalog(personas: &[Persona]) -> Result<(), CatalogError> {
+    if personas.is_empty() {
+        return Err(CatalogError::EmptyCatalog);
+    }
+    let mut seen_ids = HashSet::with_capacity(personas.len());
+    for persona in personas {
+        if !seen_ids.insert(persona.id) {
+            return Err(CatalogError::DuplicateId(persona.id));
+        }
+        if persona.user_agent.is_empty() {
+            return Err(CatalogError::EmptyUserAgent(persona.id));
+        }
+        if persona.accept_header.is_empty() {
+            return Err(CatalogError::EmptyAcceptHeader(persona.id));
+        }
+    }
+    Ok(())
+}
+
+/// Returns the default embedded persona catalog.
+///
+/// Panics if the embedded JSON is invalid, which would indicate a build-time data corruption.
 pub fn persona_catalog() -> Vec<Persona> {
-    vec![
-        build_chrome_desktop(),
-        build_firefox_desktop(),
-        build_safari_desktop(),
-        build_chrome_mobile(),
-        build_googlebot(),
-        build_edge_desktop(),
-        build_opera_desktop(),
-        build_safari_mobile(),
-        build_curl_client(),
-        build_python_requests(),
-    ]
-}
-
-fn build_chrome_desktop() -> Persona {
-    Persona {
-        id: PersonaId::ChromeDesktop,
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br, zstd".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: chrome_header_order(),
-        min_request_interval_ms: 800,
-        max_request_interval_ms: 3000,
-        jitter_distribution: JitterDistribution::Normal,
-    }
-}
-
-fn build_firefox_desktop() -> Persona {
-    Persona {
-        id: PersonaId::FirefoxDesktop,
-        user_agent:
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0"
-                .to_string(),
-        accept_header:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
-                .to_string(),
-        accept_language: "en-US,en;q=0.5".to_string(),
-        accept_encoding: "gzip, deflate, br, zstd".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: firefox_header_order(),
-        min_request_interval_ms: 700,
-        max_request_interval_ms: 2500,
-        jitter_distribution: JitterDistribution::Normal,
-    }
-}
-
-fn build_safari_desktop() -> Persona {
-    Persona {
-        id: PersonaId::SafariDesktop,
-        user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: safari_header_order(),
-        min_request_interval_ms: 900,
-        max_request_interval_ms: 3500,
-        jitter_distribution: JitterDistribution::Exponential,
-    }
-}
-
-fn build_chrome_mobile() -> Persona {
-    Persona {
-        id: PersonaId::ChromeMobile,
-        user_agent: "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br, zstd".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: chrome_header_order(),
-        min_request_interval_ms: 1000,
-        max_request_interval_ms: 4000,
-        jitter_distribution: JitterDistribution::Normal,
-    }
-}
-
-fn build_googlebot() -> Persona {
-    Persona {
-        id: PersonaId::Googlebot,
-        user_agent: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
-            .to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
-            .to_string(),
-        accept_language: "en".to_string(),
-        accept_encoding: "gzip, deflate".to_string(),
-        sec_fetch_headers: Vec::new(),
-        header_order: vec![
-            "Host".to_string(),
-            "User-Agent".to_string(),
-            "Accept".to_string(),
-            "Accept-Encoding".to_string(),
-        ],
-        min_request_interval_ms: 2000,
-        max_request_interval_ms: 8000,
-        jitter_distribution: JitterDistribution::Exponential,
-    }
-}
-
-fn build_edge_desktop() -> Persona {
-    Persona {
-        id: PersonaId::EdgeDesktop,
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br, zstd".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: chrome_header_order(),
-        min_request_interval_ms: 800,
-        max_request_interval_ms: 3000,
-        jitter_distribution: JitterDistribution::Normal,
-    }
-}
-
-fn build_opera_desktop() -> Persona {
-    Persona {
-        id: PersonaId::OperaDesktop,
-        user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 OPR/116.0.0.0".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br, zstd".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: chrome_header_order(),
-        min_request_interval_ms: 700,
-        max_request_interval_ms: 2500,
-        jitter_distribution: JitterDistribution::Normal,
-    }
-}
-
-fn build_safari_mobile() -> Persona {
-    Persona {
-        id: PersonaId::SafariMobile,
-        user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1".to_string(),
-        accept_header: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br".to_string(),
-        sec_fetch_headers: vec![
-            ("Sec-Fetch-Site".to_string(), "none".to_string()),
-            ("Sec-Fetch-Mode".to_string(), "navigate".to_string()),
-            ("Sec-Fetch-Dest".to_string(), "document".to_string()),
-        ],
-        header_order: safari_header_order(),
-        min_request_interval_ms: 1000,
-        max_request_interval_ms: 4000,
-        jitter_distribution: JitterDistribution::Exponential,
-    }
-}
-
-fn build_curl_client() -> Persona {
-    Persona {
-        id: PersonaId::CurlClient,
-        user_agent: "curl/8.4.0".to_string(),
-        accept_header: "*/*".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br".to_string(),
-        sec_fetch_headers: Vec::new(),
-        header_order: minimal_header_order(),
-        min_request_interval_ms: 500,
-        max_request_interval_ms: 2000,
-        jitter_distribution: JitterDistribution::Uniform,
-    }
-}
-
-fn build_python_requests() -> Persona {
-    Persona {
-        id: PersonaId::PythonRequests,
-        user_agent: "python-requests/2.31.0".to_string(),
-        accept_header: "*/*".to_string(),
-        accept_language: "en-US,en;q=0.9".to_string(),
-        accept_encoding: "gzip, deflate, br".to_string(),
-        sec_fetch_headers: Vec::new(),
-        header_order: minimal_header_order(),
-        min_request_interval_ms: 500,
-        max_request_interval_ms: 2000,
-        jitter_distribution: JitterDistribution::Uniform,
-    }
-}
-
-fn minimal_header_order() -> Vec<String> {
-    vec![
-        "Host".to_string(),
-        "User-Agent".to_string(),
-        "Accept".to_string(),
-        "Accept-Encoding".to_string(),
-    ]
-}
-
-fn chrome_header_order() -> Vec<String> {
-    vec![
-        "Host".to_string(),
-        "Connection".to_string(),
-        "sec-ch-ua".to_string(),
-        "sec-ch-ua-mobile".to_string(),
-        "sec-ch-ua-platform".to_string(),
-        "Upgrade-Insecure-Requests".to_string(),
-        "User-Agent".to_string(),
-        "Accept".to_string(),
-        "Sec-Fetch-Site".to_string(),
-        "Sec-Fetch-Mode".to_string(),
-        "Sec-Fetch-Dest".to_string(),
-        "Accept-Encoding".to_string(),
-        "Accept-Language".to_string(),
-    ]
-}
-
-fn firefox_header_order() -> Vec<String> {
-    vec![
-        "Host".to_string(),
-        "User-Agent".to_string(),
-        "Accept".to_string(),
-        "Accept-Language".to_string(),
-        "Accept-Encoding".to_string(),
-        "Connection".to_string(),
-        "Upgrade-Insecure-Requests".to_string(),
-        "Sec-Fetch-Dest".to_string(),
-        "Sec-Fetch-Mode".to_string(),
-        "Sec-Fetch-Site".to_string(),
-    ]
-}
-
-fn safari_header_order() -> Vec<String> {
-    vec![
-        "Host".to_string(),
-        "Accept".to_string(),
-        "User-Agent".to_string(),
-        "Accept-Language".to_string(),
-        "Accept-Encoding".to_string(),
-        "Connection".to_string(),
-        "Sec-Fetch-Dest".to_string(),
-        "Sec-Fetch-Mode".to_string(),
-        "Sec-Fetch-Site".to_string(),
-    ]
+    load_persona_catalog(None).expect("embedded default persona catalog is valid")
 }
 
 #[cfg(test)]

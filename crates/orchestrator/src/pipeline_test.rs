@@ -87,6 +87,7 @@ fn localhost_config() -> ScanConfig {
             max_rps: None,
             skip_evasion: false,
             accept_self_signed: false,
+            persona_catalog: None,
         },
         pipeline: scan_config::PipelineOptions {
             max_iterations: 1,
