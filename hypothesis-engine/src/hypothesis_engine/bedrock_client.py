@@ -140,10 +140,15 @@ class BedrockClient(LlmBackend):
                 output_tokens=raw_usage.get("output_tokens", 0),
             )
             for block in response_body.get("content", []):
-                if block.get("type") == "tool_use":
+                if block.get("type") == "tool_use" and block.get("name") == "structured_output":
                     return (json.dumps(block["input"]), usage)
-        except Exception:
-            pass
+        except Exception as e:
+            import warnings
+            warnings.warn(
+                f"invoke_structured failed, falling back to invoke(): {e}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
         return self.invoke(messages, system=system, max_tokens=max_tokens)
 
     def _invoke_with_retry(self, body: str) -> tuple[str, TokenUsage]:

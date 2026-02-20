@@ -491,10 +491,11 @@ class TestInvokeStructured:
         client._client = mock_boto
 
         schema = {"type": "object"}
-        text, usage = client.invoke_structured(
-            messages=[{"role": "user", "content": "test"}],
-            output_schema=schema,
-        )
+        with pytest.warns(RuntimeWarning, match="invoke_structured failed, falling back to invoke\\(\\)"):
+            text, usage = client.invoke_structured(
+                messages=[{"role": "user", "content": "test"}],
+                output_schema=schema,
+            )
 
         assert text == "recovered"
         assert mock_boto.invoke_model.call_count == 2
