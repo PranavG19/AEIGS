@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use aegis_audit_log::log_writer::AuditLogWriter;
 use aegis_fuzzing::DefenseProfile;
 use aegis_knowledge_graph::graph::KnowledgeGraph;
+use aegis_knowledge_graph::graph_store::GraphStore;
 use aegis_protocol::audit::AuditEventType;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 
@@ -17,7 +18,7 @@ use crate::scan_config::{
 
 pub struct ScanContext {
     pub config: ScanConfig,
-    pub graph: KnowledgeGraph,
+    pub graph: Box<dyn GraphStore>,
     pub defense_profile: Option<DefenseProfile>,
 }
 
@@ -167,7 +168,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     );
 
     // state persistence planned: see docs/plans/2026-02-19-aegis-improvements.md Task 16
-    let graph = KnowledgeGraph::new();
+    let graph: Box<dyn GraphStore> = Box::new(KnowledgeGraph::new());
     let mut ctx = ScanContext {
         config,
         graph,

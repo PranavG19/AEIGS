@@ -1,6 +1,7 @@
 pub mod edge_store;
 pub mod finding_store;
 pub mod graph;
+pub mod graph_store;
 pub mod node_store;
 pub mod operation_log;
 pub mod query;

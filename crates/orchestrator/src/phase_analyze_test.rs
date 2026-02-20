@@ -2,6 +2,7 @@ use super::*;
 
 use aegis_chain_synthesis::attack_graph::{AttackGraph, AttackNodeType};
 use aegis_knowledge_graph::graph::KnowledgeGraph;
+use aegis_knowledge_graph::graph_store::GraphStore;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use clap::Parser;
@@ -14,12 +15,12 @@ fn make_context() -> ScanContext {
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
     ScanContext {
         config,
-        graph: KnowledgeGraph::new(),
+        graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
     }
 }
 
-fn add_endpoint(graph: &KnowledgeGraph, seq: u64, path: &str) {
+fn add_endpoint(graph: &mut dyn GraphStore, seq: u64, path: &str) {
     let entry = OperationLogEntry {
         sequence_number: seq,
         module: ModuleIdentifier::Enumeration,
@@ -32,7 +33,7 @@ fn add_endpoint(graph: &KnowledgeGraph, seq: u64, path: &str) {
     graph.apply_operations(&[entry]).unwrap();
 }
 
-fn add_datastore(graph: &KnowledgeGraph, seq: u64, name: &str) {
+fn add_datastore(graph: &mut dyn GraphStore, seq: u64, name: &str) {
     let entry = OperationLogEntry {
         sequence_number: seq,
         module: ModuleIdentifier::Enumeration,
@@ -56,8 +57,8 @@ fn run_analyze_empty_graph_returns_zero_findings() {
 #[test]
 fn run_analyze_endpoints_only_returns_zero_findings() {
     let mut ctx = make_context();
-    add_endpoint(&ctx.graph, 1, "/api/users");
-    add_endpoint(&ctx.graph, 2, "/api/admin");
+    add_endpoint(&mut *ctx.graph, 1, "/api/users");
+    add_endpoint(&mut *ctx.graph, 2, "/api/admin");
 
     let result = run_analyze(&mut ctx).unwrap();
     assert_eq!(result.findings_count, 0);
@@ -79,8 +80,8 @@ fn build_attack_graph_empty_knowledge_graph() {
 
 #[test]
 fn build_attack_graph_maps_endpoints_to_entry_points() {
-    let ctx = make_context();
-    add_endpoint(&ctx.graph, 1, "/login");
+    let mut ctx = make_context();
+    add_endpoint(&mut *ctx.graph, 1, "/login");
 
     let mut ag = AttackGraph::new();
     let mut mapping = HashMap::new();
@@ -96,8 +97,8 @@ fn build_attack_graph_maps_endpoints_to_entry_points() {
 
 #[test]
 fn build_attack_graph_maps_datastores_to_assets() {
-    let ctx = make_context();
-    add_datastore(&ctx.graph, 1, "users_db");
+    let mut ctx = make_context();
+    add_datastore(&mut *ctx.graph, 1, "users_db");
 
     let mut ag = AttackGraph::new();
     let mut mapping = HashMap::new();
@@ -120,8 +121,8 @@ fn timestamp_ms_returns_nonzero() {
 #[test]
 fn run_analyze_with_endpoint_and_datastore_no_edges_returns_zero_findings() {
     let mut ctx = make_context();
-    add_endpoint(&ctx.graph, 1, "/api/login");
-    add_datastore(&ctx.graph, 2, "users_db");
+    add_endpoint(&mut *ctx.graph, 1, "/api/login");
+    add_datastore(&mut *ctx.graph, 2, "users_db");
 
     let result = run_analyze(&mut ctx).unwrap();
     assert_eq!(result.findings_count, 0);
@@ -130,7 +131,7 @@ fn run_analyze_with_endpoint_and_datastore_no_edges_returns_zero_findings() {
 
 #[test]
 fn build_attack_graph_endpoint_without_path_property_uses_node_id_label() {
-    let ctx = make_context();
+    let mut ctx = make_context();
     let entry = OperationLogEntry {
         sequence_number: 1,
         module: ModuleIdentifier::Enumeration,
@@ -157,7 +158,7 @@ fn build_attack_graph_endpoint_without_path_property_uses_node_id_label() {
 
 #[test]
 fn build_attack_graph_datastore_without_name_property_uses_asset_id_label() {
-    let ctx = make_context();
+    let mut ctx = make_context();
     let entry = OperationLogEntry {
         sequence_number: 1,
         module: ModuleIdentifier::Enumeration,
@@ -188,8 +189,8 @@ fn run_analyze_with_chain_finding_applies_to_graph() {
 
     let mut ctx = make_context();
 
-    add_endpoint(&ctx.graph, 1, "/api/login");
-    add_datastore(&ctx.graph, 2, "users_db");
+    add_endpoint(&mut *ctx.graph, 1, "/api/login");
+    add_datastore(&mut *ctx.graph, 2, "users_db");
 
     let mut ag = AttackGraph::new();
     let mut mapping = HashMap::new();
@@ -215,10 +216,10 @@ fn run_analyze_with_chain_finding_applies_to_graph() {
 
 #[test]
 fn build_attack_graph_multiple_endpoints_maps_all() {
-    let ctx = make_context();
-    add_endpoint(&ctx.graph, 1, "/api/users");
-    add_endpoint(&ctx.graph, 2, "/api/admin");
-    add_endpoint(&ctx.graph, 3, "/api/login");
+    let mut ctx = make_context();
+    add_endpoint(&mut *ctx.graph, 1, "/api/users");
+    add_endpoint(&mut *ctx.graph, 2, "/api/admin");
+    add_endpoint(&mut *ctx.graph, 3, "/api/login");
 
     let mut ag = AttackGraph::new();
     let mut mapping = HashMap::new();
@@ -230,9 +231,9 @@ fn build_attack_graph_multiple_endpoints_maps_all() {
 
 #[test]
 fn build_attack_graph_multiple_datastores_maps_all() {
-    let ctx = make_context();
-    add_datastore(&ctx.graph, 1, "users_db");
-    add_datastore(&ctx.graph, 2, "sessions_db");
+    let mut ctx = make_context();
+    add_datastore(&mut *ctx.graph, 1, "users_db");
+    add_datastore(&mut *ctx.graph, 2, "sessions_db");
 
     let mut ag = AttackGraph::new();
     let mut mapping = HashMap::new();

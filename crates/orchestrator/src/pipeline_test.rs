@@ -1,4 +1,68 @@
+use aegis_knowledge_graph::graph::GraphError;
+use aegis_knowledge_graph::graph_store::GraphStore;
+use aegis_protocol::finding::{FindingData, VulnerabilityClass};
+use aegis_protocol::node::{NodeData, NodeType};
+use aegis_protocol::operation::OperationLogEntry;
+
 use super::*;
+
+/// Lightweight in-memory graph for tests that do not need full KnowledgeGraph.
+struct FakeGraphStore {
+    ops_applied: u64,
+    nodes: Vec<NodeData>,
+}
+
+impl FakeGraphStore {
+    fn new() -> Self {
+        Self {
+            ops_applied: 0,
+            nodes: Vec::new(),
+        }
+    }
+}
+
+impl GraphStore for FakeGraphStore {
+    fn apply_operations(&mut self, ops: &[OperationLogEntry]) -> Result<(), GraphError> {
+        self.ops_applied += ops.len() as u64;
+        Ok(())
+    }
+
+    fn nodes_by_type(&self, node_type: NodeType) -> Result<Vec<u64>, GraphError> {
+        Ok(self
+            .nodes
+            .iter()
+            .filter(|n| n.node_type == node_type)
+            .map(|n| n.id)
+            .collect())
+    }
+
+    fn get_node(&self, id: u64) -> Result<Option<NodeData>, GraphError> {
+        Ok(self.nodes.iter().find(|n| n.id == id).cloned())
+    }
+
+    fn total_operations_applied(&self) -> Result<u64, GraphError> {
+        Ok(self.ops_applied)
+    }
+
+    fn all_findings(&self) -> Result<Vec<FindingData>, GraphError> {
+        Ok(Vec::new())
+    }
+
+    fn node_count(&self) -> Result<u64, GraphError> {
+        Ok(self.nodes.len() as u64)
+    }
+
+    fn findings_by_class(
+        &self,
+        _vulnerability_class: VulnerabilityClass,
+    ) -> Result<Vec<u64>, GraphError> {
+        Ok(Vec::new())
+    }
+
+    fn get_finding(&self, _id: u64) -> Result<Option<FindingData>, GraphError> {
+        Ok(None)
+    }
+}
 
 fn localhost_config() -> ScanConfig {
     ScanConfig {
@@ -225,7 +289,8 @@ async fn run_scan_with_paranoid_stealth_level() {
 #[test]
 fn scan_context_fields_accessible() {
     let config = localhost_config();
-    let graph = aegis_knowledge_graph::graph::KnowledgeGraph::new();
+    let graph: Box<dyn aegis_knowledge_graph::graph_store::GraphStore> =
+        Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new());
     let ctx = ScanContext {
         config,
         graph,
@@ -238,7 +303,8 @@ fn scan_context_fields_accessible() {
 #[test]
 fn scan_context_with_defense_profile() {
     let config = localhost_config();
-    let graph = aegis_knowledge_graph::graph::KnowledgeGraph::new();
+    let graph: Box<dyn aegis_knowledge_graph::graph_store::GraphStore> =
+        Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new());
     let profile = aegis_fuzzing::DefenseProfile::empty(1000);
     let ctx = ScanContext {
         config,
@@ -471,6 +537,57 @@ async fn run_scan_multiple_iterations_convergence_threshold_two() {
     config.output = std::env::temp_dir().join("aegis-pipeline-multi-iter.sarif");
     let summary = run_scan(config).await.unwrap();
     assert!(summary.phases_completed >= 3);
+}
+
+#[test]
+fn fake_graph_store_satisfies_scan_context() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let mut ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+    };
+    assert_eq!(ctx.graph.node_count().unwrap(), 0);
+    assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
+    assert!(
+        ctx.graph
+            .nodes_by_type(NodeType::Endpoint)
+            .unwrap()
+            .is_empty()
+    );
+    assert!(ctx.graph.all_findings().unwrap().is_empty());
+    ctx.graph.apply_operations(&[]).unwrap();
+    assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
+}
+
+#[test]
+fn fake_graph_store_apply_operations_increments_count() {
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier};
+
+    let mut store = FakeGraphStore::new();
+    let ops = vec![
+        OperationLogEntry {
+            sequence_number: 1,
+            module: ModuleIdentifier::PassiveRecon,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Dependency,
+                properties: vec![],
+            },
+            timestamp_unix_ms: 0,
+        },
+        OperationLogEntry {
+            sequence_number: 2,
+            module: ModuleIdentifier::PassiveRecon,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Dependency,
+                properties: vec![],
+            },
+            timestamp_unix_ms: 0,
+        },
+    ];
+    store.apply_operations(&ops).unwrap();
+    assert_eq!(store.total_operations_applied().unwrap(), 2);
 }
 
 #[test]

@@ -30,7 +30,7 @@ fn test_config(output_path: &std::path::Path) -> ScanConfig {
 fn test_context(output_path: &std::path::Path) -> ScanContext {
     ScanContext {
         config: test_config(output_path),
-        graph: KnowledgeGraph::new(),
+        graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
     }
 }
@@ -92,7 +92,7 @@ fn run_report_with_findings_produces_sarif_results() {
 #[test]
 fn all_finding_ids_returns_sorted_unique() {
     let output = std::env::temp_dir().join("test_report_ids.sarif");
-    let ctx = test_context(&output);
+    let mut ctx = test_context(&output);
     let entries = vec![
         add_finding_entry(0, VulnerabilityClass::SqlInjection, 0.8),
         add_finding_entry(1, VulnerabilityClass::PathTraversal, 0.7),
@@ -380,7 +380,7 @@ fn run_report_non_known_issue_finding_has_no_suppression() {
 #[test]
 fn endpoint_for_finding_returns_path_for_linked_node_with_path_property() {
     let output = std::env::temp_dir().join("test_endpoint_for_finding.sarif");
-    let ctx = test_context(&output);
+    let mut ctx = test_context(&output);
 
     let entries = vec![add_node_entry(0, "/api/payments")];
     ctx.graph.apply_operations(&entries).unwrap();

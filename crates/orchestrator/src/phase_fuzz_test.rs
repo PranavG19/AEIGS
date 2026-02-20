@@ -8,7 +8,7 @@ fn make_context(args: &[&str]) -> ScanContext {
     let config = ScanConfig::try_parse_from(args).unwrap();
     ScanContext {
         config,
-        graph: KnowledgeGraph::new(),
+        graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
     }
 }
@@ -248,7 +248,7 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
     .unwrap();
     let ctx = ScanContext {
         config,
-        graph: aegis_knowledge_graph::graph::KnowledgeGraph::new(),
+        graph: Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new()),
         defense_profile: None,
     };
     (ctx, tmp)
@@ -383,4 +383,235 @@ async fn run_fuzz_empty_excluded_endpoints_is_noop() {
         result.phase.findings_count, result2.phase.findings_count,
         "empty excluded_endpoints should behave identically to no context_file"
     );
+}
+
+// --- append_anomaly_entries tests ---
+
+#[test]
+fn append_anomaly_entries_empty_slice_does_nothing() {
+    let mut sequence = 5u64;
+    let mut findings_count = 0u64;
+    let mut origin_counts = std::collections::HashMap::new();
+    let mut entries = Vec::new();
+
+    phase_fuzz::append_anomaly_entries(
+        &[],
+        VulnerabilityClass::SqlInjection,
+        &mut sequence,
+        &mut findings_count,
+        &mut origin_counts,
+        &mut entries,
+    );
+
+    assert_eq!(sequence, 5);
+    assert_eq!(findings_count, 0);
+    assert!(entries.is_empty());
+    assert!(origin_counts.is_empty());
+}
+
+#[test]
+fn append_anomaly_entries_single_anomaly_increments_counts() {
+    use aegis_fuzzing::oracle::{Anomaly, AnomalyType};
+
+    let anomaly = Anomaly {
+        request_id: 0,
+        anomaly_type: AnomalyType::ContentAnomaly,
+        score: 0.9,
+        description: "sql error in response".to_string(),
+    };
+
+    let mut sequence = 10u64;
+    let mut findings_count = 0u64;
+    let mut origin_counts = std::collections::HashMap::new();
+    let mut entries = Vec::new();
+
+    phase_fuzz::append_anomaly_entries(
+        &[anomaly],
+        VulnerabilityClass::SqlInjection,
+        &mut sequence,
+        &mut findings_count,
+        &mut origin_counts,
+        &mut entries,
+    );
+
+    assert_eq!(sequence, 11);
+    assert_eq!(findings_count, 1);
+    assert_eq!(
+        origin_counts
+            .get(&phase_fuzz::FindingOrigin::Mutation)
+            .copied()
+            .unwrap_or(0),
+        1
+    );
+    assert_eq!(entries.len(), 1);
+    assert_eq!(entries[0].sequence_number, 11);
+}
+
+#[test]
+fn append_anomaly_entries_multiple_anomalies_accumulate_correctly() {
+    use aegis_fuzzing::oracle::{Anomaly, AnomalyType};
+
+    let anomalies: Vec<Anomaly> = (0..3)
+        .map(|i| Anomaly {
+            request_id: i,
+            anomaly_type: AnomalyType::ContentAnomaly,
+            score: 0.8,
+            description: format!("anomaly {i}"),
+        })
+        .collect();
+
+    let mut sequence = 0u64;
+    let mut findings_count = 0u64;
+    let mut origin_counts = std::collections::HashMap::new();
+    let mut entries = Vec::new();
+
+    phase_fuzz::append_anomaly_entries(
+        &anomalies,
+        VulnerabilityClass::CrossSiteScripting,
+        &mut sequence,
+        &mut findings_count,
+        &mut origin_counts,
+        &mut entries,
+    );
+
+    assert_eq!(sequence, 3);
+    assert_eq!(findings_count, 3);
+    assert_eq!(
+        origin_counts
+            .get(&phase_fuzz::FindingOrigin::Mutation)
+            .copied()
+            .unwrap_or(0),
+        3
+    );
+    assert_eq!(entries.len(), 3);
+    assert_eq!(entries[0].sequence_number, 1);
+    assert_eq!(entries[1].sequence_number, 2);
+    assert_eq!(entries[2].sequence_number, 3);
+}
+
+#[test]
+fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
+    use aegis_fuzzing::oracle::{Anomaly, AnomalyType};
+    use aegis_protocol::operation::GraphOperation;
+
+    let anomaly = Anomaly {
+        request_id: 0,
+        anomaly_type: AnomalyType::StatusCodeAnomaly,
+        score: 0.8,
+        description: "status anomaly".to_string(),
+    };
+
+    let mut sequence = 0u64;
+    let mut findings_count = 0u64;
+    let mut origin_counts = std::collections::HashMap::new();
+    let mut entries = Vec::new();
+
+    phase_fuzz::append_anomaly_entries(
+        &[anomaly],
+        VulnerabilityClass::CommandInjection,
+        &mut sequence,
+        &mut findings_count,
+        &mut origin_counts,
+        &mut entries,
+    );
+
+    if let GraphOperation::AddFinding {
+        severity,
+        confidence,
+        vulnerability_class,
+        ..
+    } = &entries[0].operation
+    {
+        assert!((severity - 0.8).abs() < 1e-9);
+        assert!((confidence - 0.64).abs() < 1e-9);
+        assert_eq!(*vulnerability_class, VulnerabilityClass::CommandInjection);
+    } else {
+        panic!("expected AddFinding operation");
+    }
+}
+
+#[test]
+fn timestamp_ms_returns_nonzero_value() {
+    let ts = phase_fuzz::timestamp_ms();
+    assert!(
+        ts > 0,
+        "timestamp_ms must return a positive unix timestamp in ms"
+    );
+}
+
+// --- bypass corpus path test ---
+
+#[tokio::test]
+async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
+    use std::io::Write;
+    let corpus_json = r#"{
+        "payloads": {
+            "SqlInjection": [
+                {"raw": "' OR 1=1--", "waf_targets": ["ModSecurity"], "technique": "classic-or", "stealth_rating": "low"}
+            ]
+        }
+    }"#;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{corpus_json}").unwrap();
+    let path = tmp.path().to_str().unwrap().to_string();
+
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--bypass-corpus",
+        &path,
+    ])
+    .unwrap();
+    let mut ctx = ScanContext {
+        config,
+        graph: Box::new(KnowledgeGraph::new()),
+        defense_profile: None,
+    };
+
+    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    assert_eq!(result.phase.findings_count, 0);
+}
+
+// --- stealth with active endpoints ---
+
+#[tokio::test]
+async fn run_fuzz_with_stealth_and_endpoints_uses_stealth_payloads() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080", "--stealth"]);
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/users".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    // The placeholder oracle produces no anomalies, so findings_count is 0.
+    // The stealth payloads path (line 71 in original) is exercised.
+    assert_eq!(result.phase.findings_count, 0);
+    assert!(result.discovered_endpoints.is_empty());
+}
+
+// --- enqueue_targets_for_endpoints with non-existent node id ---
+
+#[test]
+fn enqueue_targets_for_nonexistent_node_id_skips_gracefully() {
+    let ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    // Node ID 999 does not exist in the empty graph — get_node returns Ok(None).
+    // This exercises the else-branch of `if let Some(node)` in enqueue_targets_for_endpoints.
+    phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &[999], &ctx);
+    assert!(scheduler.is_empty());
+    assert_eq!(scheduler.pending_count(), 0);
 }

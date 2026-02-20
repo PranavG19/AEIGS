@@ -328,3 +328,47 @@ impl Default for KnowledgeGraph {
         Self::new()
     }
 }
+
+impl crate::graph_store::GraphStore for KnowledgeGraph {
+    fn apply_operations(&mut self, ops: &[OperationLogEntry]) -> Result<(), GraphError> {
+        KnowledgeGraph::apply_operations(self, ops).map(|_| ())
+    }
+
+    fn nodes_by_type(
+        &self,
+        node_type: aegis_protocol::node::NodeType,
+    ) -> Result<Vec<u64>, GraphError> {
+        KnowledgeGraph::nodes_by_type(self, node_type)
+    }
+
+    fn get_node(&self, id: u64) -> Result<Option<aegis_protocol::node::NodeData>, GraphError> {
+        KnowledgeGraph::get_node(self, id)
+    }
+
+    fn total_operations_applied(&self) -> Result<u64, GraphError> {
+        KnowledgeGraph::total_operations_applied(self)
+    }
+
+    fn all_findings(&self) -> Result<Vec<aegis_protocol::finding::FindingData>, GraphError> {
+        let inner = self.inner.read();
+        Ok(inner.finding_store.iter().cloned().collect())
+    }
+
+    fn node_count(&self) -> Result<u64, GraphError> {
+        KnowledgeGraph::node_count(self).map(|n| n as u64)
+    }
+
+    fn findings_by_class(
+        &self,
+        vulnerability_class: aegis_protocol::finding::VulnerabilityClass,
+    ) -> Result<Vec<u64>, GraphError> {
+        KnowledgeGraph::findings_by_class(self, vulnerability_class)
+    }
+
+    fn get_finding(
+        &self,
+        id: u64,
+    ) -> Result<Option<aegis_protocol::finding::FindingData>, GraphError> {
+        KnowledgeGraph::get_finding(self, id)
+    }
+}

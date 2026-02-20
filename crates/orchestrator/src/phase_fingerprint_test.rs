@@ -13,7 +13,7 @@ fn test_config() -> ScanConfig {
 fn test_context() -> ScanContext {
     ScanContext {
         config: test_config(),
-        graph: KnowledgeGraph::new(),
+        graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
     }
 }

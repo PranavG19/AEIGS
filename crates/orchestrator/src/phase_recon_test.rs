@@ -20,7 +20,7 @@ fn make_context(source_dir: Option<PathBuf>) -> ScanContext {
     let config = ScanConfig::try_parse_from(args).unwrap();
     ScanContext {
         config,
-        graph: KnowledgeGraph::new(),
+        graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
     }
 }
