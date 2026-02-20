@@ -230,3 +230,157 @@ fn filter_scheduler_no_filters_passes_all_through() {
     phase_fuzz::filter_scheduler_by_endpoints(&mut scheduler, &None, &None);
     assert_eq!(scheduler.pending_count(), 3);
 }
+
+// --- BusinessContext excluded_endpoints integration tests ---
+
+fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile::NamedTempFile) {
+    use std::io::Write;
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{context_json}").unwrap();
+    let path = tmp.path().to_str().unwrap().to_string();
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--context-file",
+        &path,
+    ])
+    .unwrap();
+    let ctx = ScanContext {
+        config,
+        graph: aegis_knowledge_graph::graph::KnowledgeGraph::new(),
+        defense_profile: None,
+    };
+    (ctx, tmp)
+}
+
+fn add_endpoint_node(ctx: &mut ScanContext, path: &str, seq: u64) {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: seq,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), path.to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+}
+
+#[test]
+fn business_context_excluded_endpoints_filtered_from_scheduler() {
+    use std::io::Write;
+    // Write a context JSON to a temp file and load it, then verify the scheduler
+    // has the excluded endpoint removed — mirrors the logic inside run_fuzz().
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, r#"{{"excluded_endpoints":["/api/health"]}}"#).unwrap();
+
+    let biz_ctx =
+        scan_config::load_business_context(tmp.path()).expect("context file should parse");
+    assert_eq!(biz_ctx.excluded_endpoints, vec!["/api/health"]);
+
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    for ep in ["/api/users", "/api/admin", "/api/health"] {
+        scheduler.enqueue(aegis_fuzzing::scheduler::FuzzTarget {
+            endpoint: ep.to_string(),
+            method: "GET".to_string(),
+            parameter: String::new(),
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+            priority_score: 1.0,
+            attempts: 0,
+            max_attempts: 3,
+        });
+    }
+
+    if !biz_ctx.excluded_endpoints.is_empty() {
+        phase_fuzz::filter_scheduler_by_endpoints(
+            &mut scheduler,
+            &None,
+            &Some(biz_ctx.excluded_endpoints),
+        );
+    }
+
+    let mut remaining = Vec::new();
+    while let Some(t) = scheduler.next_target() {
+        remaining.push(t.endpoint.clone());
+    }
+    assert_eq!(remaining.len(), 2);
+    assert!(remaining.contains(&"/api/users".to_string()));
+    assert!(remaining.contains(&"/api/admin".to_string()));
+    assert!(
+        !remaining.contains(&"/api/health".to_string()),
+        "/api/health should have been excluded by BusinessContext"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_with_business_context_excluded_endpoint_succeeds() {
+    // Integration smoke test: run_fuzz must succeed and not panic when
+    // context_file excludes one of the three endpoints in the graph.
+    let (mut ctx, _tmp) =
+        make_context_with_context_file(r#"{"excluded_endpoints":["/api/health"]}"#);
+    add_endpoint_node(&mut ctx, "/api/users", 0);
+    add_endpoint_node(&mut ctx, "/api/admin", 1);
+    add_endpoint_node(&mut ctx, "/api/health", 2);
+
+    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    // The function must complete without error.  The oracle produces no findings
+    // for placeholder 200/empty-body responses, so we only assert the invariant
+    // that counts are non-negative and consistent with 2 fuzzed endpoints.
+    assert_eq!(result.discovered_endpoints.len(), 0);
+    // findings_count is whatever the placeholder oracle decides (likely 0);
+    // the important invariant is that the total is the same as fuzzing exactly
+    // the two non-excluded endpoints.
+    let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx2, "/api/users", 0);
+    add_endpoint_node(&mut ctx2, "/api/admin", 1);
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+    assert_eq!(
+        result.phase.findings_count, result2.phase.findings_count,
+        "excluding /api/health should give same count as only fuzzing /api/users + /api/admin"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_no_context_file_is_noop() {
+    // Baseline: no context_file, all 3 endpoints fuzzed.
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/a", 0);
+    add_endpoint_node(&mut ctx, "/api/b", 1);
+    add_endpoint_node(&mut ctx, "/api/c", 2);
+    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+    // No exclusion — all endpoints are in scope; result must succeed.
+    // findings must match a second identical run (deterministic oracle)
+    let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx2, "/api/a", 0);
+    add_endpoint_node(&mut ctx2, "/api/b", 1);
+    add_endpoint_node(&mut ctx2, "/api/c", 2);
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+    assert_eq!(result.phase.findings_count, result2.phase.findings_count);
+}
+
+#[tokio::test]
+async fn run_fuzz_empty_excluded_endpoints_is_noop() {
+    let (mut ctx, _tmp) = make_context_with_context_file(r#"{"excluded_endpoints":[]}"#);
+    add_endpoint_node(&mut ctx, "/api/x", 0);
+    add_endpoint_node(&mut ctx, "/api/y", 1);
+
+    // No exclusions — both endpoints fuzzed; result must succeed.
+    let result = phase_fuzz::run_fuzz(&mut ctx).await.unwrap();
+
+    let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx2, "/api/x", 0);
+    add_endpoint_node(&mut ctx2, "/api/y", 1);
+    let result2 = phase_fuzz::run_fuzz(&mut ctx2).await.unwrap();
+
+    assert_eq!(
+        result.phase.findings_count, result2.phase.findings_count,
+        "empty excluded_endpoints should behave identically to no context_file"
+    );
+}

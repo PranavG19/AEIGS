@@ -7,7 +7,7 @@ use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
 use crate::pipeline::{PhaseResult, ScanContext};
-use crate::scan_config::parse_stealth_level;
+use crate::scan_config::{load_business_context, parse_stealth_level};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FindingOrigin {
@@ -35,6 +35,13 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
         &ctx.config.include_endpoints,
         &ctx.config.exclude_endpoints,
     );
+
+    if let Some(context_path) = &ctx.config.context_file
+        && let Ok(biz_ctx) = load_business_context(context_path)
+        && !biz_ctx.excluded_endpoints.is_empty()
+    {
+        filter_scheduler_by_endpoints(&mut scheduler, &None, &Some(biz_ctx.excluded_endpoints));
+    }
 
     let mut mutator = PayloadMutator::new();
     if let Some(corpus_path) = &ctx.config.bypass_corpus
