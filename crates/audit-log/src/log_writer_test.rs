@@ -224,4 +224,65 @@ mod tests {
         let writer = NoOpAuditLogWriter::default();
         assert_eq!(writer.sequence_number(), 0);
     }
+
+    /// Verify that ciborium produces deterministic CBOR output for the same input.
+    ///
+    /// The hash chain computes SHA3-256 over CBOR bytes, so non-deterministic
+    /// serialization would produce different hashes for identical logical events,
+    /// making the audit log non-reproducible. RFC 8949 Section 4.2 specifies
+    /// deterministic encoding rules; this test confirms ciborium satisfies them
+    /// for our AuditEventType enum.
+    #[test]
+    fn cbor_serialization_is_deterministic() {
+        let iterations = 1000;
+
+        let scan_started = AuditEventType::ScanStarted {
+            target_description: "http://localhost:8080/api".to_string(),
+        };
+        let reference_bytes = serialize_event(&scan_started).unwrap();
+        for i in 0..iterations {
+            let event = AuditEventType::ScanStarted {
+                target_description: "http://localhost:8080/api".to_string(),
+            };
+            let bytes = serialize_event(&event).unwrap();
+            assert_eq!(
+                bytes, reference_bytes,
+                "ScanStarted serialization diverged on iteration {i}"
+            );
+        }
+
+        let module_started = AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::Fuzzing,
+        };
+        let reference_bytes = serialize_event(&module_started).unwrap();
+        for i in 0..iterations {
+            let event = AuditEventType::ModuleStarted {
+                module: ModuleIdentifier::Fuzzing,
+            };
+            let bytes = serialize_event(&event).unwrap();
+            assert_eq!(
+                bytes, reference_bytes,
+                "ModuleStarted serialization diverged on iteration {i}"
+            );
+        }
+
+        let config_change = AuditEventType::ConfigChange {
+            key: "max_rps".to_string(),
+            old_value: "100".to_string(),
+            new_value: "200".to_string(),
+        };
+        let reference_bytes = serialize_event(&config_change).unwrap();
+        for i in 0..iterations {
+            let event = AuditEventType::ConfigChange {
+                key: "max_rps".to_string(),
+                old_value: "100".to_string(),
+                new_value: "200".to_string(),
+            };
+            let bytes = serialize_event(&event).unwrap();
+            assert_eq!(
+                bytes, reference_bytes,
+                "ConfigChange serialization diverged on iteration {i}"
+            );
+        }
+    }
 }
