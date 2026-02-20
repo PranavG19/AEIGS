@@ -63,6 +63,58 @@ impl EdgeData {
     }
 }
 
+/// The 28 valid (`NodeType`, `EdgeLabel`, `NodeType`) triples that the AEGIS security model
+/// permits. This array is the single source of truth — [`is_valid_edge`] iterates it for
+/// membership checks, and [`valid_edge_count`] exposes its length.
+///
+/// # Warning
+///
+/// Adding a new [`NodeType`] or [`EdgeLabel`] variant **requires** updating this
+/// array and the exhaustive coverage test in `protocol_test.rs`.
+pub const EDGE_WHITELIST: &[(NodeType, EdgeLabel, NodeType)] = {
+    use EdgeLabel::*;
+    use NodeType::*;
+
+    &[
+        // Execution flow
+        (Endpoint, Calls, Function),
+        (Function, Calls, Function),
+        (Service, Calls, Service),
+        (Service, Calls, Function),
+        // Trust relationships
+        (Role, Trusts, Role),
+        (Service, Trusts, Service),
+        (User, Trusts, Service),
+        // Authentication
+        (Role, Authenticates, Endpoint),
+        (User, Authenticates, Endpoint),
+        (Service, Authenticates, Endpoint),
+        // Data access — reads
+        (Function, Reads, DataStore),
+        (Endpoint, Reads, DataStore),
+        (Service, Reads, DataStore),
+        // Data access — writes
+        (Function, Writes, DataStore),
+        (Endpoint, Writes, DataStore),
+        (Service, Writes, DataStore),
+        // Dependencies
+        (Service, DependsOn, Dependency),
+        (Service, DependsOn, Service),
+        (Function, DependsOn, Dependency),
+        (Endpoint, DependsOn, Dependency),
+        // Data exposure
+        (Endpoint, Exposes, DataStore),
+        (Function, Exposes, DataStore),
+        (Service, Exposes, DataStore),
+        (Config, Exposes, DataStore),
+        // Protection
+        (Endpoint, ProtectedBy, Defense),
+        (DataStore, ProtectedBy, Defense),
+        (Service, ProtectedBy, Defense),
+        (Function, ProtectedBy, Defense),
+    ]
+};
+
 /// Validates whether a (`source_type`, `label`, `target_type`) triple is semantically
 /// meaningful in the AEGIS security model.
 ///
@@ -89,44 +141,13 @@ impl EdgeData {
 ///
 /// **Protection** — `ProtectedBy` edges model defensive controls:
 /// - `Endpoint → Defense`, `DataStore → Defense`, `Service → Defense`, `Function → Defense`
-///
-/// # Warning
-///
-/// Adding a new [`NodeType`] or [`EdgeLabel`] variant **requires** updating this
-/// function and the exhaustive coverage test in `protocol_test.rs`.
 pub fn is_valid_edge(source: NodeType, label: EdgeLabel, target: NodeType) -> bool {
-    use EdgeLabel::*;
-    use NodeType::*;
+    EDGE_WHITELIST
+        .iter()
+        .any(|&(s, l, t)| s == source && l == label && t == target)
+}
 
-    matches!(
-        (source, label, target),
-        (Endpoint, Calls, Function)
-            | (Function, Calls, Function)
-            | (Service, Calls, Service)
-            | (Service, Calls, Function)
-            | (Role, Trusts, Role)
-            | (Service, Trusts, Service)
-            | (User, Trusts, Service)
-            | (Role, Authenticates, Endpoint)
-            | (User, Authenticates, Endpoint)
-            | (Service, Authenticates, Endpoint)
-            | (Function, Reads, DataStore)
-            | (Endpoint, Reads, DataStore)
-            | (Service, Reads, DataStore)
-            | (Function, Writes, DataStore)
-            | (Endpoint, Writes, DataStore)
-            | (Service, Writes, DataStore)
-            | (Service, DependsOn, Dependency)
-            | (Service, DependsOn, Service)
-            | (Function, DependsOn, Dependency)
-            | (Endpoint, DependsOn, Dependency)
-            | (Endpoint, Exposes, DataStore)
-            | (Function, Exposes, DataStore)
-            | (Service, Exposes, DataStore)
-            | (Config, Exposes, DataStore)
-            | (Endpoint, ProtectedBy, Defense)
-            | (DataStore, ProtectedBy, Defense)
-            | (Service, ProtectedBy, Defense)
-            | (Function, ProtectedBy, Defense)
-    )
+/// Returns the number of valid edge triples in [`EDGE_WHITELIST`].
+pub fn valid_edge_count() -> usize {
+    EDGE_WHITELIST.len()
 }

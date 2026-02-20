@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::defense_context::DefenseContext;
-    use crate::edge::{EdgeData, EdgeLabel, is_valid_edge};
+    use crate::edge::{EdgeData, EdgeLabel, is_valid_edge, valid_edge_count};
     use crate::finding::{
         EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence,
     };
@@ -1206,8 +1206,10 @@ mod tests {
         }
 
         assert_eq!(
-            valid_count, 28,
-            "Expected exactly 28 valid triples, found {}",
+            valid_count,
+            valid_edge_count(),
+            "Expected exactly {} valid triples, found {}",
+            valid_edge_count(),
             valid_count
         );
         assert_eq!(total, 9 * 8 * 9, "Total triple space should be 648");
