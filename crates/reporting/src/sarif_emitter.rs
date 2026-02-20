@@ -117,7 +117,7 @@ pub fn attack_technique_for(class: &VulnerabilityClass) -> &'static str {
     }
 }
 
-fn remediation_for(class: &VulnerabilityClass) -> &'static str {
+pub fn remediation_for(class: &VulnerabilityClass) -> &'static str {
     match class {
         VulnerabilityClass::SqlInjection => {
             "Use parameterized queries or prepared statements instead of string concatenation."

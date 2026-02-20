@@ -91,6 +91,7 @@ fn localhost_config() -> scan_config::ScanConfig {
     scan_config::ScanConfig {
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-actor-test.sarif"),
+        report_format: "developer".to_string(),
         source_dir: None,
         verbose: false,
         stealth: scan_config::StealthOptions {

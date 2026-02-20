@@ -1,7 +1,12 @@
 pub mod certificate_serializer;
 pub mod narrative;
+pub mod report_format;
 pub mod risk_scorer;
 pub mod sarif_emitter;
+
+#[cfg(test)]
+#[path = "report_format_test.rs"]
+mod report_format_test;
 
 #[cfg(test)]
 #[path = "narrative_test.rs"]

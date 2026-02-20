@@ -1,15 +1,22 @@
 use aegis_protocol::finding::{FindingData, FindingId, VulnerabilityClass};
+use aegis_reporting::report_format::{DefenseSummary, ReportFormat, ReportMetadata, format_report};
 use aegis_reporting::risk_scorer::{RiskInput, compute_risk_score};
-use aegis_reporting::sarif_emitter::{SarifFinding, SarifLevel, emit_sarif};
+use aegis_reporting::sarif_emitter::{SarifFinding, SarifLevel};
 
 use crate::pipeline::{PhaseResult, ScanContext};
-use crate::scan_config::{BusinessContext, KnownIssue, ScanMetrics, load_business_context};
+use crate::scan_config::{
+    BusinessContext, KnownIssue, ScanMetrics, load_business_context, resolve_report_format,
+};
 
 /// Returns only findings not present in `previous_findings` (by stable_id).
 ///
 /// Findings with `stable_id == None` are always considered new, as they cannot
 /// be matched against a previous scan. This preserves all findings when no
 /// stable identity has been computed.
+///
+/// NOTE: stable_id is not populated by the fuzz executor (findings are created via
+/// `GraphOperation::AddFinding`, not `FindingData::new`). Findings produced by the
+/// fuzz phase are therefore always treated as new in diff mode.
 pub fn compute_new_findings<'a>(
     current: &'a [FindingData],
     previous: &[FindingData],
@@ -132,22 +139,72 @@ pub fn run_report_with_previous(
         });
     }
 
-    let sarif_log = emit_sarif(&sarif_findings, "0.1.0");
-    let mut json_value: serde_json::Value =
-        serde_json::to_value(&sarif_log).map_err(|e| e.to_string())?;
-    if let Some(m) = metrics {
-        inject_metrics_into_sarif(&mut json_value, m);
-    }
-    if let Some(known) = previously_known_count {
-        inject_diff_stats_into_sarif(&mut json_value, sarif_findings.len() as u64, known);
-    }
-    let json = serde_json::to_string_pretty(&json_value).map_err(|e| e.to_string())?;
+    let report_format =
+        resolve_report_format(&ctx.config.report_format).unwrap_or(ReportFormat::Developer);
+    let json = build_formatted_output(
+        &sarif_findings,
+        report_format,
+        metrics,
+        previously_known_count,
+        ctx,
+    )?;
     std::fs::write(&ctx.config.output, json).map_err(|e| e.to_string())?;
 
     Ok(PhaseResult {
         operations_applied: 0,
         findings_count: sarif_findings.len() as u64,
     })
+}
+
+fn build_formatted_output(
+    sarif_findings: &[SarifFinding],
+    report_format: ReportFormat,
+    metrics: Option<&ScanMetrics>,
+    previously_known_count: Option<u64>,
+    ctx: &ScanContext,
+) -> Result<String, String> {
+    match report_format {
+        ReportFormat::Executive => {
+            let report_metadata = metrics.map(|m| {
+                let total_secs = m
+                    .phase_timings
+                    .timings
+                    .values()
+                    .map(|d| d.as_secs_f64())
+                    .sum();
+                ReportMetadata {
+                    target_url: ctx.config.target.clone(),
+                    total_duration_secs: total_secs,
+                    phases_completed: m.phase_timings.timings.len() as u32,
+                }
+            });
+            let defense_summary = ctx.defense_profile.as_ref().map(|dp| DefenseSummary {
+                has_waf: dp.waf.is_some(),
+                waf_vendor: dp.waf.as_ref().map(|w| format!("{:?}", w.vendor)),
+                has_rate_limiting: dp.rate_limit.is_some(),
+                has_bot_detection: dp.bot_detection.is_some(),
+            });
+            format_report(
+                sarif_findings,
+                report_format,
+                "0.1.0",
+                report_metadata.as_ref(),
+                defense_summary.as_ref(),
+            )
+        }
+        _ => {
+            let json_str = format_report(sarif_findings, report_format, "0.1.0", None, None)?;
+            let mut json_value: serde_json::Value =
+                serde_json::from_str(&json_str).map_err(|e| e.to_string())?;
+            if let Some(m) = metrics {
+                inject_metrics_into_sarif(&mut json_value, m);
+            }
+            if let Some(known) = previously_known_count {
+                inject_diff_stats_into_sarif(&mut json_value, sarif_findings.len() as u64, known);
+            }
+            serde_json::to_string_pretty(&json_value).map_err(|e| e.to_string())
+        }
+    }
 }
 
 pub(crate) fn all_finding_ids(ctx: &ScanContext) -> Vec<u64> {
@@ -234,13 +291,15 @@ pub(crate) fn inject_metrics_into_sarif(sarif_json: &mut serde_json::Value, metr
         return;
     };
 
-    let props = run
-        .as_object_mut()
-        .unwrap()
+    let Some(run_obj) = run.as_object_mut() else {
+        return;
+    };
+    let entry = run_obj
         .entry("properties")
-        .or_insert_with(|| serde_json::Value::Object(serde_json::Map::new()))
-        .as_object_mut()
-        .unwrap();
+        .or_insert_with(|| serde_json::Value::Object(serde_json::Map::new()));
+    let Some(props) = entry.as_object_mut() else {
+        return;
+    };
 
     let mut timing_map = serde_json::Map::new();
     for (phase, duration) in &metrics.phase_timings.timings {
@@ -291,13 +350,15 @@ pub(crate) fn inject_diff_stats_into_sarif(
         return;
     };
 
-    let props = run
-        .as_object_mut()
-        .unwrap()
+    let Some(run_obj) = run.as_object_mut() else {
+        return;
+    };
+    let entry = run_obj
         .entry("properties")
-        .or_insert_with(|| serde_json::Value::Object(serde_json::Map::new()))
-        .as_object_mut()
-        .unwrap();
+        .or_insert_with(|| serde_json::Value::Object(serde_json::Map::new()));
+    let Some(props) = entry.as_object_mut() else {
+        return;
+    };
 
     let mut diff_map = serde_json::Map::new();
     diff_map.insert(

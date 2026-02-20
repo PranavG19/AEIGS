@@ -20,7 +20,8 @@ use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
 use crate::phase_report::run_report_with_previous;
 use crate::scan_config::{
-    ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, validate_localhost,
+    ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, resolve_report_format,
+    validate_localhost,
 };
 use crate::util::timestamp_ms;
 
@@ -608,6 +609,7 @@ fn load_resume_checkpoint(
 pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
     validate_localhost(&config.target)?;
     parse_stealth_level(&config.stealth.stealth_level)?;
+    resolve_report_format(&config.report_format)?;
 
     let (mut audit_writer, audit_path, hmac_key_path): (
         Box<dyn AuditWriter>,

@@ -1,5 +1,6 @@
 use aegis_evasion_engine::PersonaId;
 use aegis_protocol::finding::VulnerabilityClass;
+use aegis_reporting::report_format::ReportFormat;
 use clap::{Args, Parser};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -40,6 +41,7 @@ pub enum ConfigError {
     NonLocalhost(String),
     InvalidStealthLevel(String),
     InvalidPersona(String),
+    InvalidReportFormat(String),
     ContextFileRead(String),
     ContextFileParse(String),
 }
@@ -51,6 +53,7 @@ impl std::fmt::Display for ConfigError {
             Self::NonLocalhost(host) => write!(f, "target must be localhost, got: {host}"),
             Self::InvalidStealthLevel(level) => write!(f, "unknown stealth level: {level}"),
             Self::InvalidPersona(name) => write!(f, "unknown persona: {name}"),
+            Self::InvalidReportFormat(fmt) => write!(f, "unknown report format: {fmt}"),
             Self::ContextFileRead(msg) => write!(f, "cannot read context file: {msg}"),
             Self::ContextFileParse(msg) => write!(f, "cannot parse context file: {msg}"),
         }
@@ -160,6 +163,9 @@ pub struct ScanConfig {
     #[arg(long, default_value = "aegis-report.sarif")]
     pub output: PathBuf,
 
+    #[arg(long, default_value = "developer")]
+    pub report_format: String,
+
     #[arg(long)]
     pub source_dir: Option<PathBuf>,
 
@@ -263,4 +269,9 @@ pub fn load_business_context(path: &Path) -> Result<BusinessContext, ConfigError
     let contents =
         std::fs::read_to_string(path).map_err(|e| ConfigError::ContextFileRead(e.to_string()))?;
     serde_json::from_str(&contents).map_err(|e| ConfigError::ContextFileParse(e.to_string()))
+}
+
+pub fn resolve_report_format(name: &str) -> Result<ReportFormat, ConfigError> {
+    aegis_reporting::report_format::parse_report_format(name)
+        .map_err(|_| ConfigError::InvalidReportFormat(name.to_string()))
 }
