@@ -19,6 +19,7 @@ fn test_context() -> ScanContext {
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     }
 }
 

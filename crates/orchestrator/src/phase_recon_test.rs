@@ -26,6 +26,7 @@ fn make_context(source_dir: Option<PathBuf>) -> ScanContext {
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     }
 }
 

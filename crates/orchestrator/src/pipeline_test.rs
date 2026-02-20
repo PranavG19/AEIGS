@@ -312,6 +312,7 @@ fn scan_context_fields_accessible() {
         graph,
         defense_profile: None,
         capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
     };
     assert_eq!(ctx.config.target, "http://localhost:8080");
     assert!(ctx.defense_profile.is_none());
@@ -328,6 +329,7 @@ fn scan_context_with_defense_profile() {
         graph,
         defense_profile: Some(profile),
         capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
     };
     assert!(ctx.defense_profile.is_some());
 }
@@ -584,6 +586,7 @@ fn fake_graph_store_satisfies_scan_context() {
         graph,
         defense_profile: None,
         capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
     };
     assert_eq!(ctx.graph.node_count().unwrap(), 0);
     assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
@@ -832,6 +835,7 @@ fn scan_context_has_capabilities_field() {
         graph,
         defense_profile: None,
         capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
     };
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::PassiveRecon));
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::Fuzzing));

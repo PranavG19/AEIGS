@@ -12,6 +12,7 @@ use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
+use crate::convergence::RefutedTracker;
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::phase_analyze::run_analyze;
 use crate::phase_fingerprint::defense_properties;
@@ -28,6 +29,7 @@ pub struct ScanContext {
     pub graph: Box<dyn GraphStore>,
     pub defense_profile: Option<DefenseProfile>,
     pub capabilities: CapabilityManager,
+    pub refuted: RefutedTracker,
 }
 
 #[derive(Debug, Clone)]
@@ -641,6 +643,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         graph,
         defense_profile: None,
         capabilities,
+        refuted: RefutedTracker::new(),
     };
 
     let phases_result = run_scan_phases(

@@ -36,6 +36,7 @@ fn test_context(output_path: &std::path::Path) -> ScanContext {
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     }
 }
 

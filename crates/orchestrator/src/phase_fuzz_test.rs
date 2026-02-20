@@ -63,6 +63,7 @@ fn make_context(args: &[&str]) -> ScanContext {
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     }
 }
 
@@ -308,6 +309,7 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
         graph: Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     };
     (ctx, tmp)
 }
@@ -633,6 +635,7 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
         capabilities,
+        refuted: convergence::RefutedTracker::new(),
     };
 
     let mut transport = MockTransport::ok_200();
