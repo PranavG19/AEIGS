@@ -467,4 +467,138 @@ mod tests {
         assert!(oracle.randomize_order());
         assert_eq!(oracle.inter_request_spacing(), Duration::from_millis(100));
     }
+
+    #[test]
+    fn normalize_body_strips_timestamps_uuids_session_ids() {
+        use crate::oracle::normalize_body;
+
+        let body = concat!(
+            r#"{"id":"550e8400-e29b-41d4-a716-446655440000","#,
+            r#""created":"2024-01-15T10:30:00Z","#,
+            r#""csrf":"a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6","#,
+            r#""ts":1705312200000}"#
+        );
+
+        let normalized = normalize_body(body);
+        assert!(normalized.contains("[UUID]"));
+        assert!(normalized.contains("[TIMESTAMP]"));
+        assert!(normalized.contains("[HEX]"));
+        assert!(normalized.contains("[UNIX_TS]"));
+        assert!(!normalized.contains("550e8400"));
+        assert!(!normalized.contains("2024-01-15"));
+        assert!(!normalized.contains("a1b2c3d4e5f6a7b8"));
+        assert!(!normalized.contains("1705312200000"));
+    }
+
+    #[test]
+    fn simhash_identical_strings_are_similar() {
+        use crate::oracle::{simhash, simhash_similarity};
+
+        let text = "the quick brown fox jumps over the lazy dog";
+        let h1 = simhash(text);
+        let h2 = simhash(text);
+        let sim = simhash_similarity(h1, h2);
+        assert!((sim - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn simhash_completely_different_strings_are_dissimilar() {
+        use crate::oracle::{simhash, simhash_similarity};
+
+        // SimHash of unrelated content should hover near 0.5 (random chance)
+        // and be well below the 0.95 determinism threshold
+        let h1 = simhash(r#"{"status":"ok","items":[],"count":0,"user":"alice"}"#);
+        let h2 = simhash(
+            "<html><body><h1>404 Not Found</h1><p>The requested page does not exist.</p></body></html>",
+        );
+        let sim = simhash_similarity(h1, h2);
+        assert!(
+            sim < 0.7,
+            "completely different bodies should be dissimilar, got {sim}"
+        );
+    }
+
+    #[test]
+    fn simhash_similar_strings_with_token_changes() {
+        use crate::oracle::{normalize_body, simhash, simhash_similarity};
+
+        let body_a = r#"{"user":"alice","csrf":"aabbccdd11223344aabbccdd11223344","time":"2024-01-15T10:00:00Z"}"#;
+        let body_b = r#"{"user":"alice","csrf":"11223344aabbccdd11223344aabbccdd","time":"2024-06-20T14:30:00Z"}"#;
+
+        let norm_a = normalize_body(body_a);
+        let norm_b = normalize_body(body_b);
+
+        let sim = simhash_similarity(simhash(&norm_a), simhash(&norm_b));
+        assert!(
+            sim > 0.9,
+            "normalized bodies should be highly similar, got {sim}"
+        );
+    }
+
+    #[test]
+    fn variance_with_csrf_tokens_is_deterministic() {
+        use crate::oracle::measure_endpoint_variance;
+
+        let make_resp = |csrf: &str| FuzzResponse {
+            request_id: 1,
+            status_code: 200,
+            body: format!(r#"{{"page":"home","csrf":"{csrf}","content":"Welcome back"}}"#),
+            headers: Vec::new(),
+            response_time: Duration::from_millis(50),
+            body_size_bytes: 60,
+        };
+
+        let responses = vec![
+            make_resp("aabbccdd11223344eeff0011aabbccdd"),
+            make_resp("11223344aabbccddeeff001122334455"),
+            make_resp("ffeeddccbbaa99887766554433221100"),
+        ];
+
+        let report = measure_endpoint_variance(&responses);
+        assert!(
+            report.is_deterministic,
+            "responses identical except CSRF tokens should be deterministic, similarity={}",
+            report.body_similarity
+        );
+    }
+
+    #[test]
+    fn variance_with_genuinely_different_bodies_is_nondeterministic() {
+        use crate::oracle::measure_endpoint_variance;
+
+        let responses = vec![
+            FuzzResponse {
+                request_id: 1,
+                status_code: 200,
+                body: r#"{"status":"ok","items":[]}"#.to_string(),
+                headers: Vec::new(),
+                response_time: Duration::from_millis(50),
+                body_size_bytes: 26,
+            },
+            FuzzResponse {
+                request_id: 2,
+                status_code: 200,
+                body: "Internal Server Error: stack trace at line 42 in module database"
+                    .to_string(),
+                headers: Vec::new(),
+                response_time: Duration::from_millis(50),
+                body_size_bytes: 63,
+            },
+            FuzzResponse {
+                request_id: 3,
+                status_code: 200,
+                body: "<html><body><h1>404 Not Found</h1></body></html>".to_string(),
+                headers: Vec::new(),
+                response_time: Duration::from_millis(50),
+                body_size_bytes: 48,
+            },
+        ];
+
+        let report = measure_endpoint_variance(&responses);
+        assert!(
+            !report.is_deterministic,
+            "genuinely different bodies should be non-deterministic, similarity={}",
+            report.body_similarity
+        );
+    }
 }

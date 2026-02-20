@@ -1,6 +1,9 @@
 use crate::executor::FuzzResponse;
 use rand::Rng;
+use regex::Regex;
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::sync::LazyLock;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -337,6 +340,67 @@ pub struct VarianceReport {
     pub is_deterministic: bool,
 }
 
+static RE_UUID: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+        .unwrap()
+});
+
+static RE_ISO8601: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})").unwrap()
+});
+
+// 10-13 digit sequences that are standalone (not part of a longer number/word)
+static RE_UNIX_TS: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\b\d{10,13}\b").unwrap());
+
+// Hex strings of 16+ characters (session IDs, CSRF tokens, nonces)
+static RE_HEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[0-9a-fA-F]{16,}").unwrap());
+
+pub fn normalize_body(body: &str) -> String {
+    let result = RE_UUID.replace_all(body, "[UUID]");
+    let result = RE_ISO8601.replace_all(&result, "[TIMESTAMP]");
+    let result = RE_UNIX_TS.replace_all(&result, "[UNIX_TS]");
+    RE_HEX.replace_all(&result, "[HEX]").into_owned()
+}
+
+pub fn simhash(text: &str) -> u64 {
+    // 64 accumulators, one per bit position
+    let mut counts = [0i64; 64];
+    let bytes = text.as_bytes();
+
+    if bytes.len() < 3 {
+        let mut hasher = std::hash::DefaultHasher::new();
+        text.hash(&mut hasher);
+        return hasher.finish();
+    }
+
+    for window in bytes.windows(3) {
+        let mut hasher = std::hash::DefaultHasher::new();
+        window.hash(&mut hasher);
+        let hash = hasher.finish();
+
+        for (i, count) in counts.iter_mut().enumerate() {
+            if hash & (1u64 << i) != 0 {
+                *count += 1;
+            } else {
+                *count -= 1;
+            }
+        }
+    }
+
+    let mut fingerprint = 0u64;
+    for (i, &count) in counts.iter().enumerate() {
+        if count > 0 {
+            fingerprint |= 1u64 << i;
+        }
+    }
+    fingerprint
+}
+
+pub fn simhash_similarity(a: u64, b: u64) -> f64 {
+    let hamming = (a ^ b).count_ones() as f64;
+    1.0 - (hamming / 64.0)
+}
+
 pub fn measure_endpoint_variance(responses: &[FuzzResponse]) -> VarianceReport {
     if responses.len() <= 1 {
         return VarianceReport {
@@ -350,13 +414,23 @@ pub fn measure_endpoint_variance(responses: &[FuzzResponse]) -> VarianceReport {
     codes.sort();
 
     let all_same_code = codes.windows(2).all(|w| w[0] == w[1]);
-    let sizes: Vec<usize> = responses.iter().map(|r| r.body_size_bytes).collect();
-    let size_values: Vec<f64> = sizes.iter().map(|s| *s as f64).collect();
-    let size_deviation = std_dev(&size_values);
-    let mean_size = mean(&size_values);
 
-    let body_similarity = if mean_size > 0.0 {
-        (1.0 - (size_deviation / mean_size)).clamp(0.0, 1.0)
+    let hashes: Vec<u64> = responses
+        .iter()
+        .map(|r| simhash(&normalize_body(&r.body)))
+        .collect();
+
+    let mut pair_count = 0u64;
+    let mut similarity_sum = 0.0f64;
+    for i in 0..hashes.len() {
+        for j in (i + 1)..hashes.len() {
+            similarity_sum += simhash_similarity(hashes[i], hashes[j]);
+            pair_count += 1;
+        }
+    }
+
+    let body_similarity = if pair_count > 0 {
+        similarity_sum / pair_count as f64
     } else {
         1.0
     };
