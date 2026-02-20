@@ -2,6 +2,7 @@ use super::*;
 
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use aegis_reporting::sarif_emitter::SarifLevel;
 use clap::Parser;
@@ -223,4 +224,153 @@ fn apply_business_context_multipliers_unmatched_endpoint_unchanged() {
     let biz = make_biz_ctx(&["/api/payments"], &["/api/users"]);
     let result = apply_business_context_multipliers(70.0, "/api/other", &biz);
     assert!((result - 70.0).abs() < 1e-9);
+}
+
+#[test]
+fn is_known_issue_returns_true_when_endpoint_and_class_match() {
+    let known = vec![scan_config::KnownIssue {
+        endpoint: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+    }];
+    assert!(phase_report::is_known_issue(
+        "/api/users",
+        VulnerabilityClass::SqlInjection,
+        &known
+    ));
+}
+
+#[test]
+fn is_known_issue_returns_false_when_class_differs() {
+    let known = vec![scan_config::KnownIssue {
+        endpoint: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+    }];
+    assert!(!phase_report::is_known_issue(
+        "/api/users",
+        VulnerabilityClass::CrossSiteScripting,
+        &known
+    ));
+}
+
+#[test]
+fn is_known_issue_returns_false_when_endpoint_differs() {
+    let known = vec![scan_config::KnownIssue {
+        endpoint: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+    }];
+    assert!(!phase_report::is_known_issue(
+        "/api/admin",
+        VulnerabilityClass::SqlInjection,
+        &known
+    ));
+}
+
+#[test]
+fn is_known_issue_returns_false_for_empty_list() {
+    assert!(!phase_report::is_known_issue(
+        "/api/users",
+        VulnerabilityClass::SqlInjection,
+        &[]
+    ));
+}
+
+fn add_node_entry(seq: u64, path: &str) -> OperationLogEntry {
+    OperationLogEntry {
+        sequence_number: seq,
+        module: ModuleIdentifier::Fuzzing,
+        operation: GraphOperation::AddNode {
+            node_type: NodeType::Endpoint,
+            properties: vec![("path".to_string(), path.to_string())],
+        },
+        timestamp_unix_ms: 1000 + seq,
+    }
+}
+
+fn add_linked_finding_entry(
+    seq: u64,
+    class: VulnerabilityClass,
+    severity: f64,
+    node_id: u64,
+) -> OperationLogEntry {
+    OperationLogEntry {
+        sequence_number: seq,
+        module: ModuleIdentifier::Fuzzing,
+        operation: GraphOperation::AddFinding {
+            linked_node_ids: vec![node_id],
+            vulnerability_class: class,
+            severity,
+            confidence: 0.9,
+            certificate: vec![],
+        },
+        timestamp_unix_ms: 1000 + seq,
+    }
+}
+
+#[test]
+fn run_report_known_issue_finding_has_sarif_suppression() {
+    let output = std::env::temp_dir().join("test_report_known_issue.sarif");
+    let mut ctx = test_context(&output);
+
+    // node 0 at /api/users, finding 1 linked to it
+    let entries = vec![
+        add_node_entry(0, "/api/users"),
+        add_linked_finding_entry(1, VulnerabilityClass::SqlInjection, 0.8, 0),
+    ];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    // Inject business context with the matching known issue directly
+    // (bypasses file I/O — we override the loaded context inside the context_file path
+    // by writing a temp JSON file).
+    let biz_json = serde_json::json!({
+        "known_issues": [
+            {"endpoint": "/api/users", "vulnerability_class": "SqlInjection"}
+        ]
+    });
+    let ctx_path = std::env::temp_dir().join("test_biz_ctx_known.json");
+    std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
+    ctx.config.context_file = Some(ctx_path.clone());
+
+    phase_report::run_report(&mut ctx, None).unwrap();
+
+    let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
+    let results = json["runs"][0]["results"].as_array().unwrap();
+    assert_eq!(results.len(), 1);
+    let suppressions = results[0]["suppressions"].as_array().unwrap();
+    assert_eq!(suppressions.len(), 1);
+    assert_eq!(suppressions[0]["kind"].as_str().unwrap(), "inSource");
+    assert_eq!(
+        suppressions[0]["justification"].as_str().unwrap(),
+        "known-issue"
+    );
+
+    let _ = std::fs::remove_file(&output);
+    let _ = std::fs::remove_file(&ctx_path);
+}
+
+#[test]
+fn run_report_non_known_issue_finding_has_no_suppression() {
+    let output = std::env::temp_dir().join("test_report_not_known_issue.sarif");
+    let mut ctx = test_context(&output);
+
+    let entries = vec![add_finding_entry(0, VulnerabilityClass::SqlInjection, 0.8)];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    let biz_json = serde_json::json!({
+        "known_issues": [
+            {"endpoint": "/api/other", "vulnerability_class": "SqlInjection"}
+        ]
+    });
+    let ctx_path = std::env::temp_dir().join("test_biz_ctx_not_known.json");
+    std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
+    ctx.config.context_file = Some(ctx_path.clone());
+
+    phase_report::run_report(&mut ctx, None).unwrap();
+
+    let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
+    let results = json["runs"][0]["results"].as_array().unwrap();
+    assert_eq!(results.len(), 1);
+    assert!(results[0]["suppressions"].is_null());
+
+    let _ = std::fs::remove_file(&output);
+    let _ = std::fs::remove_file(&ctx_path);
 }

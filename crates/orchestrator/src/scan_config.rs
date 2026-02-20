@@ -1,4 +1,5 @@
 use aegis_evasion_engine::PersonaId;
+use aegis_protocol::finding::VulnerabilityClass;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -10,6 +11,17 @@ pub enum StealthLevel {
     Paranoid,
 }
 
+/// A known vulnerability that has already been triaged and accepted as a risk.
+///
+/// When a scan finding matches a known issue (same endpoint and vulnerability class),
+/// the SARIF output annotates it with a suppression rather than removing it, allowing
+/// downstream tooling to filter it while preserving the audit trail.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct KnownIssue {
+    pub endpoint: String,
+    pub vulnerability_class: VulnerabilityClass,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BusinessContext {
     #[serde(default)]
@@ -19,7 +31,7 @@ pub struct BusinessContext {
     #[serde(default)]
     pub pii_endpoints: Vec<String>,
     #[serde(default)]
-    pub known_issues: Vec<String>,
+    pub known_issues: Vec<KnownIssue>,
 }
 
 #[derive(Debug)]

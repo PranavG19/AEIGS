@@ -26,6 +26,8 @@ mod tests {
             cve_id: None,
             mitigation_rank: None,
             confidence_score: None,
+            suppression_kind: None,
+            suppression_message: None,
         }
     }
 
@@ -48,6 +50,8 @@ mod tests {
             cve_id: None,
             mitigation_rank: None,
             confidence_score: None,
+            suppression_kind: None,
+            suppression_message: None,
         }
     }
 
@@ -79,6 +83,8 @@ mod tests {
             cve_id: None,
             mitigation_rank: None,
             confidence_score: None,
+            suppression_kind: None,
+            suppression_message: None,
         }
     }
 
@@ -503,6 +509,8 @@ mod tests {
             cve_id: None,
             mitigation_rank: None,
             confidence_score: None,
+            suppression_kind: None,
+            suppression_message: None,
         }
     }
 

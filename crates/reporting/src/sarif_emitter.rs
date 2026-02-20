@@ -1,5 +1,5 @@
 use aegis_protocol::finding::VulnerabilityClass;
-use sarif_rust::types::result::Fix;
+use sarif_rust::types::result::{Fix, Suppression};
 use sarif_rust::types::{
     ArtifactLocation, Level, Location, LogicalLocation, Message, MultiformatMessage,
     PhysicalLocation, ReportingConfiguration, ReportingDescriptor, ReportingDescriptorReference,
@@ -35,6 +35,11 @@ pub struct SarifFinding {
     pub cve_id: Option<String>,
     pub mitigation_rank: Option<u32>,
     pub confidence_score: Option<f64>,
+    /// When set, the SARIF result is annotated with a suppression of this kind.
+    /// Use `"inSource"` for known issues accepted as risk.
+    pub suppression_kind: Option<String>,
+    /// Human-readable justification for the suppression (e.g. `"known-issue"`).
+    pub suppression_message: Option<String>,
 }
 
 pub struct RelatedLocation {
@@ -387,6 +392,17 @@ fn build_result(finding: &SarifFinding) -> sarif_rust::types::Result {
             attack_taxon_reference(attack_technique_for(vc)),
         ]);
         result.fixes = Some(vec![build_fix(vc)]);
+    }
+
+    if let Some(kind) = &finding.suppression_kind {
+        result.suppressions = Some(vec![Suppression {
+            kind: kind.clone(),
+            status: None,
+            justification: finding.suppression_message.clone(),
+            location: None,
+            guid: None,
+            properties: None,
+        }]);
     }
 
     result

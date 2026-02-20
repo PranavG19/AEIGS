@@ -293,6 +293,7 @@ fn business_context_default_has_empty_vecs() {
 
 #[test]
 fn load_business_context_valid_json() {
+    use aegis_protocol::finding::VulnerabilityClass;
     let mut tmp = tempfile::NamedTempFile::new().unwrap();
     write!(
         tmp,
@@ -300,7 +301,9 @@ fn load_business_context_valid_json() {
             "excluded_endpoints": ["/health"],
             "critical_assets": ["/api/payments"],
             "pii_endpoints": ["/api/users"],
-            "known_issues": ["CVE-2024-0001"]
+            "known_issues": [
+                {{"endpoint": "/api/users", "vulnerability_class": "SqlInjection"}}
+            ]
         }}"#
     )
     .unwrap();
@@ -308,7 +311,12 @@ fn load_business_context_valid_json() {
     assert_eq!(ctx.excluded_endpoints, vec!["/health"]);
     assert_eq!(ctx.critical_assets, vec!["/api/payments"]);
     assert_eq!(ctx.pii_endpoints, vec!["/api/users"]);
-    assert_eq!(ctx.known_issues, vec!["CVE-2024-0001"]);
+    assert_eq!(ctx.known_issues.len(), 1);
+    assert_eq!(ctx.known_issues[0].endpoint, "/api/users");
+    assert_eq!(
+        ctx.known_issues[0].vulnerability_class,
+        VulnerabilityClass::SqlInjection
+    );
 }
 
 #[test]

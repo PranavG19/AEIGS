@@ -3,7 +3,7 @@ use aegis_reporting::risk_scorer::{RiskInput, compute_risk_score};
 use aegis_reporting::sarif_emitter::{SarifFinding, SarifLevel, emit_sarif};
 
 use crate::pipeline::{PhaseResult, ScanContext};
-use crate::scan_config::{BusinessContext, ScanMetrics, load_business_context};
+use crate::scan_config::{BusinessContext, KnownIssue, ScanMetrics, load_business_context};
 
 pub fn run_report(
     ctx: &mut ScanContext,
@@ -39,11 +39,22 @@ pub fn run_report(
             };
 
             let base_score = compute_risk_score(&risk_input);
+            let endpoint = endpoint_for_finding(&finding.linked_node_ids, ctx);
             let composite = if let Some(ref biz) = biz_ctx {
-                let endpoint = endpoint_for_finding(&finding.linked_node_ids, ctx);
                 apply_business_context_multipliers(base_score.composite, &endpoint, biz)
             } else {
                 base_score.composite
+            };
+
+            let (suppression_kind, suppression_message) = if let Some(ref biz) = biz_ctx
+                && is_known_issue(&endpoint, finding.vulnerability_class, &biz.known_issues)
+            {
+                (
+                    Some("inSource".to_string()),
+                    Some("known-issue".to_string()),
+                )
+            } else {
+                (None, None)
             };
 
             sarif_findings.push(SarifFinding {
@@ -67,6 +78,8 @@ pub fn run_report(
                 cve_id: None,
                 mitigation_rank: None,
                 confidence_score: None,
+                suppression_kind,
+                suppression_message,
             });
         }
     }
@@ -137,6 +150,17 @@ pub(crate) fn apply_business_context_multipliers(
         multiplied = (multiplied * 1.5).min(100.0);
     }
     multiplied
+}
+
+/// Returns true if the given endpoint and vulnerability class match any entry in the known-issues list.
+pub(crate) fn is_known_issue(
+    endpoint: &str,
+    vulnerability_class: VulnerabilityClass,
+    known_issues: &[KnownIssue],
+) -> bool {
+    known_issues
+        .iter()
+        .any(|k| k.endpoint == endpoint && k.vulnerability_class == vulnerability_class)
 }
 
 fn endpoint_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -> String {
