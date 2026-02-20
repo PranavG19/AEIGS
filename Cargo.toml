@@ -41,3 +41,4 @@ openapiv3 = "2"
 graphql-parser = "0.4"
 regex = "1"
 clap = { version = "4", features = ["derive"] }
+url = "2"

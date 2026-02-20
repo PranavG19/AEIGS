@@ -595,6 +595,115 @@ mod tests {
     }
 
     #[test]
+    fn test_https_localhost_accepted() {
+        assert!(validate_target_is_localhost("https://localhost:8443").is_ok());
+    }
+
+    #[test]
+    fn test_uppercase_localhost_accepted() {
+        assert!(validate_target_is_localhost("http://LOCALHOST:8080").is_ok());
+    }
+
+    #[test]
+    fn test_mixed_case_localhost_accepted() {
+        assert!(validate_target_is_localhost("http://Localhost:8080").is_ok());
+    }
+
+    #[test]
+    fn test_127_with_deep_path_and_query_accepted() {
+        assert!(validate_target_is_localhost("http://127.0.0.1:8080/deep/path?query=1").is_ok());
+    }
+
+    #[test]
+    fn test_credentials_in_url_accepted_when_host_is_localhost() {
+        assert!(validate_target_is_localhost("http://user@localhost:8080").is_ok());
+    }
+
+    #[test]
+    fn test_subdomain_localhost_evil_rejected() {
+        let err = validate_target_is_localhost("http://localhost.evil.com").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "localhost.evil.com".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_evil_localhost_subdomain_rejected() {
+        let err = validate_target_is_localhost("http://evil-localhost.com").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "evil-localhost.com".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_hex_encoded_127001_rejected() {
+        assert!(validate_target_is_localhost("http://0x7f000001:8080").is_err());
+    }
+
+    #[test]
+    fn test_decimal_encoded_127001_rejected() {
+        assert!(validate_target_is_localhost("http://2130706433:8080").is_err());
+    }
+
+    #[test]
+    fn test_octal_encoded_127001_rejected() {
+        assert!(validate_target_is_localhost("http://0177.0.0.1:8080").is_err());
+    }
+
+    #[test]
+    fn test_dns_rebinding_nip_io_rejected() {
+        let err = validate_target_is_localhost("http://127.0.0.1.nip.io").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "127.0.0.1.nip.io".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_ipv6_mapped_ipv4_rejected() {
+        assert!(validate_target_is_localhost("http://[::ffff:127.0.0.1]:8080").is_err());
+    }
+
+    #[test]
+    fn test_verbose_ipv6_loopback_rejected() {
+        assert!(validate_target_is_localhost("http://[0:0:0:0:0:0:0:1]:8080").is_err());
+    }
+
+    #[test]
+    fn test_confused_authority_localhost_at_evil_rejected() {
+        let err = validate_target_is_localhost("http://localhost@evil.com").unwrap_err();
+        assert_eq!(
+            err,
+            TargetValidationError::NonLocalhostTarget {
+                host: "evil.com".into()
+            }
+        );
+    }
+
+    #[test]
+    fn test_shortened_ipv4_127_1_rejected() {
+        assert!(validate_target_is_localhost("http://127.1:8080").is_err());
+    }
+
+    #[test]
+    fn test_shortened_ipv4_127_0_1_rejected() {
+        assert!(validate_target_is_localhost("http://127.0.1:8080").is_err());
+    }
+
+    #[test]
+    fn test_bare_localhost_with_path_no_port() {
+        assert!(validate_target_is_localhost("localhost/path").is_ok());
+    }
+
+    #[test]
     fn all_evidence_levels_serialize() {
         let levels = [
             EvidenceLevel::Statistical,
