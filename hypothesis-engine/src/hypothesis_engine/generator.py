@@ -4,9 +4,9 @@ import json
 import time
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
-from hypothesis_engine.bedrock_client import BedrockClient, LlmBackend
+from hypothesis_engine.bedrock_client import BedrockClient, LlmBackend, TokenUsage
 from hypothesis_engine.openai_client import OpenAiClient
 
 
@@ -18,6 +18,10 @@ class ScanContext(BaseModel):
     authorization_matrix_summary: str = ""
     known_vulnerable_dependencies: list[str] = Field(default_factory=list)
     feedback_summary: str = ""
+    graph_nodes: list[dict[str, Any]] = Field(default_factory=list)
+    graph_edges: list[dict[str, Any]] = Field(default_factory=list)
+    defense_posture: dict[str, Any] = Field(default_factory=dict)
+    attack_paths: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class Hypothesis(BaseModel):
@@ -40,6 +44,9 @@ class GenerationResult(BaseModel):
 SYSTEM_PROMPT = (
     "You are a security researcher analyzing a web application for vulnerabilities. "
     "First, analyze the context and reason about potential vulnerabilities step by step. "
+    "When graph topology is provided, reason about multi-step attack chains: "
+    "identify which nodes are reachable from public endpoints and which paths "
+    "lack defensive controls. "
     "Then output your hypotheses as a JSON array.\n\n"
     "Each hypothesis must follow this exact JSON format:\n"
     '{"condition": "IF ...", "vulnerability_class": "...", '
@@ -82,11 +89,56 @@ def build_user_prompt(context: ScanContext) -> str:
             + "\n".join(f"  - {d}" for d in context.known_vulnerable_dependencies)
         )
 
+    if context.graph_nodes:
+        node_lines = []
+        for n in context.graph_nodes[:50]:
+            label = n.get("label", "unknown")
+            ntype = n.get("type", "unknown")
+            protected = n.get("protected_by", [])
+            if protected:
+                node_lines.append(f"  - {label} (type={ntype}, protected_by={', '.join(protected)})")
+            else:
+                node_lines.append(f"  - {label} (type={ntype})")
+        parts.append("Graph nodes:\n" + "\n".join(node_lines))
+
+    if context.graph_edges:
+        edge_lines = [
+            f"  - {e.get('source_id', '?')} --[{e.get('label', '?')}]--> {e.get('target_id', '?')} (weight={e.get('weight', '?')})"
+            for e in context.graph_edges[:100]
+        ]
+        parts.append("Graph edges:\n" + "\n".join(edge_lines))
+
+    if context.defense_posture:
+        dp = context.defense_posture
+        defense_lines = []
+        if dp.get("has_waf") is not None:
+            defense_lines.append(f"  WAF present: {dp['has_waf']}")
+        if dp.get("waf_vendor"):
+            defense_lines.append(f"  WAF vendor: {dp['waf_vendor']}")
+        if dp.get("bot_detection_present") is not None:
+            defense_lines.append(f"  Bot detection: {dp['bot_detection_present']}")
+        if dp.get("rate_limit_rps") is not None:
+            defense_lines.append(f"  Rate limit: {dp['rate_limit_rps']} rps")
+        if defense_lines:
+            parts.append("Defense posture:\n" + "\n".join(defense_lines))
+
+    if context.attack_paths:
+        path_lines = []
+        for p in context.attack_paths[:10]:
+            path_nodes = " -> ".join(p.get("path", []))
+            weight = p.get("total_weight", "?")
+            unprotected = p.get("unprotected_hops", "?")
+            path_lines.append(f"  - {path_nodes} (weight={weight}, unprotected_hops={unprotected})")
+        parts.append("Known attack paths:\n" + "\n".join(path_lines))
+
     if context.feedback_summary:
-        # feedback_summary is produced by build_feedback_summary() — contains only
-        # metadata fields (vulnerability_class, outcome, anomaly_score). Raw response
-        # bodies, header values, and any target-controlled strings are excluded
-        # to prevent prompt injection attacks.
+        # feedback_summary is produced by build_feedback_summary() — safe fields only:
+        #   SAFE: vulnerability_class (enum name, from our system)
+        #   SAFE: outcome (HypothesisOutcome enum value, from our system)
+        #   SAFE: anomaly_score (float, from our oracle)
+        #   UNSAFE (excluded): anomaly_details — may contain raw target response content;
+        #     including it would allow a malicious server to inject instructions into
+        #     subsequent LLM prompts.
         parts.append("## Prior Round Feedback\n" + context.feedback_summary)
 
     return "\n\n".join(parts) if parts else "No context available. Generate general hypotheses."
@@ -166,7 +218,7 @@ class HypothesisGenerator:
         messages: list[dict[str, str]],
         system: str = "",
         max_tokens: int = 4096,
-    ) -> tuple[str, Any]:
+    ) -> tuple[str, TokenUsage]:
         return self._client.invoke(messages=messages, system=system, max_tokens=max_tokens)
 
     def generate(self, context: ScanContext, max_hypotheses: int = 20) -> GenerationResult:

@@ -69,9 +69,98 @@ class TestBuildUserPrompt:
         assert "auth_endpoint" in prompt
 
 
+class TestGraphTopologyPrompt:
+    def test_graph_nodes_included_in_prompt(self) -> None:
+        ctx = ScanContext(
+            graph_nodes=[
+                {"id": 1, "type": "Endpoint", "label": "/api/login", "protected_by": ["CloudFlare WAF"]},
+                {"id": 2, "type": "Function", "label": "authenticate"},
+            ]
+        )
+        prompt = build_user_prompt(ctx)
+        assert "Graph nodes:" in prompt
+        assert "/api/login" in prompt
+        assert "type=Endpoint" in prompt
+        assert "protected_by=CloudFlare WAF" in prompt
+        assert "authenticate" in prompt
+        assert "type=Function" in prompt
+
+    def test_graph_edges_included_in_prompt(self) -> None:
+        ctx = ScanContext(
+            graph_edges=[
+                {"source_id": 1, "target_id": 2, "label": "Calls", "weight": 0.5},
+            ]
+        )
+        prompt = build_user_prompt(ctx)
+        assert "Graph edges:" in prompt
+        assert "1 --[Calls]--> 2" in prompt
+        assert "weight=0.5" in prompt
+
+    def test_defense_posture_included_in_prompt(self) -> None:
+        ctx = ScanContext(
+            defense_posture={
+                "has_waf": True,
+                "waf_vendor": "CloudFlare",
+                "bot_detection_present": False,
+                "rate_limit_rps": 100,
+            }
+        )
+        prompt = build_user_prompt(ctx)
+        assert "Defense posture:" in prompt
+        assert "WAF present: True" in prompt
+        assert "WAF vendor: CloudFlare" in prompt
+        assert "Bot detection: False" in prompt
+        assert "Rate limit: 100 rps" in prompt
+
+    def test_attack_paths_included_in_prompt(self) -> None:
+        ctx = ScanContext(
+            attack_paths=[
+                {"path": ["/public", "gateway", "db"], "total_weight": 2.5, "unprotected_hops": 1},
+            ]
+        )
+        prompt = build_user_prompt(ctx)
+        assert "Known attack paths:" in prompt
+        assert "/public -> gateway -> db" in prompt
+        assert "weight=2.5" in prompt
+        assert "unprotected_hops=1" in prompt
+
+    def test_graph_nodes_truncated_at_50(self) -> None:
+        nodes = [{"id": i, "type": "Endpoint", "label": f"/endpoint_{i}"} for i in range(60)]
+        ctx = ScanContext(graph_nodes=nodes)
+        prompt = build_user_prompt(ctx)
+        assert "/endpoint_49" in prompt
+        assert "/endpoint_50" not in prompt
+
+    def test_attack_paths_truncated_at_10(self) -> None:
+        paths = [
+            {"path": [f"node_{i}", "sink"], "total_weight": float(i), "unprotected_hops": 0}
+            for i in range(15)
+        ]
+        ctx = ScanContext(attack_paths=paths)
+        prompt = build_user_prompt(ctx)
+        assert "node_9" in prompt
+        assert "node_10" not in prompt
+
+    def test_empty_graph_fields_excluded(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Express"],
+            graph_nodes=[],
+            graph_edges=[],
+            defense_posture={},
+            attack_paths=[],
+        )
+        prompt = build_user_prompt(ctx)
+        assert "Graph nodes:" not in prompt
+        assert "Graph edges:" not in prompt
+        assert "Defense posture:" not in prompt
+        assert "Known attack paths:" not in prompt
+        assert "Express" in prompt
+
+
 class TestFeedbackSummary:
     def test_feedback_summary_defaults_to_empty_string(self) -> None:
         ctx = ScanContext()
+        assert isinstance(ctx.feedback_summary, str)
         assert ctx.feedback_summary == ""
 
     def test_empty_feedback_summary_excluded_from_prompt(self) -> None:
@@ -127,7 +216,7 @@ class TestFeedbackSummary:
             for i in range(100)
         ]
         result = build_feedback_summary(findings)
-        assert len(result) <= MAX_FEEDBACK_CHARS + len("[truncated — further findings omitted]")
+        assert len(result) <= MAX_FEEDBACK_CHARS
         assert "[truncated — further findings omitted]" in result
 
     def test_build_feedback_summary_empty_list_returns_empty(self) -> None:
