@@ -339,3 +339,162 @@ class TestLlmBackend:
         assert usage.input_tokens == 1
         assert usage.output_tokens == 2
         assert isinstance(backend, LlmBackend)
+
+    def test_invoke_structured_default_appends_schema_as_user_message(self) -> None:
+        captured: list[list[dict]] = []
+
+        class CapturingBackend(LlmBackend):
+            def invoke(
+                self,
+                messages: list[dict[str, str]],
+                system: str = "",
+                max_tokens: int = 4096,
+            ) -> tuple[str, TokenUsage]:
+                captured.append(messages)
+                return ('{"key": "value"}', TokenUsage(input_tokens=5, output_tokens=10))
+
+        schema = {"type": "object", "properties": {"key": {"type": "string"}}}
+        backend: LlmBackend = CapturingBackend()
+        text, usage = backend.invoke_structured(
+            messages=[{"role": "user", "content": "generate something"}],
+            output_schema=schema,
+            system="sys",
+        )
+
+        assert text == '{"key": "value"}'
+        assert usage.input_tokens == 5
+        assert usage.output_tokens == 10
+        assert len(captured) == 1
+        sent_messages = captured[0]
+        # Original message preserved, schema hint appended as final user message
+        assert sent_messages[0] == {"role": "user", "content": "generate something"}
+        assert sent_messages[-1]["role"] == "user"
+        assert "Output must be valid JSON" in sent_messages[-1]["content"]
+        assert '"type": "object"' in sent_messages[-1]["content"]
+
+
+class TestInvokeStructured:
+    def _make_tool_use_response(
+        self,
+        tool_input: dict,
+        input_tokens: int = 10,
+        output_tokens: int = 20,
+    ) -> dict:
+        body_bytes = json.dumps(
+            {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_01",
+                        "name": "structured_output",
+                        "input": tool_input,
+                    }
+                ],
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                },
+            }
+        ).encode()
+        return {"body": io.BytesIO(body_bytes)}
+
+    def _make_text_response(self, text: str) -> dict:
+        body_bytes = json.dumps(
+            {
+                "content": [{"type": "text", "text": text}],
+                "usage": {"input_tokens": 5, "output_tokens": 8},
+            }
+        ).encode()
+        return {"body": io.BytesIO(body_bytes)}
+
+    def test_extracts_tool_use_block_as_json_string(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        tool_input = {"findings": ["sqli", "xss"], "severity": "high"}
+        mock_boto.invoke_model.return_value = self._make_tool_use_response(
+            tool_input, input_tokens=100, output_tokens=50
+        )
+        client._client = mock_boto
+
+        schema = {"type": "object", "properties": {"findings": {"type": "array"}}}
+        text, usage = client.invoke_structured(
+            messages=[{"role": "user", "content": "find vulns"}],
+            output_schema=schema,
+        )
+
+        result = json.loads(text)
+        assert result == tool_input
+        assert usage.input_tokens == 100
+        assert usage.output_tokens == 50
+
+    def test_sends_tool_definition_and_forced_tool_choice(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        mock_boto.invoke_model.return_value = self._make_tool_use_response({"x": 1})
+        client._client = mock_boto
+
+        schema = {"type": "object", "properties": {"x": {"type": "integer"}}}
+        client.invoke_structured(
+            messages=[{"role": "user", "content": "test"}],
+            output_schema=schema,
+            system="sys prompt",
+        )
+
+        call_kwargs = mock_boto.invoke_model.call_args.kwargs
+        sent_body = json.loads(call_kwargs["body"])
+        assert sent_body["system"] == "sys prompt"
+        assert len(sent_body["tools"]) == 1
+        tool = sent_body["tools"][0]
+        assert tool["name"] == "structured_output"
+        assert tool["input_schema"] == schema
+        assert sent_body["tool_choice"] == {"type": "tool", "name": "structured_output"}
+
+    def test_falls_back_to_invoke_when_no_tool_use_block_in_response(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        # First call (invoke_structured attempt) returns only a text block
+        # Second call (fallback invoke) returns proper text
+        fallback_response_bytes = json.dumps(
+            {
+                "content": [{"type": "text", "text": "fallback text"}],
+                "usage": {"input_tokens": 3, "output_tokens": 6},
+            }
+        ).encode()
+        mock_boto.invoke_model.side_effect = [
+            self._make_text_response("unexpected text"),
+            {"body": io.BytesIO(fallback_response_bytes)},
+        ]
+        client._client = mock_boto
+
+        schema = {"type": "object"}
+        text, usage = client.invoke_structured(
+            messages=[{"role": "user", "content": "test"}],
+            output_schema=schema,
+        )
+
+        assert text == "fallback text"
+        assert mock_boto.invoke_model.call_count == 2
+
+    def test_falls_back_to_invoke_when_api_raises_exception(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        fallback_response_bytes = json.dumps(
+            {
+                "content": [{"type": "text", "text": "recovered"}],
+                "usage": {"input_tokens": 2, "output_tokens": 4},
+            }
+        ).encode()
+        mock_boto.invoke_model.side_effect = [
+            RuntimeError("tool_use not supported"),
+            {"body": io.BytesIO(fallback_response_bytes)},
+        ]
+        client._client = mock_boto
+
+        schema = {"type": "object"}
+        text, usage = client.invoke_structured(
+            messages=[{"role": "user", "content": "test"}],
+            output_schema=schema,
+        )
+
+        assert text == "recovered"
+        assert mock_boto.invoke_model.call_count == 2
