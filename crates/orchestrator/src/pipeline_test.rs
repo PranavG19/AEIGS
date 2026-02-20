@@ -684,3 +684,75 @@ fn hex_encode_is_not_tested_directly_but_hmac_key_hex_length_confirms_it() {
     assert_eq!(hex.len(), 64);
     assert!(hex.chars().all(|c| c.is_ascii_hexdigit()));
 }
+
+#[tokio::test]
+async fn run_scan_no_audit_skips_audit_file_creation() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("no-audit-test.sarif");
+    let expected_audit_path = dir.path().join("aegis-audit.cbor");
+
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.audit.no_audit = true;
+
+    let result = run_scan(config).await;
+    assert!(result.is_ok(), "run_scan failed: {:?}", result.err());
+    let summary = result.unwrap();
+    assert!(summary.audit_log_path.is_none());
+    assert!(summary.hmac_key_hex.is_none());
+    assert!(
+        !expected_audit_path.exists(),
+        "audit file should not exist when --no-audit is set"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_aborts_when_audit_creation_fails() {
+    let mut config = localhost_config();
+    config.output = std::path::PathBuf::from("/nonexistent/deeply/nested/dir/report.sarif");
+    config.audit.no_audit = false;
+
+    let result = run_scan(config).await;
+    assert!(
+        result.is_err(),
+        "scan should fail when audit log cannot be created"
+    );
+    let msg = format!("{}", result.unwrap_err());
+    assert!(
+        msg.starts_with("audit log:"),
+        "error should be audit log variant, got: {msg}"
+    );
+    assert!(
+        msg.contains("failed to create audit log"),
+        "error should describe the failure, got: {msg}"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_no_audit_succeeds_even_with_bad_audit_path() {
+    let mut config = localhost_config();
+    config.output = std::path::PathBuf::from("/nonexistent/deeply/nested/dir/report.sarif");
+    config.audit.no_audit = true;
+
+    let result = run_scan(config).await;
+    assert!(
+        !matches!(&result, Err(PipelineError::AuditLog(_))),
+        "no_audit=true should never produce an AuditLog error, got: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn pipeline_error_display_audit_log() {
+    let err = PipelineError::AuditLog("permission denied".to_string());
+    let msg = format!("{err}");
+    assert_eq!(msg, "audit log: permission denied");
+}
+
+#[test]
+fn pipeline_error_debug_audit_log() {
+    let err = PipelineError::AuditLog("disk full".to_string());
+    let dbg = format!("{err:?}");
+    assert!(dbg.contains("AuditLog"));
+    assert!(dbg.contains("disk full"));
+}

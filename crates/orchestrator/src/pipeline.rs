@@ -12,11 +12,11 @@ use crate::phase_analyze::run_analyze;
 use crate::phase_fingerprint::defense_properties;
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
-use crate::util::timestamp_ms;
 use crate::phase_report::run_report_with_previous;
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, validate_localhost,
 };
+use crate::util::timestamp_ms;
 
 pub struct ScanContext {
     pub config: ScanConfig,
@@ -50,6 +50,7 @@ pub struct ScanSummary {
 #[derive(Debug)]
 pub enum PipelineError {
     Config(ConfigError),
+    AuditLog(String),
     Recon(String),
     Fingerprint(String),
     Fuzz(String),
@@ -61,6 +62,7 @@ impl std::fmt::Display for PipelineError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Config(e) => write!(f, "config: {e}"),
+            Self::AuditLog(e) => write!(f, "audit log: {e}"),
             Self::Recon(e) => write!(f, "recon: {e}"),
             Self::Fingerprint(e) => write!(f, "fingerprint: {e}"),
             Self::Fuzz(e) => write!(f, "fuzz: {e}"),
@@ -88,13 +90,16 @@ fn derive_audit_log_path(config: &ScanConfig) -> std::path::PathBuf {
 
 fn create_audit_writer(
     config: &ScanConfig,
-) -> Option<(AuditLogWriter, std::path::PathBuf, [u8; 32])> {
+) -> Result<(AuditLogWriter, std::path::PathBuf, [u8; 32]), PipelineError> {
     let audit_path = derive_audit_log_path(config);
     let hmac_key: [u8; 32] = rand::random();
-    match AuditLogWriter::create(&audit_path, &hmac_key) {
-        Ok(writer) => Some((writer, audit_path, hmac_key)),
-        Err(_) => None,
-    }
+    let writer = AuditLogWriter::create(&audit_path, &hmac_key).map_err(|e| {
+        PipelineError::AuditLog(format!(
+            "failed to create audit log at {}: {e}",
+            audit_path.display()
+        ))
+    })?;
+    Ok((writer, audit_path, hmac_key))
 }
 
 fn emit_event(writer: &mut Option<AuditLogWriter>, event: AuditEventType) {
@@ -327,10 +332,8 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     let (mut audit_writer, audit_path, hmac_key) = if config.audit.no_audit {
         (None, None, None)
     } else {
-        match create_audit_writer(&config) {
-            Some((writer, path, key)) => (Some(writer), Some(path), Some(key)),
-            None => (None, None, None),
-        }
+        let (writer, path, key) = create_audit_writer(&config)?;
+        (Some(writer), Some(path), Some(key))
     };
 
     emit_event(
