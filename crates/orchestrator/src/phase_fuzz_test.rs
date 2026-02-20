@@ -55,10 +55,14 @@ impl phase_fuzz::FuzzTransport for FailingTransport {
 
 fn make_context(args: &[&str]) -> ScanContext {
     let config = ScanConfig::try_parse_from(args).unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     ScanContext {
         config,
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     }
 }
 
@@ -296,10 +300,14 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
         &path,
     ])
     .unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     let ctx = ScanContext {
         config,
         graph: Box::new(aegis_knowledge_graph::graph::KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     };
     (ctx, tmp)
 }
@@ -617,10 +625,14 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         &path,
     ])
     .unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     let mut ctx = ScanContext {
         config,
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     };
 
     let mut transport = MockTransport::ok_200();

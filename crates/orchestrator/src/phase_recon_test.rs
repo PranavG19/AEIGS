@@ -18,10 +18,14 @@ fn make_context(source_dir: Option<PathBuf>) -> ScanContext {
         args.push(&dir_string);
     }
     let config = ScanConfig::try_parse_from(args).unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     ScanContext {
         config,
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     }
 }
 

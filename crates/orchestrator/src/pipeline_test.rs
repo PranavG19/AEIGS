@@ -1,8 +1,10 @@
 use aegis_knowledge_graph::GraphStore;
 use aegis_knowledge_graph::graph::GraphError;
+use aegis_protocol::capability::Permission;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};
-use aegis_protocol::operation::OperationLogEntry;
+use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+use aegis_supervisor::capability_manager::CapabilityManager;
 
 use super::*;
 
@@ -64,6 +66,12 @@ impl GraphStore for FakeGraphStore {
     fn get_finding(&self, _id: u64) -> Result<Option<FindingData>, GraphError> {
         Ok(None)
     }
+}
+
+fn test_capability_manager() -> CapabilityManager {
+    let mut manager = CapabilityManager::new(vec![0u8; 32]);
+    register_default_policies(&mut manager);
+    manager
 }
 
 fn localhost_config() -> ScanConfig {
@@ -302,6 +310,7 @@ fn scan_context_fields_accessible() {
         config,
         graph,
         defense_profile: None,
+        capabilities: test_capability_manager(),
     };
     assert_eq!(ctx.config.target, "http://localhost:8080");
     assert!(ctx.defense_profile.is_none());
@@ -317,6 +326,7 @@ fn scan_context_with_defense_profile() {
         config,
         graph,
         defense_profile: Some(profile),
+        capabilities: test_capability_manager(),
     };
     assert!(ctx.defense_profile.is_some());
 }
@@ -572,6 +582,7 @@ fn fake_graph_store_satisfies_scan_context() {
         config,
         graph,
         defense_profile: None,
+        capabilities: test_capability_manager(),
     };
     assert_eq!(ctx.graph.node_count().unwrap(), 0);
     assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
@@ -809,4 +820,107 @@ async fn run_scan_no_audit_returns_verified_none() {
         summary.audit_verified, None,
         "audit_verified should be None when --no-audit is set"
     );
+}
+
+#[test]
+fn scan_context_has_capabilities_field() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+    };
+    assert!(ctx.capabilities.has_policy(ModuleIdentifier::PassiveRecon));
+    assert!(ctx.capabilities.has_policy(ModuleIdentifier::Fuzzing));
+}
+
+#[test]
+fn register_default_policies_registers_all_five_modules() {
+    let mut manager = CapabilityManager::new(vec![0u8; 32]);
+    register_default_policies(&mut manager);
+
+    let modules = [
+        ModuleIdentifier::PassiveRecon,
+        ModuleIdentifier::Enumeration,
+        ModuleIdentifier::Fuzzing,
+        ModuleIdentifier::ChainSynthesis,
+        ModuleIdentifier::HypothesisEngine,
+    ];
+    for module in &modules {
+        assert!(manager.has_policy(*module), "missing policy for {module:?}");
+    }
+}
+
+#[test]
+fn register_default_policies_correct_permissions() {
+    let mut manager = CapabilityManager::new(vec![0u8; 32]);
+    register_default_policies(&mut manager);
+
+    let recon = manager.policy_for(ModuleIdentifier::PassiveRecon).unwrap();
+    assert!(
+        recon
+            .allowed_permissions
+            .contains(&Permission::ReadFilesystem)
+    );
+    assert!(recon.allowed_permissions.contains(&Permission::WriteGraph));
+    assert!(
+        !recon
+            .allowed_permissions
+            .contains(&Permission::ExecuteRequests)
+    );
+
+    let fuzz = manager.policy_for(ModuleIdentifier::Fuzzing).unwrap();
+    assert!(
+        fuzz.allowed_permissions
+            .contains(&Permission::ExecuteRequests)
+    );
+    assert!(fuzz.allowed_permissions.contains(&Permission::ReadGraph));
+    assert!(fuzz.allowed_permissions.contains(&Permission::WriteGraph));
+
+    let hypothesis = manager
+        .policy_for(ModuleIdentifier::HypothesisEngine)
+        .unwrap();
+    assert!(
+        hypothesis
+            .allowed_permissions
+            .contains(&Permission::ReadGraph)
+    );
+    assert_eq!(hypothesis.allowed_permissions.len(), 1);
+}
+
+#[test]
+fn tokens_can_be_issued_for_each_module_after_policy_registration() {
+    let mut manager = CapabilityManager::new(vec![42u8; 32]);
+    register_default_policies(&mut manager);
+
+    let now = crate::util::timestamp_ms();
+    let modules = [
+        ModuleIdentifier::PassiveRecon,
+        ModuleIdentifier::Enumeration,
+        ModuleIdentifier::Fuzzing,
+        ModuleIdentifier::ChainSynthesis,
+        ModuleIdentifier::HypothesisEngine,
+    ];
+    for module in &modules {
+        let token = manager.issue_token(*module, now);
+        assert!(
+            token.is_ok(),
+            "failed to issue token for {module:?}: {:?}",
+            token.err()
+        );
+    }
+    assert_eq!(manager.issued_count(), 5);
+}
+
+#[test]
+fn issued_token_validates_successfully() {
+    let mut manager = CapabilityManager::new(vec![7u8; 32]);
+    register_default_policies(&mut manager);
+
+    let now = crate::util::timestamp_ms();
+    let token = manager.issue_token(ModuleIdentifier::Fuzzing, now).unwrap();
+    let result = manager.validate_token(&token, Permission::WriteGraph, now);
+    assert!(result.is_ok());
 }

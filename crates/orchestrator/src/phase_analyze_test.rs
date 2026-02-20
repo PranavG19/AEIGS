@@ -14,10 +14,14 @@ use crate::util::timestamp_ms;
 fn make_context() -> ScanContext {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     ScanContext {
         config,
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     }
 }
 

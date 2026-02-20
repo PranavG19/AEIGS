@@ -1,12 +1,15 @@
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use aegis_audit_log::AuditWriter;
 use aegis_audit_log::log_writer::{AuditLogWriter, NoOpAuditLogWriter};
 use aegis_fuzzing::DefenseProfile;
 use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::audit::AuditEventType;
+use aegis_protocol::capability::Permission;
 use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::phase_analyze::run_analyze;
@@ -23,6 +26,7 @@ pub struct ScanContext {
     pub config: ScanConfig,
     pub graph: Box<dyn GraphStore>,
     pub defense_profile: Option<DefenseProfile>,
+    pub capabilities: CapabilityManager,
 }
 
 #[derive(Debug, Clone)]
@@ -124,6 +128,51 @@ fn emit_event(writer: &mut dyn AuditWriter, event: AuditEventType) {
     let _ = writer.append_event(event);
 }
 
+/// Registers capability policies for all scan modules with least-privilege permissions.
+pub fn register_default_policies(manager: &mut CapabilityManager) {
+    let one_hour = Duration::from_secs(3600);
+
+    let policies = [
+        ModulePermissionPolicy {
+            module: ModuleIdentifier::PassiveRecon,
+            allowed_permissions: vec![Permission::ReadFilesystem, Permission::WriteGraph],
+            token_lifetime: one_hour,
+        },
+        ModulePermissionPolicy {
+            module: ModuleIdentifier::Enumeration,
+            allowed_permissions: vec![
+                Permission::ReadGraph,
+                Permission::WriteGraph,
+                Permission::ExecuteRequests,
+            ],
+            token_lifetime: one_hour,
+        },
+        ModulePermissionPolicy {
+            module: ModuleIdentifier::Fuzzing,
+            allowed_permissions: vec![
+                Permission::ReadGraph,
+                Permission::WriteGraph,
+                Permission::ExecuteRequests,
+            ],
+            token_lifetime: one_hour,
+        },
+        ModulePermissionPolicy {
+            module: ModuleIdentifier::ChainSynthesis,
+            allowed_permissions: vec![Permission::ReadGraph, Permission::WriteGraph],
+            token_lifetime: one_hour,
+        },
+        ModulePermissionPolicy {
+            module: ModuleIdentifier::HypothesisEngine,
+            allowed_permissions: vec![Permission::ReadGraph],
+            token_lifetime: one_hour,
+        },
+    ];
+
+    for policy in policies {
+        manager.register_policy(policy);
+    }
+}
+
 pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
     let Some(source_dir) = source_dir else {
         return Ok(Vec::new());
@@ -197,6 +246,34 @@ struct PhasesResult {
     previously_known_count: Option<u64>,
 }
 
+fn issue_phase_token(
+    manager: &mut CapabilityManager,
+    module: ModuleIdentifier,
+) -> Option<aegis_protocol::capability::CapabilityToken> {
+    match manager.issue_token(module, timestamp_ms()) {
+        Ok(token) => {
+            tracing::debug!(module = ?module, "capability token issued");
+            Some(token)
+        }
+        Err(e) => {
+            tracing::warn!(module = ?module, error = %e, "failed to issue capability token");
+            None
+        }
+    }
+}
+
+fn validate_phase_token(
+    manager: &CapabilityManager,
+    token: &Option<aegis_protocol::capability::CapabilityToken>,
+    phase_name: &str,
+) {
+    if let Some(token) = token
+        && let Err(e) = manager.validate_token(token, Permission::WriteGraph, timestamp_ms())
+    {
+        tracing::warn!(phase = phase_name, error = %e, "capability token validation failed");
+    }
+}
+
 async fn run_scan_phases(
     ctx: &mut ScanContext,
     audit_writer: &mut dyn AuditWriter,
@@ -207,20 +284,26 @@ async fn run_scan_phases(
     let mut phases = 0u32;
     let mut scan_metrics = ScanMetrics::default();
 
+    let recon_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::PassiveRecon);
+
     emit_event(
         audit_writer,
         AuditEventType::ModuleStarted {
             module: ModuleIdentifier::PassiveRecon,
         },
     );
-    if !ctx.config.pipeline.skip_fingerprint {
+
+    let enumeration_token = if !ctx.config.pipeline.skip_fingerprint {
         emit_event(
             audit_writer,
             AuditEventType::ModuleStarted {
                 module: ModuleIdentifier::Enumeration,
             },
         );
-    }
+        issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Enumeration)
+    } else {
+        None
+    };
 
     let source_dir = ctx.config.source_dir.clone();
     let skip_fingerprint = ctx.config.pipeline.skip_fingerprint;
@@ -246,6 +329,7 @@ async fn run_scan_phases(
     scan_metrics
         .phase_timings
         .record("recon", recon_start.elapsed());
+    validate_phase_token(&ctx.capabilities, &recon_token, "recon");
 
     let fingerprint_start = std::time::Instant::now();
     if let Some((fp_ops, profile)) = fp_result {
@@ -261,6 +345,7 @@ async fn run_scan_phases(
         scan_metrics
             .phase_timings
             .record("fingerprint", fingerprint_start.elapsed());
+        validate_phase_token(&ctx.capabilities, &enumeration_token, "fingerprint");
     }
 
     let mut transport = build_fuzz_transport(ctx);
@@ -272,6 +357,7 @@ async fn run_scan_phases(
     let mut analyze_cumulative = std::time::Duration::ZERO;
 
     for iteration in 0..max_iterations {
+        let fuzz_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Fuzzing);
         emit_event(
             audit_writer,
             AuditEventType::ModuleStarted {
@@ -286,7 +372,10 @@ async fn run_scan_phases(
         total_findings += fuzz_result.phase.findings_count;
         phases += 1;
         fuzz_cumulative += fuzz_start.elapsed();
+        validate_phase_token(&ctx.capabilities, &fuzz_token, "fuzz");
 
+        let analyze_token =
+            issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::ChainSynthesis);
         emit_event(
             audit_writer,
             AuditEventType::ModuleStarted {
@@ -299,6 +388,7 @@ async fn run_scan_phases(
         total_findings += analysis.findings_count;
         phases += 1;
         analyze_cumulative += analyze_start.elapsed();
+        validate_phase_token(&ctx.capabilities, &analyze_token, "analyze");
 
         if fuzz_result.phase.findings_count == 0 && analysis.findings_count == 0 {
             consecutive_zero_findings += 1;
@@ -389,10 +479,15 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     };
 
     let graph: Box<dyn GraphStore> = Box::new(loaded_graph);
+    let master_key: [u8; 32] = rand::random();
+    let mut capabilities = CapabilityManager::new(master_key.to_vec());
+    register_default_policies(&mut capabilities);
+
     let mut ctx = ScanContext {
         config,
         graph,
         defense_profile: None,
+        capabilities,
     };
 
     let phases_result = run_scan_phases(

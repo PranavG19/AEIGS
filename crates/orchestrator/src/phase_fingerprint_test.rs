@@ -11,10 +11,14 @@ fn test_config() -> ScanConfig {
 }
 
 fn test_context() -> ScanContext {
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
     ScanContext {
         config: test_config(),
         graph: Box::new(KnowledgeGraph::new()),
         defense_profile: None,
+        capabilities,
     }
 }
 
