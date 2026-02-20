@@ -211,6 +211,107 @@ mod tests {
         assert!(err.to_string().contains("bad query"));
     }
 
+    fn entry_with_payload(
+        endpoint: &str,
+        class: VulnerabilityClass,
+        payload: &str,
+        is_tp: bool,
+    ) -> ScanHistoryEntry {
+        ScanHistoryEntry {
+            endpoint_pattern: endpoint.to_string(),
+            vulnerability_class: class,
+            payload: payload.to_string(),
+            anomaly_score: 0.85,
+            is_true_positive: is_tp,
+            timestamp_unix_ms: 1_700_000_000_000,
+            target_app_hash: "abc123".to_string(),
+        }
+    }
+
+    #[test]
+    fn payload_stats_for_aggregates_correctly() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        let ep = "/api/users";
+        let class = VulnerabilityClass::SqlInjection;
+        db.insert(&entry_with_payload(ep, class, "' OR 1=1--", true))
+            .unwrap();
+        db.insert(&entry_with_payload(ep, class, "' OR 1=1--", false))
+            .unwrap();
+        db.insert(&entry_with_payload(ep, class, "' OR 1=1--", true))
+            .unwrap();
+        db.insert(&entry_with_payload(
+            ep,
+            class,
+            "1 UNION SELECT null--",
+            true,
+        ))
+        .unwrap();
+        db.insert(&entry_with_payload(
+            ep,
+            class,
+            "1 UNION SELECT null--",
+            false,
+        ))
+        .unwrap();
+
+        let stats = db.payload_stats_for(ep, class).unwrap();
+        assert_eq!(stats.len(), 2);
+
+        let or_payload = stats.iter().find(|s| s.payload == "' OR 1=1--").unwrap();
+        assert_eq!(or_payload.attempts, 3);
+        assert_eq!(or_payload.successes, 2);
+
+        let union_payload = stats
+            .iter()
+            .find(|s| s.payload == "1 UNION SELECT null--")
+            .unwrap();
+        assert_eq!(union_payload.attempts, 2);
+        assert_eq!(union_payload.successes, 1);
+    }
+
+    #[test]
+    fn payload_stats_for_empty_returns_empty() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        let stats = db
+            .payload_stats_for("/api/nonexistent", VulnerabilityClass::SqlInjection)
+            .unwrap();
+        assert!(stats.is_empty());
+    }
+
+    #[test]
+    fn payload_stats_for_filters_by_class_and_endpoint() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        db.insert(&entry_with_payload(
+            "/api/users",
+            VulnerabilityClass::SqlInjection,
+            "sqli-payload",
+            true,
+        ))
+        .unwrap();
+        db.insert(&entry_with_payload(
+            "/api/users",
+            VulnerabilityClass::CrossSiteScripting,
+            "xss-payload",
+            true,
+        ))
+        .unwrap();
+        db.insert(&entry_with_payload(
+            "/api/admin",
+            VulnerabilityClass::SqlInjection,
+            "admin-sqli",
+            true,
+        ))
+        .unwrap();
+
+        let stats = db
+            .payload_stats_for("/api/users", VulnerabilityClass::SqlInjection)
+            .unwrap();
+        assert_eq!(stats.len(), 1);
+        assert_eq!(stats[0].payload, "sqli-payload");
+        assert_eq!(stats[0].attempts, 1);
+        assert_eq!(stats[0].successes, 1);
+    }
+
     #[test]
     fn open_file_based_database() {
         let dir = std::env::temp_dir().join("aegis-scan-history-test");

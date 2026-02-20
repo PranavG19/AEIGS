@@ -3,6 +3,7 @@ pub mod defense_profile;
 pub mod executor;
 pub mod mutator;
 pub mod oracle;
+pub mod payload_selector;
 pub mod rate_limit_detector;
 pub mod scheduler;
 pub mod stealth_config;
@@ -36,3 +37,7 @@ mod stealth_config_test;
 #[cfg(test)]
 #[path = "defense_profile_test.rs"]
 mod defense_profile_test;
+
+#[cfg(test)]
+#[path = "payload_selector_test.rs"]
+mod payload_selector_test;

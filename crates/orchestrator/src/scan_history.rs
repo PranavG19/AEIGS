@@ -202,6 +202,38 @@ impl ScanHistoryDb {
         Ok(positives as f64 / total as f64)
     }
 
+    /// Returns per-payload attempt and success counts for a given endpoint
+    /// pattern and vulnerability class.
+    ///
+    /// Used by `PayloadSelector` to compute UCB1 scores for adaptive payload
+    /// ordering. Groups by payload string and aggregates attempt count and
+    /// true-positive count.
+    pub fn payload_stats_for(
+        &self,
+        endpoint_pattern: &str,
+        class: VulnerabilityClass,
+    ) -> Result<Vec<aegis_fuzzing::payload_selector::PayloadStats>, ScanHistoryError> {
+        let mut stmt = self.connection.prepare(
+            "SELECT payload, COUNT(*) as attempts, COALESCE(SUM(is_true_positive), 0) as successes
+             FROM scan_history
+             WHERE endpoint_pattern = ?1 AND vulnerability_class = ?2
+             GROUP BY payload",
+        )?;
+        let rows = stmt
+            .query_map(params![endpoint_pattern, class.to_string()], |row| {
+                let payload: String = row.get(0)?;
+                let attempts: i64 = row.get(1)?;
+                let successes: i64 = row.get(2)?;
+                Ok(aegis_fuzzing::payload_selector::PayloadStats {
+                    payload,
+                    attempts: attempts as u32,
+                    successes: successes as u32,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(rows)
+    }
+
     /// Returns the total number of records in the database.
     pub fn total_records(&self) -> Result<u64, ScanHistoryError> {
         let count: i64 =
