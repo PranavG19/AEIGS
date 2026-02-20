@@ -1,6 +1,6 @@
 use aegis_evasion_engine::PersonaId;
 use aegis_protocol::finding::VulnerabilityClass;
-use clap::Parser;
+use clap::{Args, Parser};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -59,15 +59,9 @@ impl std::fmt::Display for ConfigError {
 
 impl std::error::Error for ConfigError {}
 
-#[derive(Parser, Debug, Clone)]
-#[command(name = "aegis", about = "Adversarial vulnerability discovery")]
-pub struct ScanConfig {
-    #[arg(long)]
-    pub target: String,
-
-    #[arg(long, default_value = "aegis-report.sarif")]
-    pub output: PathBuf,
-
+/// Stealth and evasion transport options.
+#[derive(Args, Debug, Clone)]
+pub struct StealthOptions {
     #[arg(long, default_value = "chrome")]
     pub persona: String,
 
@@ -78,32 +72,15 @@ pub struct ScanConfig {
     pub stealth_level: String,
 
     #[arg(long)]
-    pub bypass_corpus: Option<PathBuf>,
-
-    #[arg(long)]
     pub max_rps: Option<u32>,
 
     #[arg(long, default_value_t = false)]
-    pub paranoia_sweep: bool,
-
-    #[arg(long, default_value_t = false)]
-    pub skip_fingerprint: bool,
-
-    #[arg(long, default_value_t = false)]
     pub skip_evasion: bool,
+}
 
-    #[arg(long, short)]
-    pub verbose: bool,
-
-    #[arg(long)]
-    pub source_dir: Option<PathBuf>,
-
-    #[arg(long, default_value_t = false)]
-    pub no_llm: bool,
-
-    #[arg(long)]
-    pub context_file: Option<PathBuf>,
-
+/// Pipeline execution control options.
+#[derive(Args, Debug, Clone)]
+pub struct PipelineOptions {
     #[arg(long, default_value_t = 1)]
     pub max_iterations: u32,
 
@@ -111,13 +88,71 @@ pub struct ScanConfig {
     pub convergence_threshold: u32,
 
     #[arg(long, default_value_t = false)]
-    pub no_audit: bool,
+    pub skip_fingerprint: bool,
 
+    #[arg(long, default_value_t = false)]
+    pub paranoia_sweep: bool,
+}
+
+/// LLM hypothesis engine options.
+#[derive(Args, Debug, Clone)]
+pub struct LlmOptions {
+    #[arg(long, default_value_t = false)]
+    pub no_llm: bool,
+
+    #[arg(long)]
+    pub bypass_corpus: Option<PathBuf>,
+}
+
+/// Audit logging options.
+#[derive(Args, Debug, Clone)]
+pub struct AuditOptions {
+    #[arg(long, default_value_t = false)]
+    pub no_audit: bool,
+}
+
+/// Scope filtering options.
+#[derive(Args, Debug, Clone)]
+pub struct ScopeOptions {
     #[arg(long)]
     pub include_endpoints: Option<Vec<String>>,
 
     #[arg(long)]
     pub exclude_endpoints: Option<Vec<String>>,
+
+    #[arg(long)]
+    pub context_file: Option<PathBuf>,
+}
+
+#[derive(Parser, Debug, Clone)]
+#[command(name = "aegis", about = "Adversarial vulnerability discovery")]
+pub struct ScanConfig {
+    #[arg(long)]
+    pub target: String,
+
+    #[arg(long, default_value = "aegis-report.sarif")]
+    pub output: PathBuf,
+
+    #[arg(long)]
+    pub source_dir: Option<PathBuf>,
+
+    #[arg(long, short)]
+    pub verbose: bool,
+
+    #[command(flatten)]
+    pub stealth: StealthOptions,
+
+    #[command(flatten)]
+    pub pipeline: PipelineOptions,
+
+    #[command(flatten)]
+    pub llm: LlmOptions,
+
+    #[command(flatten)]
+    pub audit: AuditOptions,
+
+    #[command(flatten)]
+    pub scope: ScopeOptions,
 }
 
 pub fn validate_localhost(target: &str) -> Result<(), ConfigError> {

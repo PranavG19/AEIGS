@@ -32,11 +32,11 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
     enqueue_targets_for_endpoints(&mut scheduler, &endpoints, ctx);
     filter_scheduler_by_endpoints(
         &mut scheduler,
-        &ctx.config.include_endpoints,
-        &ctx.config.exclude_endpoints,
+        &ctx.config.scope.include_endpoints,
+        &ctx.config.scope.exclude_endpoints,
     );
 
-    if let Some(context_path) = &ctx.config.context_file
+    if let Some(context_path) = &ctx.config.scope.context_file
         && let Ok(biz_ctx) = load_business_context(context_path)
         && !biz_ctx.excluded_endpoints.is_empty()
     {
@@ -44,14 +44,14 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
     }
 
     let mut mutator = PayloadMutator::new();
-    if let Some(corpus_path) = &ctx.config.bypass_corpus
+    if let Some(corpus_path) = &ctx.config.llm.bypass_corpus
         && let Ok(corpus) = aegis_fuzzing::mutator::load_bypass_corpus(corpus_path)
     {
         mutator = mutator.with_bypass_corpus(corpus);
     }
 
-    if ctx.config.stealth
-        && let Ok(level) = parse_stealth_level(&ctx.config.stealth_level)
+    if ctx.config.stealth.stealth
+        && let Ok(level) = parse_stealth_level(&ctx.config.stealth.stealth_level)
     {
         let stealth_config = build_stealth_config(&level);
         scheduler.reprioritize_for_stealth(&stealth_config);
@@ -67,7 +67,7 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
     let mut origin_counts: HashMap<FindingOrigin, u64> = HashMap::new();
 
     while let Some(target) = scheduler.next_target() {
-        let payloads = if ctx.config.stealth {
+        let payloads = if ctx.config.stealth.stealth {
             mutator.generate_stealth_payloads(target.vulnerability_class, 10)
         } else {
             mutator.generate_payloads(target.vulnerability_class, 10)
@@ -81,23 +81,14 @@ pub async fn run_fuzz(ctx: &mut ScanContext) -> Result<FuzzPhaseResult, String> 
                 &target.method,
             );
 
-            for anomaly in &anomalies {
-                sequence += 1;
-                findings_count += 1;
-                *origin_counts.entry(FindingOrigin::Mutation).or_insert(0) += 1;
-                entries.push(OperationLogEntry {
-                    sequence_number: sequence,
-                    module: ModuleIdentifier::Fuzzing,
-                    operation: GraphOperation::AddFinding {
-                        linked_node_ids: vec![],
-                        vulnerability_class: target.vulnerability_class,
-                        severity: anomaly.score,
-                        confidence: anomaly.score * 0.8,
-                        certificate: Vec::new(),
-                    },
-                    timestamp_unix_ms: timestamp_ms(),
-                });
-            }
+            append_anomaly_entries(
+                &anomalies,
+                target.vulnerability_class,
+                &mut sequence,
+                &mut findings_count,
+                &mut origin_counts,
+                &mut entries,
+            );
         }
         scheduler.mark_completed(target);
     }
@@ -212,7 +203,34 @@ pub(crate) fn build_placeholder_response(
     }
 }
 
-fn timestamp_ms() -> u64 {
+pub(crate) fn append_anomaly_entries(
+    anomalies: &[aegis_fuzzing::oracle::Anomaly],
+    vulnerability_class: VulnerabilityClass,
+    sequence: &mut u64,
+    findings_count: &mut u64,
+    origin_counts: &mut HashMap<FindingOrigin, u64>,
+    entries: &mut Vec<OperationLogEntry>,
+) {
+    for anomaly in anomalies {
+        *sequence += 1;
+        *findings_count += 1;
+        *origin_counts.entry(FindingOrigin::Mutation).or_insert(0) += 1;
+        entries.push(OperationLogEntry {
+            sequence_number: *sequence,
+            module: ModuleIdentifier::Fuzzing,
+            operation: GraphOperation::AddFinding {
+                linked_node_ids: vec![],
+                vulnerability_class,
+                severity: anomaly.score,
+                confidence: anomaly.score * 0.8,
+                certificate: Vec::new(),
+            },
+            timestamp_unix_ms: timestamp_ms(),
+        });
+    }
+}
+
+pub(crate) fn timestamp_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()

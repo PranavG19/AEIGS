@@ -264,7 +264,7 @@ fn validate_localhost_ipv6_with_path() {
 fn scan_config_default_no_llm_is_false() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(!config.no_llm);
+    assert!(!config.llm.no_llm);
 }
 
 #[test]
@@ -272,14 +272,14 @@ fn scan_config_no_llm_flag_sets_true() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080", "--no-llm"])
             .unwrap();
-    assert!(config.no_llm);
+    assert!(config.llm.no_llm);
 }
 
 #[test]
 fn scan_config_default_context_file_is_none() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(config.context_file.is_none());
+    assert!(config.scope.context_file.is_none());
 }
 
 #[test]
@@ -374,14 +374,14 @@ fn scan_metrics_default() {
 fn scan_config_default_max_iterations_is_one() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert_eq!(config.max_iterations, 1);
+    assert_eq!(config.pipeline.max_iterations, 1);
 }
 
 #[test]
 fn scan_config_default_convergence_threshold_is_two() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert_eq!(config.convergence_threshold, 2);
+    assert_eq!(config.pipeline.convergence_threshold, 2);
 }
 
 #[test]
@@ -394,7 +394,7 @@ fn scan_config_max_iterations_overridable() {
         "5",
     ])
     .unwrap();
-    assert_eq!(config.max_iterations, 5);
+    assert_eq!(config.pipeline.max_iterations, 5);
 }
 
 #[test]
@@ -407,14 +407,14 @@ fn scan_config_convergence_threshold_overridable() {
         "3",
     ])
     .unwrap();
-    assert_eq!(config.convergence_threshold, 3);
+    assert_eq!(config.pipeline.convergence_threshold, 3);
 }
 
 #[test]
 fn scan_config_default_no_audit_is_false() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(!config.no_audit);
+    assert!(!config.audit.no_audit);
 }
 
 #[test]
@@ -422,21 +422,21 @@ fn scan_config_no_audit_flag_sets_true() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080", "--no-audit"])
             .unwrap();
-    assert!(config.no_audit);
+    assert!(config.audit.no_audit);
 }
 
 #[test]
 fn scan_config_default_include_endpoints_is_none() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(config.include_endpoints.is_none());
+    assert!(config.scope.include_endpoints.is_none());
 }
 
 #[test]
 fn scan_config_default_exclude_endpoints_is_none() {
     let config =
         ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
-    assert!(config.exclude_endpoints.is_none());
+    assert!(config.scope.exclude_endpoints.is_none());
 }
 
 #[test]
@@ -450,7 +450,7 @@ fn scan_config_include_endpoints_flag_parses() {
     ])
     .unwrap();
     assert_eq!(
-        config.include_endpoints.unwrap(),
+        config.scope.include_endpoints.unwrap(),
         vec!["/api/v1/users".to_string()]
     );
 }
@@ -466,7 +466,7 @@ fn scan_config_exclude_endpoints_flag_parses() {
     ])
     .unwrap();
     assert_eq!(
-        config.exclude_endpoints.unwrap(),
+        config.scope.exclude_endpoints.unwrap(),
         vec!["/health".to_string()]
     );
 }

@@ -14,6 +14,7 @@ pub fn run_report(
 
     let biz_ctx = ctx
         .config
+        .scope
         .context_file
         .as_ref()
         .and_then(|p| load_business_context(p).ok());
@@ -163,7 +164,7 @@ pub(crate) fn is_known_issue(
         .any(|k| k.endpoint == endpoint && k.vulnerability_class == vulnerability_class)
 }
 
-fn endpoint_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -> String {
+pub(crate) fn endpoint_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -> String {
     for &node_id in linked_node_ids {
         if let Some(node) = ctx.graph.get_node(node_id).ok().flatten()
             && let Some(path) = node.properties.get("path")

@@ -328,7 +328,7 @@ fn run_report_known_issue_finding_has_sarif_suppression() {
     });
     let ctx_path = std::env::temp_dir().join("test_biz_ctx_known.json");
     std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
-    ctx.config.context_file = Some(ctx_path.clone());
+    ctx.config.scope.context_file = Some(ctx_path.clone());
 
     phase_report::run_report(&mut ctx, None).unwrap();
 
@@ -362,7 +362,7 @@ fn run_report_non_known_issue_finding_has_no_suppression() {
     });
     let ctx_path = std::env::temp_dir().join("test_biz_ctx_not_known.json");
     std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
-    ctx.config.context_file = Some(ctx_path.clone());
+    ctx.config.scope.context_file = Some(ctx_path.clone());
 
     phase_report::run_report(&mut ctx, None).unwrap();
 
@@ -373,4 +373,65 @@ fn run_report_non_known_issue_finding_has_no_suppression() {
 
     let _ = std::fs::remove_file(&output);
     let _ = std::fs::remove_file(&ctx_path);
+}
+
+// --- endpoint_for_finding tests ---
+
+#[test]
+fn endpoint_for_finding_returns_path_for_linked_node_with_path_property() {
+    let output = std::env::temp_dir().join("test_endpoint_for_finding.sarif");
+    let ctx = test_context(&output);
+
+    let entries = vec![add_node_entry(0, "/api/payments")];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    let result = phase_report::endpoint_for_finding(&[0], &ctx);
+    assert_eq!(result, "/api/payments");
+}
+
+#[test]
+fn endpoint_for_finding_returns_empty_string_for_empty_ids() {
+    let output = std::env::temp_dir().join("test_endpoint_empty_ids.sarif");
+    let ctx = test_context(&output);
+    let result = phase_report::endpoint_for_finding(&[], &ctx);
+    assert!(result.is_empty());
+}
+
+#[test]
+fn endpoint_for_finding_returns_empty_string_for_nonexistent_node_id() {
+    let output = std::env::temp_dir().join("test_endpoint_nonexistent_node.sarif");
+    let ctx = test_context(&output);
+    let result = phase_report::endpoint_for_finding(&[999], &ctx);
+    assert!(result.is_empty());
+}
+
+#[test]
+fn run_report_with_linked_finding_uses_endpoint_path() {
+    let output = std::env::temp_dir().join("test_report_linked_endpoint.sarif");
+    let mut ctx = test_context(&output);
+
+    let entries = vec![
+        add_node_entry(0, "/api/data"),
+        add_linked_finding_entry(1, VulnerabilityClass::SqlInjection, 0.9, 0),
+    ];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    let result = phase_report::run_report(&mut ctx, None).unwrap();
+    assert_eq!(result.findings_count, 1);
+
+    let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
+    let results = json["runs"][0]["results"].as_array().unwrap();
+    assert_eq!(results.len(), 1);
+    let _ = std::fs::remove_file(&output);
+}
+
+// --- inject_metrics_into_sarif with no runs ---
+
+#[test]
+fn inject_metrics_into_sarif_no_runs_returns_early() {
+    let mut json_value = serde_json::json!({"version": "2.1.0"});
+    let metrics = scan_config::ScanMetrics::default();
+    phase_report::inject_metrics_into_sarif(&mut json_value, &metrics);
+    // No "properties" key added since there are no runs — early-return path executed.
+    assert!(json_value.get("properties").is_none());
 }

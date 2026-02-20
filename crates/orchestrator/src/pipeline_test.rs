@@ -4,23 +4,31 @@ fn localhost_config() -> ScanConfig {
     ScanConfig {
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-pipeline-test.sarif"),
-        persona: "chrome".to_string(),
-        stealth: false,
-        stealth_level: "default".to_string(),
-        bypass_corpus: None,
-        max_rps: None,
-        paranoia_sweep: false,
-        skip_fingerprint: false,
-        skip_evasion: false,
-        verbose: false,
         source_dir: None,
-        no_llm: false,
-        context_file: None,
-        max_iterations: 1,
-        convergence_threshold: 2,
-        no_audit: false,
-        include_endpoints: None,
-        exclude_endpoints: None,
+        verbose: false,
+        stealth: scan_config::StealthOptions {
+            persona: "chrome".to_string(),
+            stealth: false,
+            stealth_level: "default".to_string(),
+            max_rps: None,
+            skip_evasion: false,
+        },
+        pipeline: scan_config::PipelineOptions {
+            max_iterations: 1,
+            convergence_threshold: 2,
+            skip_fingerprint: false,
+            paranoia_sweep: false,
+        },
+        llm: scan_config::LlmOptions {
+            no_llm: false,
+            bypass_corpus: None,
+        },
+        audit: scan_config::AuditOptions { no_audit: false },
+        scope: scan_config::ScopeOptions {
+            include_endpoints: None,
+            exclude_endpoints: None,
+            context_file: None,
+        },
     }
 }
 
@@ -149,7 +157,7 @@ async fn run_scan_rejects_non_localhost_target() {
 #[tokio::test]
 async fn run_scan_rejects_invalid_stealth_level() {
     let mut config = localhost_config();
-    config.stealth_level = "invisible".to_string();
+    config.stealth.stealth_level = "invisible".to_string();
     let result = run_scan(config).await;
     assert!(result.is_err());
     let msg = format!("{}", result.unwrap_err());
@@ -188,7 +196,7 @@ async fn run_scan_ipv6_localhost_succeeds() {
 #[tokio::test]
 async fn run_scan_skip_fingerprint_reduces_phases() {
     let mut config = localhost_config();
-    config.skip_fingerprint = true;
+    config.pipeline.skip_fingerprint = true;
     config.output = std::env::temp_dir().join("aegis-pipeline-skip-fp.sarif");
     let result = run_scan(config).await;
     assert!(result.is_ok());
@@ -199,7 +207,7 @@ async fn run_scan_skip_fingerprint_reduces_phases() {
 #[tokio::test]
 async fn run_scan_with_aggressive_stealth_level() {
     let mut config = localhost_config();
-    config.stealth_level = "aggressive".to_string();
+    config.stealth.stealth_level = "aggressive".to_string();
     config.output = std::env::temp_dir().join("aegis-pipeline-aggressive.sarif");
     let result = run_scan(config).await;
     assert!(result.is_ok());
@@ -208,7 +216,7 @@ async fn run_scan_with_aggressive_stealth_level() {
 #[tokio::test]
 async fn run_scan_with_paranoid_stealth_level() {
     let mut config = localhost_config();
-    config.stealth_level = "paranoid".to_string();
+    config.stealth.stealth_level = "paranoid".to_string();
     config.output = std::env::temp_dir().join("aegis-pipeline-paranoid.sarif");
     let result = run_scan(config).await;
     assert!(result.is_ok());
@@ -335,7 +343,7 @@ async fn run_scan_concurrent_recon_and_fingerprint() {
 #[tokio::test]
 async fn run_scan_concurrent_with_skip_fingerprint() {
     let mut config = localhost_config();
-    config.skip_fingerprint = true;
+    config.pipeline.skip_fingerprint = true;
     config.output = std::env::temp_dir().join("aegis-pipeline-concurrent-skip-fp.sarif");
     let result = run_scan(config).await;
     assert!(
@@ -386,7 +394,7 @@ async fn run_scan_phase_timings_non_zero() {
 #[tokio::test]
 async fn run_scan_no_llm_has_zero_llm_calls() {
     let mut config = localhost_config();
-    config.no_llm = true;
+    config.llm.no_llm = true;
     config.output = std::env::temp_dir().join("aegis-pipeline-no-llm-metrics.sarif");
     let summary = run_scan(config).await.unwrap();
     assert_eq!(summary.metrics.llm_metrics.call_count, 0);
@@ -397,7 +405,7 @@ async fn run_scan_no_llm_has_zero_llm_calls() {
 #[tokio::test]
 async fn run_scan_max_iterations_one_behaves_like_single_pass() {
     let mut config = localhost_config();
-    config.max_iterations = 1;
+    config.pipeline.max_iterations = 1;
     config.output = std::env::temp_dir().join("aegis-pipeline-iter1.sarif");
     let summary = run_scan(config).await.unwrap();
     assert!(summary.phases_completed >= 3);
@@ -406,8 +414,8 @@ async fn run_scan_max_iterations_one_behaves_like_single_pass() {
 #[tokio::test]
 async fn run_scan_convergence_stops_early() {
     let mut config = localhost_config();
-    config.max_iterations = 5;
-    config.convergence_threshold = 1;
+    config.pipeline.max_iterations = 5;
+    config.pipeline.convergence_threshold = 1;
     config.output = std::env::temp_dir().join("aegis-pipeline-converge.sarif");
     let summary = run_scan(config).await.unwrap();
     assert!(summary.phases_completed >= 3);

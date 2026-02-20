@@ -152,7 +152,7 @@ fn pipeline_timestamp_ms() -> u64 {
 
 pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
     validate_localhost(&config.target)?;
-    parse_stealth_level(&config.stealth_level)?;
+    parse_stealth_level(&config.stealth.stealth_level)?;
 
     let (mut audit_writer, audit_path, hmac_key) = match create_audit_writer(&config) {
         Some((writer, path, key)) => (Some(writer), Some(path), Some(key)),
@@ -184,7 +184,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             module: ModuleIdentifier::PassiveRecon,
         },
     );
-    if !ctx.config.skip_fingerprint {
+    if !ctx.config.pipeline.skip_fingerprint {
         emit_event(
             &mut audit_writer,
             AuditEventType::ModuleStarted {
@@ -194,7 +194,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     }
 
     let source_dir = ctx.config.source_dir.clone();
-    let skip_fingerprint = ctx.config.skip_fingerprint;
+    let skip_fingerprint = ctx.config.pipeline.skip_fingerprint;
 
     let recon_start = std::time::Instant::now();
     let (recon_result, fp_result) = tokio::join!(async { collect_recon_ops(&source_dir) }, async {
@@ -234,8 +234,8 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             .record("fingerprint", fingerprint_start.elapsed());
     }
 
-    let max_iterations = ctx.config.max_iterations;
-    let convergence_threshold = ctx.config.convergence_threshold;
+    let max_iterations = ctx.config.pipeline.max_iterations;
+    let convergence_threshold = ctx.config.pipeline.convergence_threshold;
     let mut consecutive_zero_findings = 0u32;
     let mut fuzz_cumulative = std::time::Duration::ZERO;
     let mut analyze_cumulative = std::time::Duration::ZERO;
