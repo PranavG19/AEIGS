@@ -6,6 +6,15 @@ use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEn
 use aegis_reporting::sarif_emitter::SarifLevel;
 use clap::Parser;
 
+fn make_biz_ctx(critical_assets: &[&str], pii_endpoints: &[&str]) -> scan_config::BusinessContext {
+    scan_config::BusinessContext {
+        excluded_endpoints: vec![],
+        critical_assets: critical_assets.iter().map(|s| s.to_string()).collect(),
+        pii_endpoints: pii_endpoints.iter().map(|s| s.to_string()).collect(),
+        known_issues: vec![],
+    }
+}
+
 fn test_config(output_path: &std::path::Path) -> ScanConfig {
     ScanConfig::try_parse_from([
         "aegis",
@@ -183,4 +192,33 @@ fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
     assert_eq!(llm["tokensUsed"].as_u64().unwrap(), 800);
     assert!(llm["totalLatency"].as_str().unwrap().contains("5.000"));
     let _ = std::fs::remove_file(&output);
+}
+
+#[test]
+fn apply_business_context_multipliers_critical_asset_multiplies_by_1_5() {
+    let biz = make_biz_ctx(&["/api/payments"], &[]);
+    let result = apply_business_context_multipliers(4.0, "/api/payments", &biz);
+    assert!((result - 6.0).abs() < 1e-9);
+}
+
+#[test]
+fn apply_business_context_multipliers_pii_endpoint_multiplies_by_1_5() {
+    let biz = make_biz_ctx(&[], &["/api/users"]);
+    let result = apply_business_context_multipliers(4.0, "/api/users", &biz);
+    assert!((result - 6.0).abs() < 1e-9);
+}
+
+#[test]
+fn apply_business_context_multipliers_stacking_caps_at_10() {
+    let biz = make_biz_ctx(&["/api/payments"], &["/api/payments"]);
+    // 5.0 × 1.5 = 7.5 (critical_assets), then 7.5 × 1.5 = 11.25 → capped at 10.0 (pii_endpoints)
+    let result = apply_business_context_multipliers(5.0, "/api/payments", &biz);
+    assert!((result - 10.0).abs() < 1e-9);
+}
+
+#[test]
+fn apply_business_context_multipliers_unmatched_endpoint_unchanged() {
+    let biz = make_biz_ctx(&["/api/payments"], &["/api/users"]);
+    let result = apply_business_context_multipliers(7.0, "/api/other", &biz);
+    assert!((result - 7.0).abs() < 1e-9);
 }

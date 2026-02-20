@@ -3,7 +3,7 @@ use aegis_reporting::risk_scorer::{RiskInput, compute_risk_score};
 use aegis_reporting::sarif_emitter::{SarifFinding, SarifLevel, emit_sarif};
 
 use crate::pipeline::{PhaseResult, ScanContext};
-use crate::scan_config::ScanMetrics;
+use crate::scan_config::{BusinessContext, ScanMetrics, load_business_context};
 
 pub fn run_report(
     ctx: &mut ScanContext,
@@ -11,6 +11,12 @@ pub fn run_report(
 ) -> Result<PhaseResult, String> {
     let finding_ids = all_finding_ids(ctx);
     let mut sarif_findings = Vec::new();
+
+    let biz_ctx = ctx
+        .config
+        .context_file
+        .as_ref()
+        .and_then(|p| load_business_context(p).ok());
 
     for &fid in &finding_ids {
         if let Some(finding) = ctx.graph.get_finding(fid).ok().flatten() {
@@ -32,21 +38,28 @@ pub fn run_report(
                 confidence: finding.confidence,
             };
 
-            let score = compute_risk_score(&risk_input);
+            let base_score = compute_risk_score(&risk_input);
+            let composite = if let Some(ref biz) = biz_ctx {
+                let endpoint = endpoint_for_finding(&finding.linked_node_ids, ctx);
+                apply_business_context_multipliers(base_score.composite, &endpoint, biz)
+            } else {
+                base_score.composite
+            };
+
             sarif_findings.push(SarifFinding {
                 rule_id: format!("AEGIS-{fid}"),
                 rule_description: format!("{:?}", finding.vulnerability_class),
-                level: severity_to_level(score.composite),
+                level: severity_to_level(composite),
                 message: format!(
                     "{:?} finding (score: {:.2})",
-                    finding.vulnerability_class, score.composite
+                    finding.vulnerability_class, composite
                 ),
                 uri: None,
                 logical_location_name: None,
                 logical_location_kind: None,
                 severity: finding.severity,
                 confidence: finding.confidence,
-                composite_score: score.composite,
+                composite_score: composite,
                 vulnerability_class: Some(finding.vulnerability_class),
                 related_locations: vec![],
                 defense_context: None,
@@ -109,6 +122,32 @@ pub(crate) fn severity_to_level(composite: f64) -> SarifLevel {
     } else {
         SarifLevel::Note
     }
+}
+
+pub(crate) fn apply_business_context_multipliers(
+    score: f64,
+    endpoint: &str,
+    biz_ctx: &BusinessContext,
+) -> f64 {
+    let mut multiplied = score;
+    if biz_ctx.critical_assets.iter().any(|a| a == endpoint) {
+        multiplied = (multiplied * 1.5).min(10.0);
+    }
+    if biz_ctx.pii_endpoints.iter().any(|p| p == endpoint) {
+        multiplied = (multiplied * 1.5).min(10.0);
+    }
+    multiplied
+}
+
+fn endpoint_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -> String {
+    for &node_id in linked_node_ids {
+        if let Some(node) = ctx.graph.get_node(node_id).ok().flatten()
+            && let Some(path) = node.properties.get("path")
+        {
+            return path.clone();
+        }
+    }
+    String::new()
 }
 
 pub(crate) fn inject_metrics_into_sarif(sarif_json: &mut serde_json::Value, metrics: &ScanMetrics) {
