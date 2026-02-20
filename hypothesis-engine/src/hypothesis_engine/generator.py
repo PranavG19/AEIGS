@@ -4,7 +4,7 @@ import json
 import time
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from hypothesis_engine.bedrock_client import BedrockClient, LlmBackend
 from hypothesis_engine.openai_client import OpenAiClient
@@ -182,14 +182,29 @@ class HypothesisGenerator:
             }
         ]
 
-        response_text, usage = self.invoke(
-            messages=messages,
-            system=SYSTEM_PROMPT,
-            max_tokens=8192,
-        )
-        elapsed_ms = (time.monotonic() - start_time) * 1000
+        schema = {"type": "array", "items": Hypothesis.model_json_schema()}
+        reasoning_trace = ""
+        hypotheses: list[Hypothesis] = []
+        usage = None
 
-        reasoning_trace, hypotheses = parse_hypotheses_from_response(response_text)
+        try:
+            json_text, usage = self._client.invoke_structured(
+                messages=messages,
+                output_schema=schema,
+                system=SYSTEM_PROMPT,
+                max_tokens=8192,
+            )
+            raw_list = json.loads(json_text)
+            hypotheses = [Hypothesis.model_validate(h) for h in raw_list]
+        except (json.JSONDecodeError, ValidationError, Exception):
+            raw_text, usage = self.invoke(
+                messages=messages,
+                system=SYSTEM_PROMPT,
+                max_tokens=8192,
+            )
+            reasoning_trace, hypotheses = parse_hypotheses_from_response(raw_text)
+
+        elapsed_ms = (time.monotonic() - start_time) * 1000
         hypotheses = hypotheses[:max_hypotheses]
 
         return GenerationResult(
@@ -197,6 +212,6 @@ class HypothesisGenerator:
             model_id=self._model_id,
             generation_time_ms=elapsed_ms,
             reasoning_trace=reasoning_trace,
-            input_tokens=usage.input_tokens,
-            output_tokens=usage.output_tokens,
+            input_tokens=usage.input_tokens if usage is not None else 0,
+            output_tokens=usage.output_tokens if usage is not None else 0,
         )

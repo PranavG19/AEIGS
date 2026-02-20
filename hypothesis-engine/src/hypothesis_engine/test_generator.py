@@ -329,6 +329,92 @@ class TestHypothesisGeneratorGenerate:
         assert result.output_tokens == 0
 
 
+class TestGenerateStructuredOutput:
+    def setup_method(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        self.generator = HypothesisGenerator(client=mock_client)
+        self.generator._model_id = "global.anthropic.claude-sonnet-4-6"
+
+    def test_generate_uses_invoke_structured_on_success(self) -> None:
+        import json
+
+        hypotheses_data = [
+            {
+                "condition": "IF login accepts raw SQL",
+                "vulnerability_class": "SQL Injection",
+                "reasoning": "no parameterization",
+                "test_approach": "send payloads",
+                "confidence": 0.9,
+            }
+        ]
+        mock_usage = TokenUsage(input_tokens=100, output_tokens=200)
+        self.generator._client.invoke_structured.return_value = (
+            json.dumps(hypotheses_data),
+            mock_usage,
+        )
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = self.generator.generate(ctx)
+
+        self.generator._client.invoke_structured.assert_called_once()
+        self.generator._client.invoke.assert_not_called()
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].vulnerability_class == "SQL Injection"
+        assert result.reasoning_trace == ""
+        assert result.input_tokens == 100
+        assert result.output_tokens == 200
+
+    def test_generate_falls_back_when_invoke_structured_raises(self) -> None:
+        import json
+
+        self.generator._client.invoke_structured.side_effect = RuntimeError("API error")
+        fallback_data = [
+            {
+                "condition": "IF /search reflects input",
+                "vulnerability_class": "XSS",
+                "reasoning": "reflected without encoding",
+                "test_approach": "inject script tag",
+                "confidence": 0.7,
+            }
+        ]
+        mock_usage = TokenUsage(input_tokens=50, output_tokens=80)
+        self.generator._client.invoke.return_value = (json.dumps(fallback_data), mock_usage)
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = self.generator.generate(ctx)
+
+        self.generator._client.invoke_structured.assert_called_once()
+        self.generator._client.invoke.assert_called_once()
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].vulnerability_class == "XSS"
+
+    def test_generate_falls_back_when_invoke_structured_returns_malformed_json(self) -> None:
+        import json
+
+        self.generator._client.invoke_structured.return_value = (
+            "this is not valid json",
+            TokenUsage(input_tokens=10, output_tokens=10),
+        )
+        fallback_data = [
+            {
+                "condition": "IF /admin lacks auth",
+                "vulnerability_class": "Broken Access Control",
+                "reasoning": "no token check",
+                "test_approach": "request without token",
+                "confidence": 0.85,
+            }
+        ]
+        mock_usage = TokenUsage(input_tokens=60, output_tokens=90)
+        self.generator._client.invoke.return_value = (json.dumps(fallback_data), mock_usage)
+
+        ctx = ScanContext(technology_stack=["Django"])
+        result = self.generator.generate(ctx)
+
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].vulnerability_class == "Broken Access Control"
+        self.generator._client.invoke.assert_called_once()
+
+
 class TestCreateBackend:
     @patch("hypothesis_engine.generator.BedrockClient.__init__", return_value=None)
     def test_bedrock_returns_bedrock_client(self, mock_init: MagicMock) -> None:
