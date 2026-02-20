@@ -30,6 +30,7 @@ pub struct FuzzPhaseResult {
     pub phase: PhaseResult,
     pub origin_counts: HashMap<FindingOrigin, u64>,
     pub discovered_endpoints: Vec<String>,
+    pub transport_errors: u64,
 }
 
 pub async fn run_fuzz<T: FuzzTransport>(
@@ -76,6 +77,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
         .total_operations_applied()
         .map_err(|e| format!("{e:?}"))?;
     let mut findings_count = 0u64;
+    let mut transport_errors = 0u64;
     let mut origin_counts: HashMap<FindingOrigin, u64> = HashMap::new();
     let mut next_request_id = 0u64;
     let target_base = ctx.config.target.clone();
@@ -100,7 +102,15 @@ pub async fn run_fuzz<T: FuzzTransport>(
 
             let response = match transport.send(&request).await {
                 Ok(resp) => resp,
-                Err(_) => continue,
+                Err(e) => {
+                    tracing::warn!(
+                        endpoint = %request.endpoint,
+                        error = %e,
+                        "transport error, skipping payload"
+                    );
+                    transport_errors += 1;
+                    continue;
+                }
             };
 
             let anomalies =
@@ -132,6 +142,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
         },
         origin_counts,
         discovered_endpoints: Vec::new(),
+        transport_errors,
     })
 }
 

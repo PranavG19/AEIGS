@@ -701,6 +701,10 @@ async fn run_fuzz_transport_errors_are_skipped_gracefully() {
         .unwrap();
     assert_eq!(result.phase.findings_count, 0);
     assert_eq!(result.phase.operations_applied, 0);
+    assert!(
+        result.transport_errors > 0,
+        "all transport calls failed, error count should be nonzero"
+    );
 }
 
 // --- mock transport with response body triggers oracle ---
