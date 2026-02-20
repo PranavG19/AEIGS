@@ -17,7 +17,7 @@ class ScanContext(BaseModel):
     high_risk_functions: list[dict[str, str]] = Field(default_factory=list)
     authorization_matrix_summary: str = ""
     known_vulnerable_dependencies: list[str] = Field(default_factory=list)
-    feedback_summary: list[dict[str, object]] = Field(default_factory=list)
+    feedback_summary: str = ""
 
 
 class Hypothesis(BaseModel):
@@ -83,12 +83,11 @@ def build_user_prompt(context: ScanContext) -> str:
         )
 
     if context.feedback_summary:
-        feedback_lines = [
-            f"  - {fb.get('condition', '?')}: {fb.get('outcome', '?')} "
-            f"(anomaly_score: {fb.get('anomaly_score', 0.0)})"
-            for fb in context.feedback_summary
-        ]
-        parts.append("## Prior Round Feedback\n" + "\n".join(feedback_lines))
+        # feedback_summary is produced by build_feedback_summary() — contains only
+        # metadata fields (vulnerability_class, outcome, anomaly_score). Raw response
+        # bodies, header values, and any target-controlled strings are excluded
+        # to prevent prompt injection attacks.
+        parts.append("## Prior Round Feedback\n" + context.feedback_summary)
 
     return "\n\n".join(parts) if parts else "No context available. Generate general hypotheses."
 

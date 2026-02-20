@@ -8,6 +8,8 @@ from pydantic import BaseModel, Field
 
 from hypothesis_engine.generator import Hypothesis
 
+MAX_FEEDBACK_CHARS = 2000
+
 
 class HypothesisOutcome(str, Enum):
     CONFIRMED = "confirmed"
@@ -171,3 +173,26 @@ class FeedbackManager:
                 continue
 
         return count
+
+
+def build_feedback_summary(confirmed_findings: list[LabeledHypothesis]) -> str:
+    """Build a prompt-safe feedback string from confirmed findings.
+
+    Only metadata fields (vulnerability_class, outcome, anomaly_score) are
+    included. The anomaly_details field is intentionally excluded because it
+    may contain target-controlled content that could inject instructions into
+    the LLM prompt.
+    """
+    sorted_findings = sorted(confirmed_findings, key=lambda lh: lh.anomaly_score, reverse=True)
+    summary = ""
+    for lh in sorted_findings:
+        # Format using only metadata from our own system — never target-controlled fields
+        entry = (
+            f"  - {lh.hypothesis.vulnerability_class} [{lh.outcome.value}]"
+            f" score={lh.anomaly_score:.2f}\n"
+        )
+        if len(summary) + len(entry) > MAX_FEEDBACK_CHARS:
+            summary += "[truncated — further findings omitted]"
+            break
+        summary += entry
+    return summary
