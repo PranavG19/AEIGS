@@ -1,3 +1,4 @@
+pub mod actor;
 pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
@@ -14,6 +15,7 @@ pub mod scan_config;
 pub mod scan_history;
 mod util;
 
+pub use actor::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use endpoint_similarity::*;
@@ -74,3 +76,7 @@ mod convergence_test;
 #[cfg(test)]
 #[path = "endpoint_similarity_test.rs"]
 mod endpoint_similarity_test;
+
+#[cfg(test)]
+#[path = "actor_test.rs"]
+mod actor_test;
