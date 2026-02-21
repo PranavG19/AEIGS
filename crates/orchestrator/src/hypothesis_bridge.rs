@@ -250,16 +250,26 @@ pub fn write_ipc_frame<W: Write>(
     Ok(())
 }
 
-/// Reads a length-prefixed JSON frame from the given reader and deserializes
-/// it as a `BridgeResponse`.
+/// Maximum IPC frame size (64 MiB). Prevents OOM on corrupt length prefixes.
+const MAX_IPC_FRAME_SIZE: usize = 64 * 1024 * 1024;
+
+/// Reads a length-prefixed JSON frame from the given reader and deserializes it.
 ///
 /// Protocol: 4-byte little-endian u32 length prefix followed by the JSON payload.
-pub fn read_ipc_frame<R: Read>(reader: &mut R) -> Result<BridgeResponse, HypothesisBridgeError> {
+/// Rejects frames larger than `MAX_IPC_FRAME_SIZE` (64 MiB).
+pub fn read_ipc_frame<R: Read, T: serde::de::DeserializeOwned>(
+    reader: &mut R,
+) -> Result<T, HypothesisBridgeError> {
     let mut len_buf = [0u8; 4];
     reader.read_exact(&mut len_buf).map_err(|e| {
         HypothesisBridgeError::FrameReadFailed(format!("reading length prefix: {e}"))
     })?;
     let len = u32::from_le_bytes(len_buf) as usize;
+    if len > MAX_IPC_FRAME_SIZE {
+        return Err(HypothesisBridgeError::FrameReadFailed(format!(
+            "frame size {len} exceeds maximum {MAX_IPC_FRAME_SIZE}"
+        )));
+    }
     let mut payload = vec![0u8; len];
     if len > 0 {
         reader.read_exact(&mut payload).map_err(|e| {

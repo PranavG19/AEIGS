@@ -559,13 +559,43 @@ json.dump(response, sys.stdout)
         buf.extend_from_slice(&0u32.to_le_bytes());
 
         let mut cursor = std::io::Cursor::new(buf);
-        let result = read_ipc_frame(&mut cursor);
+        let result: Result<BridgeResponse, _> = read_ipc_frame(&mut cursor);
         assert!(result.is_err());
         let err_msg = match result.unwrap_err() {
             HypothesisBridgeError::FrameReadFailed(msg) => msg,
             other => panic!("expected FrameReadFailed, got {other:?}"),
         };
         assert!(err_msg.contains("deserializing payload"), "got: {err_msg}");
+    }
+
+    #[test]
+    fn ipc_frame_rejects_oversized_length_prefix() {
+        let oversized_len: u32 = (65 * 1024 * 1024) as u32;
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&oversized_len.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 16]);
+
+        let mut cursor = std::io::Cursor::new(buf);
+        let result: Result<BridgeResponse, _> = read_ipc_frame(&mut cursor);
+        let err_msg = match result.unwrap_err() {
+            HypothesisBridgeError::FrameReadFailed(msg) => msg,
+            other => panic!("expected FrameReadFailed, got {other:?}"),
+        };
+        assert!(err_msg.contains("exceeds maximum"), "got: {err_msg}");
+    }
+
+    #[test]
+    fn ipc_frame_read_write_roundtrip_bridge_response() {
+        let resp_json = r#"{"type":"Ready"}"#;
+        let mut buf = Vec::new();
+        let payload = resp_json.as_bytes();
+        let len = payload.len() as u32;
+        buf.extend_from_slice(&len.to_le_bytes());
+        buf.extend_from_slice(payload);
+
+        let mut cursor = std::io::Cursor::new(buf);
+        let resp: BridgeResponse = read_ipc_frame(&mut cursor).unwrap();
+        assert!(matches!(resp, BridgeResponse::Ready));
     }
 
     #[test]
