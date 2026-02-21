@@ -32,6 +32,7 @@ pub struct FuzzPhaseResult {
     pub origin_counts: HashMap<FindingOrigin, u64>,
     pub discovered_endpoints: Vec<String>,
     pub transport_errors: u64,
+    pub was_authenticated: bool,
 }
 
 pub fn build_fuzz_request(
@@ -96,7 +97,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
         scheduler.reprioritize_for_stealth(&stealth_config);
     }
 
-    let mut authenticated_session = authenticate_if_configured(ctx, transport).await;
+    let mut authenticated_session = attempt_auth(ctx, transport, "initial auth").await;
 
     let oracle = FuzzOracle::new(0.7);
     let mut entries = Vec::new();
@@ -143,7 +144,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
             };
 
             if response.status_code == 401
-                && let Some(new_session) = try_re_authenticate(ctx, transport).await
+                && let Some(new_session) = attempt_auth(ctx, transport, "re-auth after 401").await
             {
                 authenticated_session = Some(new_session);
                 let mut retry_request =
@@ -197,38 +198,23 @@ pub async fn run_fuzz<T: FuzzTransport>(
         origin_counts,
         discovered_endpoints: Vec::new(),
         transport_errors,
+        was_authenticated: authenticated_session.is_some(),
     })
 }
 
-async fn authenticate_if_configured<T: FuzzTransport>(
+async fn attempt_auth<T: FuzzTransport>(
     ctx: &ScanContext,
     transport: &mut T,
+    context: &str,
 ) -> Option<AuthenticatedSession> {
     let flow = ctx.auth_flow.as_ref()?;
     match execute_auth_flow(flow, transport, &ctx.auth_inputs, &ctx.config.target).await {
         Ok(session) => {
-            tracing::info!("auth flow executed successfully");
+            tracing::info!("{context}: auth flow succeeded");
             Some(session)
         }
         Err(e) => {
-            tracing::warn!(error = %e, "auth flow failed, continuing without auth");
-            None
-        }
-    }
-}
-
-async fn try_re_authenticate<T: FuzzTransport>(
-    ctx: &ScanContext,
-    transport: &mut T,
-) -> Option<AuthenticatedSession> {
-    let flow = ctx.auth_flow.as_ref()?;
-    match execute_auth_flow(flow, transport, &ctx.auth_inputs, &ctx.config.target).await {
-        Ok(new_session) => {
-            tracing::info!("re-authenticated after 401");
-            Some(new_session)
-        }
-        Err(e) => {
-            tracing::warn!(error = %e, "re-authentication failed");
+            tracing::warn!(error = %e, "{context}: auth flow failed, continuing without auth");
             None
         }
     }

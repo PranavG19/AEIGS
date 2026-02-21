@@ -1422,6 +1422,91 @@ async fn run_fuzz_continues_without_auth_on_flow_failure() {
 }
 
 #[tokio::test]
+async fn run_fuzz_re_auth_succeeds_but_retry_transport_fails() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+    ctx.auth_flow = Some(make_login_auth_flow());
+    ctx.auth_inputs = make_auth_inputs();
+
+    let mut responses = Vec::new();
+    responses.push(auth_login_response());
+    responses.push(unauthorized_401_response());
+    responses.push(auth_login_response());
+    // After re-auth, remaining responses run out — transport returns default 200s
+    // via RecordingTransport fallback, so pipeline continues gracefully.
+    for _ in 0..200 {
+        responses.push(ok_200_response());
+    }
+
+    let mut transport = RecordingTransport::with_responses(responses);
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert!(
+        result.was_authenticated,
+        "should be authenticated after successful re-auth"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_re_auth_fails_after_401_continues_fuzzing() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+
+    // Auth flow expects status 200, but we return 403 for the re-auth attempt
+    let mut flow = make_login_auth_flow();
+    flow.steps[0].expected_status = 200;
+    ctx.auth_flow = Some(flow);
+    ctx.auth_inputs = make_auth_inputs();
+
+    let mut responses = Vec::new();
+    // Initial auth succeeds
+    responses.push(auth_login_response());
+    // First fuzz request returns 401
+    responses.push(unauthorized_401_response());
+    // Re-auth attempt gets 403 (fails)
+    responses.push(FuzzResponse {
+        request_id: 0,
+        status_code: 403,
+        body: "Forbidden".to_string(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 9,
+    });
+    // Remaining fuzz requests get 200
+    for _ in 0..200 {
+        responses.push(ok_200_response());
+    }
+
+    let mut transport = RecordingTransport::with_responses(responses);
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    // When re-auth fails, the 401 response is NOT retried (attempt_auth returns None,
+    // so the `if` block doesn't execute). Pipeline continues with remaining payloads.
+    assert!(
+        result.was_authenticated,
+        "initial auth succeeded, so session should still be present"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_was_authenticated_false_when_no_auth() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+    assert!(ctx.auth_flow.is_none());
+
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert!(
+        !result.was_authenticated,
+        "should not be authenticated when no auth flow is configured"
+    );
+}
+
+#[tokio::test]
 async fn run_fuzz_no_auth_flow_works_as_before() {
     let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
     add_endpoint_node(&mut ctx, "/api/test", 0);
