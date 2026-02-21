@@ -5,6 +5,7 @@ pub mod mutator;
 pub mod oracle;
 pub mod payload_selector;
 pub mod rate_limit_detector;
+pub mod request_patterns;
 pub mod scheduler;
 pub mod stealth_config;
 pub mod streaming_fuzzer;
@@ -42,3 +43,7 @@ mod defense_profile_test;
 #[cfg(test)]
 #[path = "payload_selector_test.rs"]
 mod payload_selector_test;
+
+#[cfg(test)]
+#[path = "request_patterns_test.rs"]
+mod request_patterns_test;
