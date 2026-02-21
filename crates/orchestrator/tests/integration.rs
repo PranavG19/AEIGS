@@ -3025,6 +3025,15 @@ async fn auth_re_authenticates_on_401_and_retries() {
         "should remain authenticated after re-auth"
     );
 
+    let first_fuzz_headers = &transport.recorded_headers[1];
+    let had_v1_token = first_fuzz_headers
+        .iter()
+        .any(|(k, v)| k == "Authorization" && v == "Bearer token-v1");
+    assert!(
+        had_v1_token,
+        "first fuzz request should have carried the initial token (token-v1)"
+    );
+
     let has_v2_token = transport.recorded_headers.iter().any(|hdrs| {
         hdrs.iter()
             .any(|(k, v)| k == "Authorization" && v == "Bearer token-v2")
@@ -3047,7 +3056,8 @@ async fn auth_missing_variable_continues_without_auth() {
     ctx.auth_inputs = {
         let mut m = std::collections::HashMap::new();
         m.insert("username".to_string(), "admin".to_string());
-        // password is missing — body_template references {{password}}
+        // password is missing from auth_inputs — render_template will fail
+        // when it encounters {{password}} with no substitution value
         m
     };
 
@@ -3077,8 +3087,8 @@ async fn auth_missing_variable_continues_without_auth() {
     );
 }
 
-// 5: Detects session fixation — tests auth flow validation catches invalid flows
-//    (empty step_id, etc.).
+// 5: Flow validation — invalid auth flow definition (empty step_id)
+//    is rejected, pipeline continues unauthenticated.
 #[tokio::test]
 async fn auth_validates_flow_rejects_empty_step_id() {
     use aegis_enumeration::auth_flow::{AuthFlow, AuthFlowStep};
