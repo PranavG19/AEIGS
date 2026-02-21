@@ -11,6 +11,7 @@ members = [
     "crates/reporting",
     "crates/evasion-engine",
     "crates/orchestrator",
+    "crates/crawler",
     "crates/test-support",
 ]
 resolver = "2"
