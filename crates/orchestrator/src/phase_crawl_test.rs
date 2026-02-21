@@ -220,3 +220,75 @@ fn crawl_actor_name() {
     let actor = CrawlActor;
     assert_eq!(actor.name(), "crawl");
 }
+
+#[test]
+fn crawl_integrates_with_pipeline_graph() {
+    let mut ctx = make_ctx_with_real_graph();
+    let crawl_result = CrawlResult {
+        discovered_endpoints: vec![
+            make_endpoint(
+                "http://localhost:3000/api/users",
+                "GET",
+                DiscoverySource::Link,
+            ),
+            make_endpoint("http://localhost:3000/login", "POST", DiscoverySource::Form),
+            make_endpoint(
+                "http://localhost:3000/api/data",
+                "PUT",
+                DiscoverySource::ApiCall,
+            ),
+        ],
+        ..Default::default()
+    };
+
+    let mut seq = 0u64;
+    let ops = crawl_result_to_operations(&crawl_result, &mut seq);
+    ctx.graph.apply_operations(&ops).unwrap();
+
+    let endpoint_ids = ctx.graph.nodes_by_type(NodeType::Endpoint).unwrap();
+    assert_eq!(endpoint_ids.len(), 3);
+
+    let expected = vec![
+        ("http://localhost:3000/api/users", "GET"),
+        ("http://localhost:3000/login", "POST"),
+        ("http://localhost:3000/api/data", "PUT"),
+    ];
+
+    for &id in &endpoint_ids {
+        let node = ctx.graph.get_node(id).unwrap().unwrap();
+        assert_eq!(node.node_type, NodeType::Endpoint);
+        let path = node.properties.get("path").unwrap();
+        let method = node.properties.get("method").unwrap();
+        assert!(
+            expected.contains(&(path.as_str(), method.as_str())),
+            "unexpected node: path={path}, method={method}"
+        );
+    }
+}
+
+#[test]
+fn crawl_actor_operations_count_matches_endpoints() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let pre_ops = ctx.graph.total_operations_applied().unwrap();
+    assert_eq!(pre_ops, 0);
+
+    let mut actor = CrawlActor;
+    let events = actor.process(&mut ctx, &[]).unwrap();
+
+    assert_eq!(events.len(), 1);
+    match &events[0].event {
+        ScanEvent::PhaseCompleted {
+            phase_name,
+            operations_applied,
+            ..
+        } => {
+            assert_eq!(phase_name, "crawl");
+            assert_eq!(*operations_applied, 0);
+        }
+        _ => panic!("expected PhaseCompleted event"),
+    }
+
+    let post_ops = ctx.graph.total_operations_applied().unwrap();
+    assert_eq!(post_ops, 0);
+}
