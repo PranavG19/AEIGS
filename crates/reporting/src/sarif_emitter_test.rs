@@ -962,4 +962,30 @@ mod tests {
             Some("src/handler.rs")
         );
     }
+
+    #[test]
+    fn sarif_json_properties_are_flattened_to_top_level() {
+        let mut finding = finding_with_vuln_class();
+        finding.endpoint = Some("/api/users".to_string());
+        finding.http_method = Some("GET".to_string());
+        let report = emit_sarif(&[finding], "0.1.0");
+        let json = sarif_to_json(&report).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let result = &parsed["runs"][0]["results"][0];
+
+        assert_eq!(
+            result["endpoint"].as_str(),
+            Some("/api/users"),
+            "sarif_rust #[serde(flatten)] puts properties at top level"
+        );
+        assert_eq!(
+            result["vulnerabilityClass"].as_str(),
+            Some("SqlInjection"),
+            "vulnerabilityClass should be a top-level key"
+        );
+        assert!(
+            result["properties"]["endpoint"].is_null(),
+            "properties sub-object should NOT exist (flatten merges into parent)"
+        );
+    }
 }
