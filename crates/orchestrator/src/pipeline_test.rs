@@ -324,6 +324,8 @@ fn scan_context_fields_accessible() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert_eq!(ctx.config.target, "http://localhost:8080");
     assert!(ctx.defense_profile.is_none());
@@ -342,6 +344,8 @@ fn scan_context_with_defense_profile() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert!(ctx.defense_profile.is_some());
 }
@@ -603,6 +607,8 @@ fn fake_graph_store_satisfies_scan_context() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert_eq!(ctx.graph.node_count().unwrap(), 0);
     assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
@@ -853,6 +859,8 @@ fn scan_context_has_capabilities_field() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::PassiveRecon));
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::Fuzzing));
@@ -1036,6 +1044,8 @@ fn build_hypothesis_context_returns_scan_context_json() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
@@ -1055,6 +1065,8 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
@@ -1223,6 +1235,8 @@ fn scan_context_scope_attestation_field_stores_value() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: Some(attestation.clone()),
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert!(ctx.scope_attestation.is_some());
     let stored = ctx.scope_attestation.unwrap();
@@ -1240,6 +1254,8 @@ fn scan_context_scope_attestation_default_is_none() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     assert!(ctx.scope_attestation.is_none());
 }
@@ -1274,6 +1290,8 @@ fn build_hypothesis_context_serializes_to_valid_json() {
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     let json = serde_json::to_value(&context).unwrap();

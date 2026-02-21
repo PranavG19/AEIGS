@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use aegis_audit_log::AuditWriter;
 use aegis_audit_log::log_writer::{AuditLogWriter, NoOpAuditLogWriter};
+use aegis_enumeration::auth_flow::AuthFlow;
 use aegis_enumeration::introspection::{
     IntrospectedEndpoint, parse_graphql_introspection, parse_openapi_json,
 };
@@ -39,6 +40,8 @@ pub struct ScanContext {
     pub capabilities: CapabilityManager,
     pub refuted: RefutedTracker,
     pub scope_attestation: Option<SignedScopeAttestation>,
+    pub auth_flow: Option<AuthFlow>,
+    pub auth_inputs: std::collections::HashMap<String, String>,
 }
 
 #[derive(Debug, Clone)]
@@ -1006,6 +1009,8 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         capabilities,
         refuted: RefutedTracker::new(),
         scope_attestation,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
 
     let phases_result = run_scan_phases(

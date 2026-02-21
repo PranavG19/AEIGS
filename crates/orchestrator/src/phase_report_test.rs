@@ -38,6 +38,8 @@ fn test_context(output_path: &std::path::Path) -> ScanContext {
         capabilities,
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     }
 }
 

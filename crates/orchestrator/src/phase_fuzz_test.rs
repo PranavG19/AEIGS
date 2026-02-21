@@ -65,6 +65,8 @@ fn make_context(args: &[&str]) -> ScanContext {
         capabilities,
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     }
 }
 
@@ -320,6 +322,8 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
         capabilities,
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
     (ctx, tmp)
 }
@@ -654,6 +658,8 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         capabilities,
         refuted: convergence::RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     };
 
     let mut transport = MockTransport::ok_200();
@@ -1232,5 +1238,201 @@ async fn findings_linked_to_endpoint_nodes_populate_sarif_endpoint() {
     assert!(
         found_endpoint,
         "at least one SARIF result should have endpoint=/api/users"
+    );
+}
+
+// --- auth flow integration tests ---
+
+fn make_login_auth_flow() -> aegis_enumeration::auth_flow::AuthFlow {
+    use aegis_enumeration::auth_flow::{
+        AuthFlow, AuthFlowStep, ExtractionSource, ResponseExtraction,
+    };
+    AuthFlow {
+        name: "test-login".to_string(),
+        steps: vec![AuthFlowStep {
+            step_id: "login".to_string(),
+            endpoint: "/auth/login".to_string(),
+            method: "POST".to_string(),
+            body_template: Some(
+                r#"{"username":"{{username}}","password":"{{password}}"}"#.to_string(),
+            ),
+            extract_from_response: vec![ResponseExtraction {
+                variable_name: "token".to_string(),
+                source: ExtractionSource::JsonPath("token".to_string()),
+            }],
+            expected_status: 200,
+        }],
+        required_inputs: vec!["username".to_string(), "password".to_string()],
+    }
+}
+
+fn make_auth_inputs() -> std::collections::HashMap<String, String> {
+    let mut inputs = std::collections::HashMap::new();
+    inputs.insert("username".to_string(), "admin".to_string());
+    inputs.insert("password".to_string(), "secret".to_string());
+    inputs
+}
+
+struct RecordingTransport {
+    responses: std::collections::VecDeque<FuzzResponse>,
+    recorded_headers: Vec<Vec<(String, String)>>,
+}
+
+impl RecordingTransport {
+    fn with_responses(responses: Vec<FuzzResponse>) -> Self {
+        Self {
+            responses: responses.into(),
+            recorded_headers: Vec::new(),
+        }
+    }
+}
+
+impl phase_fuzz::FuzzTransport for RecordingTransport {
+    async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        self.recorded_headers.push(request.headers.clone());
+        let mut resp = self.responses.pop_front().unwrap_or_else(|| FuzzResponse {
+            request_id: request.request_id,
+            status_code: 200,
+            body: String::new(),
+            headers: vec![],
+            response_time: std::time::Duration::from_millis(10),
+            body_size_bytes: 0,
+        });
+        resp.request_id = request.request_id;
+        Ok(resp)
+    }
+}
+
+fn auth_login_response() -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 200,
+        body: r#"{"token":"test-bearer-token-abc"}"#.to_string(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 32,
+    }
+}
+
+fn ok_200_response() -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 200,
+        body: String::new(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 0,
+    }
+}
+
+fn unauthorized_401_response() -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 401,
+        body: "Unauthorized".to_string(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 12,
+    }
+}
+
+#[tokio::test]
+async fn run_fuzz_injects_auth_headers() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+    ctx.auth_flow = Some(make_login_auth_flow());
+    ctx.auth_inputs = make_auth_inputs();
+
+    let mut responses = Vec::new();
+    responses.push(auth_login_response());
+    for _ in 0..200 {
+        responses.push(ok_200_response());
+    }
+
+    let mut transport = RecordingTransport::with_responses(responses);
+    phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        transport.recorded_headers.len() > 1,
+        "should have sent auth request + fuzz requests"
+    );
+
+    let fuzz_request_headers = &transport.recorded_headers[1..];
+    let has_auth_header = fuzz_request_headers.iter().any(|headers| {
+        headers
+            .iter()
+            .any(|(k, v)| k == "Authorization" && v.starts_with("Bearer "))
+    });
+    assert!(
+        has_auth_header,
+        "fuzz requests should have Authorization header injected from auth flow"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_re_authenticates_on_401() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+    ctx.auth_flow = Some(make_login_auth_flow());
+    ctx.auth_inputs = make_auth_inputs();
+
+    let mut responses = Vec::new();
+    responses.push(auth_login_response());
+    responses.push(unauthorized_401_response());
+    responses.push(auth_login_response());
+    responses.push(ok_200_response());
+    for _ in 0..200 {
+        responses.push(ok_200_response());
+    }
+
+    let mut transport = RecordingTransport::with_responses(responses);
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert_eq!(
+        result.transport_errors, 0,
+        "401 re-auth should not count as transport error"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_continues_without_auth_on_flow_failure() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+
+    let mut bad_flow = make_login_auth_flow();
+    bad_flow.steps[0].expected_status = 201;
+    ctx.auth_flow = Some(bad_flow);
+    ctx.auth_inputs = make_auth_inputs();
+
+    let mut responses = Vec::new();
+    responses.push(ok_200_response());
+    for _ in 0..200 {
+        responses.push(ok_200_response());
+    }
+
+    let mut transport = RecordingTransport::with_responses(responses);
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport).await;
+    assert!(
+        result.is_ok(),
+        "fuzzing should succeed even if auth flow fails"
+    );
+}
+
+#[tokio::test]
+async fn run_fuzz_no_auth_flow_works_as_before() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/test", 0);
+    assert!(ctx.auth_flow.is_none());
+
+    let mut transport = MockTransport::ok_200();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert_eq!(
+        result.transport_errors, 0,
+        "no auth flow should result in no transport errors"
     );
 }

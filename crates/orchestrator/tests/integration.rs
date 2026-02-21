@@ -184,6 +184,8 @@ fn make_scan_context_fake() -> ScanContext {
         capabilities: test_capability_manager(),
         refuted: RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     }
 }
 
@@ -195,6 +197,8 @@ fn make_scan_context_real() -> ScanContext {
         capabilities: test_capability_manager(),
         refuted: RefutedTracker::new(),
         scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
     }
 }
 

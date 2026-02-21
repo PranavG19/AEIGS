@@ -81,7 +81,7 @@ pub fn run_report_with_previous(
         let risk_input = RiskInput {
             vulnerability_class: finding.vulnerability_class,
             cvss_exploitability: finding.severity,
-            is_authenticated: false,
+            is_authenticated: ctx.auth_flow.is_some(),
             is_rate_limited: ctx
                 .defense_profile
                 .as_ref()

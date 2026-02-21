@@ -7,6 +7,7 @@ use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
+use crate::auth_session::{AuthenticatedSession, execute_auth_flow, inject_auth_into_request};
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{load_business_context, parse_stealth_level};
 use crate::util::timestamp_ms;
@@ -31,6 +32,29 @@ pub struct FuzzPhaseResult {
     pub origin_counts: HashMap<FindingOrigin, u64>,
     pub discovered_endpoints: Vec<String>,
     pub transport_errors: u64,
+}
+
+pub fn build_fuzz_request(
+    target_base: &str,
+    target: &FuzzTarget,
+    payload: &str,
+    request_id: u64,
+) -> FuzzRequest {
+    FuzzRequest {
+        request_id,
+        endpoint: format!("{}{}", target_base, target.endpoint),
+        method: target.method.clone(),
+        parameter_name: target.parameter.clone(),
+        parameter_location: target.parameter_location,
+        payload: payload.to_string(),
+        headers: {
+            let mut h = vec![];
+            if target.parameter_location == ParameterLocation::Body {
+                h.push(("Content-Type".to_string(), "application/json".to_string()));
+            }
+            h
+        },
+    }
 }
 
 pub async fn run_fuzz<T: FuzzTransport>(
@@ -72,6 +96,8 @@ pub async fn run_fuzz<T: FuzzTransport>(
         scheduler.reprioritize_for_stealth(&stealth_config);
     }
 
+    let mut authenticated_session = authenticate_if_configured(ctx, transport).await;
+
     let oracle = FuzzOracle::new(0.7);
     let mut entries = Vec::new();
     let mut sequence = ctx
@@ -95,24 +121,15 @@ pub async fn run_fuzz<T: FuzzTransport>(
         let linked = endpoint_node_id.map(|id| vec![id]).unwrap_or_default();
 
         for payload in &payloads {
-            let request = FuzzRequest {
-                request_id: next_request_id,
-                endpoint: format!("{}{}", target_base, target.endpoint),
-                method: target.method.clone(),
-                parameter_name: target.parameter.clone(),
-                parameter_location: target.parameter_location,
-                payload: payload.raw.clone(),
-                headers: {
-                    let mut h = vec![];
-                    if target.parameter_location == ParameterLocation::Body {
-                        h.push(("Content-Type".to_string(), "application/json".to_string()));
-                    }
-                    h
-                },
-            };
+            let mut request =
+                build_fuzz_request(&target_base, &target, &payload.raw, next_request_id);
             next_request_id += 1;
 
-            let response = match transport.send(&request).await {
+            if let Some(ref session) = authenticated_session {
+                inject_auth_into_request(&mut request, session);
+            }
+
+            let mut response = match transport.send(&request).await {
                 Ok(resp) => resp,
                 Err(e) => {
                     tracing::warn!(
@@ -124,6 +141,30 @@ pub async fn run_fuzz<T: FuzzTransport>(
                     continue;
                 }
             };
+
+            if response.status_code == 401
+                && let Some(new_session) = try_re_authenticate(ctx, transport).await
+            {
+                authenticated_session = Some(new_session);
+                let mut retry_request =
+                    build_fuzz_request(&target_base, &target, &payload.raw, request.request_id);
+                inject_auth_into_request(
+                    &mut retry_request,
+                    authenticated_session.as_ref().unwrap(),
+                );
+                match transport.send(&retry_request).await {
+                    Ok(r) => response = r,
+                    Err(e) => {
+                        tracing::warn!(
+                            endpoint = %retry_request.endpoint,
+                            error = %e,
+                            "transport error on retry after re-auth"
+                        );
+                        transport_errors += 1;
+                        continue;
+                    }
+                }
+            }
 
             let anomalies =
                 oracle.analyze_response(&response, &payload.raw, &target.endpoint, &target.method);
@@ -157,6 +198,40 @@ pub async fn run_fuzz<T: FuzzTransport>(
         discovered_endpoints: Vec::new(),
         transport_errors,
     })
+}
+
+async fn authenticate_if_configured<T: FuzzTransport>(
+    ctx: &ScanContext,
+    transport: &mut T,
+) -> Option<AuthenticatedSession> {
+    let flow = ctx.auth_flow.as_ref()?;
+    match execute_auth_flow(flow, transport, &ctx.auth_inputs, &ctx.config.target).await {
+        Ok(session) => {
+            tracing::info!("auth flow executed successfully");
+            Some(session)
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "auth flow failed, continuing without auth");
+            None
+        }
+    }
+}
+
+async fn try_re_authenticate<T: FuzzTransport>(
+    ctx: &ScanContext,
+    transport: &mut T,
+) -> Option<AuthenticatedSession> {
+    let flow = ctx.auth_flow.as_ref()?;
+    match execute_auth_flow(flow, transport, &ctx.auth_inputs, &ctx.config.target).await {
+        Ok(new_session) => {
+            tracing::info!("re-authenticated after 401");
+            Some(new_session)
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "re-authentication failed");
+            None
+        }
+    }
 }
 
 fn build_endpoint_node_map(endpoint_ids: &[u64], ctx: &ScanContext) -> HashMap<String, u64> {
