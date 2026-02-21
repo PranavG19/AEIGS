@@ -2769,3 +2769,434 @@ req = read_frame(sock)
         "socket file should be cleaned up by Drop impl"
     );
 }
+
+// ===========================================================================
+// Authenticated scanning integration tests
+// ===========================================================================
+
+fn make_auth_login_flow() -> aegis_enumeration::auth_flow::AuthFlow {
+    use aegis_enumeration::auth_flow::{
+        AuthFlow, AuthFlowStep, ExtractionSource, ResponseExtraction,
+    };
+    AuthFlow {
+        name: "integration-login".to_string(),
+        steps: vec![AuthFlowStep {
+            step_id: "login".to_string(),
+            endpoint: "/auth/login".to_string(),
+            method: "POST".to_string(),
+            body_template: Some(
+                r#"{"username":"{{username}}","password":"{{password}}"}"#.to_string(),
+            ),
+            extract_from_response: vec![ResponseExtraction {
+                variable_name: "token".to_string(),
+                source: ExtractionSource::JsonPath("token".to_string()),
+            }],
+            expected_status: 200,
+        }],
+        required_inputs: vec!["username".to_string(), "password".to_string()],
+    }
+}
+
+fn make_cookie_session_flow() -> aegis_enumeration::auth_flow::AuthFlow {
+    use aegis_enumeration::auth_flow::{
+        AuthFlow, AuthFlowStep, ExtractionSource, ResponseExtraction,
+    };
+    AuthFlow {
+        name: "cookie-session".to_string(),
+        steps: vec![AuthFlowStep {
+            step_id: "login".to_string(),
+            endpoint: "/login".to_string(),
+            method: "POST".to_string(),
+            body_template: Some(
+                r#"{"username":"{{username}}","password":"{{password}}"}"#.to_string(),
+            ),
+            extract_from_response: vec![ResponseExtraction {
+                variable_name: "sid".to_string(),
+                source: ExtractionSource::Cookie("session".to_string()),
+            }],
+            expected_status: 200,
+        }],
+        required_inputs: vec!["username".to_string(), "password".to_string()],
+    }
+}
+
+fn auth_inputs() -> std::collections::HashMap<String, String> {
+    let mut m = std::collections::HashMap::new();
+    m.insert("username".to_string(), "admin".to_string());
+    m.insert("password".to_string(), "secret".to_string());
+    m
+}
+
+struct AuthRecordingTransport {
+    responses: std::collections::VecDeque<FuzzResponse>,
+    recorded_headers: Vec<Vec<(String, String)>>,
+}
+
+impl AuthRecordingTransport {
+    fn with_responses(responses: Vec<FuzzResponse>) -> Self {
+        Self {
+            responses: responses.into(),
+            recorded_headers: Vec::new(),
+        }
+    }
+}
+
+impl aegis_orchestrator::FuzzTransport for AuthRecordingTransport {
+    async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        self.recorded_headers.push(request.headers.clone());
+        let mut resp = self.responses.pop_front().unwrap_or_else(|| FuzzResponse {
+            request_id: request.request_id,
+            status_code: 200,
+            body: String::new(),
+            headers: vec![],
+            response_time: std::time::Duration::from_millis(10),
+            body_size_bytes: 0,
+        });
+        resp.request_id = request.request_id;
+        Ok(resp)
+    }
+}
+
+fn auth_ok_response(body: &str, headers: Vec<(String, String)>) -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 200,
+        body: body.to_string(),
+        headers,
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: body.len(),
+    }
+}
+
+fn plain_200() -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 200,
+        body: String::new(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 0,
+    }
+}
+
+fn response_401() -> FuzzResponse {
+    FuzzResponse {
+        request_id: 0,
+        status_code: 401,
+        body: "Unauthorized".to_string(),
+        headers: vec![],
+        response_time: std::time::Duration::from_millis(10),
+        body_size_bytes: 12,
+    }
+}
+
+fn add_endpoint(ctx: &mut ScanContext, path: &str, seq: u64) {
+    use aegis_protocol::operation::{GraphOperation, OperationLogEntry};
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: seq,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), path.to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+}
+
+// 1: Auth flow login and fuzz with endpoint — full pipeline: auth flow login
+//    succeeds, fuzz requests carry auth headers.
+#[tokio::test]
+async fn auth_flow_login_and_fuzz_carries_bearer_header() {
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/protected", 0);
+    ctx.auth_flow = Some(make_auth_login_flow());
+    ctx.auth_inputs = auth_inputs();
+
+    let login_resp = auth_ok_response(r#"{"token":"integration-jwt-xyz"}"#, vec![]);
+    let mut responses = vec![login_resp];
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        result.was_authenticated,
+        "run_fuzz should report authenticated when auth flow succeeds"
+    );
+    assert!(
+        transport.recorded_headers.len() > 1,
+        "should have sent auth login request + fuzz requests"
+    );
+
+    let fuzz_headers = &transport.recorded_headers[1..];
+    let bearer_count = fuzz_headers
+        .iter()
+        .filter(|hdrs| {
+            hdrs.iter()
+                .any(|(k, v)| k == "Authorization" && v == "Bearer integration-jwt-xyz")
+        })
+        .count();
+    assert!(
+        bearer_count > 0,
+        "fuzz requests should carry the Bearer token extracted during auth login"
+    );
+}
+
+// 2: Cookie session — auth flow extracts cookies, fuzz requests carry Cookie header.
+#[tokio::test]
+async fn auth_cookie_session_injects_cookie_header() {
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/dashboard", 0);
+    ctx.auth_flow = Some(make_cookie_session_flow());
+    ctx.auth_inputs = auth_inputs();
+
+    let login_resp = auth_ok_response(
+        "",
+        vec![(
+            "Set-Cookie".to_string(),
+            "session=deadbeef1234; HttpOnly; Secure".to_string(),
+        )],
+    );
+    let mut responses = vec![login_resp];
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(result.was_authenticated);
+
+    let fuzz_headers = &transport.recorded_headers[1..];
+    let cookie_count = fuzz_headers
+        .iter()
+        .filter(|hdrs| {
+            hdrs.iter()
+                .any(|(k, v)| k == "Cookie" && v.contains("session=deadbeef1234"))
+        })
+        .count();
+    assert!(
+        cookie_count > 0,
+        "fuzz requests should carry Cookie header with session ID extracted from Set-Cookie"
+    );
+}
+
+// 3: Re-authenticates on 401 — initial auth, 401 response triggers re-auth,
+//    retry succeeds.
+#[tokio::test]
+async fn auth_re_authenticates_on_401_and_retries() {
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/secure", 0);
+    ctx.auth_flow = Some(make_auth_login_flow());
+    ctx.auth_inputs = auth_inputs();
+
+    let initial_login = auth_ok_response(r#"{"token":"token-v1"}"#, vec![]);
+    let fuzz_401 = response_401();
+    let re_login = auth_ok_response(r#"{"token":"token-v2"}"#, vec![]);
+    let retry_ok = plain_200();
+
+    let mut responses = vec![initial_login, fuzz_401, re_login, retry_ok];
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert_eq!(
+        result.transport_errors, 0,
+        "401 + re-auth + retry should not count as transport errors"
+    );
+    assert!(
+        result.was_authenticated,
+        "should remain authenticated after re-auth"
+    );
+
+    let has_v2_token = transport.recorded_headers.iter().any(|hdrs| {
+        hdrs.iter()
+            .any(|(k, v)| k == "Authorization" && v == "Bearer token-v2")
+    });
+    assert!(
+        has_v2_token,
+        "after re-auth, requests should carry the refreshed token (token-v2)"
+    );
+}
+
+// 4: Missing variable fails gracefully — auth flow template references undefined
+//    variable, pipeline continues without auth.
+#[tokio::test]
+async fn auth_missing_variable_continues_without_auth() {
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/open", 0);
+
+    let flow = make_auth_login_flow();
+    ctx.auth_flow = Some(flow);
+    ctx.auth_inputs = {
+        let mut m = std::collections::HashMap::new();
+        m.insert("username".to_string(), "admin".to_string());
+        // password is missing — body_template references {{password}}
+        m
+    };
+
+    let mut responses = Vec::new();
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !result.was_authenticated,
+        "missing required variable should cause auth to fail gracefully, \
+         but fuzzing should still complete"
+    );
+
+    let has_auth_header = transport
+        .recorded_headers
+        .iter()
+        .any(|hdrs| hdrs.iter().any(|(k, _)| k == "Authorization"));
+    assert!(
+        !has_auth_header,
+        "no Authorization header should be injected when auth fails"
+    );
+}
+
+// 5: Detects session fixation — tests auth flow validation catches invalid flows
+//    (empty step_id, etc.).
+#[tokio::test]
+async fn auth_validates_flow_rejects_empty_step_id() {
+    use aegis_enumeration::auth_flow::{AuthFlow, AuthFlowStep};
+
+    let invalid_flow = AuthFlow {
+        name: "bad-flow".to_string(),
+        steps: vec![AuthFlowStep {
+            step_id: String::new(),
+            endpoint: "/login".to_string(),
+            method: "POST".to_string(),
+            body_template: None,
+            extract_from_response: vec![],
+            expected_status: 200,
+        }],
+        required_inputs: vec![],
+    };
+
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/test", 0);
+    ctx.auth_flow = Some(invalid_flow);
+
+    let mut responses = Vec::new();
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !result.was_authenticated,
+        "invalid auth flow (empty step_id) should fail validation and continue unauthenticated"
+    );
+}
+
+// 6: Variables persist across steps — multi-step auth flow where step 2 uses
+//    variable extracted by step 1.
+#[tokio::test]
+async fn auth_variables_persist_across_steps() {
+    use aegis_enumeration::auth_flow::{
+        AuthFlow, AuthFlowStep, ExtractionSource, ResponseExtraction,
+    };
+
+    let flow = AuthFlow {
+        name: "csrf-then-login".to_string(),
+        steps: vec![
+            AuthFlowStep {
+                step_id: "get_csrf".to_string(),
+                endpoint: "/csrf-token".to_string(),
+                method: "GET".to_string(),
+                body_template: None,
+                extract_from_response: vec![ResponseExtraction {
+                    variable_name: "csrf".to_string(),
+                    source: ExtractionSource::Header("X-CSRF-Token".to_string()),
+                }],
+                expected_status: 200,
+            },
+            AuthFlowStep {
+                step_id: "login".to_string(),
+                endpoint: "/login".to_string(),
+                method: "POST".to_string(),
+                body_template: Some(r#"{"username":"{{username}}","csrf":"{{csrf}}"}"#.to_string()),
+                extract_from_response: vec![ResponseExtraction {
+                    variable_name: "token".to_string(),
+                    source: ExtractionSource::JsonPath("token".to_string()),
+                }],
+                expected_status: 200,
+            },
+        ],
+        required_inputs: vec!["username".to_string()],
+    };
+
+    let mut ctx = make_scan_context_real();
+    add_endpoint(&mut ctx, "/api/data", 0);
+    ctx.auth_flow = Some(flow);
+    ctx.auth_inputs = {
+        let mut m = std::collections::HashMap::new();
+        m.insert("username".to_string(), "admin".to_string());
+        m
+    };
+
+    let csrf_resp = auth_ok_response(
+        "",
+        vec![("X-CSRF-Token".to_string(), "csrf-abc-999".to_string())],
+    );
+    let login_resp = auth_ok_response(r#"{"token":"multi-step-jwt"}"#, vec![]);
+    let mut responses = vec![csrf_resp, login_resp];
+    for _ in 0..200 {
+        responses.push(plain_200());
+    }
+
+    let mut transport = AuthRecordingTransport::with_responses(responses);
+    let result = aegis_orchestrator::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        result.was_authenticated,
+        "multi-step auth flow should succeed when step 2 uses variable from step 1"
+    );
+
+    let fuzz_headers = &transport.recorded_headers[2..];
+    let has_bearer = fuzz_headers.iter().any(|hdrs| {
+        hdrs.iter()
+            .any(|(k, v)| k == "Authorization" && v == "Bearer multi-step-jwt")
+    });
+    assert!(
+        has_bearer,
+        "fuzz requests should carry Bearer token from the second auth step"
+    );
+}
+
+// 7: Integrates with evasion transport — verify at the type level that
+//    EvasionTransport implements FuzzTransport.
+#[test]
+fn evasion_transport_implements_fuzz_transport() {
+    fn assert_fuzz_transport<T: aegis_orchestrator::FuzzTransport>() {}
+    assert_fuzz_transport::<aegis_evasion_engine::EvasionTransport>();
+}
