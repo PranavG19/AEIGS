@@ -1,8 +1,10 @@
 use crate::attest::{
-    AttestArgs, AttestError, DEFAULT_OUTPUT, compute_valid_until, days_to_ymd, generate_scope_id,
+    AttestArgs, AttestError, DEFAULT_OUTPUT, compute_valid_until, generate_scope_id,
     load_or_generate_key, parse_attest_args, run_attest, write_attestation,
 };
-use aegis_protocol::scope_attestation::{SignedScopeAttestation, verify_attestation};
+use aegis_protocol::scope_attestation::{
+    SignedScopeAttestation, days_to_ymd, verify_attestation,
+};
 use std::path::PathBuf;
 
 fn make_args(flags: &[(&str, &str)]) -> Vec<String> {
@@ -181,6 +183,19 @@ fn error_on_invalid_valid_days() {
         ("target", "http://localhost:3000"),
         ("authorized-by", "tester"),
         ("valid-days", "not-a-number"),
+        ("key", "/tmp/test.key"),
+    ]);
+    let result = parse_attest_args(&args_vec);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), AttestError::InvalidDays(_)));
+}
+
+#[test]
+fn error_on_zero_valid_days() {
+    let args_vec = make_args(&[
+        ("target", "http://localhost:3000"),
+        ("authorized-by", "tester"),
+        ("valid-days", "0"),
         ("key", "/tmp/test.key"),
     ]);
     let result = parse_attest_args(&args_vec);

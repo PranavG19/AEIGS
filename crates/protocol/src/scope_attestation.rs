@@ -176,7 +176,7 @@ fn today_as_ordinal() -> i32 {
     y * 10000 + m * 100 + d
 }
 
-fn days_to_ymd(days: u64) -> (i32, i32, i32) {
+pub fn days_to_ymd(days: u64) -> (i32, i32, i32) {
     // Civil calendar algorithm from Howard Hinnant
     let z = days as i64 + 719468;
     let era = (if z >= 0 { z } else { z - 146096 }) / 146097;

@@ -1,5 +1,5 @@
 use aegis_protocol::scope_attestation::{
-    ScopeDocument, SignedScopeAttestation, sign_scope_document,
+    ScopeDocument, SignedScopeAttestation, days_to_ymd, sign_scope_document,
 };
 use ed25519_dalek::SigningKey;
 use std::path::{Path, PathBuf};
@@ -46,7 +46,10 @@ pub fn parse_attest_args(args: &[String]) -> Result<AttestArgs, AttestError> {
         find_flag(args, "valid-days").ok_or(AttestError::MissingArg("valid-days".to_string()))?;
     let valid_days: u64 = valid_days_str
         .parse()
-        .map_err(|_| AttestError::InvalidDays(valid_days_str))?;
+        .map_err(|_| AttestError::InvalidDays(valid_days_str.clone()))?;
+    if valid_days == 0 {
+        return Err(AttestError::InvalidDays(valid_days_str));
+    }
     let key_path_str = find_flag(args, "key").ok_or(AttestError::MissingArg("key".to_string()))?;
     let output_path_str = find_flag(args, "output").unwrap_or(DEFAULT_OUTPUT.to_string());
 
@@ -74,9 +77,8 @@ pub fn run_attest(args: &AttestArgs) -> Result<PathBuf, AttestError> {
     let attestation = sign_scope_document(&document, &signing_key);
     write_attestation(&attestation, &args.output_path)?;
 
-    let public_key_hex = attestation.public_key_hex;
     println!("Attestation written to: {}", args.output_path.display());
-    println!("Public key (hex): {public_key_hex}");
+    println!("Public key (hex): {}", attestation.public_key_hex);
 
     Ok(args.output_path.clone())
 }
@@ -84,7 +86,7 @@ pub fn run_attest(args: &AttestArgs) -> Result<PathBuf, AttestError> {
 fn load_or_generate_key(path: &Path) -> Result<SigningKey, AttestError> {
     if !path.exists() {
         let secret: [u8; 32] = rand::random();
-        std::fs::write(path, secret).map_err(|e| AttestError::KeyIo(e.to_string()))?;
+        write_key_file(path, &secret)?;
         println!("Generated new Ed25519 signing key: {}", path.display());
     }
 
@@ -107,7 +109,7 @@ fn compute_valid_until(valid_days: u64) -> String {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let future_secs = now_secs + valid_days * 86400;
+    let future_secs = now_secs.saturating_add(valid_days.saturating_mul(86400));
     let days_since_epoch = future_secs / 86400;
     let (y, m, d) = days_to_ymd(days_since_epoch);
     format!("{y:04}-{m:02}-{d:02}")
@@ -118,19 +120,25 @@ fn generate_scope_id() -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Civil calendar algorithm from Howard Hinnant (same as protocol crate).
-fn days_to_ymd(days: u64) -> (i32, i32, i32) {
-    let z = days as i64 + 719468;
-    let era = (if z >= 0 { z } else { z - 146096 }) / 146097;
-    let doe = (z - era * 146097) as u64;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe as i64 + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = if m <= 2 { y + 1 } else { y };
-    (y as i32, m as i32, d as i32)
+/// Writes raw key bytes to a file with restrictive permissions (0600 on Unix).
+fn write_key_file(path: &Path, secret: &[u8; 32]) -> Result<(), AttestError> {
+    #[cfg(unix)]
+    {
+        use std::io::Write;
+        use std::os::unix::fs::OpenOptionsExt;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o600)
+            .open(path)
+            .map_err(|e| AttestError::KeyIo(e.to_string()))?;
+        file.write_all(secret)
+            .map_err(|e| AttestError::KeyIo(e.to_string()))
+    }
+    #[cfg(not(unix))]
+    {
+        std::fs::write(path, secret).map_err(|e| AttestError::KeyIo(e.to_string()))
+    }
 }
 
 fn find_flag(args: &[String], name: &str) -> Option<String> {
