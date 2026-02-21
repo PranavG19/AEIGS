@@ -2035,10 +2035,7 @@ fn remote_rejected_tampered_signature() {
     att.signature_hex = sig_bytes.iter().map(|b| format!("{b:02x}")).collect();
 
     let result = validate_target("http://remote.example.com:3000", Some(&att));
-    assert!(
-        result.is_err(),
-        "tampered signature must be rejected"
-    );
+    assert!(result.is_err(), "tampered signature must be rejected");
 }
 
 // 6: localhost_always_accepted
@@ -2076,7 +2073,10 @@ async fn transport_enforces_on_remote() {
     };
     let err = transport_no_att.send(&request).await.unwrap_err();
     assert!(
-        matches!(err, aegis_evasion_engine::TransportError::TargetNotAllowed(_)),
+        matches!(
+            err,
+            aegis_evasion_engine::TransportError::TargetNotAllowed(_)
+        ),
         "transport without attestation should reject remote target, got: {err}"
     );
 
@@ -2088,7 +2088,10 @@ async fn transport_enforces_on_remote() {
         .build();
     let err2 = transport_with_att.send(&request).await.unwrap_err();
     assert!(
-        !matches!(err2, aegis_evasion_engine::TransportError::TargetNotAllowed(_)),
+        !matches!(
+            err2,
+            aegis_evasion_engine::TransportError::TargetNotAllowed(_)
+        ),
         "transport with valid attestation should NOT fail with TargetNotAllowed, got: {err2}"
     );
 }
@@ -2106,7 +2109,10 @@ fn executor_enforces_on_remote() {
         Duration::from_secs(5),
         None,
     );
-    assert!(result.is_err(), "executor must reject remote target without attestation");
+    assert!(
+        result.is_err(),
+        "executor must reject remote target without attestation"
+    );
     match result {
         Err(aegis_fuzzing::executor::ExecutorError::TargetNotAllowed(_)) => {}
         Err(other) => panic!("expected TargetNotAllowed, got: {other}"),
@@ -2145,8 +2151,7 @@ fn pipeline_loads_attestation_from_cli() {
     assert_eq!(loaded.document.valid_until, "2030-12-31");
 
     // Verify the loaded attestation passes verification
-    let verify_result =
-        verify_attestation(&loaded, "http://remote.example.com:3000");
+    let verify_result = verify_attestation(&loaded, "http://remote.example.com:3000");
     assert!(
         verify_result.is_ok(),
         "loaded attestation must verify: {verify_result:?}"
@@ -2188,8 +2193,7 @@ fn generation_roundtrip() {
     assert_eq!(loaded.document.target, "http://staging.example.com:8080");
     assert_eq!(loaded.document.authorized_by, "roundtrip-test");
 
-    let verify_result =
-        verify_attestation(&loaded, "http://staging.example.com:8080");
+    let verify_result = verify_attestation(&loaded, "http://staging.example.com:8080");
     assert!(
         verify_result.is_ok(),
         "generated attestation must verify against its target: {verify_result:?}"

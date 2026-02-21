@@ -2,9 +2,7 @@ use crate::attest::{
     AttestArgs, AttestError, DEFAULT_OUTPUT, compute_valid_until, generate_scope_id,
     load_or_generate_key, parse_attest_args, run_attest, write_attestation,
 };
-use aegis_protocol::scope_attestation::{
-    SignedScopeAttestation, days_to_ymd, verify_attestation,
-};
+use aegis_protocol::scope_attestation::{SignedScopeAttestation, days_to_ymd, verify_attestation};
 use std::path::PathBuf;
 
 fn make_args(flags: &[(&str, &str)]) -> Vec<String> {
