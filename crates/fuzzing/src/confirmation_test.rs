@@ -4,8 +4,10 @@ use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::confirmation::{
     EvidenceType, build_confirmation_registry, confirm_cmd_output_patterns, confirm_cmd_time_delay,
-    confirm_sql_boolean_diff, confirm_sql_error_message, confirm_sql_time_delay,
-    confirm_sql_union_column_count, confirm_ssti_evaluation, confirm_xss_reflection_in_attribute,
+    confirm_deserialization_error_pattern, confirm_path_traversal_file_contents,
+    confirm_redirect_to_payload_domain, confirm_sql_boolean_diff, confirm_sql_error_message,
+    confirm_sql_time_delay, confirm_sql_union_column_count, confirm_ssrf_internal_content,
+    confirm_ssti_evaluation, confirm_xss_reflection_in_attribute,
     confirm_xss_reflection_in_html_context, confirm_xss_reflection_in_js_context,
 };
 use crate::executor::FuzzResponse;
@@ -18,6 +20,21 @@ fn make_response(body: &str, status: u16, response_time: Duration) -> FuzzRespon
         body: body.to_string(),
         headers: Vec::new(),
         response_time,
+        body_size_bytes: body.len(),
+    }
+}
+
+fn make_response_with_headers(
+    body: &str,
+    status: u16,
+    headers: Vec<(String, String)>,
+) -> FuzzResponse {
+    FuzzResponse {
+        request_id: 1,
+        status_code: status,
+        body: body.to_string(),
+        headers,
+        response_time: Duration::from_millis(50),
         body_size_bytes: body.len(),
     }
 }
@@ -806,5 +823,501 @@ fn cmd_time_delay_returns_none_when_delta_insufficient() {
     let baseline = make_baseline();
 
     let evidence = confirm_cmd_time_delay(&treatment, &control, "; sleep 5", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn registry_contains_path_traversal_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::PathTraversal));
+    assert_eq!(registry[&VulnerabilityClass::PathTraversal].len(), 1);
+}
+
+#[test]
+fn registry_contains_open_redirect_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::OpenRedirect));
+    assert_eq!(registry[&VulnerabilityClass::OpenRedirect].len(), 1);
+}
+
+#[test]
+fn registry_contains_insecure_deserialization_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::InsecureDeserialization));
+    assert_eq!(
+        registry[&VulnerabilityClass::InsecureDeserialization].len(),
+        1
+    );
+}
+
+#[test]
+fn registry_contains_ssrf_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::ServerSideRequestForgery));
+    assert_eq!(
+        registry[&VulnerabilityClass::ServerSideRequestForgery].len(),
+        1
+    );
+}
+
+#[test]
+fn path_traversal_detects_etc_passwd() {
+    let treatment = make_response(
+        "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("File not found", 404, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_path_traversal_file_contents(&treatment, &control, "../../etc/passwd", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::PathContents);
+    assert!((ev.confidence - 0.92).abs() < f64::EPSILON);
+}
+
+#[test]
+fn path_traversal_detects_windows_boot_ini() {
+    let treatment = make_response(
+        "[boot loader]\ntimeout=30\ndefault=multi(0)",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("Not found", 404, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_path_traversal_file_contents(&treatment, &control, "..\\..\\boot.ini", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn path_traversal_detects_windows_win_ini() {
+    let treatment = make_response(
+        "[extensions]\ntxt=notepad.exe",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("Not found", 404, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_path_traversal_file_contents(
+        &treatment,
+        &control,
+        "..\\..\\windows\\win.ini",
+        &baseline,
+    );
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn path_traversal_returns_none_when_pattern_in_control() {
+    let body = "root:x:0:0:root:/root:/bin/bash";
+    let treatment = make_response(body, 200, Duration::from_millis(50));
+    let control = make_response(body, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_path_traversal_file_contents(&treatment, &control, "../../etc/passwd", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn path_traversal_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("normal page content", 200, Duration::from_millis(50));
+    let control = make_response("normal page content", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_path_traversal_file_contents(&treatment, &control, "../../etc/passwd", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn redirect_detects_evil_com_in_location_header() {
+    let treatment = make_response_with_headers(
+        "",
+        302,
+        vec![("Location".to_string(), "https://evil.com/phish".to_string())],
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "https://evil.com", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::RedirectToExternal);
+    assert!((ev.confidence - 0.90).abs() < f64::EPSILON);
+}
+
+#[test]
+fn redirect_detects_protocol_relative_location() {
+    let treatment = make_response_with_headers(
+        "",
+        302,
+        vec![("Location".to_string(), "//attacker.com/steal".to_string())],
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "attacker.com", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert!((ev.confidence - 0.90).abs() < f64::EPSILON);
+}
+
+#[test]
+fn redirect_detects_payload_domain_in_location() {
+    let treatment = make_response_with_headers(
+        "",
+        302,
+        vec![(
+            "location".to_string(),
+            "https://attacker.example.com/path".to_string(),
+        )],
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "attacker.example.com", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn redirect_detects_status_only_redirect() {
+    let treatment = make_response("", 301, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "https://evil.com", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert!((ev.confidence - 0.80).abs() < f64::EPSILON);
+}
+
+#[test]
+fn redirect_returns_none_when_both_redirect() {
+    let treatment = make_response("", 302, Duration::from_millis(50));
+    let control = make_response("", 301, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "https://evil.com", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn redirect_returns_none_when_no_redirect_behavior() {
+    let treatment = make_response("OK", 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_redirect_to_payload_domain(&treatment, &control, "https://evil.com", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn redirect_header_match_is_case_insensitive() {
+    let treatment = make_response_with_headers(
+        "",
+        302,
+        vec![("LOCATION".to_string(), "https://evil.com/x".to_string())],
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_redirect_to_payload_domain(&treatment, &control, "evil.com", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_detects_class_not_found_exception() {
+    let treatment = make_response(
+        "java.lang.ClassNotFoundException: com.evil.Exploit",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "rO0ABXNy...", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::DeserializationMarker);
+    assert!((ev.confidence - 0.85).abs() < f64::EPSILON);
+}
+
+#[test]
+fn deserialization_detects_object_input_stream() {
+    let treatment = make_response(
+        "Error: java.io.ObjectInputStream failed to deserialize",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_detects_php_unserialize() {
+    let treatment = make_response(
+        "Warning: unserialize() expects parameter 1",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "O:4:\"Test\"", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_detects_pickle_loads() {
+    let treatment = make_response(
+        "pickle.loads failed with invalid opcode",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_detects_node_serialize() {
+    let treatment = make_response(
+        "node-serialize: Error during deserialization",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_detects_marshalling_error() {
+    let treatment = make_response(
+        "Internal Server Error: marshalling error occurred",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn deserialization_returns_none_when_pattern_in_control() {
+    let body = "node-serialize: Error during deserialization";
+    let treatment = make_response(body, 500, Duration::from_millis(50));
+    let control = make_response(body, 500, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn deserialization_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("normal error page", 500, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_deserialization_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssrf_detects_instance_identity() {
+    let treatment = make_response(
+        "{\"instanceId\": \"i-1234\", \"instance-identity\": \"doc\"}",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(
+        &treatment,
+        &control,
+        "http://169.254.169.254/latest/",
+        &baseline,
+    );
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::InformationDisclosure);
+    assert!((ev.confidence - 0.88).abs() < f64::EPSILON);
+}
+
+#[test]
+fn ssrf_detects_metadata_endpoint() {
+    let treatment = make_response(
+        "ami-id\nmeta-data\ninstance-type",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssrf_detects_link_local_address() {
+    let treatment = make_response(
+        "Response from 169.254.169.254: OK",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssrf_detects_10_x_internal_ip() {
+    let treatment = make_response(
+        "Connected to 10.0.1.5 on port 8080",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssrf_detects_172_16_internal_ip() {
+    let treatment = make_response("Host: 172.16.0.1 responded", 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssrf_detects_192_168_internal_ip() {
+    let treatment = make_response("Fetched from 192.168.1.100", 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssrf_detects_body_size_amplification() {
+    let small_body = "OK";
+    let large_body = "A".repeat(500);
+    let treatment = FuzzResponse {
+        request_id: 1,
+        status_code: 200,
+        body: large_body.clone(),
+        headers: Vec::new(),
+        response_time: Duration::from_millis(50),
+        body_size_bytes: large_body.len(),
+    };
+    let control = FuzzResponse {
+        request_id: 1,
+        status_code: 200,
+        body: small_body.to_string(),
+        headers: Vec::new(),
+        response_time: Duration::from_millis(50),
+        body_size_bytes: small_body.len(),
+    };
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+    assert!(evidence.unwrap().description.contains("bytes"));
+}
+
+#[test]
+fn ssrf_returns_none_when_pattern_in_control() {
+    let body = "Connected to 10.0.1.5 on port 8080";
+    let treatment = make_response(body, 200, Duration::from_millis(50));
+    let control = make_response(body, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssrf_returns_none_when_no_indicators() {
+    let treatment = make_response("normal page content", 200, Duration::from_millis(50));
+    let control = make_response("normal page content", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssrf_body_size_check_ignores_zero_control() {
+    let treatment = make_response("some content", 200, Duration::from_millis(50));
+    let control = FuzzResponse {
+        request_id: 1,
+        status_code: 200,
+        body: String::new(),
+        headers: Vec::new(),
+        response_time: Duration::from_millis(50),
+        body_size_bytes: 0,
+    };
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssrf_does_not_match_172_15_as_internal() {
+    let treatment = make_response("Connected to 172.15.0.1", 200, Duration::from_millis(50));
+    let control = make_response("Connected to public host", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssrf_does_not_match_172_32_as_internal() {
+    let treatment = make_response("Connected to 172.32.0.1", 200, Duration::from_millis(50));
+    let control = make_response("Connected to public host", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
     assert!(evidence.is_none());
 }

@@ -96,6 +96,26 @@ pub fn build_confirmation_registry() -> HashMap<VulnerabilityClass, Vec<ConfirmF
         vec![confirm_cmd_output_patterns, confirm_cmd_time_delay],
     );
 
+    registry.insert(
+        VulnerabilityClass::PathTraversal,
+        vec![confirm_path_traversal_file_contents],
+    );
+
+    registry.insert(
+        VulnerabilityClass::OpenRedirect,
+        vec![confirm_redirect_to_payload_domain],
+    );
+
+    registry.insert(
+        VulnerabilityClass::InsecureDeserialization,
+        vec![confirm_deserialization_error_pattern],
+    );
+
+    registry.insert(
+        VulnerabilityClass::ServerSideRequestForgery,
+        vec![confirm_ssrf_internal_content],
+    );
+
     registry
 }
 
@@ -417,4 +437,167 @@ pub fn confirm_cmd_time_delay(
             "command delay: treatment took {delta:.2}s longer than control (expected: {expected_delay_secs}s)"
         ),
     })
+}
+
+static PATH_TRAVERSAL_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [r"root:.*:0:0:", r"\[boot loader\]", r"\[extensions\]"]
+        .iter()
+        .map(|p| Regex::new(p).unwrap())
+        .collect()
+});
+
+pub fn confirm_path_traversal_file_contents(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = PATH_TRAVERSAL_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body))?;
+
+    if matched_pattern.is_match(&control.body) {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::PathContents,
+        confidence: 0.92,
+        description: format!(
+            "file content pattern '{}' found in treatment but not control",
+            matched_pattern.as_str()
+        ),
+    })
+}
+
+fn find_header<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
+    headers
+        .iter()
+        .find(|(k, _)| k.eq_ignore_ascii_case(name))
+        .map(|(_, v)| v.as_str())
+}
+
+fn is_redirect_status(status: u16) -> bool {
+    (300..400).contains(&status)
+}
+
+pub fn confirm_redirect_to_payload_domain(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    if let Some(location) = find_header(&treatment.headers, "location") {
+        let has_evil = location.contains("evil.com");
+        let has_protocol_relative = location.starts_with("//");
+        let has_payload_domain = !payload.is_empty() && location.contains(payload);
+
+        if has_evil || has_protocol_relative || has_payload_domain {
+            return Some(ConfirmationEvidence {
+                evidence_type: EvidenceType::RedirectToExternal,
+                confidence: 0.90,
+                description: format!("Location header redirects to external: {location}"),
+            });
+        }
+    }
+
+    if is_redirect_status(treatment.status_code) && !is_redirect_status(control.status_code) {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::RedirectToExternal,
+            confidence: 0.80,
+            description: format!(
+                "treatment returned redirect status {} while control returned {}",
+                treatment.status_code, control.status_code
+            ),
+        });
+    }
+
+    None
+}
+
+static DESERIALIZATION_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [
+        r"(?i)ClassNotFoundException",
+        r"java\.io\.ObjectInputStream",
+        r"unserialize\(\)",
+        r"pickle\.loads",
+        r"node-serialize",
+        r"(?i)marshalling error",
+    ]
+    .iter()
+    .map(|p| Regex::new(p).unwrap())
+    .collect()
+});
+
+pub fn confirm_deserialization_error_pattern(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = DESERIALIZATION_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body))?;
+
+    if matched_pattern.is_match(&control.body) {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::DeserializationMarker,
+        confidence: 0.85,
+        description: format!(
+            "deserialization pattern '{}' found in treatment but not control",
+            matched_pattern.as_str()
+        ),
+    })
+}
+
+static SSRF_INTERNAL_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [
+        r"instance-identity",
+        r"meta-data",
+        r"169\.254\.169\.254",
+        r"\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
+        r"\b172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b",
+        r"\b192\.168\.\d{1,3}\.\d{1,3}\b",
+    ]
+    .iter()
+    .map(|p| Regex::new(p).unwrap())
+    .collect()
+});
+
+pub fn confirm_ssrf_internal_content(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = SSRF_INTERNAL_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body) && !re.is_match(&control.body));
+
+    if let Some(pattern) = matched_pattern {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::InformationDisclosure,
+            confidence: 0.88,
+            description: format!(
+                "internal service pattern '{}' found in treatment but not control",
+                pattern.as_str()
+            ),
+        });
+    }
+
+    if control.body_size_bytes > 0 && treatment.body_size_bytes > control.body_size_bytes * 2 {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::InformationDisclosure,
+            confidence: 0.88,
+            description: format!(
+                "treatment body ({} bytes) is >2x control body ({} bytes)",
+                treatment.body_size_bytes, control.body_size_bytes
+            ),
+        });
+    }
+
+    None
 }
