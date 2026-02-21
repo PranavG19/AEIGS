@@ -559,3 +559,59 @@ fn inject_diff_stats_into_sarif_no_runs_returns_early() {
     phase_report::inject_diff_stats_into_sarif(&mut json_value, 3, 1);
     assert!(json_value.get("properties").is_none());
 }
+
+#[test]
+fn sarif_extraction_matches_ground_truth_format() {
+    let output = std::env::temp_dir().join("test_extraction_e2e.sarif");
+    let mut ctx = test_context(&output);
+    let mut metrics = scan_config::ScanMetrics::default();
+    metrics
+        .phase_timings
+        .record("fuzz", std::time::Duration::from_millis(100));
+
+    let entries = vec![
+        add_node_entry(0, "/api/users"),
+        add_node_entry(1, "/api/search"),
+        add_linked_finding_entry(2, VulnerabilityClass::SqlInjection, 9.0, 0),
+        add_linked_finding_entry(3, VulnerabilityClass::CrossSiteScripting, 7.0, 1),
+    ];
+    ctx.graph.apply_operations(&entries).unwrap();
+
+    let result = phase_report::run_report(&mut ctx, Some(&metrics)).unwrap();
+    assert_eq!(result.findings_count, 2);
+
+    let sarif_content = std::fs::read_to_string(&output).unwrap();
+    let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
+
+    let results = sarif_json["runs"][0]["results"].as_array().unwrap();
+    assert_eq!(results.len(), 2, "should have 2 SARIF results");
+
+    let mut extracted: std::collections::HashSet<(String, String)> =
+        std::collections::HashSet::new();
+    for result in results {
+        let endpoint = result["endpoint"]
+            .as_str()
+            .or_else(|| result["properties"]["endpoint"].as_str())
+            .unwrap_or("");
+        let vuln_class = result["vulnerabilityClass"]
+            .as_str()
+            .or_else(|| result["properties"]["vulnerabilityClass"].as_str())
+            .unwrap_or("");
+        if !vuln_class.is_empty() {
+            extracted.insert((endpoint.to_string(), vuln_class.to_string()));
+        }
+    }
+
+    assert!(
+        extracted.contains(&("/api/users".to_string(), "SqlInjection".to_string())),
+        "should extract SqlInjection at /api/users, got: {:?}",
+        extracted
+    );
+    assert!(
+        extracted.contains(&("/api/search".to_string(), "CrossSiteScripting".to_string())),
+        "should extract XSS at /api/search, got: {:?}",
+        extracted
+    );
+
+    let _ = std::fs::remove_file(&output);
+}

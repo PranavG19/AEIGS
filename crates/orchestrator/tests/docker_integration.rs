@@ -1339,6 +1339,12 @@ fn express_e2e_scanner_vs_ground_truth() {
         comparison.recall,
         comparison.f1
     );
+    if !comparison.matched.is_empty() {
+        println!("  Matched: {:?}", comparison.matched);
+    }
+    if !comparison.missed.is_empty() {
+        println!("  Missed: {:?}", comparison.missed);
+    }
 
     assert!(
         comparison.true_positives >= 1,
@@ -1398,6 +1404,12 @@ fn flask_e2e_scanner_vs_ground_truth() {
         comparison.recall,
         comparison.f1
     );
+    if !comparison.matched.is_empty() {
+        println!("  Matched: {:?}", comparison.matched);
+    }
+    if !comparison.missed.is_empty() {
+        println!("  Missed: {:?}", comparison.missed);
+    }
 
     assert!(
         comparison.true_positives >= 1,

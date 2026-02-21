@@ -5,3 +5,6 @@ Cargo.lock
 *.pyc
 __pycache__/
 .venv/
+node_modules/
+*.rlib
+.coverage
