@@ -279,7 +279,10 @@ async fn execute_auth_flow_transport_error() {
 fn inject_auth_adds_headers_and_cookies() {
     let session = AuthenticatedSession {
         variables: HashMap::new(),
-        cookies: vec![("session".to_string(), "abc123".to_string())],
+        cookies: vec![
+            ("session".to_string(), "abc123".to_string()),
+            ("csrf".to_string(), "xyz789".to_string()),
+        ],
         headers: vec![("Authorization".to_string(), "Bearer jwt-xyz".to_string())],
         is_valid: true,
     };
@@ -300,7 +303,44 @@ fn inject_auth_adds_headers_and_cookies() {
     assert_eq!(request.headers[0].0, "Authorization");
     assert_eq!(request.headers[0].1, "Bearer jwt-xyz");
     assert_eq!(request.headers[1].0, "Cookie");
-    assert_eq!(request.headers[1].1, "session=abc123");
+    assert_eq!(
+        request.headers[1].1, "session=abc123; csrf=xyz789",
+        "cookies should be combined into a single header per RFC 6265"
+    );
+}
+
+#[test]
+fn inject_auth_replaces_existing_auth_header() {
+    let session = AuthenticatedSession {
+        variables: HashMap::new(),
+        cookies: vec![],
+        headers: vec![("Authorization".to_string(), "Bearer new-token".to_string())],
+        is_valid: true,
+    };
+
+    let mut request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://localhost:3000/api/users".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "id".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "1".to_string(),
+        headers: vec![("Authorization".to_string(), "Bearer old-token".to_string())],
+    };
+
+    inject_auth_into_request(&mut request, &session);
+
+    let auth_headers: Vec<_> = request
+        .headers
+        .iter()
+        .filter(|(k, _)| k == "Authorization")
+        .collect();
+    assert_eq!(
+        auth_headers.len(),
+        1,
+        "should have exactly one Authorization header"
+    );
+    assert_eq!(auth_headers[0].1, "Bearer new-token");
 }
 
 #[tokio::test]
@@ -355,10 +395,10 @@ async fn execute_auth_flow_missing_input_variable() {
     .unwrap_err();
 
     match err {
-        AuthSessionError::TransportError(msg) => {
+        AuthSessionError::ValidationFailed(msg) => {
             assert!(msg.contains("password"), "got: {msg}");
         }
-        other => panic!("expected TransportError from render_template, got: {other}"),
+        other => panic!("expected ValidationFailed from render_template, got: {other}"),
     }
 }
 

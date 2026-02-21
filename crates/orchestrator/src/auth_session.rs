@@ -95,14 +95,26 @@ pub async fn execute_auth_flow<T: FuzzTransport>(
 }
 
 /// Inject authentication headers and cookies into a fuzz request.
+///
+/// Replaces existing headers with the same name to avoid duplicates.
+/// Cookies are combined into a single `Cookie` header per RFC 6265.
 pub fn inject_auth_into_request(request: &mut FuzzRequest, session: &AuthenticatedSession) {
     for (name, value) in &session.headers {
+        let lower = name.to_lowercase();
+        request.headers.retain(|(k, _)| k.to_lowercase() != lower);
         request.headers.push((name.clone(), value.clone()));
     }
-    for (name, value) in &session.cookies {
+    if !session.cookies.is_empty() {
         request
             .headers
-            .push(("Cookie".to_string(), format!("{name}={value}")));
+            .retain(|(k, _)| k.to_lowercase() != "cookie");
+        let cookie_value = session
+            .cookies
+            .iter()
+            .map(|(name, value)| format!("{name}={value}"))
+            .collect::<Vec<_>>()
+            .join("; ");
+        request.headers.push(("Cookie".to_string(), cookie_value));
     }
 }
 
@@ -145,7 +157,7 @@ fn render_step_body(
 ) -> Result<String, AuthSessionError> {
     match body_template {
         Some(tmpl) => render_template(tmpl, variables)
-            .map_err(|e| AuthSessionError::TransportError(e.to_string())),
+            .map_err(|e| AuthSessionError::ValidationFailed(e.to_string())),
         None => Ok(String::new()),
     }
 }
