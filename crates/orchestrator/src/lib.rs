@@ -3,6 +3,7 @@ pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
+pub mod distributed;
 pub mod endpoint_similarity;
 mod graph_persistence;
 pub mod interactive;
@@ -21,6 +22,7 @@ mod util;
 pub use actor::*;
 pub use checkpoint::*;
 pub use convergence::*;
+pub use distributed::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use interactive::*;
@@ -94,3 +96,7 @@ mod interactive_test;
 #[cfg(test)]
 #[path = "pipeline_composer_test.rs"]
 mod pipeline_composer_test;
+
+#[cfg(test)]
+#[path = "distributed_test.rs"]
+mod distributed_test;
