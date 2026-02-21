@@ -13,3 +13,10 @@ reqwest = { workspace = true }
 tokio = { workspace = true }
 openapiv3 = { workspace = true }
 graphql-parser = { workspace = true }
+
+[dev-dependencies]
+aegis-test-support = { path = "../test-support" }
+axum = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
