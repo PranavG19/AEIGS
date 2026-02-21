@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::stealth_config::StealthConfig;
+use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_protocol::target_validation;
 
 pub use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
@@ -76,6 +77,7 @@ pub struct RequestExecutor {
     total_requests: u64,
     total_errors: u64,
     stealth_config: Option<StealthConfig>,
+    scope_attestation: Option<SignedScopeAttestation>,
 }
 
 pub(crate) fn browser_default_headers() -> Vec<(String, String)> {
@@ -89,8 +91,13 @@ pub(crate) fn browser_default_headers() -> Vec<(String, String)> {
 }
 
 impl RequestExecutor {
-    pub fn new(base_url: String, max_rps: u32, timeout: Duration) -> Result<Self, ExecutorError> {
-        target_validation::validate_target_is_localhost(&base_url)
+    pub fn new(
+        base_url: String,
+        max_rps: u32,
+        timeout: Duration,
+        scope_attestation: Option<SignedScopeAttestation>,
+    ) -> Result<Self, ExecutorError> {
+        target_validation::validate_target(&base_url, scope_attestation.as_ref())
             .map_err(|e| ExecutorError::TargetNotAllowed(e.to_string()))?;
 
         Ok(Self {
@@ -102,6 +109,7 @@ impl RequestExecutor {
             total_requests: 0,
             total_errors: 0,
             stealth_config: None,
+            scope_attestation,
         })
     }
 
@@ -174,5 +182,9 @@ impl RequestExecutor {
 
     pub fn stealth_config(&self) -> Option<&StealthConfig> {
         self.stealth_config.as_ref()
+    }
+
+    pub fn scope_attestation(&self) -> Option<&SignedScopeAttestation> {
+        self.scope_attestation.as_ref()
     }
 }

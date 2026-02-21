@@ -98,6 +98,7 @@ fn executor_builds_request_with_headers() {
         "http://127.0.0.1:9999".to_string(),
         100,
         Duration::from_secs(30),
+        None,
     )
     .unwrap();
 
@@ -175,6 +176,7 @@ fn executor_localhost_validation() {
         "http://evil.example.com".to_string(),
         100,
         Duration::from_secs(30),
+        None,
     );
     let Err(err) = result else {
         panic!("expected error for non-localhost target");

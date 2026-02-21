@@ -2,7 +2,22 @@
 mod tests {
     use crate::executor::{ExecutorError, RateLimiter, RequestExecutor, browser_default_headers};
     use crate::stealth_config::StealthConfig;
+    use aegis_protocol::scope_attestation::{
+        ScopeDocument, SignedScopeAttestation, sign_scope_document,
+    };
+    use ed25519_dalek::SigningKey;
     use std::time::Duration;
+
+    fn make_attestation(target: &str, valid_until: &str) -> SignedScopeAttestation {
+        let signing_key = SigningKey::from_bytes(&[1u8; 32]);
+        let doc = ScopeDocument {
+            target: target.to_string(),
+            authorized_by: "test-admin".to_string(),
+            valid_until: valid_until.to_string(),
+            scope_id: "test-scope-001".to_string(),
+        };
+        sign_scope_document(&doc, &signing_key)
+    }
 
     #[test]
     fn rate_limiter_allows_within_limit() {
@@ -42,6 +57,7 @@ mod tests {
             "http://localhost:8080".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         )
         .unwrap();
 
@@ -58,9 +74,13 @@ mod tests {
 
     #[test]
     fn executor_tracks_requests_and_errors() {
-        let mut executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap();
+        let mut executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap();
 
         assert_eq!(executor.total_requests(), 0);
         assert_eq!(executor.total_errors(), 0);
@@ -77,9 +97,13 @@ mod tests {
 
     #[test]
     fn executor_rate_limiting() {
-        let mut executor =
-            RequestExecutor::new("http://localhost".to_string(), 2, Duration::from_secs(30))
-                .unwrap();
+        let mut executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            2,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap();
 
         assert!(executor.try_acquire_rate_limit());
         assert!(executor.try_acquire_rate_limit());
@@ -92,6 +116,7 @@ mod tests {
             "http://localhost:9090".to_string(),
             100,
             Duration::from_secs(60),
+            None,
         )
         .unwrap();
         assert_eq!(executor.base_url(), "http://localhost:9090");
@@ -125,6 +150,7 @@ mod tests {
             "http://localhost:8080".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         )
         .unwrap();
 
@@ -146,10 +172,14 @@ mod tests {
             ("Authorization".to_string(), "Bearer token".to_string()),
         ];
 
-        let mut executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_default_headers(custom_headers);
+        let mut executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_default_headers(custom_headers);
 
         let req = executor.build_request("/test", "POST", "body", "data");
         assert_eq!(req.headers.len(), 2);
@@ -165,6 +195,7 @@ mod tests {
             "http://localhost:3000".to_string(),
             50,
             Duration::from_secs(10),
+            None,
         )
         .unwrap();
 
@@ -180,47 +211,67 @@ mod tests {
 
     #[test]
     fn stealth_config_none_by_default() {
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap();
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap();
         assert!(executor.stealth_config().is_none());
     }
 
     #[test]
     fn with_stealth_config_sets_config() {
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_stealth_config(StealthConfig::default());
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_stealth_config(StealthConfig::default());
         assert!(executor.stealth_config().is_some());
     }
 
     #[test]
     fn with_stealth_config_default() {
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_stealth_config(StealthConfig::default());
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_stealth_config(StealthConfig::default());
         let config = executor.stealth_config().unwrap();
         assert_eq!(*config, StealthConfig::default());
     }
 
     #[test]
     fn with_stealth_config_aggressive() {
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_stealth_config(StealthConfig::aggressive());
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_stealth_config(StealthConfig::aggressive());
         let config = executor.stealth_config().unwrap();
         assert_eq!(*config, StealthConfig::aggressive());
     }
 
     #[test]
     fn with_stealth_config_paranoid() {
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_stealth_config(StealthConfig::paranoid());
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_stealth_config(StealthConfig::paranoid());
         let config = executor.stealth_config().unwrap();
         assert_eq!(*config, StealthConfig::paranoid());
     }
@@ -228,10 +279,14 @@ mod tests {
     #[test]
     fn stealth_config_preserves_values() {
         let custom = StealthConfig::default().with_max_requests_per_second(42.0);
-        let executor =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30))
-                .unwrap()
-                .with_stealth_config(custom);
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap()
+        .with_stealth_config(custom);
         let config = executor.stealth_config().unwrap();
         assert!((config.max_requests_per_second - 42.0).abs() < f64::EPSILON);
     }
@@ -242,6 +297,7 @@ mod tests {
             "http://example.com".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         );
         let Err(err) = result else {
             panic!("expected error for non-localhost target");
@@ -256,6 +312,7 @@ mod tests {
             "http://192.168.1.1:8080".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         );
         let Err(err) = result else {
             panic!("expected error for non-localhost target");
@@ -265,8 +322,12 @@ mod tests {
 
     #[test]
     fn new_accepts_localhost_url() {
-        let result =
-            RequestExecutor::new("http://localhost".to_string(), 100, Duration::from_secs(30));
+        let result = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        );
         assert!(result.is_ok());
     }
 
@@ -276,6 +337,7 @@ mod tests {
             "http://localhost:8080".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         );
         assert!(result.is_ok());
     }
@@ -286,6 +348,7 @@ mod tests {
             "http://127.0.0.1:3000".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         );
         assert!(result.is_ok());
     }
@@ -296,7 +359,75 @@ mod tests {
             "http://[::1]:9090".to_string(),
             100,
             Duration::from_secs(30),
+            None,
         );
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_accepts_remote_target_with_valid_attestation() {
+        let attestation = make_attestation("http://example.com:8080", "2099-12-31");
+        let result = RequestExecutor::new(
+            "http://example.com:8080".to_string(),
+            100,
+            Duration::from_secs(30),
+            Some(attestation),
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn new_rejects_remote_target_with_mismatched_attestation() {
+        let attestation = make_attestation("http://other.com", "2099-12-31");
+        let result = RequestExecutor::new(
+            "http://example.com:8080".to_string(),
+            100,
+            Duration::from_secs(30),
+            Some(attestation),
+        );
+        let Err(err) = result else {
+            panic!("expected error for mismatched attestation");
+        };
+        assert!(matches!(err, ExecutorError::TargetNotAllowed(_)));
+    }
+
+    #[test]
+    fn new_rejects_remote_target_with_expired_attestation() {
+        let attestation = make_attestation("http://example.com", "2020-01-01");
+        let result = RequestExecutor::new(
+            "http://example.com".to_string(),
+            100,
+            Duration::from_secs(30),
+            Some(attestation),
+        );
+        let Err(err) = result else {
+            panic!("expected error for expired attestation");
+        };
+        assert!(matches!(err, ExecutorError::TargetNotAllowed(_)));
+    }
+
+    #[test]
+    fn scope_attestation_none_by_default() {
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+        )
+        .unwrap();
+        assert!(executor.scope_attestation().is_none());
+    }
+
+    #[test]
+    fn scope_attestation_stored_when_provided() {
+        let attestation = make_attestation("http://localhost", "2099-12-31");
+        let executor = RequestExecutor::new(
+            "http://localhost".to_string(),
+            100,
+            Duration::from_secs(30),
+            Some(attestation),
+        )
+        .unwrap();
+        assert!(executor.scope_attestation().is_some());
     }
 }
