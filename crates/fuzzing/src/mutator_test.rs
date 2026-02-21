@@ -619,8 +619,17 @@ mod tests {
             ],
         )];
         let mutator = PayloadMutator::new().with_bypass_corpus(corpus);
-        let payloads = mutator.generate_stealth_payloads(VulnerabilityClass::CommandInjection, 2);
-        assert_eq!(payloads[0].raw, "high_bypass");
+        let template_count = mutator.template_count(VulnerabilityClass::CommandInjection);
+        let payloads = mutator
+            .generate_stealth_payloads(VulnerabilityClass::CommandInjection, template_count + 2);
+        let high_pos = payloads.iter().position(|p| p.raw == "high_bypass");
+        let low_pos = payloads.iter().position(|p| p.raw == "low_bypass");
+        assert!(high_pos.is_some(), "high_bypass should be present");
+        assert!(low_pos.is_some(), "low_bypass should be present");
+        assert!(
+            high_pos.unwrap() < low_pos.unwrap(),
+            "high-stealth corpus entry should appear before low-stealth corpus entry"
+        );
     }
 
     #[test]
