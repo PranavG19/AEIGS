@@ -9,6 +9,8 @@ use crate::oracle::BaselineProfile;
 /// Evidence produced by a per-vulnerability-class confirmation function.
 /// Captures what type of evidence was observed, how confident the function
 /// is in the finding, and a human-readable description of the observation.
+///
+/// `confidence` must be in `0.0..=1.0`.
 #[derive(Debug, Clone)]
 pub struct ConfirmationEvidence {
     pub evidence_type: EvidenceType,
