@@ -2241,7 +2241,11 @@ fn bridge_socket_path(test_name: &str) -> std::path::PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    std::path::PathBuf::from(format!("/tmp/aegis-it-{}-{ts}.sock", test_name,))
+    std::path::PathBuf::from(format!(
+        "/tmp/aegis-it-{}-{}-{ts}.sock",
+        test_name,
+        std::process::id()
+    ))
 }
 
 /// Creates a mock `hypothesis_engine.bridge` Python module and a wrapper
@@ -2534,10 +2538,8 @@ fn bridge_handles_python_crash() {
     let sock = bridge_socket_path("crash");
     let (_tmp, wrapper) = create_mock_bridge_env(
         r#"
-import time
 send_frame(sock, {"type": "Ready"})
-# Wait for Rust to complete the handshake before crashing
-time.sleep(0.5)
+req = read_frame(sock)
 sock.close()
 sys.exit(1)
 "#,
@@ -2549,9 +2551,14 @@ sys.exit(1)
     let result =
         bridge.generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None);
 
+    let err = result.unwrap_err();
+    let msg = err.to_string();
     assert!(
-        result.is_err(),
-        "call after crash should return error, not panic"
+        msg.contains("read")
+            || msg.contains("frame")
+            || msg.contains("connection")
+            || msg.contains("end of stream"),
+        "error should indicate connection/read failure: {msg}"
     );
 
     let _ = bridge.shutdown();
@@ -2730,4 +2737,27 @@ req = read_frame(sock)
     assert_eq!(result.reasoning_trace, "pipeline context received");
 
     bridge.shutdown().unwrap();
+}
+
+// 11: bridge_drop_cleans_up_without_explicit_shutdown
+#[test]
+fn bridge_drop_cleans_up_without_explicit_shutdown() {
+    let sock = bridge_socket_path("drop_cleanup");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+"#,
+    );
+
+    {
+        let _bridge =
+            HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+        assert!(sock.exists(), "socket should exist while bridge is alive");
+    }
+
+    assert!(
+        !sock.exists(),
+        "socket file should be cleaned up by Drop impl"
+    );
 }
