@@ -3,8 +3,10 @@ use std::time::Duration;
 use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::confirmation::{
-    EvidenceType, build_confirmation_registry, confirm_sql_boolean_diff, confirm_sql_error_message,
-    confirm_sql_time_delay, confirm_sql_union_column_count,
+    EvidenceType, build_confirmation_registry, confirm_cmd_output_patterns, confirm_cmd_time_delay,
+    confirm_sql_boolean_diff, confirm_sql_error_message, confirm_sql_time_delay,
+    confirm_sql_union_column_count, confirm_ssti_evaluation, confirm_xss_reflection_in_attribute,
+    confirm_xss_reflection_in_html_context, confirm_xss_reflection_in_js_context,
 };
 use crate::executor::FuzzResponse;
 use crate::oracle::BaselineProfile;
@@ -341,4 +343,468 @@ fn sql_union_column_count_handles_union_all_select() {
         &baseline,
     );
     assert!(evidence.is_some());
+}
+
+#[test]
+fn registry_contains_xss_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::CrossSiteScripting));
+    assert_eq!(registry[&VulnerabilityClass::CrossSiteScripting].len(), 3);
+}
+
+#[test]
+fn registry_contains_ssti_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::ServerSideTemplateInjection));
+    assert_eq!(
+        registry[&VulnerabilityClass::ServerSideTemplateInjection].len(),
+        1
+    );
+}
+
+#[test]
+fn registry_contains_cmd_injection_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::CommandInjection));
+    assert_eq!(registry[&VulnerabilityClass::CommandInjection].len(), 2);
+}
+
+#[test]
+fn xss_html_context_detects_reflected_payload() {
+    let treatment = make_response(
+        "<div><script>alert(1)</script></div>",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("<div>safe content</div>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_html_context(
+        &treatment,
+        &control,
+        "<script>alert(1)</script>",
+        &baseline,
+    );
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::ReflectedPayload);
+    assert!((ev.confidence - 0.90).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xss_html_context_rejects_short_payload() {
+    let treatment = make_response("<b>ab</b>", 200, Duration::from_millis(50));
+    let control = make_response("safe", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_html_context(&treatment, &control, "ab", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_html_context_rejects_payload_in_control() {
+    let payload = "<img src=x onerror=alert(1)>";
+    let treatment = make_response(
+        &format!("<div>{payload}</div>"),
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response(
+        &format!("<div>{payload}</div>"),
+        200,
+        Duration::from_millis(50),
+    );
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_html_context(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_html_context_rejects_html_encoded_only() {
+    let payload = "<script>alert(1)</script>";
+    let encoded = "&lt;script&gt;alert(1)&lt;/script&gt;";
+    let treatment = make_response(
+        &format!("<div>{encoded}</div>"),
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("<div>safe</div>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_html_context(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_html_context_rejects_payload_not_in_treatment() {
+    let treatment = make_response("<div>no payload here</div>", 200, Duration::from_millis(50));
+    let control = make_response("<div>safe</div>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_html_context(
+        &treatment,
+        &control,
+        "<script>alert(1)</script>",
+        &baseline,
+    );
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_attribute_detects_payload_in_href() {
+    let treatment = make_response(
+        r#"<a href="javascript:alert(1)">click</a>"#,
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("<a href='/safe'>click</a>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_xss_reflection_in_attribute(&treatment, &control, "javascript:alert(1)", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::ReflectedPayload);
+    assert!((ev.confidence - 0.88).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xss_attribute_detects_payload_in_onclick() {
+    let treatment = make_response(
+        r#"<button onclick="alert(document.cookie)">go</button>"#,
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("<button>go</button>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_attribute(
+        &treatment,
+        &control,
+        "alert(document.cookie)",
+        &baseline,
+    );
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xss_attribute_detects_payload_in_onerror() {
+    let treatment = make_response(
+        r#"<img src="x" onerror="alert(1)">"#,
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response(r#"<img src="safe.png">"#, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_attribute(&treatment, &control, "alert(1)", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xss_attribute_returns_none_when_no_attribute_context() {
+    let treatment = make_response(
+        "<div>just text with alert(1)</div>",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("<div>safe</div>", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xss_reflection_in_attribute(&treatment, &control, "alert(1)", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_js_context_detects_payload_in_script_block() {
+    let treatment = make_response(
+        "<html><script>var x = 'INJECTED';</script></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response(
+        "<html><script>var x = 'safe';</script></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_xss_reflection_in_js_context(&treatment, &control, "INJECTED", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::ReflectedPayload);
+    assert!((ev.confidence - 0.92).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xss_js_context_returns_none_when_payload_outside_script() {
+    let treatment = make_response(
+        "<html><div>INJECTED</div><script>safe();</script></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response(
+        "<html><div>safe</div><script>safe();</script></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_xss_reflection_in_js_context(&treatment, &control, "INJECTED", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xss_js_context_returns_none_when_no_script_blocks() {
+    let treatment = make_response(
+        "<html><div>INJECTED content</div></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response(
+        "<html><div>safe</div></html>",
+        200,
+        Duration::from_millis(50),
+    );
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_xss_reflection_in_js_context(&treatment, &control, "INJECTED", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssti_detects_jinja2_evaluation() {
+    let treatment = make_response("Hello 49 World", 200, Duration::from_millis(50));
+    let control = make_response("Hello World", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "Hello {{7*7}} World", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::TemplateEvaluation);
+    assert!((ev.confidence - 0.95).abs() < f64::EPSILON);
+}
+
+#[test]
+fn ssti_detects_freemarker_evaluation() {
+    let treatment = make_response("result=49", 200, Duration::from_millis(50));
+    let control = make_response("result=", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "result=${7*7}", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssti_detects_erb_evaluation() {
+    let treatment = make_response("got 49 ok", 200, Duration::from_millis(50));
+    let control = make_response("got ok", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "got <%= 7*7 %> ok", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssti_detects_ruby_hash_evaluation() {
+    let treatment = make_response("val: 49", 200, Duration::from_millis(50));
+    let control = make_response("val: none", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "val: #{7*7}", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssti_detects_string_multiplication() {
+    let treatment = make_response("7777777", 200, Duration::from_millis(50));
+    let control = make_response("empty", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "{{7*'7'}}", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn ssti_returns_none_when_result_in_control() {
+    let treatment = make_response("page with 49 in it", 200, Duration::from_millis(50));
+    let control = make_response("page with 49 in it", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "{{7*7}}", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssti_returns_none_when_no_probe_in_payload() {
+    let treatment = make_response("result is 49", 200, Duration::from_millis(50));
+    let control = make_response("result is nope", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_ssti_evaluation(&treatment, &control, "some unrelated payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn ssti_returns_none_when_result_not_in_treatment() {
+    let treatment = make_response("nothing here", 200, Duration::from_millis(50));
+    let control = make_response("also nothing", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_ssti_evaluation(&treatment, &control, "{{7*7}}", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn cmd_output_detects_id_command() {
+    let treatment = make_response(
+        "uid=1000(www-data) gid=1000",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("normal page", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_output_patterns(&treatment, &control, "; id", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::CommandOutput);
+    assert!((ev.confidence - 0.95).abs() < f64::EPSILON);
+}
+
+#[test]
+fn cmd_output_detects_etc_passwd() {
+    let treatment = make_response(
+        "root:x:0:0:root:/root:/bin/bash",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("normal page", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_cmd_output_patterns(&treatment, &control, "; cat /etc/passwd", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_output_detects_ls_output() {
+    let treatment = make_response(
+        "total 48\ndrwxr-xr-x 5 user user 4096",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("normal page", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_output_patterns(&treatment, &control, "; ls -la", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_output_detects_windows_ipconfig() {
+    let treatment = make_response(
+        "Windows IP Configuration\n\nEthernet adapter",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("normal page", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_output_patterns(&treatment, &control, "& ipconfig", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_output_detects_os_release() {
+    let treatment = make_response(
+        "PRETTY_NAME=\"Ubuntu 22.04\"",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("normal page", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence =
+        confirm_cmd_output_patterns(&treatment, &control, "; cat /etc/os-release", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_output_returns_none_when_pattern_in_control() {
+    let body = "uid=1000(www-data) gid=1000";
+    let treatment = make_response(body, 200, Duration::from_millis(50));
+    let control = make_response(body, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_output_patterns(&treatment, &control, "; id", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn cmd_output_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("safe page content", 200, Duration::from_millis(50));
+    let control = make_response("safe page content", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_output_patterns(&treatment, &control, "; id", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn cmd_time_delay_detects_sleep_command() {
+    let treatment = make_response("OK", 200, Duration::from_secs(5));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_time_delay(&treatment, &control, "; sleep 5", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::TimeBasedDelay);
+    assert!((ev.confidence - 0.88).abs() < f64::EPSILON);
+}
+
+#[test]
+fn cmd_time_delay_detects_ping_command() {
+    let treatment = make_response("OK", 200, Duration::from_secs(3));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_time_delay(&treatment, &control, "| ping 3", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_time_delay_detects_timeout_command() {
+    let treatment = make_response("OK", 200, Duration::from_secs(4));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_time_delay(&treatment, &control, "& timeout 4", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn cmd_time_delay_returns_none_when_no_time_keyword() {
+    let treatment = make_response("OK", 200, Duration::from_secs(5));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_time_delay(&treatment, &control, "; id", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn cmd_time_delay_returns_none_when_delta_insufficient() {
+    let treatment = make_response("OK", 200, Duration::from_millis(500));
+    let control = make_response("OK", 200, Duration::from_millis(200));
+    let baseline = make_baseline();
+
+    let evidence = confirm_cmd_time_delay(&treatment, &control, "; sleep 5", &baseline);
+    assert!(evidence.is_none());
 }

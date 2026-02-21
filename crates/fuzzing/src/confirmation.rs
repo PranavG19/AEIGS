@@ -77,6 +77,25 @@ pub fn build_confirmation_registry() -> HashMap<VulnerabilityClass, Vec<ConfirmF
         ],
     );
 
+    registry.insert(
+        VulnerabilityClass::CrossSiteScripting,
+        vec![
+            confirm_xss_reflection_in_html_context,
+            confirm_xss_reflection_in_attribute,
+            confirm_xss_reflection_in_js_context,
+        ],
+    );
+
+    registry.insert(
+        VulnerabilityClass::ServerSideTemplateInjection,
+        vec![confirm_ssti_evaluation],
+    );
+
+    registry.insert(
+        VulnerabilityClass::CommandInjection,
+        vec![confirm_cmd_output_patterns, confirm_cmd_time_delay],
+    );
+
     registry
 }
 
@@ -203,5 +222,199 @@ pub fn confirm_sql_union_column_count(
         confidence: 0.80,
         description: "UNION SELECT did not produce SQL error, column count likely matched"
             .to_string(),
+    })
+}
+
+fn html_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for ch in s.chars() {
+        match ch {
+            '&' => out.push_str("&amp;"),
+            '<' => out.push_str("&lt;"),
+            '>' => out.push_str("&gt;"),
+            '"' => out.push_str("&quot;"),
+            '\'' => out.push_str("&#x27;"),
+            _ => out.push(ch),
+        }
+    }
+    out
+}
+
+static XSS_ATTRIBUTE_CONTEXT: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r#"(?i)(href|src|onclick|onload|onerror|onmouseover|action|formaction|data|style|value)\s*=\s*["']([^"']*)["']"#).unwrap()
+});
+
+static XSS_SCRIPT_BLOCK: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?is)<script[^>]*>(.*?)</script>").unwrap());
+
+pub fn confirm_xss_reflection_in_html_context(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    if payload.len() < 4 {
+        return None;
+    }
+
+    if !treatment.body.contains(payload) {
+        return None;
+    }
+
+    if control.body.contains(payload) {
+        return None;
+    }
+
+    let encoded = html_encode(payload);
+    if encoded != payload && treatment.body.contains(&encoded) && !treatment.body.contains(payload)
+    {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::ReflectedPayload,
+        confidence: 0.90,
+        description: format!(
+            "XSS payload reflected unencoded in HTML context ({} chars)",
+            payload.len()
+        ),
+    })
+}
+
+pub fn confirm_xss_reflection_in_attribute(
+    treatment: &FuzzResponse,
+    _control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    for captures in XSS_ATTRIBUTE_CONTEXT.captures_iter(&treatment.body) {
+        let attr_value = captures.get(2)?;
+        if attr_value.as_str().contains(payload) {
+            let attr_name = captures.get(1)?.as_str();
+            return Some(ConfirmationEvidence {
+                evidence_type: EvidenceType::ReflectedPayload,
+                confidence: 0.88,
+                description: format!("XSS payload reflected inside '{attr_name}' attribute value"),
+            });
+        }
+    }
+    None
+}
+
+pub fn confirm_xss_reflection_in_js_context(
+    treatment: &FuzzResponse,
+    _control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    for captures in XSS_SCRIPT_BLOCK.captures_iter(&treatment.body) {
+        let script_content = captures.get(1)?;
+        if script_content.as_str().contains(payload) {
+            return Some(ConfirmationEvidence {
+                evidence_type: EvidenceType::ReflectedPayload,
+                confidence: 0.92,
+                description: "XSS payload reflected inside <script> block".to_string(),
+            });
+        }
+    }
+    None
+}
+
+static SSTI_PROBES: LazyLock<Vec<(&'static str, &'static str)>> = LazyLock::new(|| {
+    vec![
+        ("{{7*7}}", "49"),
+        ("${7*7}", "49"),
+        ("<%= 7*7 %>", "49"),
+        ("#{7*7}", "49"),
+        ("{{7*'7'}}", "7777777"),
+    ]
+});
+
+pub fn confirm_ssti_evaluation(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    for (probe, expected) in SSTI_PROBES.iter() {
+        if !payload.contains(probe) {
+            continue;
+        }
+
+        if treatment.body.contains(expected) && !control.body.contains(expected) {
+            return Some(ConfirmationEvidence {
+                evidence_type: EvidenceType::TemplateEvaluation,
+                confidence: 0.95,
+                description: format!(
+                    "SSTI probe '{probe}' evaluated to '{expected}' in treatment but not control"
+                ),
+            });
+        }
+    }
+    None
+}
+
+static CMD_OUTPUT_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [
+        r"uid=\d+\(.*?\)\s+gid=\d+",
+        r"root:.*:0:0:",
+        r"total \d+\n.*rwx",
+        r"(?i)Windows IP Configuration",
+        r"PRETTY_NAME=",
+    ]
+    .iter()
+    .map(|p| Regex::new(p).unwrap())
+    .collect()
+});
+
+static CMD_TIME_KEYWORDS: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)(sleep|ping|timeout)\s+(\d+)").unwrap());
+
+pub fn confirm_cmd_output_patterns(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = CMD_OUTPUT_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body))?;
+
+    if matched_pattern.is_match(&control.body) {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::CommandOutput,
+        confidence: 0.95,
+        description: format!(
+            "OS command output pattern '{}' found in treatment but not control",
+            matched_pattern.as_str()
+        ),
+    })
+}
+
+pub fn confirm_cmd_time_delay(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let captures = CMD_TIME_KEYWORDS.captures(payload)?;
+    let expected_delay_secs: f64 = captures.get(2)?.as_str().parse().ok()?;
+    let threshold_secs = expected_delay_secs * 0.8;
+
+    let delta = treatment.response_time.as_secs_f64() - control.response_time.as_secs_f64();
+
+    if delta < threshold_secs {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::TimeBasedDelay,
+        confidence: 0.88,
+        description: format!(
+            "command delay: treatment took {delta:.2}s longer than control (expected: {expected_delay_secs}s)"
+        ),
     })
 }
