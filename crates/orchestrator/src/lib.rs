@@ -5,6 +5,7 @@ pub mod checkpoint;
 pub mod convergence;
 pub mod endpoint_similarity;
 mod graph_persistence;
+pub mod interactive;
 mod phase_analyze;
 mod phase_fingerprint;
 mod phase_fuzz;
@@ -21,6 +22,7 @@ pub use checkpoint::*;
 pub use convergence::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
+pub use interactive::*;
 pub use phase_analyze::*;
 pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
@@ -82,3 +84,7 @@ mod endpoint_similarity_test;
 #[cfg(test)]
 #[path = "actor_test.rs"]
 mod actor_test;
+
+#[cfg(test)]
+#[path = "interactive_test.rs"]
+mod interactive_test;
