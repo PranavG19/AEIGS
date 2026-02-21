@@ -173,6 +173,10 @@ fn localhost_config() -> ScanConfig {
             history_db: None,
             export_graph: None,
         },
+        auth: aegis_orchestrator::scan_config::AuthOptions {
+            auth_flow: None,
+            auth_input: vec![],
+        },
     }
 }
 

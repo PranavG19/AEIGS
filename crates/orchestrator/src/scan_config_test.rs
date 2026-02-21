@@ -797,3 +797,10 @@ fn config_error_display_auth_input_parse() {
         "invalid auth input: missing '=' in: noequals"
     );
 }
+
+#[test]
+fn parse_auth_inputs_duplicate_key_last_wins() {
+    let inputs = vec!["username=first".to_string(), "username=second".to_string()];
+    let result = parse_auth_inputs(&inputs).unwrap();
+    assert_eq!(result["username"], "second");
+}

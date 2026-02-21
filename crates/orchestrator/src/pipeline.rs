@@ -1009,6 +1009,9 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         None
     };
     let auth_inputs = parse_auth_inputs(&config.auth.auth_input)?;
+    if auth_flow.is_none() && !auth_inputs.is_empty() {
+        tracing::warn!("--auth-input provided without --auth-flow; inputs will be ignored");
+    }
 
     let mut ctx = ScanContext {
         config,
