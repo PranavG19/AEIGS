@@ -21,7 +21,7 @@ use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPo
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
 use crate::convergence::RefutedTracker;
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
-use crate::hypothesis_bridge::{HypothesisRequest, invoke_hypothesis_engine};
+use crate::hypothesis_bridge::{HypothesisBridge, ScanContextJson};
 use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
 use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
@@ -592,11 +592,11 @@ fn run_fingerprint_phase(
     Ok(())
 }
 
-/// Extracts scan context into the JSON shape expected by the hypothesis-engine Python CLI.
+/// Extracts scan context into the struct expected by the hypothesis bridge.
 ///
 /// Populates `technology_stack` from the graph's Dependency nodes and `findings_summary`
 /// from existing findings. Remaining fields are left empty for the LLM to infer.
-pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> serde_json::Value {
+pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
     let technology_stack: Vec<String> = ctx
         .graph
         .nodes_by_type(aegis_protocol::node::NodeType::Dependency)
@@ -619,49 +619,40 @@ pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> serde_json::Value {
         .map(|f| format!("{}", f.vulnerability_class))
         .collect();
 
-    serde_json::json!({
-        "technology_stack": technology_stack,
-        "high_centrality_nodes": [],
-        "findings_summary": findings_summary,
-        "high_risk_functions": [],
-        "authorization_matrix_summary": "",
-        "known_vulnerable_dependencies": [],
-        "feedback_summary": "",
-        "graph_nodes": [],
-        "graph_edges": [],
-        "defense_posture": {},
-        "attack_paths": []
-    })
+    ScanContextJson {
+        technology_stack,
+        findings_summary,
+        high_centrality_nodes: Vec::new(),
+        defense_posture: serde_json::json!({}),
+    }
 }
 
-/// Invokes the hypothesis engine and records metrics. Returns silently on failure
+/// Invokes the hypothesis bridge and records metrics. Returns silently on failure
 /// (graceful degradation).
-fn run_hypothesis_step(ctx: &ScanContext, scan_metrics: &mut ScanMetrics) {
-    let context = build_hypothesis_context(ctx);
-    let request = HypothesisRequest::Generate {
-        backend: "bedrock".to_string(),
-        backend_kwargs: None,
-        context,
-    };
+fn run_hypothesis_step(
+    ctx: &ScanContext,
+    scan_metrics: &mut ScanMetrics,
+    bridge: &mut HypothesisBridge,
+) {
+    let scan_context = build_hypothesis_context(ctx);
 
     let llm_start = std::time::Instant::now();
-    match invoke_hypothesis_engine(&request, &ctx.config.llm.python_cmd) {
+    match bridge.generate_hypotheses(scan_context, String::new(), None) {
         Ok(result) => {
             let latency = llm_start.elapsed();
             let tokens = result.input_tokens + result.output_tokens;
             scan_metrics.llm_metrics.record_call(latency, tokens);
             tracing::info!(
                 hypotheses = result.hypotheses.len(),
-                model = %result.model_id,
                 input_tokens = result.input_tokens,
                 output_tokens = result.output_tokens,
-                "hypothesis engine generated hypotheses"
+                "hypothesis bridge generated hypotheses"
             );
         }
         Err(e) => {
             tracing::warn!(
                 error = %e,
-                "hypothesis engine unavailable, continuing without LLM hypotheses"
+                "hypothesis bridge call failed, continuing without LLM hypotheses"
             );
         }
     }
@@ -681,6 +672,24 @@ async fn run_fuzz_analyze_loop(
     let start_iteration = checkpoint.map_or(0, |cp| cp.current_iteration);
     let mut fuzz_cumulative = std::time::Duration::ZERO;
     let mut analyze_cumulative = std::time::Duration::ZERO;
+
+    let mut bridge: Option<HypothesisBridge> = if !ctx.config.llm.no_llm {
+        match HypothesisBridge::start(&ctx.config.llm.python_cmd) {
+            Ok(b) => {
+                tracing::info!("hypothesis bridge started");
+                Some(b)
+            }
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    "hypothesis bridge failed to start, continuing without LLM hypotheses"
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
 
     for iteration in start_iteration..max_iterations {
         let fuzz_phase = format!("fuzz:{iteration}");
@@ -703,8 +712,8 @@ async fn run_fuzz_analyze_loop(
             try_save_checkpoint(progress, iteration, graph_db_path);
         }
 
-        if !ctx.config.llm.no_llm {
-            run_hypothesis_step(ctx, scan_metrics);
+        if let Some(ref mut b) = bridge {
+            run_hypothesis_step(ctx, scan_metrics, b);
         }
 
         if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase) {

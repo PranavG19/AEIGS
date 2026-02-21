@@ -1026,7 +1026,7 @@ async fn run_scan_saves_and_resumes_from_checkpoint() {
 }
 
 #[test]
-fn build_hypothesis_context_returns_valid_json() {
+fn build_hypothesis_context_returns_scan_context_json() {
     let config = localhost_config();
     let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
     let ctx = ScanContext {
@@ -1038,12 +1038,10 @@ fn build_hypothesis_context_returns_valid_json() {
         scope_attestation: None,
     };
     let context = pipeline::build_hypothesis_context(&ctx);
-    assert!(context.is_object());
-    assert!(context["technology_stack"].is_array());
-    assert!(context["findings_summary"].is_array());
-    assert!(context["high_centrality_nodes"].is_array());
-    assert!(context["defense_posture"].is_object());
-    assert!(context["attack_paths"].is_array());
+    assert!(context.technology_stack.is_empty());
+    assert!(context.findings_summary.is_empty());
+    assert!(context.high_centrality_nodes.is_empty());
+    assert!(context.defense_posture.is_object());
 }
 
 #[test]
@@ -1059,8 +1057,8 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
         scope_attestation: None,
     };
     let context = pipeline::build_hypothesis_context(&ctx);
-    assert!(context["technology_stack"].as_array().unwrap().is_empty());
-    assert!(context["findings_summary"].as_array().unwrap().is_empty());
+    assert!(context.technology_stack.is_empty());
+    assert!(context.findings_summary.is_empty());
 }
 
 #[tokio::test]
@@ -1244,4 +1242,43 @@ fn scan_context_scope_attestation_default_is_none() {
         scope_attestation: None,
     };
     assert!(ctx.scope_attestation.is_none());
+}
+
+#[tokio::test]
+async fn pipeline_continues_when_bridge_start_fails() {
+    let mut config = localhost_config();
+    config.llm.no_llm = false;
+    config.llm.python_cmd = "nonexistent-python-binary-aegis-bridge-test".to_string();
+    config.output = std::env::temp_dir().join("aegis-bridge-start-fail.sarif");
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "pipeline should succeed when bridge fails to start: {:?}",
+        result.err()
+    );
+    let summary = result.unwrap();
+    assert_eq!(
+        summary.metrics.llm_metrics.call_count, 0,
+        "no LLM calls should be recorded when bridge fails to start"
+    );
+}
+
+#[test]
+fn build_hypothesis_context_serializes_to_valid_json() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    let json = serde_json::to_value(&context).unwrap();
+    assert!(json["technology_stack"].is_array());
+    assert!(json["findings_summary"].is_array());
+    assert!(json["high_centrality_nodes"].is_array());
+    assert!(json["defense_posture"].is_object());
 }
