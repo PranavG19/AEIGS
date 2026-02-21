@@ -1,9 +1,11 @@
+use crate::scope_attestation::{SignedScopeAttestation, verify_attestation};
 use url::Url;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TargetValidationError {
     NonLocalhostTarget { host: String },
     InvalidUrl { url: String },
+    AttestationFailed { reason: String },
 }
 
 impl std::fmt::Display for TargetValidationError {
@@ -14,6 +16,9 @@ impl std::fmt::Display for TargetValidationError {
             }
             Self::InvalidUrl { url } => {
                 write!(f, "invalid URL: {url}")
+            }
+            Self::AttestationFailed { reason } => {
+                write!(f, "scope attestation failed: {reason}")
             }
         }
     }
@@ -117,3 +122,29 @@ fn extract_raw_host(url: &str) -> &str {
         &after_userinfo[..end]
     }
 }
+
+/// Validates a target URL, allowing remote targets when a valid scope attestation is provided.
+///
+/// Localhost targets are always allowed without attestation. Remote targets require a
+/// signed scope attestation that matches the target URL and has not expired. This is
+/// the primary entry point for target validation in the scan pipeline.
+pub fn validate_target(
+    url: &str,
+    attestation: Option<&SignedScopeAttestation>,
+) -> Result<(), TargetValidationError> {
+    match validate_target_is_localhost(url) {
+        Ok(()) => Ok(()),
+        Err(localhost_err) => match attestation {
+            Some(att) => {
+                verify_attestation(att, url).map_err(|e| TargetValidationError::AttestationFailed {
+                    reason: e.to_string(),
+                })
+            }
+            None => Err(localhost_err),
+        },
+    }
+}
+
+#[cfg(test)]
+#[path = "target_validation_test.rs"]
+mod target_validation_test;
