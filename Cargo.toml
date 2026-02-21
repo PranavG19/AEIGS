@@ -11,6 +11,7 @@ members = [
     "crates/reporting",
     "crates/evasion-engine",
     "crates/orchestrator",
+    "crates/test-support",
 ]
 resolver = "2"
 
@@ -43,3 +44,7 @@ regex = "1"
 clap = { version = "4", features = ["derive"] }
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 url = "2"
+axum = "0.8"
+tower = "0.5"
+hyper = "1"
+tempfile = "3"

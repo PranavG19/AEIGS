@@ -1,0 +1,13 @@
+[package]
+name = "aegis-test-support"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+aegis-audit-log = { path = "../audit-log" }
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }
