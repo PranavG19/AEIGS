@@ -13,7 +13,9 @@ use aegis_protocol::audit::AuditEventType;
 use aegis_protocol::capability::Permission;
 use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_protocol::signed_config::SignableConfig;
+use aegis_protocol::target_validation::validate_target;
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
@@ -27,7 +29,6 @@ use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::{export_attack_graph, run_report_with_previous};
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, resolve_report_format,
-    validate_localhost,
 };
 use crate::util::timestamp_ms;
 
@@ -37,6 +38,7 @@ pub struct ScanContext {
     pub defense_profile: Option<DefenseProfile>,
     pub capabilities: CapabilityManager,
     pub refuted: RefutedTracker,
+    pub scope_attestation: Option<SignedScopeAttestation>,
 }
 
 #[derive(Debug, Clone)]
@@ -418,6 +420,9 @@ fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTrans
         .with_accept_self_signed(ctx.config.stealth.accept_self_signed);
     if let Some(path) = catalog_path {
         builder = builder.with_persona_catalog(path);
+    }
+    if let Some(attestation) = &ctx.scope_attestation {
+        builder = builder.with_scope_attestation(attestation.clone());
     }
     builder.build()
 }
@@ -907,24 +912,23 @@ fn load_resume_checkpoint(
 }
 
 pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
-    validate_localhost(&config.target)?;
     parse_stealth_level(&config.stealth.stealth_level)?;
     resolve_report_format(&config.report_format)?;
 
-    if let Some(attestation_path) = &config.audit.scope_attestation {
+    let scope_attestation = if let Some(attestation_path) = &config.audit.scope_attestation {
         let attestation = aegis_protocol::scope_attestation::load_attestation(attestation_path)
             .map_err(|e| {
                 PipelineError::Config(ConfigError::InvalidTarget(format!(
                     "scope attestation: {e}"
                 )))
             })?;
-        aegis_protocol::scope_attestation::verify_attestation(&attestation, &config.target)
-            .map_err(|e| {
-                PipelineError::Config(ConfigError::InvalidTarget(format!(
-                    "scope attestation: {e}"
-                )))
-            })?;
-    }
+        Some(attestation)
+    } else {
+        None
+    };
+
+    validate_target(&config.target, scope_attestation.as_ref())
+        .map_err(|e| PipelineError::Config(ConfigError::InvalidTarget(e.to_string())))?;
 
     let signed_config_hash = if let Some(signed_config_path) = &config.audit.signed_config {
         let signed = aegis_protocol::signed_config::load_signed_config(signed_config_path)
@@ -992,6 +996,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         defense_profile: None,
         capabilities,
         refuted: RefutedTracker::new(),
+        scope_attestation,
     };
 
     let phases_result = run_scan_phases(

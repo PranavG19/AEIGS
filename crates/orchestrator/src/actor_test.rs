@@ -138,6 +138,7 @@ fn make_ctx_with_fake_graph() -> pipeline::ScanContext {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 
@@ -148,6 +149,7 @@ fn make_ctx_with_real_graph() -> pipeline::ScanContext {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 

@@ -4,6 +4,7 @@ use aegis_protocol::capability::Permission;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_supervisor::capability_manager::CapabilityManager;
 
 use super::*;
@@ -322,6 +323,7 @@ fn scan_context_fields_accessible() {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     assert_eq!(ctx.config.target, "http://localhost:8080");
     assert!(ctx.defense_profile.is_none());
@@ -339,6 +341,7 @@ fn scan_context_with_defense_profile() {
         defense_profile: Some(profile),
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     assert!(ctx.defense_profile.is_some());
 }
@@ -599,6 +602,7 @@ fn fake_graph_store_satisfies_scan_context() {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     assert_eq!(ctx.graph.node_count().unwrap(), 0);
     assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
@@ -848,6 +852,7 @@ fn scan_context_has_capabilities_field() {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::PassiveRecon));
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::Fuzzing));
@@ -1030,6 +1035,7 @@ fn build_hypothesis_context_returns_valid_json() {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.is_object());
@@ -1050,6 +1056,7 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context["technology_stack"].as_array().unwrap().is_empty());
@@ -1086,4 +1093,155 @@ async fn run_scan_with_llm_enabled_degrades_gracefully() {
 fn scan_config_python_cmd_default() {
     let config = localhost_config();
     assert_eq!(config.llm.python_cmd, "python3");
+}
+
+fn make_attestation_for_target(target: &str, valid_until: &str) -> SignedScopeAttestation {
+    use aegis_protocol::scope_attestation::{ScopeDocument, sign_scope_document};
+    use ed25519_dalek::SigningKey;
+
+    let signing_key = SigningKey::from_bytes(&[42u8; 32]);
+    let document = ScopeDocument {
+        target: target.to_string(),
+        authorized_by: "test-authority".to_string(),
+        valid_until: valid_until.to_string(),
+        scope_id: "test-scope-001".to_string(),
+    };
+    sign_scope_document(&document, &signing_key)
+}
+
+fn write_attestation_to_file(
+    attestation: &SignedScopeAttestation,
+    dir: &std::path::Path,
+) -> std::path::PathBuf {
+    let path = dir.join("scope-attestation.json");
+    let json = serde_json::to_string(attestation).unwrap();
+    std::fs::write(&path, json).unwrap();
+    path
+}
+
+#[tokio::test]
+async fn run_scan_rejects_remote_target_without_attestation() {
+    let mut config = localhost_config();
+    config.target = "http://example.com:8080".to_string();
+    config.audit.scope_attestation = None;
+    let result = run_scan(config).await;
+    assert!(result.is_err());
+    let msg = format!("{}", result.unwrap_err());
+    assert!(msg.contains("example.com"));
+}
+
+#[tokio::test]
+async fn run_scan_accepts_remote_target_with_valid_attestation() {
+    let dir = tempfile::tempdir().unwrap();
+    let attestation = make_attestation_for_target("http://example.com:8080", "2099-12-31");
+    let att_path = write_attestation_to_file(&attestation, dir.path());
+
+    let mut config = localhost_config();
+    config.target = "http://example.com:8080".to_string();
+    config.output = dir.path().join("remote-target-test.sarif");
+    config.audit.scope_attestation = Some(att_path);
+    config.audit.no_audit = true;
+
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "remote target with valid attestation should succeed: {:?}",
+        result.err()
+    );
+    let summary = result.unwrap();
+    assert!(summary.phases_completed >= 3);
+}
+
+#[tokio::test]
+async fn run_scan_rejects_remote_target_with_expired_attestation() {
+    let dir = tempfile::tempdir().unwrap();
+    let attestation = make_attestation_for_target("http://example.com:8080", "2020-01-01");
+    let att_path = write_attestation_to_file(&attestation, dir.path());
+
+    let mut config = localhost_config();
+    config.target = "http://example.com:8080".to_string();
+    config.audit.scope_attestation = Some(att_path);
+
+    let result = run_scan(config).await;
+    assert!(result.is_err());
+    let msg = format!("{}", result.unwrap_err());
+    assert!(msg.contains("expired") || msg.contains("attestation"));
+}
+
+#[tokio::test]
+async fn run_scan_rejects_remote_target_with_mismatched_attestation() {
+    let dir = tempfile::tempdir().unwrap();
+    let attestation = make_attestation_for_target("http://other-host.com:9090", "2099-12-31");
+    let att_path = write_attestation_to_file(&attestation, dir.path());
+
+    let mut config = localhost_config();
+    config.target = "http://example.com:8080".to_string();
+    config.audit.scope_attestation = Some(att_path);
+
+    let result = run_scan(config).await;
+    assert!(result.is_err());
+    let msg = format!("{}", result.unwrap_err());
+    assert!(msg.contains("mismatch") || msg.contains("attestation"));
+}
+
+#[tokio::test]
+async fn run_scan_localhost_works_without_attestation() {
+    let config = localhost_config();
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "localhost should work without attestation: {:?}",
+        result.err()
+    );
+}
+
+#[tokio::test]
+async fn run_scan_localhost_works_with_attestation() {
+    let dir = tempfile::tempdir().unwrap();
+    let attestation = make_attestation_for_target("http://localhost:8080", "2099-12-31");
+    let att_path = write_attestation_to_file(&attestation, dir.path());
+
+    let mut config = localhost_config();
+    config.output = dir.path().join("localhost-with-att.sarif");
+    config.audit.scope_attestation = Some(att_path);
+
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "localhost with attestation should succeed: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn scan_context_scope_attestation_field_stores_value() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let attestation = make_attestation_for_target("http://example.com", "2099-12-31");
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: Some(attestation.clone()),
+    };
+    assert!(ctx.scope_attestation.is_some());
+    let stored = ctx.scope_attestation.unwrap();
+    assert_eq!(stored.document.target, "http://example.com");
+}
+
+#[test]
+fn scan_context_scope_attestation_default_is_none() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+    };
+    assert!(ctx.scope_attestation.is_none());
 }

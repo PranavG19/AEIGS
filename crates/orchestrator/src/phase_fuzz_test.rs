@@ -64,6 +64,7 @@ fn make_context(args: &[&str]) -> ScanContext {
         defense_profile: None,
         capabilities,
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 
@@ -318,6 +319,7 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
         defense_profile: None,
         capabilities,
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
     (ctx, tmp)
 }
@@ -651,6 +653,7 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         defense_profile: None,
         capabilities,
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     };
 
     let mut transport = MockTransport::ok_200();

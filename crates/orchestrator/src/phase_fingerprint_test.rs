@@ -20,6 +20,7 @@ fn test_context() -> ScanContext {
         defense_profile: None,
         capabilities,
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 

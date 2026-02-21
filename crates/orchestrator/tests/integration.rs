@@ -183,6 +183,7 @@ fn make_scan_context_fake() -> ScanContext {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 
@@ -193,6 +194,7 @@ fn make_scan_context_real() -> ScanContext {
         defense_profile: None,
         capabilities: test_capability_manager(),
         refuted: RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 

@@ -37,6 +37,7 @@ fn test_context(output_path: &std::path::Path) -> ScanContext {
         defense_profile: None,
         capabilities,
         refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
     }
 }
 
