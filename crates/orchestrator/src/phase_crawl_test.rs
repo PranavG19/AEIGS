@@ -248,7 +248,7 @@ fn crawl_integrates_with_pipeline_graph() {
     let endpoint_ids = ctx.graph.nodes_by_type(NodeType::Endpoint).unwrap();
     assert_eq!(endpoint_ids.len(), 3);
 
-    let expected = vec![
+    let expected = [
         ("http://localhost:3000/api/users", "GET"),
         ("http://localhost:3000/login", "POST"),
         ("http://localhost:3000/api/data", "PUT"),
