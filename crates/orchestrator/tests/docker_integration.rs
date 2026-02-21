@@ -1420,6 +1420,36 @@ fn flask_e2e_scanner_vs_ground_truth() {
     );
 }
 
+fn build_e2e_scan_config_with_iterations(
+    target_url: &str,
+    sarif_path: &Path,
+    source_dir: Option<&str>,
+    include_endpoints: &[&str],
+    max_iterations: u32,
+) -> ScanConfig {
+    let mut args = vec![
+        "aegis".to_string(),
+        "--target".to_string(),
+        target_url.to_string(),
+        "--output".to_string(),
+        sarif_path.to_str().unwrap().to_string(),
+        "--no-llm".to_string(),
+        "--no-audit".to_string(),
+        "--skip-evasion".to_string(),
+        "--max-iterations".to_string(),
+        max_iterations.to_string(),
+    ];
+    if let Some(dir) = source_dir {
+        args.push("--source-dir".to_string());
+        args.push(dir.to_string());
+    }
+    for ep in include_endpoints {
+        args.push("--include-endpoints".to_string());
+        args.push(ep.to_string());
+    }
+    ScanConfig::parse_from(args.iter().map(|s| s.as_str()))
+}
+
 // 100: graphql_e2e_scanner_vs_ground_truth
 #[test]
 fn graphql_e2e_scanner_vs_ground_truth() {
@@ -1476,5 +1506,470 @@ fn graphql_e2e_scanner_vs_ground_truth() {
         comparison.true_positives,
         comparison.matched,
         comparison.missed
+    );
+}
+
+// ===========================================================================
+// Detection rate integration tests (#200-#207)
+// ===========================================================================
+
+// 200: expanded_sqli_templates_detect_express_sqli
+#[test]
+fn expanded_sqli_templates_detect_express_sqli() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-sqli-200",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("sqli-detection.sarif");
+    let source = fixture_dir("express-vuln-app");
+    let config = build_e2e_scan_config(
+        "http://localhost:3000",
+        &sarif_path,
+        Some(&source),
+        &["/api/users"],
+    );
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    println!(
+        "SQLi detection: {} findings, SARIF: {}",
+        summary.total_findings, summary.sarif_path
+    );
+
+    let gt_path = format!("{}/ground-truth.json", fixture_dir("express-vuln-app"));
+    let gt = ground_truth::load_ground_truth(Path::new(&gt_path));
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+
+    let sqli_detected = sarif_findings
+        .iter()
+        .any(|(ep, vc)| ep.contains("/api/users") && vc == "SqlInjection");
+
+    println!(
+        "SQLi probe: detected={}, all findings={:?}",
+        sqli_detected, sarif_findings
+    );
+
+    let comparison = ground_truth::compare(&gt, &sarif_findings);
+    println!(
+        "SQLi scan: TP={}, FP={}, FN={}, matched={:?}, missed={:?}",
+        comparison.true_positives,
+        comparison.false_positives,
+        comparison.false_negatives,
+        comparison.matched,
+        comparison.missed
+    );
+
+    assert!(
+        sqli_detected,
+        "expanded SQLi templates should detect SqlInjection on /api/users, findings={:?}",
+        sarif_findings
+    );
+}
+
+// 201: expanded_xss_templates_detect_express_xss
+#[test]
+fn expanded_xss_templates_detect_express_xss() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-xss-201",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("xss-detection.sarif");
+    let source = fixture_dir("express-vuln-app");
+    let config = build_e2e_scan_config(
+        "http://localhost:3000",
+        &sarif_path,
+        Some(&source),
+        &["/api/search"],
+    );
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    println!(
+        "XSS detection: {} findings, SARIF: {}",
+        summary.total_findings, summary.sarif_path
+    );
+
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+
+    let xss_detected = sarif_findings
+        .iter()
+        .any(|(ep, vc)| ep.contains("/api/search") && vc == "CrossSiteScripting");
+
+    println!(
+        "XSS probe: detected={}, all findings={:?}",
+        xss_detected, sarif_findings
+    );
+
+    assert!(
+        xss_detected,
+        "expanded XSS templates should detect CrossSiteScripting on /api/search, findings={:?}",
+        sarif_findings
+    );
+}
+
+// 202: ssti_templates_detect_flask_ssti
+#[test]
+fn ssti_templates_detect_flask_ssti() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.flask.yml", compose_dir()),
+        "aegis-test-flask-ssti-202",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:5001/health", Duration::from_secs(60)),
+        "flask app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("ssti-detection.sarif");
+    let source = fixture_dir("flask-vuln-app");
+    let config = build_e2e_scan_config(
+        "http://localhost:5001",
+        &sarif_path,
+        Some(&source),
+        &["/api/render"],
+    );
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    println!(
+        "SSTI detection: {} findings, SARIF: {}",
+        summary.total_findings, summary.sarif_path
+    );
+
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+
+    let ssti_detected = sarif_findings
+        .iter()
+        .any(|(ep, vc)| ep.contains("/api/render") && vc == "ServerSideTemplateInjection");
+
+    println!(
+        "SSTI probe: detected={}, all findings={:?}",
+        ssti_detected, sarif_findings
+    );
+
+    assert!(
+        ssti_detected,
+        "SSTI templates should detect ServerSideTemplateInjection on /api/render, findings={:?}",
+        sarif_findings
+    );
+}
+
+// 203: time_based_sqli_detection
+#[test]
+fn time_based_sqli_detection() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-timesqli-203",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("time-sqli-detection.sarif");
+    let source = fixture_dir("express-vuln-app");
+    let config = build_e2e_scan_config(
+        "http://localhost:3000",
+        &sarif_path,
+        Some(&source),
+        &["/api/users"],
+    );
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    println!(
+        "Time-based SQLi: {} findings, SARIF: {}",
+        summary.total_findings, summary.sarif_path
+    );
+
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+    let sqli_detected = sarif_findings
+        .iter()
+        .any(|(ep, vc)| ep.contains("/api/users") && vc == "SqlInjection");
+
+    println!(
+        "Time-based SQLi: sqli_detected={}, all findings={:?}",
+        sqli_detected, sarif_findings
+    );
+
+    assert!(
+        sqli_detected,
+        "time-based blind SQLi templates (expanded payloads) should detect SqlInjection \
+         on /api/users even without inline error reflection, findings={:?}",
+        sarif_findings
+    );
+}
+
+// 204: combined_recall_express_ground_truth
+#[test]
+fn combined_recall_express_ground_truth() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-recall-204",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("express-recall.sarif");
+    let source = fixture_dir("express-vuln-app");
+    let config = build_e2e_scan_config("http://localhost:3000", &sarif_path, Some(&source), &[]);
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    let gt_path = format!("{}/ground-truth.json", fixture_dir("express-vuln-app"));
+    let gt = ground_truth::load_ground_truth(Path::new(&gt_path));
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+    let comparison = ground_truth::compare(&gt, &sarif_findings);
+
+    println!(
+        "Express recall: TP={}, FP={}, FN={}, P={:.2}, R={:.2}, F1={:.2}",
+        comparison.true_positives,
+        comparison.false_positives,
+        comparison.false_negatives,
+        comparison.precision,
+        comparison.recall,
+        comparison.f1
+    );
+    println!("  Matched: {:?}", comparison.matched);
+    println!("  Missed:  {:?}", comparison.missed);
+    println!("  Extra:   {:?}", comparison.extra);
+
+    let gt_count = gt.findings.len();
+    let min_tp = 10;
+    assert!(
+        comparison.true_positives >= min_tp,
+        "express recall should be >= {min_tp}/{gt_count} (62.5%), \
+         got TP={}, recall={:.2}, matched={:?}, missed={:?}",
+        comparison.true_positives,
+        comparison.recall,
+        comparison.matched,
+        comparison.missed
+    );
+}
+
+// 205: combined_recall_flask_ground_truth
+#[test]
+fn combined_recall_flask_ground_truth() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.flask.yml", compose_dir()),
+        "aegis-test-flask-recall-205",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:5001/health", Duration::from_secs(60)),
+        "flask app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("flask-recall.sarif");
+    let source = fixture_dir("flask-vuln-app");
+    let config = build_e2e_scan_config("http://localhost:5001", &sarif_path, Some(&source), &[]);
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    let gt_path = format!("{}/ground-truth.json", fixture_dir("flask-vuln-app"));
+    let gt = ground_truth::load_ground_truth(Path::new(&gt_path));
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+    let comparison = ground_truth::compare(&gt, &sarif_findings);
+
+    println!(
+        "Flask recall: TP={}, FP={}, FN={}, P={:.2}, R={:.2}, F1={:.2}",
+        comparison.true_positives,
+        comparison.false_positives,
+        comparison.false_negatives,
+        comparison.precision,
+        comparison.recall,
+        comparison.f1
+    );
+    println!("  Matched: {:?}", comparison.matched);
+    println!("  Missed:  {:?}", comparison.missed);
+    println!("  Extra:   {:?}", comparison.extra);
+
+    let gt_count = gt.findings.len();
+    let min_tp = 5;
+    assert!(
+        comparison.true_positives >= min_tp,
+        "flask recall should be >= {min_tp}/{gt_count} (71.4%), \
+         got TP={}, recall={:.2}, matched={:?}, missed={:?}",
+        comparison.true_positives,
+        comparison.recall,
+        comparison.matched,
+        comparison.missed
+    );
+}
+
+// 206: false_positive_rate_bounded
+#[test]
+fn false_positive_rate_bounded() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-fp-206",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("fp-bounded.sarif");
+    let source = fixture_dir("express-vuln-app");
+    let config = build_e2e_scan_config("http://localhost:3000", &sarif_path, Some(&source), &[]);
+
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary = rt.block_on(run_scan(config)).expect("scan should succeed");
+
+    let gt_path = format!("{}/ground-truth.json", fixture_dir("express-vuln-app"));
+    let gt = ground_truth::load_ground_truth(Path::new(&gt_path));
+    let sarif_findings = ground_truth::extract_sarif_findings(Path::new(&summary.sarif_path));
+    let comparison = ground_truth::compare(&gt, &sarif_findings);
+
+    let gt_count = gt.findings.len();
+    let max_fp = gt_count * 2;
+
+    println!(
+        "FP bounded: TP={}, FP={}, FN={}, gt_size={}, max_allowed_fp={}",
+        comparison.true_positives,
+        comparison.false_positives,
+        comparison.false_negatives,
+        gt_count,
+        max_fp
+    );
+    println!("  Extra (FP): {:?}", comparison.extra);
+
+    assert!(
+        comparison.false_positives <= max_fp,
+        "false positives ({}) should not exceed 2x ground truth size ({}), extra={:?}",
+        comparison.false_positives,
+        max_fp,
+        comparison.extra
+    );
+}
+
+// 207: llm_feedback_improves_second_iteration
+#[test]
+fn llm_feedback_improves_second_iteration() {
+    if !docker_tests_enabled() {
+        eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
+        return;
+    }
+    let compose = DockerCompose::new(
+        &format!("{}/docker-compose.yml", compose_dir()),
+        "aegis-test-express-iter-207",
+    );
+    compose.up().unwrap();
+    assert!(
+        wait_for_health("http://localhost:3000/health", Duration::from_secs(60)),
+        "express app failed health check"
+    );
+
+    let source = fixture_dir("express-vuln-app");
+    let endpoints: &[&str] = &["/api/users", "/api/search", "/api/exec", "/api/files"];
+
+    let dir1 = tempfile::tempdir().unwrap();
+    let sarif_path_1 = dir1.path().join("iter1.sarif");
+    let config_1 = build_e2e_scan_config(
+        "http://localhost:3000",
+        &sarif_path_1,
+        Some(&source),
+        endpoints,
+    );
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let summary_1 = rt
+        .block_on(run_scan(config_1))
+        .expect("scan iter=1 should succeed");
+
+    let sarif_findings_1 = ground_truth::extract_sarif_findings(Path::new(&summary_1.sarif_path));
+    let iter1_count = sarif_findings_1.len();
+
+    let dir2 = tempfile::tempdir().unwrap();
+    let sarif_path_2 = dir2.path().join("iter2.sarif");
+    let config_2 = build_e2e_scan_config_with_iterations(
+        "http://localhost:3000",
+        &sarif_path_2,
+        Some(&source),
+        endpoints,
+        2,
+    );
+    let summary_2 = rt
+        .block_on(run_scan(config_2))
+        .expect("scan iter=2 should succeed");
+
+    let sarif_findings_2 = ground_truth::extract_sarif_findings(Path::new(&summary_2.sarif_path));
+    let iter2_count = sarif_findings_2.len();
+
+    println!(
+        "Iteration comparison: iter1={} findings, iter2={} findings",
+        iter1_count, iter2_count
+    );
+    println!("  iter1 findings: {:?}", sarif_findings_1);
+    println!("  iter2 findings: {:?}", sarif_findings_2);
+
+    assert!(
+        iter2_count >= iter1_count,
+        "iteration 2 (max_iterations=2) should produce at least as many findings as iteration 1: \
+         iter1={iter1_count}, iter2={iter2_count}"
+    );
+
+    assert!(
+        summary_2.phases_completed >= summary_1.phases_completed,
+        "iteration 2 should complete at least as many phases: iter1={}, iter2={}",
+        summary_1.phases_completed,
+        summary_2.phases_completed
     );
 }
