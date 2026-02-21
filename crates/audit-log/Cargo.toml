@@ -10,4 +10,5 @@ ciborium = { workspace = true }
 sha3 = { workspace = true }
 hmac = { workspace = true }
 uuid = { workspace = true }
+serde_json = { workspace = true }
 tracing = { workspace = true }

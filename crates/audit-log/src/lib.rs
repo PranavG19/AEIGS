@@ -1,9 +1,14 @@
+pub mod event_store;
 pub mod hash_chain;
 pub mod hmac_signer;
 pub mod log_verifier;
 pub mod log_writer;
 
 pub use log_writer::AuditWriter;
+
+#[cfg(test)]
+#[path = "event_store_test.rs"]
+mod event_store_test;
 
 #[cfg(test)]
 #[path = "hash_chain_test.rs"]
