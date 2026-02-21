@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
-use std::process::{Command, Stdio};
+use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::PathBuf;
+use std::process::{Child, Command, Stdio};
+use std::time::Duration;
 
 /// Request sent to the Python hypothesis-engine CLI via stdin.
 ///
@@ -58,6 +61,13 @@ pub enum HypothesisBridgeError {
     PythonError(String),
     FrameWriteFailed(std::io::Error),
     FrameReadFailed(String),
+    HandshakeFailed(String),
+    RequestIdMismatch {
+        expected: u64,
+        actual: u64,
+    },
+    Timeout(String),
+    SocketCleanupFailed(std::io::Error),
 }
 
 impl std::fmt::Display for HypothesisBridgeError {
@@ -83,6 +93,12 @@ impl std::fmt::Display for HypothesisBridgeError {
             Self::PythonError(msg) => write!(f, "hypothesis-engine returned error: {msg}"),
             Self::FrameWriteFailed(e) => write!(f, "failed to write IPC frame: {e}"),
             Self::FrameReadFailed(msg) => write!(f, "failed to read IPC frame: {msg}"),
+            Self::HandshakeFailed(msg) => write!(f, "bridge handshake failed: {msg}"),
+            Self::RequestIdMismatch { expected, actual } => {
+                write!(f, "request ID mismatch: expected {expected}, got {actual}")
+            }
+            Self::Timeout(msg) => write!(f, "bridge timeout: {msg}"),
+            Self::SocketCleanupFailed(e) => write!(f, "failed to clean up socket: {e}"),
         }
     }
 }
@@ -173,7 +189,7 @@ pub struct DefenseContextJson {
 /// over a persistent Unix domain socket connection.
 ///
 /// Uses serde's internally-tagged representation with `"type"` as the tag field.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BridgeRequest {
     GenerateHypotheses {
@@ -197,7 +213,7 @@ pub enum BridgeRequest {
 /// Unix domain socket connection.
 ///
 /// Uses serde's internally-tagged representation with `"type"` as the tag field.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BridgeResponse {
     Ready,
@@ -224,6 +240,35 @@ pub enum BridgeResponse {
         request_id: u64,
         message: String,
     },
+}
+
+// ---------------------------------------------------------------------------
+// Result types for HypothesisBridge methods
+// ---------------------------------------------------------------------------
+
+/// Result of a hypothesis generation request.
+#[derive(Debug)]
+pub struct GenerateResult {
+    pub hypotheses: Vec<HypothesisJson>,
+    pub reasoning_trace: String,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+}
+
+/// Result of a payload compilation request.
+#[derive(Debug)]
+pub struct CompileResult {
+    pub payloads: Vec<String>,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
+}
+
+/// Result of an evasion payload generation request.
+#[derive(Debug)]
+pub struct EvasionBridgeResult {
+    pub payloads: Vec<String>,
+    pub input_tokens: u64,
+    pub output_tokens: u64,
 }
 
 /// Writes a length-prefixed JSON frame to the given writer.
@@ -278,4 +323,326 @@ pub fn read_ipc_frame<R: Read, T: serde::de::DeserializeOwned>(
     }
     serde_json::from_slice(&payload)
         .map_err(|e| HypothesisBridgeError::FrameReadFailed(format!("deserializing payload: {e}")))
+}
+
+// ---------------------------------------------------------------------------
+// Persistent HypothesisBridge (Unix domain socket IPC)
+// ---------------------------------------------------------------------------
+
+const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(10);
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Persistent bridge to the Python hypothesis-engine process.
+///
+/// Keeps a long-lived Python child process communicating over a Unix domain
+/// socket with length-prefixed JSON frames. Cleans up the socket file and
+/// terminates the child on drop.
+pub struct HypothesisBridge {
+    pub(crate) child: Child,
+    pub(crate) socket: UnixStream,
+    pub(crate) request_counter: u64,
+    pub(crate) socket_path: PathBuf,
+}
+
+impl HypothesisBridge {
+    /// Spawns the Python bridge process and completes the Ready handshake.
+    ///
+    /// Creates a Unix socket at `/tmp/aegis-hypothesis-{pid}.sock`, spawns
+    /// `python_cmd -m hypothesis_engine.bridge --socket <path>`, and waits
+    /// up to 10 seconds for the Python side to connect and send `Ready`.
+    pub fn start(python_cmd: &str) -> Result<Self, HypothesisBridgeError> {
+        let socket_path =
+            PathBuf::from(format!("/tmp/aegis-hypothesis-{}.sock", std::process::id()));
+        Self::start_with_path(python_cmd, socket_path)
+    }
+
+    /// Like `start`, but accepts an explicit socket path (useful for testing).
+    pub fn start_with_path(
+        python_cmd: &str,
+        socket_path: PathBuf,
+    ) -> Result<Self, HypothesisBridgeError> {
+        if socket_path.exists() {
+            std::fs::remove_file(&socket_path)
+                .map_err(HypothesisBridgeError::SocketCleanupFailed)?;
+        }
+
+        let listener =
+            UnixListener::bind(&socket_path).map_err(HypothesisBridgeError::SpawnFailed)?;
+
+        let child = Command::new(python_cmd)
+            .args([
+                "-m",
+                "hypothesis_engine.bridge",
+                "--socket",
+                &socket_path.to_string_lossy(),
+            ])
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(HypothesisBridgeError::SpawnFailed)?;
+
+        listener
+            .set_nonblocking(false)
+            .map_err(HypothesisBridgeError::SpawnFailed)?;
+        let socket = accept_with_timeout(&listener, HANDSHAKE_TIMEOUT)?;
+
+        socket
+            .set_read_timeout(Some(HANDSHAKE_TIMEOUT))
+            .map_err(|e| {
+                HypothesisBridgeError::Timeout(format!("setting handshake timeout: {e}"))
+            })?;
+
+        let mut bridge = Self {
+            child,
+            socket,
+            request_counter: 0,
+            socket_path,
+        };
+        bridge.read_handshake()?;
+        Ok(bridge)
+    }
+
+    pub(crate) fn read_handshake(&mut self) -> Result<(), HypothesisBridgeError> {
+        let response: BridgeResponse = read_ipc_frame(&mut self.socket)?;
+        match response {
+            BridgeResponse::Ready => Ok(()),
+            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+                "expected Ready, got {other:?}"
+            ))),
+        }
+    }
+
+    /// Sends a GenerateHypotheses request and returns the parsed result.
+    pub fn generate_hypotheses(
+        &mut self,
+        scan_context: ScanContextJson,
+        vulnerability_class: String,
+        feedback_summary: Option<String>,
+    ) -> Result<GenerateResult, HypothesisBridgeError> {
+        self.request_counter += 1;
+        let request_id = self.request_counter;
+
+        let request = BridgeRequest::GenerateHypotheses {
+            request_id,
+            scan_context,
+            vulnerability_class,
+            feedback_summary,
+        };
+
+        self.send_request(&request)?;
+        self.set_read_timeout(REQUEST_TIMEOUT)?;
+        let response: BridgeResponse = read_ipc_frame(&mut self.socket)?;
+
+        match response {
+            BridgeResponse::Hypotheses {
+                request_id: resp_id,
+                hypotheses,
+                reasoning_trace,
+                input_tokens,
+                output_tokens,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Ok(GenerateResult {
+                    hypotheses,
+                    reasoning_trace,
+                    input_tokens,
+                    output_tokens,
+                })
+            }
+            BridgeResponse::Error {
+                request_id: resp_id,
+                message,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Err(HypothesisBridgeError::PythonError(message))
+            }
+            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+                "expected Hypotheses or Error, got {other:?}"
+            ))),
+        }
+    }
+
+    /// Sends a CompilePayloads request and returns the parsed result.
+    pub fn compile_payloads(
+        &mut self,
+        hypotheses: Vec<HypothesisJson>,
+    ) -> Result<CompileResult, HypothesisBridgeError> {
+        self.request_counter += 1;
+        let request_id = self.request_counter;
+
+        let request = BridgeRequest::CompilePayloads {
+            request_id,
+            hypotheses,
+        };
+
+        self.send_request(&request)?;
+        self.set_read_timeout(REQUEST_TIMEOUT)?;
+        let response: BridgeResponse = read_ipc_frame(&mut self.socket)?;
+
+        match response {
+            BridgeResponse::CompiledPayloads {
+                request_id: resp_id,
+                payloads,
+                input_tokens,
+                output_tokens,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Ok(CompileResult {
+                    payloads,
+                    input_tokens,
+                    output_tokens,
+                })
+            }
+            BridgeResponse::Error {
+                request_id: resp_id,
+                message,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Err(HypothesisBridgeError::PythonError(message))
+            }
+            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+                "expected CompiledPayloads or Error, got {other:?}"
+            ))),
+        }
+    }
+
+    /// Sends an EvasionGenerate request and returns the parsed result.
+    pub fn generate_evasion(
+        &mut self,
+        defense_context: DefenseContextJson,
+    ) -> Result<EvasionBridgeResult, HypothesisBridgeError> {
+        self.request_counter += 1;
+        let request_id = self.request_counter;
+
+        let request = BridgeRequest::EvasionGenerate {
+            request_id,
+            defense_context,
+        };
+
+        self.send_request(&request)?;
+        self.set_read_timeout(REQUEST_TIMEOUT)?;
+        let response: BridgeResponse = read_ipc_frame(&mut self.socket)?;
+
+        match response {
+            BridgeResponse::EvasionPayloads {
+                request_id: resp_id,
+                payloads,
+                input_tokens,
+                output_tokens,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Ok(EvasionBridgeResult {
+                    payloads,
+                    input_tokens,
+                    output_tokens,
+                })
+            }
+            BridgeResponse::Error {
+                request_id: resp_id,
+                message,
+            } => {
+                Self::validate_request_id(request_id, resp_id)?;
+                Err(HypothesisBridgeError::PythonError(message))
+            }
+            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+                "expected EvasionPayloads or Error, got {other:?}"
+            ))),
+        }
+    }
+
+    /// Sends a Shutdown request, waits briefly for the child to exit, and cleans up.
+    ///
+    /// If the child does not exit within 2 seconds after receiving Shutdown,
+    /// it is killed.
+    pub fn shutdown(&mut self) -> Result<(), HypothesisBridgeError> {
+        let _ = self.send_request(&BridgeRequest::Shutdown);
+        self.wait_or_kill_child();
+        self.cleanup_socket()
+    }
+
+    fn wait_or_kill_child(&mut self) {
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        loop {
+            match self.child.try_wait() {
+                Ok(Some(_)) => return,
+                Ok(None) => {
+                    if std::time::Instant::now() >= deadline {
+                        let _ = self.child.kill();
+                        let _ = self.child.wait();
+                        return;
+                    }
+                    std::thread::sleep(Duration::from_millis(50));
+                }
+                Err(_) => return,
+            }
+        }
+    }
+
+    fn send_request(&mut self, request: &BridgeRequest) -> Result<(), HypothesisBridgeError> {
+        write_ipc_frame(&mut self.socket, request)
+    }
+
+    fn set_read_timeout(&self, timeout: Duration) -> Result<(), HypothesisBridgeError> {
+        self.socket
+            .set_read_timeout(Some(timeout))
+            .map_err(|e| HypothesisBridgeError::Timeout(format!("setting read timeout: {e}")))
+    }
+
+    fn validate_request_id(expected: u64, actual: u64) -> Result<(), HypothesisBridgeError> {
+        if expected != actual {
+            return Err(HypothesisBridgeError::RequestIdMismatch { expected, actual });
+        }
+        Ok(())
+    }
+
+    fn cleanup_socket(&self) -> Result<(), HypothesisBridgeError> {
+        if self.socket_path.exists() {
+            std::fs::remove_file(&self.socket_path)
+                .map_err(HypothesisBridgeError::SocketCleanupFailed)?;
+        }
+        Ok(())
+    }
+}
+
+impl Drop for HypothesisBridge {
+    fn drop(&mut self) {
+        if let Err(e) = self.shutdown() {
+            eprintln!("warning: hypothesis bridge shutdown failed during drop: {e}");
+        }
+    }
+}
+
+/// Accepts a connection on the listener with a timeout.
+///
+/// Uses a polling loop with short sleeps since `UnixListener` does not
+/// natively support accept timeouts in the standard library.
+fn accept_with_timeout(
+    listener: &UnixListener,
+    timeout: Duration,
+) -> Result<UnixStream, HypothesisBridgeError> {
+    listener
+        .set_nonblocking(true)
+        .map_err(HypothesisBridgeError::SpawnFailed)?;
+
+    let deadline = std::time::Instant::now() + timeout;
+    loop {
+        match listener.accept() {
+            Ok((stream, _addr)) => {
+                stream
+                    .set_nonblocking(false)
+                    .map_err(HypothesisBridgeError::SpawnFailed)?;
+                return Ok(stream);
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                if std::time::Instant::now() >= deadline {
+                    return Err(HypothesisBridgeError::Timeout(
+                        "timed out waiting for Python bridge to connect".to_string(),
+                    ));
+                }
+                std::thread::sleep(Duration::from_millis(50));
+            }
+            Err(e) => return Err(HypothesisBridgeError::SpawnFailed(e)),
+        }
+    }
 }

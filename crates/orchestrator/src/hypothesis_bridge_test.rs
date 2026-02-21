@@ -1,11 +1,14 @@
 #[cfg(test)]
 mod tests {
     use crate::hypothesis_bridge::{
-        BridgeRequest, BridgeResponse, DefenseContextJson, HypothesisBridgeError, HypothesisJson,
-        HypothesisRequest, HypothesisResult, ScanContextJson, invoke_hypothesis_engine,
-        read_ipc_frame, write_ipc_frame,
+        BridgeRequest, BridgeResponse, DefenseContextJson, HypothesisBridge, HypothesisBridgeError,
+        HypothesisJson, HypothesisRequest, HypothesisResult, ScanContextJson,
+        invoke_hypothesis_engine, read_ipc_frame, write_ipc_frame,
     };
     use serde_json::json;
+    use std::io::{Read, Write};
+    use std::os::unix::net::UnixStream;
+    use std::path::PathBuf;
 
     #[test]
     fn generate_request_serializes_with_action_tag() {
@@ -631,5 +634,669 @@ json.dump(response, sys.stdout)
         assert_eq!(roundtripped.description, h.description);
         assert_eq!(roundtripped.confidence, h.confidence);
         assert_eq!(roundtripped.test_specification, h.test_specification);
+    }
+
+    // -----------------------------------------------------------------------
+    // HypothesisBridge tests (Task 8.2)
+    // -----------------------------------------------------------------------
+
+    fn unique_socket_path(test_name: &str) -> PathBuf {
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        PathBuf::from(format!(
+            "/tmp/aegis-test-{}-{}-{}.sock",
+            std::process::id(),
+            test_name,
+            ts
+        ))
+    }
+
+    fn make_scan_context() -> ScanContextJson {
+        ScanContextJson {
+            technology_stack: vec!["express".to_string()],
+            findings_summary: vec![],
+            high_centrality_nodes: vec![],
+            defense_posture: json!({"has_waf": false}),
+        }
+    }
+
+    fn make_defense_context() -> DefenseContextJson {
+        DefenseContextJson {
+            has_waf: true,
+            waf_vendor: Some("ModSecurity".to_string()),
+            rate_limit_rps: Some(10.0),
+            bot_detection_present: false,
+        }
+    }
+
+    fn spawn_mock_bridge(
+        socket_path: &PathBuf,
+        handler: impl FnOnce(UnixStream) + Send + 'static,
+    ) -> std::thread::JoinHandle<()> {
+        let listener =
+            std::os::unix::net::UnixListener::bind(socket_path).expect("bind mock listener");
+        std::thread::spawn(move || {
+            let (stream, _) = listener.accept().expect("accept mock connection");
+            handler(stream);
+        })
+    }
+
+    fn write_response_frame(stream: &mut UnixStream, response: &BridgeResponse) {
+        let payload = serde_json::to_vec(response).unwrap();
+        let len = payload.len() as u32;
+        stream.write_all(&len.to_le_bytes()).unwrap();
+        stream.write_all(&payload).unwrap();
+    }
+
+    fn read_request_frame(stream: &mut UnixStream) -> BridgeRequest {
+        let mut len_buf = [0u8; 4];
+        stream.read_exact(&mut len_buf).unwrap();
+        let len = u32::from_le_bytes(len_buf) as usize;
+        let mut payload = vec![0u8; len];
+        stream.read_exact(&mut payload).unwrap();
+        serde_json::from_slice(&payload).unwrap()
+    }
+
+    fn connect_and_build_bridge(socket_path: PathBuf) -> HypothesisBridge {
+        let stream = UnixStream::connect(&socket_path).expect("connect to mock bridge");
+        HypothesisBridge {
+            child: Command::new("sleep")
+                .arg("300")
+                .spawn()
+                .expect("spawn sleep"),
+            socket: stream,
+            request_counter: 0,
+            socket_path,
+        }
+    }
+
+    use std::process::Command;
+
+    #[test]
+    fn bridge_handshake_receives_ready() {
+        let sock = unique_socket_path("handshake");
+        let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+        let mock = spawn_mock_bridge(&sock, move |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+            let _ = done_rx.recv();
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        let result = bridge.read_handshake();
+        assert!(result.is_ok(), "handshake should succeed: {result:?}");
+
+        let _ = done_tx.send(());
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_handshake_fails_on_non_ready_response() {
+        let sock = unique_socket_path("handshake_fail");
+        let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
+        let mock = spawn_mock_bridge(&sock, move |mut stream| {
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Error {
+                    request_id: 0,
+                    message: "not ready".to_string(),
+                },
+            );
+            let _ = done_rx.recv();
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        let result = bridge.read_handshake();
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("handshake"),
+            "error should mention handshake: {err_msg}"
+        );
+
+        let _ = done_tx.send(());
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_generate_hypotheses_roundtrip() {
+        let sock = unique_socket_path("gen_hyp");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Hypotheses {
+                    request_id: 1,
+                    hypotheses: vec![HypothesisJson {
+                        vulnerability_class: "SqlInjection".to_string(),
+                        description: "blind sqli in /users".to_string(),
+                        confidence: 0.9,
+                        test_specification: None,
+                    }],
+                    reasoning_trace: "analyzed endpoints".to_string(),
+                    input_tokens: 500,
+                    output_tokens: 120,
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result = bridge
+            .generate_hypotheses(make_scan_context(), "SqlInjection".to_string(), None)
+            .unwrap();
+
+        assert_eq!(result.hypotheses.len(), 1);
+        assert_eq!(result.hypotheses[0].vulnerability_class, "SqlInjection");
+        assert_eq!(result.reasoning_trace, "analyzed endpoints");
+        assert_eq!(result.input_tokens, 500);
+        assert_eq!(result.output_tokens, 120);
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_compile_payloads_roundtrip() {
+        let sock = unique_socket_path("compile");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::CompiledPayloads {
+                    request_id: 1,
+                    payloads: vec![
+                        "' OR 1=1--".to_string(),
+                        "<script>alert(1)</script>".to_string(),
+                    ],
+                    input_tokens: 200,
+                    output_tokens: 80,
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let hypotheses = vec![HypothesisJson {
+            vulnerability_class: "SqlInjection".to_string(),
+            description: "test".to_string(),
+            confidence: 0.8,
+            test_specification: None,
+        }];
+        let result = bridge.compile_payloads(hypotheses).unwrap();
+
+        assert_eq!(result.payloads.len(), 2);
+        assert_eq!(result.payloads[0], "' OR 1=1--");
+        assert_eq!(result.input_tokens, 200);
+        assert_eq!(result.output_tokens, 80);
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_generate_evasion_roundtrip() {
+        let sock = unique_socket_path("evasion");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::EvasionPayloads {
+                    request_id: 1,
+                    payloads: vec!["evasion-payload-1".to_string()],
+                    input_tokens: 300,
+                    output_tokens: 60,
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result = bridge.generate_evasion(make_defense_context()).unwrap();
+
+        assert_eq!(result.payloads, vec!["evasion-payload-1"]);
+        assert_eq!(result.input_tokens, 300);
+        assert_eq!(result.output_tokens, 60);
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_shutdown_sends_shutdown_request() {
+        let sock = unique_socket_path("shutdown");
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mock = spawn_mock_bridge(&sock, move |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let req: BridgeRequest = read_request_frame(&mut stream);
+            let is_shutdown = matches!(req, BridgeRequest::Shutdown);
+            tx.send(is_shutdown).unwrap();
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let _ = bridge.shutdown();
+
+        let received_shutdown = rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
+        assert!(received_shutdown, "mock should have received Shutdown");
+
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_request_id_increments() {
+        let sock = unique_socket_path("req_id");
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mock = spawn_mock_bridge(&sock, move |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            for expected_id in 1..=3u64 {
+                let req: BridgeRequest = read_request_frame(&mut stream);
+                let actual_id = match &req {
+                    BridgeRequest::GenerateHypotheses { request_id, .. } => *request_id,
+                    BridgeRequest::CompilePayloads { request_id, .. } => *request_id,
+                    BridgeRequest::EvasionGenerate { request_id, .. } => *request_id,
+                    _ => 0,
+                };
+                tx.send(actual_id).unwrap();
+
+                match expected_id {
+                    1 => write_response_frame(
+                        &mut stream,
+                        &BridgeResponse::Hypotheses {
+                            request_id: expected_id,
+                            hypotheses: vec![],
+                            reasoning_trace: String::new(),
+                            input_tokens: 0,
+                            output_tokens: 0,
+                        },
+                    ),
+                    2 => write_response_frame(
+                        &mut stream,
+                        &BridgeResponse::CompiledPayloads {
+                            request_id: expected_id,
+                            payloads: vec![],
+                            input_tokens: 0,
+                            output_tokens: 0,
+                        },
+                    ),
+                    3 => write_response_frame(
+                        &mut stream,
+                        &BridgeResponse::EvasionPayloads {
+                            request_id: expected_id,
+                            payloads: vec![],
+                            input_tokens: 0,
+                            output_tokens: 0,
+                        },
+                    ),
+                    _ => {}
+                }
+            }
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        bridge
+            .generate_hypotheses(make_scan_context(), "SqlInjection".to_string(), None)
+            .unwrap();
+        bridge.compile_payloads(vec![]).unwrap();
+        bridge.generate_evasion(make_defense_context()).unwrap();
+
+        assert_eq!(rx.recv().unwrap(), 1);
+        assert_eq!(rx.recv().unwrap(), 2);
+        assert_eq!(rx.recv().unwrap(), 3);
+        assert_eq!(bridge.request_counter, 3);
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_request_id_mismatch_returns_error() {
+        let sock = unique_socket_path("mismatch");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Hypotheses {
+                    request_id: 999,
+                    hypotheses: vec![],
+                    reasoning_trace: String::new(),
+                    input_tokens: 0,
+                    output_tokens: 0,
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result =
+            bridge.generate_hypotheses(make_scan_context(), "SqlInjection".to_string(), None);
+        let err = result.unwrap_err();
+        let msg = err.to_string();
+        assert!(msg.contains("mismatch"), "should report ID mismatch: {msg}");
+        assert!(msg.contains("expected 1"), "should show expected: {msg}");
+        assert!(msg.contains("999"), "should show actual: {msg}");
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_timeout_on_slow_response() {
+        let sock = unique_socket_path("timeout");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_millis(100)))
+            .unwrap();
+
+        bridge.request_counter += 1;
+        let request = BridgeRequest::GenerateHypotheses {
+            request_id: bridge.request_counter,
+            scan_context: make_scan_context(),
+            vulnerability_class: "SqlInjection".to_string(),
+            feedback_summary: None,
+        };
+        write_ipc_frame(&mut bridge.socket, &request).unwrap();
+
+        let result: Result<BridgeResponse, _> = read_ipc_frame(&mut bridge.socket);
+        assert!(result.is_err(), "should timeout: {result:?}");
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_python_error_response_propagates() {
+        let sock = unique_socket_path("py_err");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Error {
+                    request_id: 1,
+                    message: "backend unavailable".to_string(),
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result =
+            bridge.generate_hypotheses(make_scan_context(), "SqlInjection".to_string(), None);
+        let err = result.unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("backend unavailable"),
+            "should propagate error: {msg}"
+        );
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_generate_verifies_request_fields_sent() {
+        let sock = unique_socket_path("verify_fields");
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mock = spawn_mock_bridge(&sock, move |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+
+            let req: BridgeRequest = read_request_frame(&mut stream);
+            tx.send(serde_json::to_value(&req).unwrap()).unwrap();
+
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Hypotheses {
+                    request_id: 1,
+                    hypotheses: vec![],
+                    reasoning_trace: String::new(),
+                    input_tokens: 0,
+                    output_tokens: 0,
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let ctx = ScanContextJson {
+            technology_stack: vec!["flask".to_string()],
+            findings_summary: vec!["XSS found".to_string()],
+            high_centrality_nodes: vec!["/api".to_string()],
+            defense_posture: json!({"has_waf": true}),
+        };
+        bridge
+            .generate_hypotheses(
+                ctx,
+                "CrossSiteScripting".to_string(),
+                Some("prior feedback".to_string()),
+            )
+            .unwrap();
+
+        let sent = rx.recv_timeout(std::time::Duration::from_secs(5)).unwrap();
+        assert_eq!(sent["type"], "GenerateHypotheses");
+        assert_eq!(sent["request_id"], 1);
+        assert_eq!(sent["vulnerability_class"], "CrossSiteScripting");
+        assert_eq!(sent["feedback_summary"], "prior feedback");
+        assert_eq!(sent["scan_context"]["technology_stack"][0], "flask");
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_socket_cleanup_on_shutdown() {
+        let sock = unique_socket_path("cleanup");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+            let _ = read_request_frame(&mut stream);
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let socket_existed_before = sock.exists();
+        let _ = bridge.shutdown();
+
+        assert!(socket_existed_before, "socket should exist before shutdown");
+        assert!(
+            !sock.exists(),
+            "socket file should be cleaned up after shutdown"
+        );
+
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_error_display_handshake_failed() {
+        let err = HypothesisBridgeError::HandshakeFailed("expected Ready".to_string());
+        assert!(err.to_string().contains("handshake"));
+        assert!(err.to_string().contains("expected Ready"));
+    }
+
+    #[test]
+    fn bridge_error_display_request_id_mismatch() {
+        let err = HypothesisBridgeError::RequestIdMismatch {
+            expected: 1,
+            actual: 5,
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("mismatch"));
+        assert!(msg.contains("expected 1"));
+        assert!(msg.contains("5"));
+    }
+
+    #[test]
+    fn bridge_error_display_timeout() {
+        let err = HypothesisBridgeError::Timeout("connection timed out".to_string());
+        assert!(err.to_string().contains("timeout"));
+    }
+
+    #[test]
+    fn bridge_error_display_socket_cleanup() {
+        let err = HypothesisBridgeError::SocketCleanupFailed(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "permission denied",
+        ));
+        assert!(err.to_string().contains("clean up socket"));
+    }
+
+    #[test]
+    fn bridge_compile_error_response_propagates() {
+        let sock = unique_socket_path("compile_err");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Error {
+                    request_id: 1,
+                    message: "compilation failed".to_string(),
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result = bridge.compile_payloads(vec![]);
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("compilation failed"));
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
+    }
+
+    #[test]
+    fn bridge_evasion_error_response_propagates() {
+        let sock = unique_socket_path("evasion_err");
+        let mock = spawn_mock_bridge(&sock, |mut stream| {
+            write_response_frame(&mut stream, &BridgeResponse::Ready);
+            let _req: BridgeRequest = read_request_frame(&mut stream);
+            write_response_frame(
+                &mut stream,
+                &BridgeResponse::Error {
+                    request_id: 1,
+                    message: "evasion generation failed".to_string(),
+                },
+            );
+        });
+
+        let mut bridge = connect_and_build_bridge(sock.clone());
+        bridge
+            .socket
+            .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+            .unwrap();
+        bridge.read_handshake().unwrap();
+
+        let result = bridge.generate_evasion(make_defense_context());
+        let err = result.unwrap_err();
+        assert!(err.to_string().contains("evasion generation failed"));
+
+        let _ = bridge.child.kill();
+        let _ = std::fs::remove_file(&sock);
+        mock.join().unwrap();
     }
 }
