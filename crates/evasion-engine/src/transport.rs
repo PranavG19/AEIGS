@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 use reqwest::Client;
 
 use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
+use aegis_protocol::scope_attestation::SignedScopeAttestation;
 
 use crate::header_transformer::HeaderTransformer;
 use crate::persona::Persona;
@@ -40,6 +41,7 @@ pub struct EvasionTransport {
     current_persona_index: usize,
     persona_rotation_interval: Option<u32>,
     sessions_since_rotation: u32,
+    scope_attestation: Option<SignedScopeAttestation>,
 }
 
 impl EvasionTransport {
@@ -51,12 +53,16 @@ impl EvasionTransport {
             timing_seed: 0,
             persona_rotation_interval: None,
             accept_self_signed: false,
+            scope_attestation: None,
         }
     }
 
     pub async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, TransportError> {
-        aegis_protocol::target_validation::validate_target_is_localhost(&request.endpoint)
-            .map_err(|e| TransportError::TargetNotAllowed(e.to_string()))?;
+        aegis_protocol::target_validation::validate_target(
+            &request.endpoint,
+            self.scope_attestation.as_ref(),
+        )
+        .map_err(|e| TransportError::TargetNotAllowed(e.to_string()))?;
 
         let delay_ms = self.timing.compute_delay_ms();
         if delay_ms > 0 {
@@ -294,6 +300,7 @@ pub struct EvasionTransportBuilder {
     timing_seed: u64,
     persona_rotation_interval: Option<u32>,
     accept_self_signed: bool,
+    scope_attestation: Option<SignedScopeAttestation>,
 }
 
 impl EvasionTransportBuilder {
@@ -318,9 +325,16 @@ impl EvasionTransportBuilder {
     }
 
     /// Accept invalid TLS certificates (e.g. self-signed) when connecting.
-    /// Only safe because `send()` enforces localhost-only via `validate_target_is_localhost`.
+    /// Only safe because `send()` enforces target validation via `validate_target`.
     pub fn with_accept_self_signed(mut self, accept: bool) -> Self {
         self.accept_self_signed = accept;
+        self
+    }
+
+    /// Attach a signed scope attestation for remote target validation.
+    /// When set, `send()` will allow non-localhost targets that match the attestation.
+    pub fn with_scope_attestation(mut self, attestation: SignedScopeAttestation) -> Self {
+        self.scope_attestation = Some(attestation);
         self
     }
 
@@ -352,6 +366,7 @@ impl EvasionTransportBuilder {
             current_persona_index: 0,
             persona_rotation_interval: self.persona_rotation_interval,
             sessions_since_rotation: 0,
+            scope_attestation: self.scope_attestation,
         }
     }
 }

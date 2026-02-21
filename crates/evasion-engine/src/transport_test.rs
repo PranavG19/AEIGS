@@ -1,6 +1,7 @@
 use super::*;
 use crate::persona::{JitterDistribution, PersonaId, persona_catalog};
 use aegis_protocol::request::{FuzzRequest, ParameterLocation};
+use aegis_protocol::scope_attestation::{ScopeDocument, sign_scope_document};
 
 #[tokio::test]
 async fn send_rejects_non_localhost_url() {
@@ -1025,4 +1026,159 @@ fn build_reqwest_request_cookie_location_adds_cookie_header() {
     let built = transport.build_reqwest_request(&request, &[]).unwrap();
     assert_eq!(built.headers().get("Cookie").unwrap(), "session=abc123");
     assert!(built.body().is_none());
+}
+
+fn test_signing_key() -> ed25519_dalek::SigningKey {
+    let secret: [u8; 32] = rand::random();
+    ed25519_dalek::SigningKey::from_bytes(&secret)
+}
+
+fn make_attestation(target: &str, valid_until: &str) -> SignedScopeAttestation {
+    let key = test_signing_key();
+    let doc = ScopeDocument {
+        target: target.to_string(),
+        authorized_by: "security-team@example.com".to_string(),
+        valid_until: valid_until.to_string(),
+        scope_id: "test-scope-id".to_string(),
+    };
+    sign_scope_document(&doc, &key)
+}
+
+#[test]
+fn builder_default_has_no_scope_attestation() {
+    let transport = EvasionTransport::builder().build();
+    assert!(transport.scope_attestation.is_none());
+}
+
+#[test]
+fn builder_with_scope_attestation_stores_attestation() {
+    let att = make_attestation("http://example.com:8080", "2099-12-31");
+    let transport = EvasionTransport::builder()
+        .with_scope_attestation(att.clone())
+        .build();
+    assert!(transport.scope_attestation.is_some());
+    let stored = transport.scope_attestation.unwrap();
+    assert_eq!(stored.document.target, "http://example.com:8080");
+    assert_eq!(stored.document.scope_id, "test-scope-id");
+}
+
+#[test]
+fn builder_with_scope_attestation_chains_with_other_options() {
+    let persona = Persona::custom(PersonaId::FirefoxDesktop)
+        .with_user_agent("Firefox/Test")
+        .with_accept_header("*/*")
+        .build();
+    let att = make_attestation("http://example.com:8080", "2099-12-31");
+
+    let transport = EvasionTransport::builder()
+        .with_persona(&persona)
+        .with_max_requests_per_session(25)
+        .with_timing_seed(999)
+        .with_scope_attestation(att)
+        .build();
+
+    assert!(transport.scope_attestation.is_some());
+    assert_eq!(transport.session_id(), 0);
+}
+
+#[tokio::test]
+async fn send_rejects_remote_with_expired_attestation() {
+    let att = make_attestation("http://example.com/api", "2020-01-01");
+    let mut transport = EvasionTransport::builder()
+        .with_scope_attestation(att)
+        .with_timing_seed(0)
+        .build();
+
+    let request = FuzzRequest {
+        request_id: 300,
+        endpoint: "http://example.com/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let result = transport.send(&request).await;
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, TransportError::TargetNotAllowed(_)));
+    assert!(err.to_string().contains("scope attestation failed"));
+}
+
+#[tokio::test]
+async fn send_rejects_remote_with_mismatched_attestation() {
+    let att = make_attestation("http://other-host.com:8080", "2099-12-31");
+    let mut transport = EvasionTransport::builder()
+        .with_scope_attestation(att)
+        .with_timing_seed(0)
+        .build();
+
+    let request = FuzzRequest {
+        request_id: 301,
+        endpoint: "http://example.com/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let result = transport.send(&request).await;
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert!(matches!(err, TransportError::TargetNotAllowed(_)));
+    assert!(err.to_string().contains("scope attestation failed"));
+}
+
+#[tokio::test]
+async fn send_localhost_still_works_without_attestation() {
+    let server = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("GET"))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_string("ok"))
+        .mount(&server)
+        .await;
+
+    let mut transport = EvasionTransport::builder().with_timing_seed(0).build();
+
+    let request = FuzzRequest {
+        request_id: 302,
+        endpoint: format!("{}/test", server.uri()),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let response = transport.send(&request).await.unwrap();
+    assert_eq!(response.status_code, 200);
+}
+
+#[tokio::test]
+async fn send_localhost_works_with_attestation_present() {
+    let server = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("GET"))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_string("ok"))
+        .mount(&server)
+        .await;
+
+    let att = make_attestation("http://example.com:8080", "2099-12-31");
+    let mut transport = EvasionTransport::builder()
+        .with_scope_attestation(att)
+        .with_timing_seed(0)
+        .build();
+
+    let request = FuzzRequest {
+        request_id: 303,
+        endpoint: format!("{}/test", server.uri()),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let response = transport.send(&request).await.unwrap();
+    assert_eq!(response.status_code, 200);
 }
