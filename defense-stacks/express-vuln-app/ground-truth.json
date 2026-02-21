@@ -1,0 +1,101 @@
+{
+  "findings": [
+    {
+      "endpoint": "/api/users",
+      "method": "GET",
+      "parameter": "id",
+      "vulnerability_class": "SqlInjection"
+    },
+    {
+      "endpoint": "/api/search",
+      "method": "GET",
+      "parameter": "q",
+      "vulnerability_class": "CrossSiteScripting"
+    },
+    {
+      "endpoint": "/api/exec",
+      "method": "GET",
+      "parameter": "cmd",
+      "vulnerability_class": "CommandInjection"
+    },
+    {
+      "endpoint": "/api/files",
+      "method": "GET",
+      "parameter": "path",
+      "vulnerability_class": "PathTraversal"
+    },
+    {
+      "endpoint": "/api/fetch",
+      "method": "GET",
+      "parameter": "url",
+      "vulnerability_class": "ServerSideRequestForgery"
+    },
+    {
+      "endpoint": "/api/render",
+      "method": "GET",
+      "parameter": "template",
+      "vulnerability_class": "ServerSideTemplateInjection"
+    },
+    {
+      "endpoint": "/api/login",
+      "method": "POST",
+      "parameter": "password",
+      "vulnerability_class": "BrokenAuthentication"
+    },
+    {
+      "endpoint": "/api/profile",
+      "method": "GET",
+      "parameter": "user_id",
+      "vulnerability_class": "BrokenAuthorization"
+    },
+    {
+      "endpoint": "/api/config",
+      "method": "GET",
+      "parameter": "",
+      "vulnerability_class": "SecurityMisconfiguration"
+    },
+    {
+      "endpoint": "/api/users/export",
+      "method": "GET",
+      "parameter": "",
+      "vulnerability_class": "SensitiveDataExposure"
+    },
+    {
+      "endpoint": "/api/deserialize",
+      "method": "POST",
+      "parameter": "body",
+      "vulnerability_class": "InsecureDeserialization"
+    },
+    {
+      "endpoint": "/api/redirect",
+      "method": "GET",
+      "parameter": "url",
+      "vulnerability_class": "OpenRedirect"
+    },
+    {
+      "endpoint": "/api/header",
+      "method": "GET",
+      "parameter": "value",
+      "vulnerability_class": "HeaderInjection"
+    },
+    {
+      "endpoint": "/api/log",
+      "method": "GET",
+      "parameter": "msg",
+      "vulnerability_class": "CrlfInjection"
+    },
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "parameter": "",
+      "vulnerability_class": "KnownVulnerableDependency",
+      "note": "serialize-javascript@2.1.2 (CVE-2020-7660), lodash@4.17.20 (CVE-2021-23337)"
+    },
+    {
+      "endpoint": "/api/submit",
+      "method": "GET",
+      "parameter": "input",
+      "vulnerability_class": "InsufficientInputValidation"
+    }
+  ]
+}

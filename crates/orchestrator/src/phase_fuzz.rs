@@ -5,7 +5,7 @@ use aegis_fuzzing::oracle::FuzzOracle;
 use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-use aegis_protocol::request::{FuzzRequest, FuzzResponse};
+use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{load_business_context, parse_stealth_level};
@@ -42,6 +42,8 @@ pub async fn run_fuzz<T: FuzzTransport>(
         .graph
         .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
         .map_err(|e| format!("{e:?}"))?;
+
+    let endpoint_node_map = build_endpoint_node_map(&endpoints, ctx);
     enqueue_targets_for_endpoints(&mut scheduler, &endpoints, ctx);
     filter_scheduler_by_endpoints(
         &mut scheduler,
@@ -89,14 +91,24 @@ pub async fn run_fuzz<T: FuzzTransport>(
             mutator.generate_payloads(target.vulnerability_class, 10)
         };
 
+        let endpoint_node_id = endpoint_node_map.get(&target.endpoint).copied();
+        let linked = endpoint_node_id.map(|id| vec![id]).unwrap_or_default();
+
         for payload in &payloads {
             let request = FuzzRequest {
                 request_id: next_request_id,
                 endpoint: format!("{}{}", target_base, target.endpoint),
                 method: target.method.clone(),
                 parameter_name: target.parameter.clone(),
+                parameter_location: target.parameter_location,
                 payload: payload.raw.clone(),
-                headers: vec![],
+                headers: {
+                    let mut h = vec![];
+                    if target.parameter_location == ParameterLocation::Body {
+                        h.push(("Content-Type".to_string(), "application/json".to_string()));
+                    }
+                    h
+                },
             };
             next_request_id += 1;
 
@@ -119,6 +131,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
             append_anomaly_entries(
                 &anomalies,
                 target.vulnerability_class,
+                &linked,
                 &mut sequence,
                 &mut findings_count,
                 &mut origin_counts,
@@ -146,6 +159,28 @@ pub async fn run_fuzz<T: FuzzTransport>(
     })
 }
 
+fn build_endpoint_node_map(endpoint_ids: &[u64], ctx: &ScanContext) -> HashMap<String, u64> {
+    let mut map = HashMap::new();
+    for &id in endpoint_ids {
+        if let Some(node) = ctx.graph.get_node(id).ok().flatten()
+            && let Some(path) = node.properties.get("path")
+        {
+            map.insert(path.clone(), id);
+        }
+    }
+    map
+}
+
+pub(crate) fn parse_parameter_location(s: &str) -> ParameterLocation {
+    match s {
+        "Body" => ParameterLocation::Body,
+        "Path" => ParameterLocation::Path,
+        "Header" => ParameterLocation::Header,
+        "Cookie" => ParameterLocation::Cookie,
+        _ => ParameterLocation::Query,
+    }
+}
+
 pub(crate) fn enqueue_targets_for_endpoints(
     scheduler: &mut FuzzScheduler,
     endpoint_ids: &[u64],
@@ -160,16 +195,49 @@ pub(crate) fn enqueue_targets_for_endpoints(
                 .cloned()
                 .unwrap_or_else(|| "GET".to_string());
 
-            for class in fuzzable_classes() {
-                scheduler.enqueue(FuzzTarget {
-                    endpoint: endpoint.clone(),
-                    method: method.clone(),
-                    parameter: String::new(),
-                    vulnerability_class: class,
-                    priority_score: 1.0,
-                    attempts: 0,
-                    max_attempts: 3,
-                });
+            let params: Vec<serde_json::Value> = node
+                .properties
+                .get("parameters")
+                .and_then(|p| serde_json::from_str(p).ok())
+                .unwrap_or_default();
+
+            if params.is_empty() {
+                let default_param = if method == "POST" { "cmd" } else { "input" };
+                let default_location = if method == "POST" {
+                    ParameterLocation::Body
+                } else {
+                    ParameterLocation::Query
+                };
+                for class in fuzzable_classes() {
+                    scheduler.enqueue(FuzzTarget {
+                        endpoint: endpoint.clone(),
+                        method: method.clone(),
+                        parameter: default_param.to_string(),
+                        parameter_location: default_location,
+                        vulnerability_class: class,
+                        priority_score: 1.0,
+                        attempts: 0,
+                        max_attempts: 3,
+                    });
+                }
+            } else {
+                for param in &params {
+                    let name = param["name"].as_str().unwrap_or_default().to_string();
+                    let location =
+                        parse_parameter_location(param["location"].as_str().unwrap_or("Query"));
+                    for class in fuzzable_classes() {
+                        scheduler.enqueue(FuzzTarget {
+                            endpoint: endpoint.clone(),
+                            method: method.clone(),
+                            parameter: name.clone(),
+                            parameter_location: location,
+                            vulnerability_class: class,
+                            priority_score: 1.0,
+                            attempts: 0,
+                            max_attempts: 3,
+                        });
+                    }
+                }
             }
         }
     }
@@ -211,6 +279,11 @@ pub(crate) fn fuzzable_classes() -> Vec<VulnerabilityClass> {
         VulnerabilityClass::CommandInjection,
         VulnerabilityClass::PathTraversal,
         VulnerabilityClass::ServerSideRequestForgery,
+        VulnerabilityClass::ServerSideTemplateInjection,
+        VulnerabilityClass::HeaderInjection,
+        VulnerabilityClass::OpenRedirect,
+        VulnerabilityClass::CrlfInjection,
+        VulnerabilityClass::InsecureDeserialization,
     ]
 }
 
@@ -236,6 +309,7 @@ impl FuzzTransport for aegis_evasion_engine::EvasionTransport {
 pub(crate) fn append_anomaly_entries(
     anomalies: &[aegis_fuzzing::oracle::Anomaly],
     vulnerability_class: VulnerabilityClass,
+    linked_node_ids: &[u64],
     sequence: &mut u64,
     findings_count: &mut u64,
     origin_counts: &mut HashMap<FindingOrigin, u64>,
@@ -249,7 +323,7 @@ pub(crate) fn append_anomaly_entries(
             sequence_number: *sequence,
             module: ModuleIdentifier::Fuzzing,
             operation: GraphOperation::AddFinding {
-                linked_node_ids: vec![],
+                linked_node_ids: linked_node_ids.to_vec(),
                 vulnerability_class,
                 severity: anomaly.score,
                 confidence: (anomaly.score * 0.8).min(1.0),

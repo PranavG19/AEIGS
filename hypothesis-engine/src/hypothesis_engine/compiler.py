@@ -5,7 +5,7 @@ import time
 
 from pydantic import BaseModel, Field
 
-from hypothesis_engine.bedrock_client import BedrockClient
+from hypothesis_engine.bedrock_client import LlmBackend
 from hypothesis_engine.generator import Hypothesis
 
 
@@ -34,6 +34,8 @@ class CompilationResult(BaseModel):
     specifications: list[TestSpecification]
     compilation_time_ms: float
     failed_compilations: int
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 COMPILER_SYSTEM_PROMPT = (
@@ -121,40 +123,46 @@ def parse_test_specifications(response_text: str, hypothesis: Hypothesis) -> lis
     return specs
 
 
-class HypothesisCompiler(BedrockClient):
-    def __init__(
-        self,
-        model_id: str = "global.anthropic.claude-sonnet-4-6",
-        aws_profile: str = "ziya",
-        max_retries: int = 3,
-        timeout_seconds: int = 120,
-    ) -> None:
-        super().__init__(
-            model_id=model_id,
-            aws_profile=aws_profile,
-            max_retries=max_retries,
-            timeout_seconds=timeout_seconds,
-        )
+class HypothesisCompiler:
+    def __init__(self, client: LlmBackend) -> None:
+        self._client = client
 
     def compile_hypothesis(self, hypothesis: Hypothesis) -> list[TestSpecification]:
         prompt = build_compilation_prompt(hypothesis)
         messages = [{"role": "user", "content": prompt}]
-        response_text, _usage = self.invoke(
+        response_text, _usage = self._client.invoke(
             messages=messages,
             system=COMPILER_SYSTEM_PROMPT,
             max_tokens=2048,
         )
         return parse_test_specifications(response_text, hypothesis)
 
+    def _compile_one_with_usage(
+        self, hypothesis: Hypothesis
+    ) -> tuple[list[TestSpecification], int, int]:
+        prompt = build_compilation_prompt(hypothesis)
+        messages = [{"role": "user", "content": prompt}]
+        response_text, usage = self._client.invoke(
+            messages=messages,
+            system=COMPILER_SYSTEM_PROMPT,
+            max_tokens=2048,
+        )
+        specs = parse_test_specifications(response_text, hypothesis)
+        return specs, usage.input_tokens, usage.output_tokens
+
     def compile_batch(self, hypotheses: list[Hypothesis]) -> CompilationResult:
         start_time = time.monotonic()
         all_specs: list[TestSpecification] = []
         failed = 0
+        total_input_tokens = 0
+        total_output_tokens = 0
 
         for hypothesis in hypotheses:
             try:
-                specs = self.compile_hypothesis(hypothesis)
+                specs, in_tok, out_tok = self._compile_one_with_usage(hypothesis)
                 all_specs.extend(specs)
+                total_input_tokens += in_tok
+                total_output_tokens += out_tok
             except Exception:
                 failed += 1
 
@@ -164,4 +172,6 @@ class HypothesisCompiler(BedrockClient):
             specifications=all_specs,
             compilation_time_ms=elapsed_ms,
             failed_compilations=failed,
+            input_tokens=total_input_tokens,
+            output_tokens=total_output_tokens,
         )

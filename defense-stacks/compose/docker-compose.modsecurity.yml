@@ -1,0 +1,31 @@
+services:
+  express-app:
+    build:
+      context: ../express-vuln-app
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const http=require('http');http.get('http://localhost:3000/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx
+    ports:
+      - "${WAF_PORT:-8080}:8080"
+    environment:
+      - MODSEC_RULE_ENGINE=On
+      - PARANOIA=${PARANOIA_LEVEL:-2}
+      - BACKEND=http://express-app:3000
+    volumes:
+      - ../modsecurity/modsecurity-override.conf:/etc/modsecurity.d/owasp-crs/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    depends_on:
+      express-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

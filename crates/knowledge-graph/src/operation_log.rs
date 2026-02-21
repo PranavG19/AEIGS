@@ -4,7 +4,7 @@ use crate::node_store::NodeStore;
 use aegis_protocol::edge::EdgeLabel;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, PartialEq)]
 pub enum ValidationError {
@@ -40,14 +40,14 @@ impl std::fmt::Display for ValidationError {
                 source,
                 target,
                 label,
-            } => write!(f, "duplicate edge {source} -{label:?}-> {target}"),
+            } => write!(f, "duplicate edge {source} -{label}-> {target}"),
             Self::InvalidEdgeSemantics {
                 source_type,
                 label,
                 target_type,
             } => write!(
                 f,
-                "invalid edge semantics: {source_type:?} -{label:?}-> {target_type:?}"
+                "invalid edge semantics: {source_type} -{label}-> {target_type}"
             ),
             Self::InvalidWeight(w) => write!(f, "invalid weight: {w}"),
             Self::InvalidSeverity(s) => write!(f, "invalid severity: {s}"),
@@ -147,6 +147,7 @@ impl OperationLog {
         edge_store: &EdgeStore,
     ) -> Result<(), ValidationError> {
         let mut batch_nodes: HashMap<u64, NodeType> = HashMap::new();
+        let mut batch_edges: HashSet<(u64, u64, EdgeLabel)> = HashSet::new();
         let mut next_node_id = node_store.count() as u64;
         let mut next_edge_id = edge_store.count() as u64;
 
@@ -198,6 +199,14 @@ impl OperationLog {
                             label: *label,
                         });
                     }
+                    if batch_edges.contains(&(*source_node_id, *target_node_id, *label)) {
+                        return Err(ValidationError::DuplicateEdge {
+                            source: *source_node_id,
+                            target: *target_node_id,
+                            label: *label,
+                        });
+                    }
+                    batch_edges.insert((*source_node_id, *target_node_id, *label));
                     next_edge_id += 1;
                 }
                 GraphOperation::UpdateWeight {

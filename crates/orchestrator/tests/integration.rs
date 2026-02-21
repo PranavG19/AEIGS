@@ -21,13 +21,12 @@ use aegis_orchestrator::endpoint_similarity::{
 use aegis_orchestrator::interactive::{
     FindingSummary, InteractiveCommand, InteractiveSession, parse_command,
 };
-use aegis_orchestrator::pipeline::{
-    ScanContext, collect_recon_ops, register_default_policies, run_scan,
-};
+use aegis_orchestrator::pipeline::{ScanContext, register_default_policies, run_scan};
 use aegis_orchestrator::pipeline_composer::{
     ComposerError, PhaseType, PipelineDefinition, PipelineStage, default_pipeline, execution_plan,
     minimal_pipeline, topological_order, validate_pipeline,
 };
+use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::{
     BusinessContext, KnownIssue, ScanConfig, StealthLevel, load_business_context,
     parse_stealth_level, resolve_persona_id, validate_localhost,
@@ -159,6 +158,7 @@ fn localhost_config() -> ScanConfig {
         llm: aegis_orchestrator::scan_config::LlmOptions {
             no_llm: false,
             bypass_corpus: None,
+            python_cmd: "python3".to_string(),
         },
         audit: aegis_orchestrator::scan_config::AuditOptions {
             no_audit: true,
@@ -255,7 +255,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "#;
     std::fs::write(tmp.path().join("Cargo.lock"), cargo_lock_contents).unwrap();
 
-    let ops = collect_recon_ops(&Some(tmp.path().to_path_buf())).unwrap();
+    let ops = run_recon_standalone(&Some(tmp.path().to_path_buf())).unwrap();
     assert!(
         !ops.is_empty(),
         "recon should produce ops for dependencies and config files"

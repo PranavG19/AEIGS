@@ -1,0 +1,11 @@
+services:
+  flask-app:
+    build:
+      context: ../flask-vuln-app
+    ports:
+      - "${FLASK_PORT:-5001}:5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

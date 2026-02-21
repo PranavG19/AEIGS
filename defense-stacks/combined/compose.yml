@@ -1,0 +1,36 @@
+services:
+  detector:
+    build:
+      context: ../bot-detection/detector
+    ports:
+      - "5000:5000"
+    environment:
+      - BOT_THRESHOLD=${BOT_THRESHOLD:-0.5}
+
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx
+    environment:
+      - MODSEC_RULE_ENGINE=On
+      - PARANOIA=${PARANOIA_LEVEL:-2}
+      - BACKEND=http://host.docker.internal:${TARGET_PORT:-3000}
+    volumes:
+      - ../modsecurity/modsecurity-override.conf:/etc/modsecurity.d/owasp-crs/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "${COMBINED_PORT:-8083}:8083"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - detector
+      - modsecurity
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

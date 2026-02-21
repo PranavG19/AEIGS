@@ -159,6 +159,7 @@ mod proptests {
             Just(NodeType::Config),
             Just(NodeType::User),
             Just(NodeType::Service),
+            Just(NodeType::Defense),
         ]
     }
 

@@ -288,4 +288,40 @@ dependencies = ["proc-macro2", "quote"]
         };
         assert_eq!(dep1, dep2);
     }
+
+    /// ParseError::JsonError display variant (line 47) via From<serde_json::Error> impl.
+    #[test]
+    fn json_error_display_variant() {
+        let serde_err: serde_json::Error =
+            serde_json::from_str::<serde_json::Value>("bad").unwrap_err();
+        let err = ParseError::from(serde_err);
+        assert!(err.to_string().contains("json parse error"));
+    }
+
+    /// parse_go_sum with a single-token line (parts.len() < 2) is skipped silently.
+    #[test]
+    fn parse_go_sum_skips_malformed_single_token_lines() {
+        let content = "github.com/orphan-module\ngithub.com/gin-gonic/gin v1.9.1 h1:abc\n";
+        let deps = parse_lock_file_content("go.sum", content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0].name, "github.com/gin-gonic/gin");
+    }
+
+    /// parse_go_sum: version without 'v' prefix (strip_prefix returns None, fallback used).
+    #[test]
+    fn parse_go_sum_version_without_v_prefix() {
+        let content = "github.com/example/pkg 1.2.3 h1:abc\n";
+        let deps = parse_lock_file_content("go.sum", content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0].version, "1.2.3");
+    }
+
+    /// parse_gemfile_lock: a spec line with no parentheses is skipped (parse_gem_spec_line returns None).
+    #[test]
+    fn parse_gemfile_lock_skips_spec_line_without_parens() {
+        let content = "GEM\n  remote: https://rubygems.org/\n  specs:\n    no-version-here\n    rack (2.2.8)\n\nPLATFORMS\n  ruby\n";
+        let deps = parse_lock_file_content("Gemfile.lock", content).unwrap();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0].name, "rack");
+    }
 }

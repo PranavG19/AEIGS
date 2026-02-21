@@ -1,0 +1,43 @@
+name: Tier 2 Docker Tests
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  docker-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-docker-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-docker-
+
+      - name: Build Docker images
+        run: |
+          docker compose -f defense-stacks/compose/docker-compose.yml build
+          docker compose -f defense-stacks/compose/docker-compose.modsecurity.yml build
+          docker compose -f defense-stacks/compose/docker-compose.ratelimit.yml build
+          docker compose -f defense-stacks/compose/docker-compose.botdetect.yml build
+          docker compose -f defense-stacks/compose/docker-compose.fulldefense.yml build
+          docker compose -f defense-stacks/compose/docker-compose.flask.yml build
+          docker compose -f defense-stacks/compose/docker-compose.graphql.yml build
+
+      - name: Run Tier 2 tests
+        env:
+          AEGIS_INTEGRATION_TESTS: "1"
+        run: cargo test -p aegis-orchestrator --test docker_integration -- --test-threads=1
+
+      - name: Cleanup Docker
+        if: always()
+        run: docker compose -f defense-stacks/compose/docker-compose.yml down -v --remove-orphans 2>/dev/null || true

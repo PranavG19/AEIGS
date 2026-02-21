@@ -28,6 +28,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -59,6 +62,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -83,6 +89,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 

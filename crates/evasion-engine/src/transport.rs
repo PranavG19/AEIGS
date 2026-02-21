@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use reqwest::Client;
 
-use aegis_protocol::request::{FuzzRequest, FuzzResponse};
+use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
 use crate::header_transformer::HeaderTransformer;
 use crate::persona::Persona;
@@ -129,13 +129,18 @@ impl EvasionTransport {
         transformed_headers: &[(String, String)],
     ) -> Result<reqwest::Request, TransportError> {
         let method = parse_method(&request.method)?;
-        let mut builder = self.client.request(method.clone(), &request.endpoint);
+        let (url, body, extra_headers) = resolve_parameter_injection(request);
+        let mut builder = self.client.request(method, &url);
 
         for (key, value) in transformed_headers {
             builder = builder.header(key, value);
         }
-
-        builder = attach_payload(builder, &method, request);
+        for (key, value) in &extra_headers {
+            builder = builder.header(key, value);
+        }
+        if let Some(body_str) = body {
+            builder = builder.body(body_str);
+        }
 
         builder
             .build()
@@ -164,16 +169,50 @@ impl EvasionTransport {
     }
 }
 
-fn attach_payload(
-    builder: reqwest::RequestBuilder,
-    method: &reqwest::Method,
+fn resolve_parameter_injection(
     request: &FuzzRequest,
-) -> reqwest::RequestBuilder {
-    let pair = [(request.parameter_name.as_str(), request.payload.as_str())];
-    if is_body_method(method) {
-        builder.form(&pair)
-    } else {
-        builder.query(&pair)
+) -> (String, Option<String>, Vec<(String, String)>) {
+    match request.parameter_location {
+        ParameterLocation::Query => {
+            let url = if request.parameter_name.is_empty() {
+                request.endpoint.clone()
+            } else {
+                format!(
+                    "{}?{}={}",
+                    request.endpoint, request.parameter_name, request.payload
+                )
+            };
+            (url, None, vec![])
+        }
+        ParameterLocation::Body => {
+            let body = if request.parameter_name.is_empty() {
+                request.payload.clone()
+            } else {
+                serde_json::json!({ &request.parameter_name: &request.payload }).to_string()
+            };
+            (
+                request.endpoint.clone(),
+                Some(body),
+                vec![("Content-Type".to_string(), "application/json".to_string())],
+            )
+        }
+        ParameterLocation::Path => {
+            let url = request
+                .endpoint
+                .replace(&format!("{{{}}}", request.parameter_name), &request.payload);
+            (url, None, vec![])
+        }
+        ParameterLocation::Header => {
+            let extra = vec![(request.parameter_name.clone(), request.payload.clone())];
+            (request.endpoint.clone(), None, extra)
+        }
+        ParameterLocation::Cookie => {
+            let extra = vec![(
+                "Cookie".to_string(),
+                format!("{}={}", request.parameter_name, request.payload),
+            )];
+            (request.endpoint.clone(), None, extra)
+        }
     }
 }
 
@@ -242,13 +281,6 @@ fn parse_method(method: &str) -> Result<reqwest::Method, TransportError> {
             "unsupported HTTP method: {other}"
         ))),
     }
-}
-
-fn is_body_method(method: &reqwest::Method) -> bool {
-    matches!(
-        *method,
-        reqwest::Method::POST | reqwest::Method::PUT | reqwest::Method::PATCH
-    )
 }
 
 #[cfg(test)]

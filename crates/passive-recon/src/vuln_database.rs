@@ -201,13 +201,6 @@ pub fn version_in_range(version: &str, start: &str, end: &str) -> bool {
 fn compare_versions(a: &str, b: &str) -> std::cmp::Ordering {
     match (semver::Version::parse(a), semver::Version::parse(b)) {
         (Ok(av), Ok(bv)) => av.cmp(&bv),
-        _ => {
-            tracing::debug!(
-                "Non-semver version strings: '{}' vs '{}', using lexicographic fallback",
-                a,
-                b
-            );
-            a.cmp(b)
-        }
+        _ => a.cmp(b),
     }
 }

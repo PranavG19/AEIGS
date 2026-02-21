@@ -1,0 +1,146 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AEGIS Vulnerable Flask App",
+    "description": "Intentionally vulnerable Flask application for AEGIS integration testing.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5001",
+      "description": "Local development server (localhost only)"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": { "description": "Service is healthy" }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "Look up user by ID",
+        "operationId": "getUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "User ID to look up"
+          }
+        ],
+        "responses": {
+          "200": { "description": "User data" },
+          "500": { "description": "SQL error" }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "summary": "Search (reflected XSS)",
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          }
+        ],
+        "responses": {
+          "200": { "description": "HTML search results page" }
+        }
+      }
+    },
+    "/api/exec": {
+      "post": {
+        "summary": "Execute command",
+        "operationId": "execCommand",
+        "parameters": [
+          {
+            "name": "cmd",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Command to execute"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Command output" },
+          "500": { "description": "Command execution error" }
+        }
+      }
+    },
+    "/api/files": {
+      "get": {
+        "summary": "Read file by path",
+        "operationId": "readFile",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "File path to read"
+          }
+        ],
+        "responses": {
+          "200": { "description": "File contents" },
+          "404": { "description": "File not found" }
+        }
+      }
+    },
+    "/api/render": {
+      "get": {
+        "summary": "Render Jinja2 template",
+        "operationId": "renderTemplate",
+        "parameters": [
+          {
+            "name": "template",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Jinja2 template string to render"
+          }
+        ],
+        "responses": {
+          "200": { "description": "Rendered template output" },
+          "500": { "description": "Template rendering error" }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "summary": "Application configuration",
+        "operationId": "getConfig",
+        "responses": {
+          "200": { "description": "Debug configuration data" }
+        }
+      }
+    },
+    "/api/redirect": {
+      "get": {
+        "summary": "Redirect to URL",
+        "operationId": "redirect",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uri" },
+            "description": "URL to redirect to"
+          }
+        ],
+        "responses": {
+          "302": { "description": "Redirect to provided URL" }
+        }
+      }
+    }
+  }
+}

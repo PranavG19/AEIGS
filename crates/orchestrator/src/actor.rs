@@ -6,8 +6,9 @@ use aegis_protocol::scan_event::{ScanEvent, ScanEventEnvelope};
 
 use crate::phase_analyze::run_analyze;
 use crate::phase_fuzz::{FuzzPhaseResult, FuzzTransport, run_fuzz};
+use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::run_report_with_previous;
-use crate::pipeline::{PhaseResult, ScanContext, collect_fingerprint_ops, collect_recon_ops};
+use crate::pipeline::{PhaseResult, ScanContext, collect_fingerprint_ops};
 use crate::scan_config::ScanMetrics;
 
 /// Errors produced by actor processing.
@@ -75,7 +76,7 @@ fn phase_completed_event(
 
 /// Source actor that discovers dependencies and filesystem structure.
 ///
-/// Ignores input events. Calls `collect_recon_ops()`, applies operations to the
+/// Ignores input events. Calls `run_recon_standalone()`, applies operations to the
 /// graph, and emits `EndpointDiscovered` events for each endpoint node plus a
 /// final `PhaseCompleted` event.
 pub struct ReconActor;
@@ -92,7 +93,7 @@ impl ScanActor for ReconActor {
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
         let source_dir = ctx.config.source_dir.clone();
-        let recon_ops = collect_recon_ops(&source_dir).map_err(ActorError::Phase)?;
+        let recon_ops = run_recon_standalone(&source_dir).map_err(ActorError::Phase)?;
         let ops_count = recon_ops.len() as u64;
 
         if !recon_ops.is_empty() {
@@ -160,7 +161,11 @@ impl ScanActor for FingerprintActor {
         _events: &[ScanEventEnvelope],
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
-        let (fp_ops, profile) = collect_fingerprint_ops();
+        let mut seq = ctx
+            .graph
+            .total_operations_applied()
+            .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+        let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
         let ops_count = fp_ops.len() as u64;
 
         if !fp_ops.is_empty() {

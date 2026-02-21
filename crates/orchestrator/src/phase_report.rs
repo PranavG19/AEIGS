@@ -115,6 +115,13 @@ pub fn run_report_with_previous(
             (None, None)
         };
 
+        let endpoint_opt = if endpoint.is_empty() {
+            None
+        } else {
+            Some(endpoint.clone())
+        };
+        let http_method = method_for_finding(&finding.linked_node_ids, ctx);
+
         sarif_findings.push(SarifFinding {
             rule_id: format!("AEGIS-{fid}"),
             rule_description: format!("{:?}", finding.vulnerability_class),
@@ -138,6 +145,9 @@ pub fn run_report_with_previous(
             confidence_score: None,
             suppression_kind,
             suppression_message,
+            endpoint: endpoint_opt,
+            http_method,
+            parameter_name: None,
         });
     }
 
@@ -282,6 +292,17 @@ pub(crate) fn endpoint_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -
         }
     }
     String::new()
+}
+
+pub(crate) fn method_for_finding(linked_node_ids: &[u64], ctx: &ScanContext) -> Option<String> {
+    for &node_id in linked_node_ids {
+        if let Some(node) = ctx.graph.get_node(node_id).ok().flatten()
+            && let Some(method) = node.properties.get("method")
+        {
+            return Some(method.clone());
+        }
+    }
+    None
 }
 
 pub(crate) fn inject_metrics_into_sarif(sarif_json: &mut serde_json::Value, metrics: &ScanMetrics) {

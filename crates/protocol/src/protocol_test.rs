@@ -8,7 +8,7 @@ mod tests {
     use crate::ipc::{GraphQuery, IpcFrame, IpcMessage};
     use crate::node::{NodeData, NodeType};
     use crate::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-    use crate::request::{FuzzRequest, FuzzResponse};
+    use crate::request::{FuzzRequest, FuzzResponse, ParameterLocation};
     use crate::target_validation::{TargetValidationError, validate_target_is_localhost};
 
     #[test]
@@ -755,6 +755,7 @@ mod tests {
             endpoint: "http://localhost:8080/api/users".to_string(),
             method: "POST".to_string(),
             parameter_name: "username".to_string(),
+            parameter_location: ParameterLocation::Query,
             payload: "' OR 1=1 --".to_string(),
             headers: vec![
                 ("Content-Type".to_string(), "application/json".to_string()),
@@ -800,6 +801,7 @@ mod tests {
             endpoint: "http://localhost/test".to_string(),
             method: "GET".to_string(),
             parameter_name: "q".to_string(),
+            parameter_location: ParameterLocation::Query,
             payload: "<script>alert(1)</script>".to_string(),
             headers: vec![],
         };
@@ -825,6 +827,25 @@ mod tests {
         assert_eq!(cloned.request_id, response.request_id);
         assert_eq!(cloned.status_code, response.status_code);
         assert_eq!(cloned.response_time, response.response_time);
+    }
+
+    #[test]
+    fn fuzz_request_with_parameter_location() {
+        let req = FuzzRequest {
+            request_id: 1,
+            endpoint: "http://localhost/api".into(),
+            method: "POST".into(),
+            parameter_name: "email".into(),
+            parameter_location: ParameterLocation::Body,
+            payload: "test".into(),
+            headers: vec![],
+        };
+        assert_eq!(req.parameter_location, ParameterLocation::Body);
+    }
+
+    #[test]
+    fn parameter_location_default_is_query() {
+        assert_eq!(ParameterLocation::default(), ParameterLocation::Query);
     }
 
     #[test]

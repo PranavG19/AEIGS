@@ -1,14 +1,16 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 1,267 Rust tests, 187 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,374 Rust tests, 229 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 1,267 tests across 11 crates
+cargo test --workspace                                                # 2,374 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
-cargo fmt --check                                                     # formatting gate
-cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 187 Python tests
+cargo fmt --all --check                                               # formatting gate
+cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 229 Python tests
+AEGIS_INTEGRATION_TESTS=1 cargo test -p aegis-orchestrator \
+  --test docker_integration -- --test-threads=1                       # 28 Docker Tier 2 tests (requires Docker/Colima)
 ```
 
 ## Architecture
@@ -21,27 +23,38 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
     |                    Semantic edge validation, weight/score bounds, duplicate edge detection,
     |                    strict sequence gap detection, JSON persistence (save/load), serde derives
     |
-    ├── audit-log              Hash-chained append-only log (SHA3-256 + HMAC + CBOR)
+    ├── audit-log              Hash-chained append-only log (SHA3-256 + HMAC + CBOR),
+    │     │                    event sourcing (replay, snapshot, diff, timeline)
     │     └── supervisor       Process lifecycle + capability tokens
     │
     ├── passive-recon          Lock file parsing (cargo-lock), vuln DB (SQLite), filesystem walking
-    ├── enumeration            Route discovery, OpenAPI (openapiv3), GraphQL (graphql-parser), auth matrix
+    ├── enumeration            Route discovery, OpenAPI (openapiv3), GraphQL (graphql-parser), auth matrix,
+    │                          GraphQL fallback discovery (error-based + brute-force), auth flow modeling
     ├── fuzzing                Priority scheduler (novelty-based), payload mutation (tagged), stealth mode,
     │                          rate-limited execution, anomaly oracle (counterfactual testing),
-    │                          WAF detection, rate limit probing, bot detection (merged from defense-fingerprinting)
+    │                          WAF detection, rate limit probing, bot detection (merged from defense-fingerprinting),
+    │                          WebSocket/SSE streaming fuzzer, concurrent request patterns, UCB1 payload selector
     ├── chain-synthesis        Attack graph (petgraph DiGraph), shortest paths, centrality analysis (capped),
-    │                          causal mitigation impact analysis, priority-bounded DFS path enumeration
+    │                          causal mitigation impact analysis, priority-bounded DFS path enumeration,
+    │                          DOT export, defense gap analysis
     ├── reporting              Risk scoring (defense-aware, confidence-weighted), SARIF 2.1.0 (CWE + ATT&CK),
-    │                          CBOR certificates, human-readable narratives, CVE references, mitigation priority
+    │                          CBOR certificates, human-readable narratives, CVE references, mitigation priority,
+    │                          multi-format output (Developer/Security/Executive)
     ├── evasion-engine         Persona-based HTTP transport (10 personas, rotation), header/encoding transforms,
-    │                          timing jitter, session rotation, localhost enforcement
+    │                          timing jitter, session rotation, localhost enforcement,
+    │                          TLS fingerprint abstraction (JA3 mapping, dual-backend Reqwest/Rquest)
     └── orchestrator           CLI binary (clap), concurrent recon+fingerprint, audit logging,
                                iterative scan pipeline: recon → fingerprint → (fuzz → analyze)* → report
-                               Per-phase timing, LLM attribution, endpoint filtering, convergence detection
+                               Per-phase timing, LLM attribution, endpoint filtering, convergence detection,
+                               scan checkpoints/resume, benchmark evaluation, confidence calibration,
+                               endpoint similarity (TF-IDF), scan history (SQLite), interactive mode,
+                               pipeline composition (topological ordering), distributed coordination,
+                               opt-in telemetry
 
 hypothesis-engine        (Python) LLM hypothesis generation via pluggable backends (Bedrock, OpenAI, ollama),
                          chain-of-thought prompting, evasion mode, test compilation, per-class feedback loop,
-                         token usage tracking, LlmBackend ABC for backend abstraction
+                         token usage tracking, LlmBackend ABC for backend abstraction,
+                         uncertainty quantification (hedging/confidence pattern analysis)
 ```
 
 ## Code Organization
@@ -50,43 +63,99 @@ hypothesis-engine        (Python) LLM hypothesis generation via pluggable backen
 crates/
 ├── protocol/src/           node.rs  edge.rs  finding.rs  operation.rs  audit.rs  capability.rs
 │                           ipc.rs  target_validation.rs  request.rs  defense_context.rs
+│                           scope_attestation.rs  signed_config.rs  scan_event.rs
 ├── knowledge-graph/src/    node_store.rs  edge_store.rs  finding_store.rs  operation_log.rs  graph.rs
-│                           query/{path_queries,reachability}.rs
-├── audit-log/src/          hash_chain.rs  hmac_signer.rs  log_writer.rs  log_verifier.rs
+│                           graph_store.rs  query/{path_queries,reachability}.rs
+├── audit-log/src/          hash_chain.rs  hmac_signer.rs  log_writer.rs  log_verifier.rs  event_store.rs
 ├── supervisor/src/         process_manager.rs  capability_manager.rs
 ├── passive-recon/src/      dependency_parser.rs  vuln_database.rs  filesystem_walker.rs
-├── enumeration/src/        route_parser.rs  introspection.rs  auth_matrix.rs
+├── enumeration/src/        route_parser.rs  introspection.rs  auth_matrix.rs  graphql_discovery.rs
+│                           auth_flow.rs
 ├── fuzzing/src/            scheduler.rs  mutator.rs  executor.rs  oracle.rs  stealth_config.rs
-│                           defense_profile.rs  waf_fingerprinter.rs  rate_limit_detector.rs  bot_detection_probe.rs
-├── chain-synthesis/src/    attack_graph.rs  path_analysis.rs
+│                           defense_profile.rs  waf_fingerprinter.rs  rate_limit_detector.rs
+│                           bot_detection_probe.rs  streaming_fuzzer.rs  request_patterns.rs
+│                           payload_selector.rs
+├── chain-synthesis/src/    attack_graph.rs  path_analysis.rs  graph_export.rs
 ├── reporting/src/          risk_scorer.rs  sarif_emitter.rs  certificate_serializer.rs  narrative.rs
+│                           report_format.rs
 ├── evasion-engine/src/     persona.rs  header_transformer.rs  encoding_transformer.rs  timing_controller.rs
-│                           session_manager.rs  transport.rs
+│                           session_manager.rs  transport.rs  tls_config.rs
 └── orchestrator/src/       scan_config.rs  pipeline.rs  phase_recon.rs  phase_fingerprint.rs
-                            phase_fuzz.rs  phase_analyze.rs  phase_report.rs  main.rs
+                            phase_fuzz.rs  phase_analyze.rs  phase_report.rs  main.rs  util.rs
+                            actor.rs  benchmark.rs  calibration.rs  checkpoint.rs  convergence.rs
+                            distributed.rs  endpoint_similarity.rs  graph_persistence.rs
+                            interactive.rs  pipeline_composer.rs  scan_history.rs  telemetry.rs
 
 hypothesis-engine/src/hypothesis_engine/
     bedrock_client.py  openai_client.py  generator.py  compiler.py  feedback.py  evasion_mode.py
-    bypass_examples.json
+    uncertainty.py  bypass_examples.json
+
+.github/workflows/
+    tier1-tests.yml                 PR/push: cargo fmt, clippy, workspace tests, pytest
+    tier2-tests.yml                 Push to main: Docker build + Tier 2 integration tests
+    ground-truth-validation.yml     Manual dispatch: validates scanner against ground truth fixtures
+
+scripts/
+    validate-ground-truth.sh        Local ground truth validation (builds stacks, runs scanner, checks findings)
 ```
 
 Every source file has an adjacent test file: `{module}_test.rs` for Rust, `test_{module}.py` for Python.
+
+## Defense Stacks (Docker Fixture Apps)
+
+```
+defense-stacks/
+├── express-vuln-app/       Express.js app with 17 endpoints covering all 16 VulnerabilityClass variants
+│                           Uses better-sqlite3, ejs (SSTI), node-serialize (insecure deser)
+│                           Includes openapi.json spec + ground-truth.json (16 findings)
+├── flask-vuln-app/         Flask app with 8 endpoints: SQLi, XSS, CmdInj, PathTraversal, SSTI, Misconfig, OpenRedirect
+│                           Poetry-managed, ground-truth.json (7 findings), pyyaml 5.3.1 (CVE-2020-14343)
+├── graphql-vuln-app/       Apollo/express-graphql with SQLi, XSS, PathTraversal, BrokenAuth, BrokenAuthz, SensitiveData
+│                           Introspection toggleable via DISABLE_INTROSPECTION=1, ground-truth.json (8 findings)
+├── bot-detection/          Python bot detector: header/UA scoring with configurable BOT_THRESHOLD
+│   └── detector/           Flask app on port 5000, scoring formula: ua_score(0.4) + header_score(0.6 * present/3)
+├── modsecurity/            ModSecurity CRS override config (modsecurity-override.conf)
+└── compose/                Docker Compose stacks + nginx configs
+    ├── docker-compose.yml               Express standalone (port 3000)
+    ├── docker-compose.modsecurity.yml   Express + ModSecurity WAF (port 8080)
+    ├── docker-compose.ratelimit.yml     Express + nginx rate limiting (port 8081)
+    ├── docker-compose.botdetect.yml     Express + bot detection proxy (port 8082)
+    ├── docker-compose.fulldefense.yml   Express + WAF + rate limit + bot detect (port 8083)
+    ├── docker-compose.flask.yml         Flask standalone (port 5001)
+    ├── docker-compose.graphql.yml       GraphQL (port 4000) + no-introspection variant (port 4001)
+    ├── nginx-ratelimit.conf             10 req/s rate limit with burst=20
+    ├── nginx-botdetect.conf             auth_request to bot detector before upstream
+    └── nginx-fulldefense.conf           bot detect → WAF → upstream chain
+```
+
+### Docker Tier 2 Integration Tests
+
+`crates/orchestrator/tests/docker_integration.rs` — 25 tests gated behind `AEGIS_INTEGRATION_TESTS=1`:
+- **7 Express tests**: ground truth validation, OpenAPI-guided scanning, recon-only, ModSecurity bypass, rate limit stealth, bot detect evasion, full defense
+- **3 Flask tests**: ground truth, SSTI detection, recon-only
+- **3 GraphQL tests**: introspection-based, fallback discovery, auth bypass
+- **4 Cross-scan tests**: checkpoint resume, diff-mode SARIF, convergence detection, scan history
+- **3 Report format tests**: developer SARIF, security ATT&CK, executive summary
+- **3 Stealth mode tests**: aggressive, paranoid, benchmark
+- **2 Audit trail tests**: full scan integrity, replay matches scan results
+
+Uses `DockerCompose` RAII struct with Drop-based teardown. Requires Docker or Colima runtime.
 
 ## Key Dependencies
 
 | Crate | Notable Deps |
 |---|---|
-| protocol | serde, serde_json, sha3 |
+| protocol | serde, serde_json, sha3, ed25519-dalek |
 | knowledge-graph | parking_lot, serde_json, proptest (dev), tempfile (dev) |
-| audit-log | sha3, hmac, ciborium |
+| audit-log | sha3, hmac, ciborium, serde_json |
 | supervisor | tokio, sha3, subtle |
 | passive-recon | rusqlite (bundled), semver, cargo-lock |
 | enumeration | reqwest, openapiv3, graphql-parser |
-| fuzzing | rand, reqwest, uuid, regex, aegis-protocol |
+| fuzzing | rand, reqwest, uuid, regex, url, aegis-protocol |
 | chain-synthesis | petgraph |
 | reporting | sarif_rust, ciborium, sha3, aegis-fuzzing |
 | evasion-engine | reqwest, rand, aegis-protocol (no longer depends on aegis-fuzzing) |
-| orchestrator | clap, tracing, rand, tempfile (dev), all workspace crates |
+| orchestrator | clap, tracing, rand, rusqlite (bundled), tempfile (dev), reqwest (dev), all workspace crates |
 | hypothesis-engine | boto3, botocore, pydantic |
 
 Rust edition 2024. Python >= 3.12 via `uv`.
@@ -120,6 +189,32 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **CertificateType** — 6 variants: Fuzzing, Taint, Chain, Config, Dependency, Evasion. Envelope versioned (current: v2).
 - **BusinessContext** — JSON-loadable business annotations: excluded_endpoints, critical_assets, pii_endpoints, known_issues.
 - **TokenUsage** — Pydantic model tracking input_tokens and output_tokens from Bedrock API calls.
+- **ScopeDocument / SignedScopeAttestation** — Ed25519-signed authorization documents binding target + authorized_by + expiry. Verified via `verify_attestation()`.
+- **SignableConfig / SignedConfig** — Ed25519-signed scan configuration with SHA3-256 content hash. Tamper detection via `verify_signed_config()`.
+- **ScanEvent** — Typed event enum (EndpointDiscovered, HypothesisGenerated, PayloadTested, AnomalyDetected, FindingConfirmed, etc.) for inter-module event bus.
+- **GraphStore** — Trait abstracting knowledge graph access (apply_operations, nodes_by_type, findings, save/load). Enables test fakes.
+- **EventQuery / ScanSnapshot / SnapshotDiff** — Event sourcing types for audit log replay. `replay_from_entries()` reconstructs scan state; `diff_snapshots()` computes deltas.
+- **GraphQlDiscoveryResult** — Fallback GraphQL discovery: extracted query/mutation fields + discovery method (ErrorBased, CommonFieldBrute, Combined).
+- **AuthFlow / AuthFlowStep** — Multi-step authentication flow modeling with template rendering, response extraction, and vulnerability detection (session fixation, weak IDs, insecure cookies).
+- **StreamProtocol / StreamFuzzTarget / StreamFuzzResult** — WebSocket and SSE streaming fuzzer: protocol-aware payload generation, message analysis, anomaly scoring.
+- **BrowsingPattern / RequestBatch / CoverTrafficConfig** — Concurrent request patterns: Sequential, BurstThenPause, ParallelResources, NavigationChain. Cover traffic injection for stealth.
+- **PayloadSelector** — UCB1 multi-armed bandit for adaptive payload selection. Balances exploitation of effective payloads with exploration of novel ones.
+- **DefenseGapReport** — Unprotected entry points/assets identified by defense gap analysis on the attack graph.
+- **ReportFormat** — 3-variant enum: Developer (SARIF), Security (ATT&CK-enriched), Executive (summary JSON).
+- **TlsFingerprint** — 6 variants: Chrome120, Firefox121, Safari17, Edge120, Curl, Default. Maps to JA3 hash strings via `ja3_hash()`.
+- **HttpClientBackend** — Reqwest (always available) vs Rquest (TLS fingerprint control). **TlsConfig / HttpClientConfig** — Builder-pattern configs.
+- **FingerprintMapping** — HashMap\<PersonaId, TlsFingerprint\> ensuring persona-TLS consistency.
+- **ScanCheckpoint** — Serializable scan progress for resume: completed phases, iteration count, findings count.
+- **GroundTruth / BenchmarkFixture / BenchmarkEvaluation** — Benchmark framework: ground truth entries, precision/recall/F1 computation, per-class metrics.
+- **CalibrationReport / CalibrationBin** — Confidence calibration: histogram binning, expected calibration error (ECE), over/underconfidence detection.
+- **EndpointSignature / TransferredFinding** — TF-IDF endpoint similarity for cross-endpoint hypothesis transfer.
+- **ScanHistoryEntry / ScanHistoryRecord** — SQLite-backed scan history: per-payload outcomes across scans for adaptive selection.
+- **RefutedTracker** — Monotonic set of refuted hypotheses preventing re-testing in iterative fuzz loops.
+- **InteractiveCommand / InteractiveSession** — Interactive scan control: pause/resume/status/findings/endpoints/priority/skip/quit.
+- **PipelineStage / PipelineDefinition / PhaseType** — Declarative pipeline composition with topological ordering (Kahn's algorithm) and execution wave planning.
+- **DistributedConfig / CoordinatorState / WorkAssignment** — Distributed scan coordination: worker partitioning (RoundRobin, PriorityBased), heartbeat failure detection, rebalancing.
+- **TelemetryConfig / TelemetryCollector** — Opt-in aggregate telemetry: scan duration, finding counts, phase timing. Never raw findings/payloads. Disabled by default.
+- **ScanActor** — Trait for pipeline phase actors (name, required capabilities, execute). Implementations: ReconActor, FingerprintActor, FuzzActor\<T\>, AnalyzeActor, ReportActor, ConvergenceActor.
 
 ## LLM Configuration
 
@@ -173,6 +268,29 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Endpoint response variance detection — `measure_endpoint_variance()` sends N identical requests and measures status code/body size variance; high-variance endpoints flagged as non-deterministic to reduce false positives in counterfactual testing
 - Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence()` maps EvidenceLevel to base confidence; `effective_confidence()` resolves to score or falls back to evidence-based calculation
 - Defense-fingerprinting merged into fuzzing crate — eliminates a leaf crate with no consumers other than orchestrator and reporting; reduces workspace crate count from 12 to 11; WAF/rate-limit/bot-detection types now re-exported from `aegis_fuzzing` root alongside scheduler/mutator types
+- Ed25519 (ed25519-dalek) for scope attestation and config signing — asymmetric signatures allow offline verification without shared secrets; SHA3-256 content hash for config integrity
+- Event sourcing for audit log — `replay_from_entries()` reconstructs scan state from audit events; `diff_snapshots()` computes deltas between states; enables post-hoc analysis without separate state persistence
+- GraphStore trait for knowledge graph abstraction — all pipeline phases operate through trait; tests inject lightweight fakes instead of full KnowledgeGraph; `Send + Sync` bound for async compatibility
+- ScanEvent typed event bus — enum-based events (not strings) for compile-time exhaustiveness; enables inter-module communication without direct dependencies
+- GraphQL fallback discovery — error-based field extraction + common field brute-force when introspection is disabled; merges results from both strategies
+- Multi-step auth flow modeling — template-based request rendering with `{{variable}}` interpolation; response extraction from headers/JSON/cookies/status codes; detects session fixation, weak session IDs, insecure cookies
+- WebSocket/SSE streaming fuzzer — protocol-aware payload generation; localhost validation on ws:// and sse:// URLs; anomaly types: UnexpectedClose, ErrorFrame, DataLeak, AuthBypass, StateCorruption, ProtocolViolation
+- UCB1 bandit for payload selection — balances exploitation (historically effective payloads) with exploration (untested payloads); novel payloads receive infinite priority; standard C=sqrt(2) exploration constant
+- Concurrent request patterns with cover traffic — BrowsingPattern enum controls timing; cover traffic injected into batches to mimic real browsing; MAX_BATCH_SIZE=64 prevents resource exhaustion
+- DOT export for attack graphs — Graphviz visualization with node coloring by type, edge coloring by difficulty; defense gap analysis identifies unprotected entry points/assets
+- Multi-format reporting — Developer (IDE SARIF), Security (ATT&CK-enriched SARIF), Executive (summary JSON); same findings, different emphasis per audience
+- TLS fingerprint abstraction — PersonaId→JA3 hash mapping; HttpClientBackend enum (Reqwest/Rquest) allows future swap without API changes; Chrome120/Edge120 share Chromium JA3 hash
+- Scan checkpoints for resume — JSON-serialized progress alongside graph DB; deleted on successful completion; enables interrupted scan recovery
+- Benchmark evaluation with ground truth — GroundTruthEntry(endpoint, vulnerability_class) pairs; precision/recall/F1 per class and aggregate; enables regression testing
+- Confidence calibration — histogram binning of confidence scores vs actual positive rates; expected calibration error (ECE) metric; identifies over/underconfident score ranges
+- TF-IDF endpoint similarity — structural comparison of endpoint signatures (path segments, methods, parameters); transfers confirmed vulnerability hypotheses to similar endpoints
+- SQLite scan history — per-payload success/failure records across scans; enables adaptive payload selection and cross-scan learning; rusqlite bundled (zero external deps)
+- Refuted hypothesis tracking — monotonic HashSet prevents re-testing failed hypotheses; shrinks search space across iterations; no false negative risk (refuted = tested + no findings)
+- Interactive scan mode — command parser with case-insensitive matching; session state tracks paused/running status; does not require async runtime
+- Pipeline composition via topological sort — Kahn's algorithm for dependency resolution; execution waves group independent stages; validates no cycles, no missing dependencies
+- Distributed scan coordination — worker partitioning strategies (RoundRobin, PriorityBased, VulnerabilityClass); heartbeat-based failure detection; automatic rebalancing on worker failure
+- Opt-in telemetry — disabled by default, explicit `TelemetryConfig { enabled: true }` required; aggregate-only (scan duration, finding counts, phase timing); never raw findings, payloads, or endpoint URLs
+- Uncertainty quantification (Python) — hedging pattern detection ("might", "possibly", "could be") and confidence pattern detection ("confirms", "clearly") in LLM reasoning traces; adjusts hypothesis confidence scores
 
 ## Graph Validation Rules
 
@@ -226,7 +344,32 @@ The knowledge graph enforces these constraints during batch validation:
 - `EvasionHypothesisGenerator` and `HypothesisCompiler` — RESOLVED: both now use composition via `LlmBackend`
 - `OpenAiClient` 429 handling — RESOLVED: now retries with exponential backoff, same as 5xx
 - `CompilationResult` (Python) — RESOLVED: `input_tokens` and `output_tokens` fields added and propagated from `HypothesisCompiler`
-- OpenAPI `requestBody` extraction covers `application/json`, `application/x-www-form-urlencoded`, and `multipart/form-data` — per-property `required` arrays are not traversed; all properties inherit the body-level `required` flag
+- OpenAPI `requestBody` IS extracted in `enumeration` crate (`introspection.rs:120-150`) — body parameters parsed with `ParameterLocation::Body`. However, parameter metadata is **not persisted to the knowledge graph** and **not used by the fuzzer**: `FuzzTarget.parameter` is always empty string; `enqueue_targets_for_endpoints()` reads only `path` and `method` from graph node properties
 - `FuzzScheduler` NaN handling — RESOLVED: `enqueue()` now clamps non-finite `priority_score` to `0.0` before insertion
 - `bypass_examples.json` loading — RESOLVED: `_load_bypass_examples()` now checks `corpus_path.exists()` and emits `RuntimeWarning` + returns `{}` if missing
 - `cargo fmt --check` — RESOLVED: formatting is now clean workspace-wide; gate is enforced
+- `GraphStore` trait must be `Send + Sync` — required for `ScanContext` across async boundaries; `KnowledgeGraph` implements this via `parking_lot::RwLock`
+- `ScopeDocument` / `SignedConfig` use `ed25519-dalek` — signing keys are `SigningKey`, verification uses `VerifyingKey`; hex-encoded in serialized forms
+- `event_store::replay_from_entries()` is independent of `AuditLogWriter` — operates on `&[AuditEntry]` slices; does not verify hash chain or HMAC signatures
+- `graphql_discovery` COMMON_QUERY_FIELDS (21) and COMMON_MUTATION_FIELDS (13) are hardcoded — extend these arrays when adding new field brute-force targets
+- `auth_flow` template rendering uses `{{variable}}` syntax — double curly braces; `render_template()` replaces from HashMap; unresolved variables are left as-is
+- `streaming_fuzzer::validate_stream_target()` enforces localhost on ws:// URLs — reuses protocol crate's target validation; SSE uses http:// so standard validation applies
+- `PayloadSelector::ucb1_score()` returns `f64::INFINITY` for novel payloads — ensures untested payloads are always selected first
+- `request_patterns` MAX_BATCH_SIZE=64 — `build_burst_batch()` and `build_parallel_resources_batch()` clamp at this limit
+- `graph_export::export_dot()` escapes labels — uses `dot_escape()` to prevent Graphviz injection from node labels
+- `tls_config` Chrome120 and Edge120 JA3 hashes are identical — both are Chromium-based; test `ja3_hash_chrome_and_edge_share_chromium_base` asserts this
+- `ScanCheckpoint` deleted on successful scan completion — presence of checkpoint file indicates interrupted scan
+- `BenchmarkEvaluation` F1 score is 0.0 when precision + recall = 0 — avoids division by zero
+- `CalibrationReport::expected_calibration_error` computed as weighted average of |mean_confidence - actual_positive_rate| per bin
+- `EndpointSignature` tokenization splits path on `/`, `_`, `-`, and camelCase boundaries — affects TF-IDF similarity
+- `ScanHistoryEntry::target_app_hash` groups history records by target application — prevents cross-app contamination in adaptive selection
+- `InteractiveSession::execute_command()` returns `InteractiveResponse` — caller is responsible for rendering; no I/O in the module itself
+- `PipelineDefinition::validate()` checks for cycles, missing dependencies, and at least one Source stage — call before `topological_order()`
+- `CoordinatorState::detect_failed_workers()` requires caller to provide current timestamp — uses `heartbeat_timeout_ms` from config; returns list of failed `WorkerId`s
+- `TelemetryCollector::export_json()` sanitizes error categories — strips stack traces and paths; only category strings like "network_error", "timeout", "parse_failure"
+- `--resume` requires `--graph-db` — checkpoint logic is fully wired: saves after each phase, skips completed phases on resume, deletes checkpoint on successful completion. Without `--graph-db`, `--resume` logs a warning and proceeds without checkpointing.
+- Docker fixture apps bind to `0.0.0.0` (not `127.0.0.1`) — required for Docker networking; Node Alpine containers use `node -e` healthchecks (not `wget`)
+- Bot detector scoring formula: `ua_score(0.4) + header_score(0.6 * present/len(REQUIRED_BROWSER_HEADERS))` — max=1.0; BOT_THRESHOLD default 0.5; requests scoring below threshold are classified as bots
+- Flask Dockerfile uses `poetry install --only main --no-root` with `POETRY_VIRTUALENVS_CREATE=false` — Poetry 2.x deprecated `--no-dev`
+- Docker Tier 2 tests use RAII `DockerCompose` struct — Drop trait tears down containers; `--test-threads=1` required to avoid port conflicts
+- Colima (`colima start --cpu 4 --memory 4`) works as Docker Desktop alternative on macOS — avoids organizational sign-in requirements

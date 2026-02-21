@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use aegis_protocol::finding::VulnerabilityClass;
+    use aegis_protocol::request::ParameterLocation;
 
     use crate::scheduler::{FuzzScheduler, FuzzTarget, is_fuzzable};
     use crate::stealth_config::StealthConfig;
@@ -10,6 +11,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             method: "GET".to_string(),
             parameter: "q".to_string(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: priority,
             attempts: 0,
@@ -128,6 +130,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             method: "GET".to_string(),
             parameter: "q".to_string(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: class,
             priority_score: priority,
             attempts: 0,
@@ -389,6 +392,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             method: "GET".to_string(),
             parameter: param.to_string(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: priority,
             attempts: 0,
@@ -406,6 +410,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             method: "GET".to_string(),
             parameter: param.to_string(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: class,
             priority_score: priority,
             attempts: 0,
@@ -560,5 +565,20 @@ mod tests {
         let second = scheduler.next_target().unwrap();
         assert_eq!(second.endpoint, "/nan");
         assert_eq!(second.priority_score, 0.0);
+    }
+
+    #[test]
+    fn fuzz_target_carries_parameter_location() {
+        let target = FuzzTarget {
+            endpoint: "/api/users".into(),
+            method: "POST".into(),
+            parameter: "email".into(),
+            parameter_location: ParameterLocation::Body,
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+            priority_score: 1.0,
+            attempts: 0,
+            max_attempts: 3,
+        };
+        assert_eq!(target.parameter_location, ParameterLocation::Body);
     }
 }

@@ -814,4 +814,43 @@ mod tests {
         assert!(finding.to_string().contains("finding"));
         assert!(finding.to_string().contains("7"));
     }
+
+    #[test]
+    fn validate_batch_rejects_intra_batch_duplicate_edges() {
+        let log = OperationLog::new();
+        let (nodes, edges, _) = make_stores();
+
+        let ops = vec![
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![],
+            },
+            GraphOperation::AddNode {
+                node_type: NodeType::Function,
+                properties: vec![],
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 0,
+                target_node_id: 1,
+                label: EdgeLabel::Calls,
+                weight: 1.0,
+            },
+            GraphOperation::AddEdge {
+                source_node_id: 0,
+                target_node_id: 1,
+                label: EdgeLabel::Calls,
+                weight: 2.0,
+            },
+        ];
+
+        let result = log.validate_batch(&ops, &nodes, &edges);
+        assert_eq!(
+            result,
+            Err(ValidationError::DuplicateEdge {
+                source: 0,
+                target: 1,
+                label: EdgeLabel::Calls,
+            })
+        );
+    }
 }

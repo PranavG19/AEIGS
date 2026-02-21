@@ -133,3 +133,216 @@ fn build_protected_by_edges_empty_endpoints_returns_empty() {
 
     assert!(entries.is_empty());
 }
+
+#[test]
+fn endpoint_properties_includes_path_and_method() {
+    use aegis_enumeration::introspection::IntrospectedEndpoint;
+
+    let ep = IntrospectedEndpoint {
+        path: "/api/users".to_string(),
+        method: "GET".to_string(),
+        parameters: vec![],
+        response_type: None,
+        description: None,
+        security_schemes: vec![],
+        request_content_types: vec![],
+        response_status_codes: vec![],
+    };
+
+    let props = phase_fingerprint::endpoint_properties(&ep);
+
+    let map: std::collections::HashMap<&str, &str> = props
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    assert_eq!(map["path"], "/api/users");
+    assert_eq!(map["method"], "GET");
+    assert!(!map.contains_key("parameters"));
+    assert!(!map.contains_key("request_content_types"));
+}
+
+#[test]
+fn endpoint_properties_serializes_parameters_as_json() {
+    use aegis_enumeration::introspection::{
+        EndpointParameter, IntrospectedEndpoint, ParameterLocation,
+    };
+
+    let ep = IntrospectedEndpoint {
+        path: "/api/items".to_string(),
+        method: "POST".to_string(),
+        parameters: vec![
+            EndpointParameter {
+                name: "id".to_string(),
+                location: ParameterLocation::Path,
+                param_type: "integer".to_string(),
+                required: true,
+            },
+            EndpointParameter {
+                name: "q".to_string(),
+                location: ParameterLocation::Query,
+                param_type: "string".to_string(),
+                required: false,
+            },
+            EndpointParameter {
+                name: "payload".to_string(),
+                location: ParameterLocation::Body,
+                param_type: "object".to_string(),
+                required: true,
+            },
+        ],
+        response_type: None,
+        description: None,
+        security_schemes: vec![],
+        request_content_types: vec!["application/json".to_string()],
+        response_status_codes: vec![],
+    };
+
+    let props = phase_fingerprint::endpoint_properties(&ep);
+    let map: std::collections::HashMap<&str, &str> = props
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+
+    let params_json: Vec<serde_json::Value> =
+        serde_json::from_str(map["parameters"]).expect("parameters should be valid JSON");
+    assert_eq!(params_json.len(), 3);
+    assert_eq!(params_json[0]["name"], "id");
+    assert_eq!(params_json[0]["location"], "Path");
+    assert_eq!(params_json[0]["param_type"], "integer");
+    assert_eq!(params_json[0]["required"], true);
+    assert_eq!(params_json[1]["name"], "q");
+    assert_eq!(params_json[1]["location"], "Query");
+    assert_eq!(params_json[1]["required"], false);
+    assert_eq!(params_json[2]["name"], "payload");
+    assert_eq!(params_json[2]["location"], "Body");
+
+    let content_types: Vec<String> =
+        serde_json::from_str(map["request_content_types"]).expect("content types should be JSON");
+    assert_eq!(content_types, vec!["application/json"]);
+}
+
+#[test]
+fn endpoints_to_operations_creates_endpoint_nodes() {
+    use aegis_enumeration::introspection::{
+        EndpointParameter, IntrospectedEndpoint, ParameterLocation,
+    };
+    use aegis_protocol::node::NodeType;
+
+    let endpoints = vec![
+        IntrospectedEndpoint {
+            path: "/api/users".to_string(),
+            method: "GET".to_string(),
+            parameters: vec![EndpointParameter {
+                name: "page".to_string(),
+                location: ParameterLocation::Query,
+                param_type: "integer".to_string(),
+                required: false,
+            }],
+            response_type: None,
+            description: None,
+            security_schemes: vec![],
+            request_content_types: vec![],
+            response_status_codes: vec![],
+        },
+        IntrospectedEndpoint {
+            path: "/api/users".to_string(),
+            method: "POST".to_string(),
+            parameters: vec![EndpointParameter {
+                name: "name".to_string(),
+                location: ParameterLocation::Body,
+                param_type: "string".to_string(),
+                required: true,
+            }],
+            response_type: None,
+            description: None,
+            security_schemes: vec![],
+            request_content_types: vec!["application/json".to_string()],
+            response_status_codes: vec![],
+        },
+    ];
+
+    let mut seq = 0u64;
+    let ops = phase_fingerprint::endpoints_to_operations(&endpoints, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    for (i, op) in ops.iter().enumerate() {
+        assert_eq!(op.sequence_number, (i + 1) as u64);
+        match &op.operation {
+            GraphOperation::AddNode {
+                node_type,
+                properties,
+            } => {
+                assert_eq!(*node_type, NodeType::Endpoint);
+                let map: std::collections::HashMap<&str, &str> = properties
+                    .iter()
+                    .map(|(k, v)| (k.as_str(), v.as_str()))
+                    .collect();
+                assert_eq!(map["path"], endpoints[i].path);
+                assert_eq!(map["method"], endpoints[i].method);
+                assert!(map.contains_key("parameters"));
+            }
+            _ => panic!("expected AddNode operation"),
+        }
+    }
+}
+
+#[test]
+fn endpoints_to_operations_applied_to_graph_stores_parameters() {
+    use aegis_enumeration::introspection::{
+        EndpointParameter, IntrospectedEndpoint, ParameterLocation,
+    };
+
+    let mut ctx = test_context();
+    let endpoints = vec![IntrospectedEndpoint {
+        path: "/graphql".to_string(),
+        method: "POST".to_string(),
+        parameters: vec![
+            EndpointParameter {
+                name: "query".to_string(),
+                location: ParameterLocation::Body,
+                param_type: "string".to_string(),
+                required: true,
+            },
+            EndpointParameter {
+                name: "auth".to_string(),
+                location: ParameterLocation::Header,
+                param_type: "string".to_string(),
+                required: false,
+            },
+        ],
+        response_type: None,
+        description: None,
+        security_schemes: vec![],
+        request_content_types: vec!["application/json".to_string()],
+        response_status_codes: vec![],
+    }];
+
+    let mut seq = 0u64;
+    let ops = phase_fingerprint::endpoints_to_operations(&endpoints, &mut seq);
+    ctx.graph.apply_operations(&ops).unwrap();
+
+    let endpoint_ids = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap();
+    assert_eq!(endpoint_ids.len(), 1);
+
+    let node = ctx.graph.get_node(endpoint_ids[0]).unwrap().unwrap();
+    assert_eq!(node.properties["path"], "/graphql");
+    assert_eq!(node.properties["method"], "POST");
+
+    let params_json: Vec<serde_json::Value> =
+        serde_json::from_str(&node.properties["parameters"]).unwrap();
+    assert_eq!(params_json.len(), 2);
+    assert_eq!(params_json[0]["name"], "query");
+    assert_eq!(params_json[0]["location"], "Body");
+    assert_eq!(params_json[0]["required"], true);
+    assert_eq!(params_json[1]["name"], "auth");
+    assert_eq!(params_json[1]["location"], "Header");
+
+    let content_types: Vec<String> =
+        serde_json::from_str(&node.properties["request_content_types"]).unwrap();
+    assert_eq!(content_types, vec!["application/json"]);
+}

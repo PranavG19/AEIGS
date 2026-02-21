@@ -120,6 +120,10 @@ pub struct LlmOptions {
 
     #[arg(long)]
     pub bypass_corpus: Option<PathBuf>,
+
+    /// Path to Python interpreter for hypothesis-engine subprocess.
+    #[arg(long, default_value = "python3")]
+    pub python_cmd: String,
 }
 
 /// Audit logging options.

@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use crate::stealth_config::StealthConfig;
 use aegis_protocol::target_validation;
 
-pub use aegis_protocol::request::{FuzzRequest, FuzzResponse};
+pub use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
 #[derive(Debug)]
 pub enum ExecutorError {
@@ -130,6 +130,7 @@ impl RequestExecutor {
             endpoint: format!("{}{}", self.base_url, endpoint),
             method: method.to_string(),
             parameter_name: parameter_name.to_string(),
+            parameter_location: ParameterLocation::Query,
             payload: payload.to_string(),
             headers: self.default_headers.clone(),
         }

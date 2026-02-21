@@ -1,0 +1,31 @@
+name: Ground Truth Validation
+
+on:
+  workflow_dispatch:
+    inputs:
+      fixture:
+        description: 'Fixture app to validate (express, flask, graphql, all)'
+        required: true
+        default: 'all'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Run ground truth validation
+        env:
+          AEGIS_INTEGRATION_TESTS: "1"
+          VALIDATE_FIXTURE: ${{ github.event.inputs.fixture }}
+        run: |
+          echo "Validating ground truth for: $VALIDATE_FIXTURE"
+          # Build all Docker images
+          for f in defense-stacks/compose/docker-compose*.yml; do
+            docker compose -f "$f" build 2>/dev/null || true
+          done
+          # Run the validation tests
+          cargo test -p aegis-orchestrator --test docker_integration ground_truth -- --test-threads=1

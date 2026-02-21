@@ -1,0 +1,524 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AEGIS Vulnerable Express App",
+    "description": "Intentionally vulnerable Express application for AEGIS integration testing. Contains endpoints covering all 16 vulnerability classes.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server (localhost only)"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      "get": {
+        "summary": "Look up user by ID",
+        "operationId": "getUsers",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "User ID to look up"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "username": { "type": "string" },
+                          "email": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing id parameter" },
+          "500": { "description": "SQL error" }
+        }
+      }
+    },
+    "/api/search": {
+      "get": {
+        "summary": "Search (reflected XSS)",
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Search query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML search results page",
+            "content": {
+              "text/html": {
+                "schema": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exec": {
+      "get": {
+        "summary": "Execute command",
+        "operationId": "execCommand",
+        "parameters": [
+          {
+            "name": "cmd",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Command to execute"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Command output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "output": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing cmd parameter" },
+          "500": { "description": "Command execution error" }
+        }
+      }
+    },
+    "/api/files": {
+      "get": {
+        "summary": "Read file by path",
+        "operationId": "readFile",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "File path to read"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File contents",
+            "content": {
+              "text/plain": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "400": { "description": "Missing path parameter" },
+          "404": { "description": "File not found" }
+        }
+      }
+    },
+    "/api/fetch": {
+      "get": {
+        "summary": "Fetch remote URL",
+        "operationId": "fetchUrl",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uri" },
+            "description": "URL to fetch"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fetched content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer" },
+                    "body": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing url parameter" },
+          "500": { "description": "Fetch error" }
+        }
+      }
+    },
+    "/api/render": {
+      "get": {
+        "summary": "Render template",
+        "operationId": "renderTemplate",
+        "parameters": [
+          {
+            "name": "template",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "EJS template string to render"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rendered template output",
+            "content": {
+              "text/html": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "500": { "description": "Template rendering error" }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "User login",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" },
+                    "role": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Invalid credentials" }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "summary": "Get user profile",
+        "operationId": "getProfile",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer" },
+            "description": "User ID to retrieve profile for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "profile": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "username": { "type": "string" },
+                        "email": { "type": "string" },
+                        "role": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing user_id parameter" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/config": {
+      "get": {
+        "summary": "Application configuration",
+        "operationId": "getConfig",
+        "responses": {
+          "200": {
+            "description": "Debug configuration data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "debug": { "type": "boolean" },
+                    "environment": { "type": "string" },
+                    "database": { "type": "string" },
+                    "default_admin_password": { "type": "string" },
+                    "secret_key": { "type": "string" },
+                    "stack_trace": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/export": {
+      "get": {
+        "summary": "Export all user data",
+        "operationId": "exportUsers",
+        "responses": {
+          "200": {
+            "description": "All user records including PII",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "username": { "type": "string" },
+                          "password": { "type": "string" },
+                          "email": { "type": "string" },
+                          "ssn": { "type": "string" },
+                          "role": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deserialize": {
+      "post": {
+        "summary": "Deserialize data",
+        "operationId": "deserialize",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["data"],
+                "properties": {
+                  "data": {
+                    "type": "string",
+                    "description": "Serialized data string to deserialize"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Deserialized result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "result": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing data field" },
+          "500": { "description": "Deserialization error" }
+        }
+      }
+    },
+    "/api/redirect": {
+      "get": {
+        "summary": "Redirect to URL",
+        "operationId": "redirect",
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "format": "uri" },
+            "description": "URL to redirect to"
+          }
+        ],
+        "responses": {
+          "302": { "description": "Redirect to provided URL" },
+          "400": { "description": "Missing url parameter" }
+        }
+      }
+    },
+    "/api/header": {
+      "get": {
+        "summary": "Set custom response header",
+        "operationId": "setHeader",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Header name to set"
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Header value to set"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Header was set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "header": { "type": "string" },
+                    "value": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing name or value parameter" }
+        }
+      }
+    },
+    "/api/log": {
+      "get": {
+        "summary": "Log message",
+        "operationId": "logMessage",
+        "parameters": [
+          {
+            "name": "msg",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Message to log"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message logged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logged": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing msg parameter" }
+        }
+      }
+    },
+    "/api/submit": {
+      "get": {
+        "summary": "Submit input",
+        "operationId": "submitInput",
+        "parameters": [
+          {
+            "name": "input",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Arbitrary input to submit"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Input accepted without validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accepted": { "type": "boolean" },
+                    "input": { "type": "string" },
+                    "length": { "type": "integer" },
+                    "processed": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing input parameter" }
+        }
+      }
+    }
+  }
+}

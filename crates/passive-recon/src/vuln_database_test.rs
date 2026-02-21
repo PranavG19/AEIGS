@@ -268,4 +268,34 @@ mod tests {
         assert!(version_in_range("r2022b", "r2022a", "r2023b"));
         assert!(!version_in_range("r2024a", "r2022a", "r2023b"));
     }
+
+    /// Mixed semver/non-semver tuple: only the version fails to parse, forcing the `_` arm.
+    /// Also exercises compare_versions with the lexicographic fallback branch.
+    #[test]
+    fn version_in_range_mixed_semver_forces_fallback() {
+        // "aaa-beta" fails semver parse; "1.0.0" and "2.0.0" succeed — tuple is (Err, Ok, Ok),
+        // which matches `_` and falls through to compare_versions lexicographic path.
+        // Lexicographically: "1.0.0" <= "aaa-beta" <= "zzz" so this is in range.
+        assert!(version_in_range("aaa-beta", "1.0.0", "zzz"));
+        // "0.0.1" < "1.0.0" lexicographically so this is out of range.
+        assert!(!version_in_range("0.0.1", "aaa", "zzz"));
+    }
+
+    /// compare_versions with two non-semver strings uses lexicographic comparison.
+    /// Exercises the tracing::debug! branch inside compare_versions.
+    #[test]
+    fn version_in_range_both_non_semver_compare_versions_fallback() {
+        // All three fail semver parse — the `_` arm calls compare_versions("alpha", "aaa", "zzz").
+        assert!(version_in_range("alpha", "aaa", "zzz"));
+        assert!(!version_in_range("zzz1", "aaa", "zzz"));
+    }
+
+    /// From<rusqlite::Error> impl converts a rusqlite error into VulnDatabaseError::SqliteError.
+    #[test]
+    fn from_rusqlite_error_converts_to_vuln_db_error() {
+        let sqlite_err = rusqlite::Error::QueryReturnedNoRows;
+        let err: VulnDatabaseError = sqlite_err.into();
+        assert!(matches!(err, VulnDatabaseError::SqliteError(_)));
+        assert!(err.to_string().contains("sqlite error"));
+    }
 }

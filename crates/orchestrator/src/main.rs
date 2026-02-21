@@ -1,4 +1,5 @@
-use aegis_orchestrator::pipeline::{collect_recon_ops, run_scan};
+use aegis_orchestrator::pipeline::run_scan;
+use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::ScanConfig;
 use clap::Parser;
 
@@ -47,7 +48,7 @@ fn run_recon_command(args: &[String]) {
         .find(|w| w[0] == "--source-dir")
         .map(|w| std::path::PathBuf::from(&w[1]));
 
-    match collect_recon_ops(&source_dir) {
+    match run_recon_standalone(&source_dir) {
         Ok(ops) => {
             println!("Recon complete: {} operations discovered", ops.len());
         }

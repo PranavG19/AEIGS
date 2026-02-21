@@ -1,8 +1,12 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
 use aegis_audit_log::AuditWriter;
 use aegis_audit_log::log_writer::{AuditLogWriter, NoOpAuditLogWriter};
+use aegis_enumeration::introspection::{
+    IntrospectedEndpoint, parse_graphql_introspection, parse_openapi_json,
+};
+use aegis_enumeration::route_parser::{self, Framework, HttpMethod};
 use aegis_fuzzing::DefenseProfile;
 use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::audit::AuditEventType;
@@ -15,10 +19,11 @@ use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPo
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
 use crate::convergence::RefutedTracker;
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
+use crate::hypothesis_bridge::{HypothesisRequest, invoke_hypothesis_engine};
 use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
-use crate::phase_fingerprint::defense_properties;
+use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
-use crate::phase_recon::{deps_to_operations, vuln_lookup, walk_to_operations};
+use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::{export_attack_graph, run_report_with_previous};
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, resolve_report_format,
@@ -190,41 +195,12 @@ pub fn register_default_policies(manager: &mut CapabilityManager) {
     }
 }
 
-pub fn collect_recon_ops(source_dir: &Option<PathBuf>) -> Result<Vec<OperationLogEntry>, String> {
-    let Some(source_dir) = source_dir else {
-        return Ok(Vec::new());
-    };
-
-    let walk = aegis_passive_recon::filesystem_walker::walk_directory(source_dir)
-        .map_err(|e| e.to_string())?;
-    let lock_files: Vec<_> = walk
-        .files
-        .iter()
-        .filter(|f| {
-            f.classification == aegis_passive_recon::filesystem_walker::FileClassification::LockFile
-        })
-        .collect();
-
-    let mut all_deps = Vec::new();
-    for lock_file in &lock_files {
-        if let Ok(deps) = aegis_passive_recon::dependency_parser::parse_lock_file(&lock_file.path) {
-            all_deps.extend(deps);
-        }
-    }
-
-    let mut sequence = 0u64;
-    let mut entries = Vec::new();
-    entries.extend(deps_to_operations(&all_deps, &mut sequence));
-    entries.extend(vuln_lookup(&all_deps, &mut sequence));
-    entries.extend(walk_to_operations(&walk.files, &mut sequence));
-    Ok(entries)
-}
-
-pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfile) {
+pub(crate) fn collect_fingerprint_ops(seq: &mut u64) -> (Vec<OperationLogEntry>, DefenseProfile) {
     let ts = timestamp_ms();
     let profile = DefenseProfile::empty(ts);
+    *seq += 1;
     let entry = OperationLogEntry {
-        sequence_number: 1,
+        sequence_number: *seq,
         module: ModuleIdentifier::Enumeration,
         operation: aegis_protocol::operation::GraphOperation::AddNode {
             node_type: aegis_protocol::node::NodeType::Defense,
@@ -235,17 +211,207 @@ pub(crate) fn collect_fingerprint_ops() -> (Vec<OperationLogEntry>, DefenseProfi
     (vec![entry], profile)
 }
 
+/// Run blocking HTTP discovery on a separate thread to avoid conflict with the
+/// Tokio runtime (reqwest::blocking creates its own runtime internally).
+fn run_on_thread<F>(f: F) -> Vec<IntrospectedEndpoint>
+where
+    F: FnOnce() -> Vec<IntrospectedEndpoint> + Send + 'static,
+{
+    std::thread::spawn(f).join().unwrap_or_else(|_| {
+        tracing::warn!("discovery thread panicked");
+        Vec::new()
+    })
+}
+
+fn discover_openapi_endpoints_http(target: &str) -> Vec<IntrospectedEndpoint> {
+    let target = target.to_string();
+    run_on_thread(move || discover_openapi_endpoints_http_inner(&target))
+}
+
+fn discover_openapi_endpoints_http_inner(target: &str) -> Vec<IntrospectedEndpoint> {
+    let openapi_urls = [
+        format!("{target}/openapi.json"),
+        format!("{target}/swagger.json"),
+        format!("{target}/api-docs"),
+    ];
+
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+
+    for url in &openapi_urls {
+        let Ok(response) = client.get(url).send() else {
+            continue;
+        };
+        if !response.status().is_success() {
+            continue;
+        }
+        let Ok(body) = response.text() else {
+            continue;
+        };
+        if let Ok(endpoints) = parse_openapi_json(&body) {
+            tracing::info!(
+                count = endpoints.len(),
+                url = %url,
+                "discovered endpoints from OpenAPI spec"
+            );
+            return endpoints;
+        }
+    }
+    Vec::new()
+}
+
+fn discover_openapi_endpoints_source(source_dir: &Path) -> Vec<IntrospectedEndpoint> {
+    for filename in &["openapi.json", "swagger.json"] {
+        let spec_path = source_dir.join(filename);
+        if !spec_path.exists() {
+            continue;
+        }
+        let Ok(body) = std::fs::read_to_string(&spec_path) else {
+            continue;
+        };
+        if let Ok(endpoints) = parse_openapi_json(&body) {
+            tracing::info!(
+                count = endpoints.len(),
+                path = %spec_path.display(),
+                "discovered endpoints from source directory OpenAPI spec"
+            );
+            return endpoints;
+        }
+    }
+    Vec::new()
+}
+
+fn discover_graphql_endpoints_http(target: &str) -> Vec<IntrospectedEndpoint> {
+    let target = target.to_string();
+    run_on_thread(move || discover_graphql_endpoints_http_inner(&target))
+}
+
+fn discover_graphql_endpoints_http_inner(target: &str) -> Vec<IntrospectedEndpoint> {
+    let graphql_urls = [format!("{target}/graphql"), format!("{target}/api/graphql")];
+
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+
+    let introspection_query = serde_json::json!({
+        "query": "{ __schema { queryType { name } mutationType { name } subscriptionType { name } types { name kind fields { name args { name type { kind name ofType { kind name ofType { kind name ofType { kind name } } } } } type { kind name ofType { kind name ofType { kind name ofType { kind name } } } } } } } }"
+    });
+
+    for url in &graphql_urls {
+        let Ok(response) = client
+            .post(url)
+            .header("Content-Type", "application/json")
+            .json(&introspection_query)
+            .send()
+        else {
+            continue;
+        };
+        if !response.status().is_success() {
+            continue;
+        }
+        let Ok(body) = response.text() else {
+            continue;
+        };
+        if let Ok(endpoints) = parse_graphql_introspection(&body)
+            && !endpoints.is_empty()
+        {
+            tracing::info!(
+                count = endpoints.len(),
+                url = %url,
+                "discovered endpoints from GraphQL introspection"
+            );
+            return endpoints;
+        }
+    }
+    Vec::new()
+}
+
+fn discover_routes_from_source(source_dir: &Path) -> Vec<IntrospectedEndpoint> {
+    use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
+
+    let walk = match walk_directory(source_dir) {
+        Ok(w) => w,
+        Err(_) => return Vec::new(),
+    };
+
+    let source_files: Vec<_> = walk
+        .files
+        .iter()
+        .filter(|f| f.classification == FileClassification::SourceCode)
+        .collect();
+
+    let mut endpoints = Vec::new();
+    for file in &source_files {
+        let ext = file.path.extension().and_then(|e| e.to_str()).unwrap_or("");
+        let frameworks: &[Framework] = match ext {
+            "py" => &[Framework::Flask, Framework::FastApi],
+            "js" | "ts" => &[Framework::Express],
+            "java" | "kt" | "scala" => &[Framework::Spring],
+            "rb" => &[Framework::Rails],
+            _ => continue,
+        };
+        for &fw in frameworks {
+            if let Ok(routes) = route_parser::parse_routes_from_file(&file.path, fw) {
+                for route in &routes {
+                    let method_str = match route.http_method {
+                        HttpMethod::Get => "GET",
+                        HttpMethod::Post => "POST",
+                        HttpMethod::Put => "PUT",
+                        HttpMethod::Delete => "DELETE",
+                        HttpMethod::Patch => "PATCH",
+                        HttpMethod::Any => "GET",
+                        HttpMethod::Options => "OPTIONS",
+                        HttpMethod::Head => "HEAD",
+                    };
+                    endpoints.push(IntrospectedEndpoint {
+                        path: route.path_pattern.clone(),
+                        method: method_str.to_string(),
+                        parameters: Vec::new(),
+                        response_type: None,
+                        description: None,
+                        security_schemes: Vec::new(),
+                        request_content_types: Vec::new(),
+                        response_status_codes: Vec::new(),
+                    });
+                }
+            }
+        }
+    }
+    if !endpoints.is_empty() {
+        tracing::info!(
+            count = endpoints.len(),
+            dir = %source_dir.display(),
+            "discovered endpoints from source code route parsing"
+        );
+    }
+    endpoints
+}
+
 fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTransport {
     let persona_id = crate::scan_config::resolve_persona_id(&ctx.config.stealth.persona)
         .unwrap_or(aegis_evasion_engine::PersonaId::ChromeDesktop);
     let catalog_path = ctx.config.stealth.persona_catalog.as_deref();
     let catalog = aegis_evasion_engine::load_persona_catalog(catalog_path)
         .expect("persona catalog must be valid");
-    let persona = catalog
+    let mut persona = catalog
         .iter()
         .find(|p| p.id == persona_id)
         .cloned()
         .unwrap_or_else(|| catalog[0].clone());
+
+    if ctx.config.stealth.skip_evasion {
+        persona.min_request_interval_ms = 0;
+        persona.max_request_interval_ms = 0;
+    }
 
     let mut builder = aegis_evasion_engine::EvasionTransport::builder()
         .with_persona(&persona)
@@ -337,7 +503,7 @@ fn run_recon_phase(
     );
     let source_dir = ctx.config.source_dir.clone();
     let recon_start = std::time::Instant::now();
-    let recon_ops = collect_recon_ops(&source_dir).map_err(PipelineError::Recon)?;
+    let recon_ops = run_recon_standalone(&source_dir).map_err(PipelineError::Recon)?;
     let recon_ops_count = recon_ops.len() as u64;
     if !recon_ops.is_empty() {
         ctx.graph
@@ -368,7 +534,11 @@ fn run_fingerprint_phase(
         },
     );
     let fingerprint_start = std::time::Instant::now();
-    let (fp_ops, profile) = collect_fingerprint_ops();
+    let mut seq = ctx
+        .graph
+        .total_operations_applied()
+        .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+    let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
     let fp_ops_count = fp_ops.len() as u64;
     if !fp_ops.is_empty() {
         ctx.graph
@@ -376,7 +546,38 @@ fn run_fingerprint_phase(
             .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
     }
     ctx.defense_profile = Some(profile);
-    progress.total_ops += fp_ops_count;
+
+    let mut discovered = discover_openapi_endpoints_http(&ctx.config.target);
+
+    if discovered.is_empty()
+        && let Some(ref source_dir) = ctx.config.source_dir
+    {
+        discovered = discover_openapi_endpoints_source(source_dir);
+    }
+
+    let graphql_endpoints = discover_graphql_endpoints_http(&ctx.config.target);
+    if !graphql_endpoints.is_empty() {
+        discovered.extend(graphql_endpoints);
+    }
+
+    if discovered.is_empty()
+        && let Some(ref source_dir) = ctx.config.source_dir
+    {
+        discovered = discover_routes_from_source(source_dir);
+    }
+
+    let mut endpoint_ops_count = 0u64;
+    if !discovered.is_empty() {
+        let endpoint_ops = endpoints_to_operations(&discovered, &mut seq);
+        endpoint_ops_count = endpoint_ops.len() as u64;
+        if !endpoint_ops.is_empty() {
+            ctx.graph
+                .apply_operations(&endpoint_ops)
+                .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+        }
+    }
+
+    progress.total_ops += fp_ops_count + endpoint_ops_count;
     progress.phases += 1;
     progress.completed_phases.push("fingerprint".to_string());
     scan_metrics
@@ -384,6 +585,81 @@ fn run_fingerprint_phase(
         .record("fingerprint", fingerprint_start.elapsed());
     validate_phase_token(&ctx.capabilities, &enumeration_token, "fingerprint");
     Ok(())
+}
+
+/// Extracts scan context into the JSON shape expected by the hypothesis-engine Python CLI.
+///
+/// Populates `technology_stack` from the graph's Dependency nodes and `findings_summary`
+/// from existing findings. Remaining fields are left empty for the LLM to infer.
+pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> serde_json::Value {
+    let technology_stack: Vec<String> = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Dependency)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|&id| {
+            ctx.graph
+                .get_node(id)
+                .ok()
+                .flatten()
+                .and_then(|n| n.properties.get("name").cloned())
+        })
+        .collect();
+
+    let findings_summary: Vec<String> = ctx
+        .graph
+        .all_findings()
+        .unwrap_or_default()
+        .iter()
+        .map(|f| format!("{}", f.vulnerability_class))
+        .collect();
+
+    serde_json::json!({
+        "technology_stack": technology_stack,
+        "high_centrality_nodes": [],
+        "findings_summary": findings_summary,
+        "high_risk_functions": [],
+        "authorization_matrix_summary": "",
+        "known_vulnerable_dependencies": [],
+        "feedback_summary": "",
+        "graph_nodes": [],
+        "graph_edges": [],
+        "defense_posture": {},
+        "attack_paths": []
+    })
+}
+
+/// Invokes the hypothesis engine and records metrics. Returns silently on failure
+/// (graceful degradation).
+fn run_hypothesis_step(ctx: &ScanContext, scan_metrics: &mut ScanMetrics) {
+    let context = build_hypothesis_context(ctx);
+    let request = HypothesisRequest::Generate {
+        backend: "bedrock".to_string(),
+        backend_kwargs: None,
+        context,
+    };
+
+    let llm_start = std::time::Instant::now();
+    match invoke_hypothesis_engine(&request, &ctx.config.llm.python_cmd) {
+        Ok(result) => {
+            let latency = llm_start.elapsed();
+            let tokens = result.input_tokens + result.output_tokens;
+            scan_metrics.llm_metrics.record_call(latency, tokens);
+            tracing::info!(
+                hypotheses = result.hypotheses.len(),
+                model = %result.model_id,
+                input_tokens = result.input_tokens,
+                output_tokens = result.output_tokens,
+                "hypothesis engine generated hypotheses"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "hypothesis engine unavailable, continuing without LLM hypotheses"
+            );
+        }
+    }
 }
 
 async fn run_fuzz_analyze_loop(
@@ -420,6 +696,10 @@ async fn run_fuzz_analyze_loop(
             fuzz_findings = result.findings_count;
             progress.completed_phases.push(fuzz_phase);
             try_save_checkpoint(progress, iteration, graph_db_path);
+        }
+
+        if !ctx.config.llm.no_llm {
+            run_hypothesis_step(ctx, scan_metrics);
         }
 
         if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase) {

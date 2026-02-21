@@ -113,6 +113,7 @@ fn localhost_config() -> scan_config::ScanConfig {
         llm: scan_config::LlmOptions {
             no_llm: false,
             bypass_corpus: None,
+            python_cmd: "python3".to_string(),
         },
         audit: scan_config::AuditOptions {
             no_audit: false,

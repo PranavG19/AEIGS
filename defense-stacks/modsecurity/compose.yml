@@ -1,0 +1,18 @@
+services:
+  modsecurity:
+    image: owasp/modsecurity-crs:nginx
+    ports:
+      - "${WAF_PORT:-8080}:8080"
+    environment:
+      - MODSEC_RULE_ENGINE=On
+      - PARANOIA=${PARANOIA_LEVEL:-2}
+      - BACKEND=http://host.docker.internal:${TARGET_PORT:-3000}
+    volumes:
+      - ./modsecurity-override.conf:/etc/modsecurity.d/owasp-crs/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

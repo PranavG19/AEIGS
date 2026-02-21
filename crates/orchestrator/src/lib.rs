@@ -6,6 +6,7 @@ pub mod convergence;
 pub mod distributed;
 pub mod endpoint_similarity;
 mod graph_persistence;
+pub mod hypothesis_bridge;
 pub mod interactive;
 mod phase_analyze;
 mod phase_fingerprint;
@@ -25,6 +26,7 @@ pub use convergence::*;
 pub use distributed::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
+pub use hypothesis_bridge::*;
 pub use interactive::*;
 pub use phase_analyze::*;
 pub use phase_fingerprint::*;
@@ -100,3 +102,7 @@ mod pipeline_composer_test;
 #[cfg(test)]
 #[path = "distributed_test.rs"]
 mod distributed_test;
+
+#[cfg(test)]
+#[path = "hypothesis_bridge_test.rs"]
+mod hypothesis_bridge_test;

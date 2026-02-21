@@ -40,6 +40,9 @@ pub struct SarifFinding {
     pub suppression_kind: Option<String>,
     /// Human-readable justification for the suppression (e.g. `"known-issue"`).
     pub suppression_message: Option<String>,
+    pub endpoint: Option<String>,
+    pub http_method: Option<String>,
+    pub parameter_name: Option<String>,
 }
 
 pub struct RelatedLocation {
@@ -246,16 +249,15 @@ fn build_rule(finding: &SarifFinding) -> ReportingDescriptor {
 }
 
 fn build_location(finding: &SarifFinding) -> Option<Location> {
-    let has_physical = finding.uri.is_some();
+    let effective_uri = finding.uri.as_ref().or(finding.endpoint.as_ref());
+    let has_physical = effective_uri.is_some();
     let has_logical = finding.logical_location_name.is_some();
 
     if !has_physical && !has_logical {
         return None;
     }
 
-    let physical = finding
-        .uri
-        .as_ref()
+    let physical = effective_uri
         .map(|uri| PhysicalLocation::with_artifact_location(ArtifactLocation::new(uri)));
 
     let logical = finding.logical_location_name.as_ref().map(|name| {
@@ -369,6 +371,30 @@ fn build_result(finding: &SarifFinding) -> sarif_rust::types::Result {
         props.insert(
             "confidenceScore".to_string(),
             serde_json::Value::from(score),
+        );
+    }
+    if let Some(ref ep) = finding.endpoint {
+        props.insert(
+            "endpoint".to_string(),
+            serde_json::Value::String(ep.clone()),
+        );
+    }
+    if let Some(ref method) = finding.http_method {
+        props.insert(
+            "httpMethod".to_string(),
+            serde_json::Value::String(method.clone()),
+        );
+    }
+    if let Some(ref param) = finding.parameter_name {
+        props.insert(
+            "parameterName".to_string(),
+            serde_json::Value::String(param.clone()),
+        );
+    }
+    if let Some(ref vc) = finding.vulnerability_class {
+        props.insert(
+            "vulnerabilityClass".to_string(),
+            serde_json::Value::String(format!("{:?}", vc)),
         );
     }
     result.properties = Some(props.into_iter().collect());

@@ -6,8 +6,8 @@ use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
-use crate::util::timestamp_ms;
 use crate::pipeline::{PhaseResult, ScanContext};
+use crate::util::timestamp_ms;
 
 pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
     let mut attack_graph = AttackGraph::new();

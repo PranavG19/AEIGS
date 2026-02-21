@@ -28,6 +28,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -52,6 +55,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -85,6 +91,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -511,6 +520,9 @@ mod tests {
             confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
+            endpoint: None,
+            http_method: None,
+            parameter_name: None,
         }
     }
 
@@ -859,6 +871,95 @@ mod tests {
         assert_eq!(
             related[0].message.as_ref().unwrap().text.as_deref(),
             Some("NVD entry for CVE-2024-12345")
+        );
+    }
+
+    #[test]
+    fn sarif_endpoint_properties_present_when_set() {
+        let mut finding = sample_finding();
+        finding.endpoint = Some("/api/users".to_string());
+        finding.http_method = Some("POST".to_string());
+        finding.parameter_name = Some("username".to_string());
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let props = results[0].properties.as_ref().unwrap();
+        assert_eq!(props["endpoint"], serde_json::json!("/api/users"));
+        assert_eq!(props["httpMethod"], serde_json::json!("POST"));
+        assert_eq!(props["parameterName"], serde_json::json!("username"));
+    }
+
+    #[test]
+    fn sarif_endpoint_properties_absent_when_none() {
+        let finding = sample_finding();
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let props = results[0].properties.as_ref().unwrap();
+        assert!(!props.contains_key("endpoint"));
+        assert!(!props.contains_key("httpMethod"));
+        assert!(!props.contains_key("parameterName"));
+    }
+
+    #[test]
+    fn sarif_location_uri_falls_back_to_endpoint() {
+        let mut finding = sample_finding();
+        finding.uri = None;
+        finding.logical_location_name = None;
+        finding.endpoint = Some("/api/data".to_string());
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let locs = results[0].locations.as_ref().unwrap();
+        let phys = locs[0].physical_location.as_ref().unwrap();
+        assert_eq!(
+            phys.artifact_location.as_ref().unwrap().uri.as_deref(),
+            Some("/api/data")
+        );
+    }
+
+    #[test]
+    fn sarif_result_includes_vulnerability_class_name() {
+        let finding = finding_with_vuln_class();
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let props = results[0].properties.as_ref().unwrap();
+        assert_eq!(
+            props["vulnerabilityClass"],
+            serde_json::json!("SqlInjection")
+        );
+    }
+
+    #[test]
+    fn sarif_result_vulnerability_class_name_absent_when_none() {
+        let finding = sample_finding();
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let props = results[0].properties.as_ref().unwrap();
+        assert!(!props.contains_key("vulnerabilityClass"));
+    }
+
+    #[test]
+    fn sarif_result_vulnerability_class_name_for_xss() {
+        let finding = finding_with_related_locations();
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let props = results[0].properties.as_ref().unwrap();
+        assert_eq!(
+            props["vulnerabilityClass"],
+            serde_json::json!("CrossSiteScripting")
+        );
+    }
+
+    #[test]
+    fn sarif_location_uri_prefers_uri_over_endpoint() {
+        let mut finding = sample_finding();
+        finding.uri = Some("src/handler.rs".to_string());
+        finding.endpoint = Some("/api/data".to_string());
+        let report = emit_sarif(&[finding], "0.1.0");
+        let results = report.runs[0].results.as_ref().unwrap();
+        let locs = results[0].locations.as_ref().unwrap();
+        let phys = locs[0].physical_location.as_ref().unwrap();
+        assert_eq!(
+            phys.artifact_location.as_ref().unwrap().uri.as_deref(),
+            Some("src/handler.rs")
         );
     }
 }

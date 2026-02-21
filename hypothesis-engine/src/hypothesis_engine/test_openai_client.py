@@ -362,3 +362,94 @@ class TestRetryLogic:
 
         assert mock_urlopen.call_count == 3
         assert mock_sleep.call_count == 2
+
+
+class TestInvokeStructured:
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_returns_content_and_usage(self, mock_urlopen: MagicMock) -> None:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response(
+            text='{"key": "value"}', prompt_tokens=50, completion_tokens=30
+        )
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        schema = {"type": "object", "properties": {"key": {"type": "string"}}}
+        client = OpenAiClient(model="gpt-4o")
+        text, usage = client.invoke_structured(
+            messages=[{"role": "user", "content": "generate"}],
+            output_schema=schema,
+        )
+
+        assert text == '{"key": "value"}'
+        assert isinstance(usage, TokenUsage)
+        assert usage.input_tokens == 50
+        assert usage.output_tokens == 30
+
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_request_payload_includes_response_format(
+        self, mock_urlopen: MagicMock
+    ) -> None:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response(text="{}")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        schema = {"type": "object", "properties": {"x": {"type": "integer"}}}
+        client = OpenAiClient(model="gpt-4o-mini")
+        client.invoke_structured(
+            messages=[{"role": "user", "content": "go"}],
+            output_schema=schema,
+        )
+
+        req = mock_urlopen.call_args[0][0]
+        sent_body = json.loads(req.data)
+        assert sent_body["model"] == "gpt-4o-mini"
+        assert sent_body["response_format"]["type"] == "json_schema"
+        assert sent_body["response_format"]["json_schema"]["name"] == "structured_output"
+        assert sent_body["response_format"]["json_schema"]["schema"] == schema
+        assert sent_body["response_format"]["json_schema"]["strict"] is True
+
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_system_message_included_when_provided(
+        self, mock_urlopen: MagicMock
+    ) -> None:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response(text="{}")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        client = OpenAiClient()
+        client.invoke_structured(
+            messages=[{"role": "user", "content": "go"}],
+            output_schema={"type": "object"},
+            system="be precise",
+        )
+
+        req = mock_urlopen.call_args[0][0]
+        sent_body = json.loads(req.data)
+        assert sent_body["messages"][0] == {"role": "system", "content": "be precise"}
+        assert sent_body["messages"][1] == {"role": "user", "content": "go"}
+
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_falls_back_to_invoke_on_failure(self, mock_urlopen: MagicMock) -> None:
+        fallback_response = _make_openai_response(text="fallback text")
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = fallback_response
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        mock_urlopen.side_effect = [OSError("network error"), mock_resp]
+
+        client = OpenAiClient(max_retries=1)
+        with pytest.warns(RuntimeWarning, match="invoke_structured failed"):
+            text, usage = client.invoke_structured(
+                messages=[{"role": "user", "content": "go"}],
+                output_schema={"type": "object"},
+            )
+
+        assert text == "fallback text"
+        assert mock_urlopen.call_count == 2

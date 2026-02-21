@@ -1,0 +1,18 @@
+{
+  "name": "aegis-express-vuln-app",
+  "version": "1.0.0",
+  "description": "Intentionally vulnerable Express app for AEGIS integration testing",
+  "main": "app.js",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ejs": "^3.1.10",
+    "better-sqlite3": "^11.0.0",
+    "serialize-javascript": "2.1.2",
+    "lodash": "4.17.20",
+    "node-serialize": "0.0.4"
+  }
+}

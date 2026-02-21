@@ -6,7 +6,7 @@ use aegis_evasion_engine::{
     HttpClientConfig, JitterDistribution, Persona, PersonaId, SessionManager, TimingController,
     TlsConfig, TlsFingerprint, TlsVersion, ja3_hash, persona_catalog, persona_tls_config,
 };
-use aegis_protocol::request::FuzzRequest;
+use aegis_protocol::request::{FuzzRequest, ParameterLocation};
 
 async fn start_echo_server() -> (SocketAddr, tokio::task::JoinHandle<()>) {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -44,6 +44,7 @@ async fn transport_sends_to_live_server() {
         endpoint: format!("http://{addr}/test"),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "hello".to_string(),
         headers: vec![],
     };
@@ -77,6 +78,7 @@ async fn transport_applies_persona_headers() {
         endpoint: format!("http://{addr}/headers"),
         method: "GET".to_string(),
         parameter_name: "x".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "y".to_string(),
         headers: vec![],
     };
@@ -118,6 +120,7 @@ async fn transport_rotates_personas() {
             endpoint: format!("http://{addr}/rotate"),
             method: "GET".to_string(),
             parameter_name: "n".to_string(),
+            parameter_location: ParameterLocation::Query,
             payload: i.to_string(),
             headers: vec![],
         };
@@ -144,6 +147,7 @@ async fn transport_localhost_enforcement() {
         endpoint: "http://example.com/evil".to_string(),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "test".to_string(),
         headers: vec![],
     };

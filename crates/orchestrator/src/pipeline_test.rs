@@ -100,6 +100,7 @@ fn localhost_config() -> ScanConfig {
         llm: scan_config::LlmOptions {
             no_llm: false,
             bypass_corpus: None,
+            python_cmd: "python3".to_string(),
         },
         audit: scan_config::AuditOptions {
             no_audit: false,
@@ -469,20 +470,22 @@ async fn run_scan_concurrent_with_skip_fingerprint() {
 
 #[test]
 fn collect_recon_ops_no_source_dir() {
-    let result = pipeline::collect_recon_ops(&None);
+    let result = phase_recon::run_recon_standalone(&None);
     assert!(result.is_ok());
     assert!(result.unwrap().is_empty());
 }
 
 #[test]
 fn collect_fingerprint_ops_produces_one_entry() {
-    let (ops, profile) = pipeline::collect_fingerprint_ops();
+    let mut seq = 0;
+    let (ops, profile) = pipeline::collect_fingerprint_ops(&mut seq);
     assert_eq!(ops.len(), 1);
     assert_eq!(
         ops[0].module,
         aegis_protocol::operation::ModuleIdentifier::Enumeration
     );
     assert_eq!(ops[0].sequence_number, 1);
+    assert_eq!(seq, 1);
     let _ = profile;
 }
 
@@ -536,7 +539,7 @@ async fn run_scan_convergence_stops_early() {
 #[test]
 fn collect_recon_ops_with_empty_real_dir_returns_empty() {
     let tmp = tempfile::tempdir().unwrap();
-    let result = pipeline::collect_recon_ops(&Some(tmp.path().to_path_buf()));
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()));
     assert!(result.is_ok());
     assert!(result.unwrap().is_empty());
 }
@@ -545,15 +548,16 @@ fn collect_recon_ops_with_empty_real_dir_returns_empty() {
 fn collect_recon_ops_with_config_file_returns_one_entry() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::write(tmp.path().join("settings.toml"), b"[db]\nhost = localhost").unwrap();
-    let result = pipeline::collect_recon_ops(&Some(tmp.path().to_path_buf()));
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()));
     assert!(result.is_ok());
     assert_eq!(result.unwrap().len(), 1);
 }
 
 #[test]
 fn collect_recon_ops_nonexistent_dir_returns_error() {
-    let result =
-        pipeline::collect_recon_ops(&Some(std::path::PathBuf::from("/nonexistent/aegis-ops")));
+    let result = phase_recon::run_recon_standalone(&Some(std::path::PathBuf::from(
+        "/nonexistent/aegis-ops",
+    )));
     assert!(result.is_err());
 }
 
@@ -1014,4 +1018,72 @@ async fn run_scan_saves_and_resumes_from_checkpoint() {
         !cp_path.exists(),
         "checkpoint should be deleted after successful resume"
     );
+}
+
+#[test]
+fn build_hypothesis_context_returns_valid_json() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert!(context.is_object());
+    assert!(context["technology_stack"].is_array());
+    assert!(context["findings_summary"].is_array());
+    assert!(context["high_centrality_nodes"].is_array());
+    assert!(context["defense_posture"].is_object());
+    assert!(context["attack_paths"].is_array());
+}
+
+#[test]
+fn build_hypothesis_context_empty_graph_has_empty_fields() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert!(context["technology_stack"].as_array().unwrap().is_empty());
+    assert!(context["findings_summary"].as_array().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn run_scan_no_llm_skips_hypothesis_engine() {
+    let mut config = localhost_config();
+    config.llm.no_llm = true;
+    config.output = std::env::temp_dir().join("aegis-pipeline-no-llm-skip.sarif");
+    let summary = run_scan(config).await.unwrap();
+    assert_eq!(
+        summary.metrics.llm_metrics.call_count, 0,
+        "no_llm=true should produce zero LLM calls"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_with_llm_enabled_degrades_gracefully() {
+    let mut config = localhost_config();
+    config.llm.no_llm = false;
+    config.llm.python_cmd = "nonexistent-python-binary-aegis-test".to_string();
+    config.output = std::env::temp_dir().join("aegis-pipeline-llm-degrade.sarif");
+    let result = run_scan(config).await;
+    assert!(
+        result.is_ok(),
+        "pipeline should succeed even when hypothesis engine is unavailable: {:?}",
+        result.err()
+    );
+}
+
+#[test]
+fn scan_config_python_cmd_default() {
+    let config = localhost_config();
+    assert_eq!(config.llm.python_cmd, "python3");
 }

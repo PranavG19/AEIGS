@@ -1,0 +1,12 @@
+{
+  "findings": [
+    {"endpoint": "/graphql", "method": "POST", "operation": "query.user", "parameter": "id", "vulnerability_class": "SqlInjection"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "query.users", "parameter": "filter", "vulnerability_class": "SqlInjection"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "query.search", "parameter": "query", "vulnerability_class": "CrossSiteScripting"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "query.file", "parameter": "path", "vulnerability_class": "PathTraversal"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "mutation.login", "parameter": null, "vulnerability_class": "BrokenAuthentication"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "mutation.updateProfile", "parameter": "userId", "vulnerability_class": "BrokenAuthorization"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "mutation.deleteUser", "parameter": null, "vulnerability_class": "BrokenAuthentication"},
+    {"endpoint": "/graphql", "method": "POST", "operation": "query.user", "parameter": null, "vulnerability_class": "SensitiveDataExposure"}
+  ]
+}

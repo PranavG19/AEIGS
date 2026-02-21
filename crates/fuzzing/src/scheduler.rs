@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashSet};
 
 use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::request::ParameterLocation;
 
 use crate::stealth_config::StealthConfig;
 
@@ -10,6 +11,7 @@ pub struct FuzzTarget {
     pub endpoint: String,
     pub method: String,
     pub parameter: String,
+    pub parameter_location: ParameterLocation,
     pub vulnerability_class: VulnerabilityClass,
     pub priority_score: f64,
     pub attempts: u32,
@@ -229,6 +231,7 @@ pub fn is_fuzzable(class: VulnerabilityClass) -> bool {
 #[cfg(test)]
 mod private_tests {
     use aegis_protocol::finding::VulnerabilityClass;
+    use aegis_protocol::request::ParameterLocation;
 
     use super::PrioritizedTarget;
     use crate::scheduler::FuzzTarget;
@@ -239,6 +242,7 @@ mod private_tests {
                 endpoint: "/test".to_string(),
                 method: "GET".to_string(),
                 parameter: "q".to_string(),
+                parameter_location: ParameterLocation::Query,
                 vulnerability_class: VulnerabilityClass::SqlInjection,
                 priority_score: priority,
                 attempts: 0,

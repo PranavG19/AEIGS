@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from hypothesis_engine.bedrock_client import BedrockClient
+from hypothesis_engine.bedrock_client import LlmBackend
 
 
 class EvasionContext(BaseModel):
@@ -30,6 +30,8 @@ class EvasionResult(BaseModel):
     evasions: list[EvasionPayload]
     model_id: str
     generation_time_ms: float
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 SYSTEM_PROMPT = (
@@ -48,20 +50,14 @@ SYSTEM_PROMPT = (
 )
 
 
-class EvasionHypothesisGenerator(BedrockClient):
+class EvasionHypothesisGenerator:
     def __init__(
         self,
+        client: LlmBackend,
         model_id: str = "global.anthropic.claude-sonnet-4-6",
-        aws_profile: str = "ziya",
-        max_retries: int = 3,
-        timeout_seconds: int = 120,
     ) -> None:
-        super().__init__(
-            model_id=model_id,
-            aws_profile=aws_profile,
-            max_retries=max_retries,
-            timeout_seconds=timeout_seconds,
-        )
+        self._client = client
+        self._model_id = model_id
         self._bypass_examples = self._load_bypass_examples()
 
     def _load_bypass_examples(self) -> dict:
@@ -114,6 +110,10 @@ class EvasionHypothesisGenerator(BedrockClient):
         self, context: EvasionContext, max_evasions: int = 10
     ) -> EvasionResult:
         system = self._build_system_prompt(context)
+        # ACCEPTED RISK: response_snippet contains raw target response content.
+        # This is necessary for evasion mode to understand WAF blocking behavior.
+        # A malicious server could embed prompt injection in responses.
+        # Mitigated by: [:500] truncation, evasion mode being opt-in.
         user_message = (
             f"Blocked payload: {context.blocked_payload}\n"
             f"HTTP response code: {context.response_code}\n"
@@ -122,7 +122,7 @@ class EvasionHypothesisGenerator(BedrockClient):
         )
 
         start_time = time.monotonic()
-        response_text, _usage = self.invoke(
+        response_text, usage = self._client.invoke(
             messages=[{"role": "user", "content": user_message}],
             system=system,
             max_tokens=4096,
@@ -135,6 +135,8 @@ class EvasionHypothesisGenerator(BedrockClient):
             evasions=evasions,
             model_id=self._model_id,
             generation_time_ms=elapsed_ms,
+            input_tokens=usage.input_tokens,
+            output_tokens=usage.output_tokens,
         )
 
     def _parse_evasions(

@@ -2,7 +2,7 @@ use super::*;
 
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_protocol::finding::VulnerabilityClass;
-use aegis_protocol::request::{FuzzRequest, FuzzResponse};
+use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 use clap::Parser;
 
 struct MockTransport {
@@ -79,14 +79,19 @@ async fn run_fuzz_empty_graph_returns_zero_findings() {
 }
 
 #[test]
-fn fuzzable_classes_returns_five_classes() {
+fn fuzzable_classes_returns_ten_classes() {
     let classes = phase_fuzz::fuzzable_classes();
-    assert_eq!(classes.len(), 5);
+    assert_eq!(classes.len(), 10);
     assert!(classes.contains(&VulnerabilityClass::SqlInjection));
     assert!(classes.contains(&VulnerabilityClass::CrossSiteScripting));
     assert!(classes.contains(&VulnerabilityClass::CommandInjection));
     assert!(classes.contains(&VulnerabilityClass::PathTraversal));
     assert!(classes.contains(&VulnerabilityClass::ServerSideRequestForgery));
+    assert!(classes.contains(&VulnerabilityClass::ServerSideTemplateInjection));
+    assert!(classes.contains(&VulnerabilityClass::HeaderInjection));
+    assert!(classes.contains(&VulnerabilityClass::OpenRedirect));
+    assert!(classes.contains(&VulnerabilityClass::CrlfInjection));
+    assert!(classes.contains(&VulnerabilityClass::InsecureDeserialization));
 }
 
 #[test]
@@ -218,6 +223,7 @@ fn filter_scheduler_exclude_removes_matching_endpoints() {
             endpoint: ep.to_string(),
             method: "GET".to_string(),
             parameter: String::new(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: 1.0,
             attempts: 0,
@@ -247,6 +253,7 @@ fn filter_scheduler_include_keeps_only_matching_endpoints() {
             endpoint: ep.to_string(),
             method: "GET".to_string(),
             parameter: String::new(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: 1.0,
             attempts: 0,
@@ -276,6 +283,7 @@ fn filter_scheduler_no_filters_passes_all_through() {
             endpoint: ep.to_string(),
             method: "GET".to_string(),
             parameter: String::new(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: 1.0,
             attempts: 0,
@@ -349,6 +357,7 @@ fn business_context_excluded_endpoints_filtered_from_scheduler() {
             endpoint: ep.to_string(),
             method: "GET".to_string(),
             parameter: String::new(),
+            parameter_location: ParameterLocation::Query,
             vulnerability_class: VulnerabilityClass::SqlInjection,
             priority_score: 1.0,
             attempts: 0,
@@ -461,6 +470,7 @@ fn append_anomaly_entries_empty_slice_does_nothing() {
     phase_fuzz::append_anomaly_entries(
         &[],
         VulnerabilityClass::SqlInjection,
+        &[],
         &mut sequence,
         &mut findings_count,
         &mut origin_counts,
@@ -492,6 +502,7 @@ fn append_anomaly_entries_single_anomaly_increments_counts() {
     phase_fuzz::append_anomaly_entries(
         &[anomaly],
         VulnerabilityClass::SqlInjection,
+        &[42],
         &mut sequence,
         &mut findings_count,
         &mut origin_counts,
@@ -532,6 +543,7 @@ fn append_anomaly_entries_multiple_anomalies_accumulate_correctly() {
     phase_fuzz::append_anomaly_entries(
         &anomalies,
         VulnerabilityClass::CrossSiteScripting,
+        &[],
         &mut sequence,
         &mut findings_count,
         &mut origin_counts,
@@ -573,6 +585,7 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
     phase_fuzz::append_anomaly_entries(
         &[anomaly],
         VulnerabilityClass::CommandInjection,
+        &[7],
         &mut sequence,
         &mut findings_count,
         &mut origin_counts,
@@ -583,12 +596,14 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
         severity,
         confidence,
         vulnerability_class,
+        linked_node_ids,
         ..
     } = &entries[0].operation
     {
         assert!((severity - 0.8).abs() < 1e-9);
         assert!((confidence - 0.64).abs() < 1e-9);
         assert_eq!(*vulnerability_class, VulnerabilityClass::CommandInjection);
+        assert_eq!(linked_node_ids, &[7]);
     } else {
         panic!("expected AddFinding operation");
     }
@@ -758,4 +773,461 @@ async fn run_fuzz_with_reflective_body_may_produce_findings() {
         .copied()
         .unwrap_or(0);
     assert_eq!(mutation_count, result.phase.findings_count);
+}
+
+// --- per-parameter FuzzTarget tests ---
+
+fn add_endpoint_node_with_params(
+    ctx: &mut ScanContext,
+    path: &str,
+    method: &str,
+    parameters_json: &str,
+    seq: u64,
+) {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: seq,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), path.to_string()),
+                    ("method".to_string(), method.to_string()),
+                    ("parameters".to_string(), parameters_json.to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+}
+
+#[test]
+fn enqueue_targets_no_parameters_creates_empty_param_targets() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node(&mut ctx, "/api/users", 0);
+
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    let endpoints = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap();
+    phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &endpoints, &ctx);
+
+    let class_count = phase_fuzz::fuzzable_classes().len();
+    assert_eq!(scheduler.pending_count(), class_count);
+
+    let mut all_targets = Vec::new();
+    while let Some(t) = scheduler.next_target() {
+        all_targets.push(t);
+    }
+    for t in &all_targets {
+        assert_eq!(
+            t.parameter, "input",
+            "GET endpoints without parameters should use default 'input' param"
+        );
+        assert_eq!(t.parameter_location, ParameterLocation::Query);
+    }
+}
+
+#[test]
+fn enqueue_targets_two_parameters_creates_per_param_targets() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    let params_json = r#"[
+        {"name":"id","location":"Query","param_type":"string","required":true},
+        {"name":"name","location":"Path","param_type":"string","required":false}
+    ]"#;
+    add_endpoint_node_with_params(&mut ctx, "/api/users", "GET", params_json, 0);
+
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    let endpoints = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap();
+    phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &endpoints, &ctx);
+
+    let class_count = phase_fuzz::fuzzable_classes().len();
+    assert_eq!(scheduler.pending_count(), 2 * class_count);
+
+    let mut all_targets = Vec::new();
+    while let Some(t) = scheduler.next_target() {
+        all_targets.push(t);
+    }
+
+    let id_targets: Vec<_> = all_targets.iter().filter(|t| t.parameter == "id").collect();
+    let name_targets: Vec<_> = all_targets
+        .iter()
+        .filter(|t| t.parameter == "name")
+        .collect();
+    assert_eq!(id_targets.len(), class_count);
+    assert_eq!(name_targets.len(), class_count);
+
+    for t in &id_targets {
+        assert_eq!(t.parameter_location, ParameterLocation::Query);
+    }
+    for t in &name_targets {
+        assert_eq!(t.parameter_location, ParameterLocation::Path);
+    }
+}
+
+#[test]
+fn enqueue_targets_body_parameter_has_body_location() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    let params_json =
+        r#"[{"name":"payload","location":"Body","param_type":"string","required":true}]"#;
+    add_endpoint_node_with_params(&mut ctx, "/api/submit", "POST", params_json, 0);
+
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    let endpoints = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap();
+    phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &endpoints, &ctx);
+
+    let class_count = phase_fuzz::fuzzable_classes().len();
+    assert_eq!(scheduler.pending_count(), class_count);
+
+    while let Some(t) = scheduler.next_target() {
+        assert_eq!(t.parameter, "payload");
+        assert_eq!(t.parameter_location, ParameterLocation::Body);
+        assert_eq!(t.method, "POST");
+    }
+}
+
+#[test]
+fn parse_parameter_location_known_variants() {
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("Query"),
+        ParameterLocation::Query
+    );
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("Path"),
+        ParameterLocation::Path
+    );
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("Header"),
+        ParameterLocation::Header
+    );
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("Cookie"),
+        ParameterLocation::Cookie
+    );
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("Body"),
+        ParameterLocation::Body
+    );
+}
+
+#[test]
+fn parse_parameter_location_unknown_defaults_to_query() {
+    assert_eq!(
+        phase_fuzz::parse_parameter_location("unknown"),
+        ParameterLocation::Query
+    );
+    assert_eq!(
+        phase_fuzz::parse_parameter_location(""),
+        ParameterLocation::Query
+    );
+}
+
+struct CapturingTransport {
+    captured_requests: Vec<FuzzRequest>,
+}
+
+impl CapturingTransport {
+    fn new() -> Self {
+        Self {
+            captured_requests: Vec::new(),
+        }
+    }
+}
+
+impl phase_fuzz::FuzzTransport for CapturingTransport {
+    async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, String> {
+        self.captured_requests.push(request.clone());
+        Ok(FuzzResponse {
+            request_id: request.request_id,
+            status_code: 200,
+            body: String::new(),
+            headers: vec![],
+            response_time: std::time::Duration::from_millis(10),
+            body_size_bytes: 0,
+        })
+    }
+}
+
+#[tokio::test]
+async fn body_target_fuzz_request_has_content_type_header() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    let params_json =
+        r#"[{"name":"data","location":"Body","param_type":"string","required":true}]"#;
+    add_endpoint_node_with_params(&mut ctx, "/api/submit", "POST", params_json, 0);
+
+    let mut transport = CapturingTransport::new();
+    phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !transport.captured_requests.is_empty(),
+        "should have sent at least one request"
+    );
+    for req in &transport.captured_requests {
+        assert_eq!(req.parameter_location, ParameterLocation::Body);
+        let has_content_type = req
+            .headers
+            .iter()
+            .any(|(k, v)| k == "Content-Type" && v == "application/json");
+        assert!(
+            has_content_type,
+            "Body-location request should have Content-Type: application/json header"
+        );
+    }
+}
+
+#[tokio::test]
+async fn query_target_fuzz_request_has_no_content_type_header() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    let params_json = r#"[{"name":"q","location":"Query","param_type":"string","required":true}]"#;
+    add_endpoint_node_with_params(&mut ctx, "/api/search", "GET", params_json, 0);
+
+    let mut transport = CapturingTransport::new();
+    phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !transport.captured_requests.is_empty(),
+        "should have sent at least one request"
+    );
+    for req in &transport.captured_requests {
+        assert_eq!(req.parameter_location, ParameterLocation::Query);
+        let has_content_type = req.headers.iter().any(|(k, _)| k == "Content-Type");
+        assert!(
+            !has_content_type,
+            "Query-location request should not have Content-Type header"
+        );
+    }
+}
+
+// --- parameter-aware fuzzing integration test ---
+
+#[tokio::test]
+async fn parameter_aware_pipeline_enqueue_and_fuzz_request_integration() {
+    let mut ctx = make_context(&["aegis", "--target", "http://localhost:8080"]);
+
+    let params_json = r#"[
+        {"name":"q","location":"Query","param_type":"string","required":false},
+        {"name":"email","location":"Body","param_type":"string","required":true}
+    ]"#;
+    add_endpoint_node_with_params(&mut ctx, "/api/users", "POST", params_json, 0);
+
+    let endpoints = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap();
+    assert_eq!(endpoints.len(), 1, "should have exactly one endpoint node");
+
+    let mut scheduler = aegis_fuzzing::scheduler::FuzzScheduler::new();
+    phase_fuzz::enqueue_targets_for_endpoints(&mut scheduler, &endpoints, &ctx);
+
+    let class_count = phase_fuzz::fuzzable_classes().len();
+    assert_eq!(class_count, 10, "fuzzable_classes should return 10 classes");
+    assert_eq!(
+        scheduler.pending_count(),
+        2 * class_count,
+        "2 params x 10 classes = 20 targets"
+    );
+
+    let mut all_targets = Vec::new();
+    while let Some(t) = scheduler.next_target() {
+        all_targets.push(t);
+    }
+    assert_eq!(all_targets.len(), 20);
+
+    let q_targets: Vec<_> = all_targets.iter().filter(|t| t.parameter == "q").collect();
+    let email_targets: Vec<_> = all_targets
+        .iter()
+        .filter(|t| t.parameter == "email")
+        .collect();
+    assert_eq!(q_targets.len(), class_count);
+    assert_eq!(email_targets.len(), class_count);
+
+    for t in &q_targets {
+        assert_eq!(
+            t.parameter_location,
+            ParameterLocation::Query,
+            "param 'q' should have Query location"
+        );
+        assert_eq!(t.endpoint, "/api/users");
+        assert_eq!(t.method, "POST");
+    }
+    for t in &email_targets {
+        assert_eq!(
+            t.parameter_location,
+            ParameterLocation::Body,
+            "param 'email' should have Body location"
+        );
+        assert_eq!(t.endpoint, "/api/users");
+        assert_eq!(t.method, "POST");
+    }
+
+    let q_classes: std::collections::HashSet<_> =
+        q_targets.iter().map(|t| t.vulnerability_class).collect();
+    let email_classes: std::collections::HashSet<_> = email_targets
+        .iter()
+        .map(|t| t.vulnerability_class)
+        .collect();
+    for class in phase_fuzz::fuzzable_classes() {
+        assert!(
+            q_classes.contains(&class),
+            "param 'q' missing class {class}"
+        );
+        assert!(
+            email_classes.contains(&class),
+            "param 'email' missing class {class}"
+        );
+    }
+
+    let mut transport = CapturingTransport::new();
+    let mut ctx2 = make_context(&["aegis", "--target", "http://localhost:8080"]);
+    add_endpoint_node_with_params(&mut ctx2, "/api/users", "POST", params_json, 0);
+    phase_fuzz::run_fuzz(&mut ctx2, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !transport.captured_requests.is_empty(),
+        "pipeline should have sent requests"
+    );
+
+    let body_requests: Vec<_> = transport
+        .captured_requests
+        .iter()
+        .filter(|r| r.parameter_location == ParameterLocation::Body)
+        .collect();
+    let query_requests: Vec<_> = transport
+        .captured_requests
+        .iter()
+        .filter(|r| r.parameter_location == ParameterLocation::Query)
+        .collect();
+
+    assert!(
+        !body_requests.is_empty(),
+        "should have Body-location requests for 'email' param"
+    );
+    assert!(
+        !query_requests.is_empty(),
+        "should have Query-location requests for 'q' param"
+    );
+
+    for req in &body_requests {
+        let has_content_type = req
+            .headers
+            .iter()
+            .any(|(k, v)| k == "Content-Type" && v == "application/json");
+        assert!(
+            has_content_type,
+            "Body-location request must have Content-Type: application/json"
+        );
+    }
+
+    for req in &query_requests {
+        let has_content_type = req.headers.iter().any(|(k, _)| k == "Content-Type");
+        assert!(
+            !has_content_type,
+            "Query-location request must not have Content-Type header"
+        );
+    }
+}
+
+#[tokio::test]
+async fn findings_linked_to_endpoint_nodes_populate_sarif_endpoint() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let output_dir = tempfile::tempdir().unwrap();
+    let sarif_path = output_dir.path().join("test.sarif");
+
+    let mut ctx = make_context(&[
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--output",
+        sarif_path.to_str().unwrap(),
+    ]);
+
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/users".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let mut transport = MockTransport::with_body("<html>SQL error: near syntax</html>");
+    let fuzz_result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    if fuzz_result.phase.findings_count == 0 {
+        return;
+    }
+
+    let finding_ids = crate::phase_report::all_finding_ids(&ctx);
+    assert!(
+        !finding_ids.is_empty(),
+        "should have findings after fuzz with SQL error body"
+    );
+
+    for &fid in &finding_ids {
+        let finding = ctx.graph.get_finding(fid).unwrap().unwrap();
+        assert!(
+            !finding.linked_node_ids.is_empty(),
+            "finding {fid} should have linked_node_ids pointing to endpoint node"
+        );
+        let node = ctx
+            .graph
+            .get_node(finding.linked_node_ids[0])
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            node.properties.get("path"),
+            Some(&"/api/users".to_string()),
+            "linked node should have path=/api/users"
+        );
+    }
+
+    crate::phase_report::run_report(&mut ctx, None).unwrap();
+
+    let sarif_content = std::fs::read_to_string(&sarif_path).unwrap();
+    let sarif: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
+    let results = sarif["runs"][0]["results"].as_array().unwrap();
+    assert!(!results.is_empty(), "SARIF should have results");
+
+    let mut found_endpoint = false;
+    for result in results {
+        let props = &result["properties"];
+        if let Some(ep) = props["endpoint"].as_str() {
+            if ep == "/api/users" {
+                found_endpoint = true;
+            }
+        }
+        assert!(
+            props["vulnerabilityClass"].as_str().is_some(),
+            "each SARIF result should have vulnerabilityClass property"
+        );
+    }
+    assert!(
+        found_endpoint,
+        "at least one SARIF result should have endpoint=/api/users"
+    );
 }

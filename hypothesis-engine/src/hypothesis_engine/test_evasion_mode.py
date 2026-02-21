@@ -1,9 +1,9 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from hypothesis_engine.bedrock_client import TokenUsage
+from hypothesis_engine.bedrock_client import LlmBackend, TokenUsage
 from hypothesis_engine.evasion_mode import (
     EvasionContext,
     EvasionHypothesisGenerator,
@@ -319,17 +319,40 @@ class TestParseEvasionsEdgeCases:
 
 
 class TestEvasionHypothesisGeneratorInit:
-    @patch("hypothesis_engine.evasion_mode.BedrockClient.__init__", return_value=None)
-    def test_init_calls_super_and_loads_examples(self, mock_super_init: MagicMock) -> None:
-        with patch.object(EvasionHypothesisGenerator, "_load_bypass_examples", return_value={"sqli": []}):
-            generator = EvasionHypothesisGenerator()
-        mock_super_init.assert_called_once_with(
-            model_id="global.anthropic.claude-sonnet-4-6",
-            aws_profile="ziya",
-            max_retries=3,
-            timeout_seconds=120,
+    def test_init_stores_client_and_loads_examples(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = EvasionHypothesisGenerator(client=mock_client)
+        assert generator._client is mock_client
+        assert generator._model_id == "global.anthropic.claude-sonnet-4-6"
+        assert isinstance(generator._bypass_examples, dict)
+
+    def test_init_accepts_custom_model_id(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = EvasionHypothesisGenerator(client=mock_client, model_id="custom-model")
+        assert generator._model_id == "custom-model"
+
+    def test_init_uses_mock_client_invoke(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        mock_response = json.dumps([
+            {"payload": "' OR 1=1--", "strategy": "tautology", "confidence": 0.9},
+        ])
+        mock_client.invoke.return_value = (mock_response, TokenUsage())
+
+        generator = EvasionHypothesisGenerator(client=mock_client)
+        ctx = EvasionContext(
+            vulnerability_class="sqli",
+            blocked_payload="' OR 1=1--",
+            defense_type="WAF",
+            defense_vendor="ModSecurity",
+            response_code=403,
+            response_snippet="Forbidden",
         )
-        assert generator._bypass_examples == {"sqli": []}
+        result = generator.generate_evasions(ctx, max_evasions=5)
+
+        mock_client.invoke.assert_called_once()
+        assert isinstance(result, EvasionResult)
+        assert len(result.evasions) == 1
+        assert result.evasions[0].payload == "' OR 1=1--"
 
 
 class TestGenerateEvasions:
@@ -338,6 +361,7 @@ class TestGenerateEvasions:
             EvasionHypothesisGenerator
         )
         self.generator._model_id = "global.anthropic.claude-sonnet-4-6"
+        self.generator._client = MagicMock(spec=LlmBackend)
         self.generator._bypass_examples = {
             "sqli": [{"payload": "test", "technique": "tautology", "targets": ["generic"]}],
         }
@@ -346,7 +370,7 @@ class TestGenerateEvasions:
         mock_response = json.dumps([
             {"payload": "' /*!OR*/ 1=1--", "strategy": "version comment", "confidence": 0.8},
         ])
-        self.generator.invoke = MagicMock(return_value=(mock_response, TokenUsage()))
+        self.generator._client.invoke.return_value = (mock_response, TokenUsage())
 
         ctx = EvasionContext(
             vulnerability_class="sqli",
@@ -363,10 +387,10 @@ class TestGenerateEvasions:
         assert result.evasions[0].payload == "' /*!OR*/ 1=1--"
         assert result.model_id == "global.anthropic.claude-sonnet-4-6"
         assert result.generation_time_ms >= 0
-        self.generator.invoke.assert_called_once()
+        self.generator._client.invoke.assert_called_once()
 
     def test_generate_evasions_empty_response(self) -> None:
-        self.generator.invoke = MagicMock(return_value=("no json", TokenUsage()))
+        self.generator._client.invoke.return_value = ("no json", TokenUsage())
 
         ctx = EvasionContext(
             vulnerability_class="sqli",

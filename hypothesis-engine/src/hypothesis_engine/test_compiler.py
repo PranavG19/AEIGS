@@ -1,6 +1,6 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-from hypothesis_engine.bedrock_client import TokenUsage
+from hypothesis_engine.bedrock_client import LlmBackend, TokenUsage
 from hypothesis_engine.compiler import (
     CompilationResult,
     HypothesisCompiler,
@@ -151,49 +151,46 @@ class TestCompilationResult:
         assert result.failed_compilations == 0
         assert result.compilation_time_ms == 100.0
 
+    def test_token_fields_default_to_zero_for_backwards_compat(self) -> None:
+        raw = {"specifications": [], "compilation_time_ms": 50.0, "failed_compilations": 0}
+        result = CompilationResult.model_validate(raw)
+        assert result.input_tokens == 0
+        assert result.output_tokens == 0
+
+    def test_token_fields_accept_explicit_values(self) -> None:
+        result = CompilationResult(
+            specifications=[],
+            compilation_time_ms=100.0,
+            failed_compilations=0,
+            input_tokens=200,
+            output_tokens=75,
+        )
+        assert result.input_tokens == 200
+        assert result.output_tokens == 75
+
 
 class TestHypothesisCompilerInit:
-    @patch("hypothesis_engine.compiler.BedrockClient.__init__", return_value=None)
-    def test_default_init(self, mock_super_init: MagicMock) -> None:
-        compiler = HypothesisCompiler()
-        mock_super_init.assert_called_once_with(
-            model_id="global.anthropic.claude-sonnet-4-6",
-            aws_profile="ziya",
-            max_retries=3,
-            timeout_seconds=120,
-        )
+    def test_stores_client(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        compiler = HypothesisCompiler(mock_client)
+        assert compiler._client is mock_client
         assert isinstance(compiler, HypothesisCompiler)
-
-    @patch("hypothesis_engine.compiler.BedrockClient.__init__", return_value=None)
-    def test_custom_init(self, mock_super_init: MagicMock) -> None:
-        HypothesisCompiler(
-            model_id="custom-model",
-            aws_profile="custom-profile",
-            max_retries=5,
-            timeout_seconds=60,
-        )
-        mock_super_init.assert_called_once_with(
-            model_id="custom-model",
-            aws_profile="custom-profile",
-            max_retries=5,
-            timeout_seconds=60,
-        )
 
 
 class TestHypothesisCompilerMethods:
     def setup_method(self) -> None:
-        with patch("hypothesis_engine.compiler.BedrockClient.__init__", return_value=None):
-            self.compiler = HypothesisCompiler()
+        self.mock_client = MagicMock(spec=LlmBackend)
+        self.compiler = HypothesisCompiler(self.mock_client)
 
     def test_compile_hypothesis(self) -> None:
         h = sample_hypothesis()
         mock_response = '[{"target_endpoint": "/login", "http_method": "POST", "priority": 0.9}]'
-        self.compiler.invoke = MagicMock(return_value=(mock_response, TokenUsage()))
+        self.mock_client.invoke.return_value = (mock_response, TokenUsage())
 
         specs = self.compiler.compile_hypothesis(h)
         assert len(specs) == 1
         assert specs[0].target_endpoint == "/login"
-        self.compiler.invoke.assert_called_once()
+        self.mock_client.invoke.assert_called_once()
 
     def test_compile_batch_success(self) -> None:
         h1 = sample_hypothesis()
@@ -205,7 +202,7 @@ class TestHypothesisCompilerMethods:
             confidence=0.7,
         )
         mock_response = '[{"target_endpoint": "/api", "http_method": "GET"}]'
-        self.compiler.invoke = MagicMock(return_value=(mock_response, TokenUsage()))
+        self.mock_client.invoke.return_value = (mock_response, TokenUsage())
 
         result = self.compiler.compile_batch([h1, h2])
         assert isinstance(result, CompilationResult)
@@ -215,7 +212,7 @@ class TestHypothesisCompilerMethods:
 
     def test_compile_batch_with_failures(self) -> None:
         h = sample_hypothesis()
-        self.compiler.invoke = MagicMock(side_effect=RuntimeError("Bedrock error"))
+        self.mock_client.invoke.side_effect = RuntimeError("LLM error")
 
         result = self.compiler.compile_batch([h])
         assert result.failed_compilations == 1
@@ -225,3 +222,22 @@ class TestHypothesisCompilerMethods:
         result = self.compiler.compile_batch([])
         assert result.specifications == []
         assert result.failed_compilations == 0
+
+    def test_compile_batch_accumulates_token_usage(self) -> None:
+        h1 = sample_hypothesis()
+        h2 = Hypothesis(
+            condition="IF search uses eval",
+            vulnerability_class="RCE",
+            reasoning="BECAUSE user input in eval",
+            test_approach="CAN BE TESTED BY injecting code",
+            confidence=0.7,
+        )
+        mock_response = '[{"target_endpoint": "/api", "http_method": "GET"}]'
+        self.mock_client.invoke.return_value = (
+            mock_response,
+            TokenUsage(input_tokens=100, output_tokens=50),
+        )
+
+        result = self.compiler.compile_batch([h1, h2])
+        assert result.input_tokens == 200
+        assert result.output_tokens == 100

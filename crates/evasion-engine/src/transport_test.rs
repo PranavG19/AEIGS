@@ -1,6 +1,6 @@
 use super::*;
 use crate::persona::{JitterDistribution, PersonaId, persona_catalog};
-use aegis_protocol::request::FuzzRequest;
+use aegis_protocol::request::{FuzzRequest, ParameterLocation};
 
 #[tokio::test]
 async fn send_rejects_non_localhost_url() {
@@ -11,6 +11,7 @@ async fn send_rejects_non_localhost_url() {
         endpoint: "http://example.com/api".to_string(),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "test".to_string(),
         headers: vec![],
     };
@@ -34,6 +35,7 @@ async fn send_rejects_external_ip() {
         endpoint: "http://8.8.8.8/dns".to_string(),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "test".to_string(),
         headers: vec![],
     };
@@ -61,6 +63,7 @@ async fn send_allows_localhost_url() {
         endpoint: format!("{}/test", server.uri()),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "test".to_string(),
         headers: vec![],
     };
@@ -298,41 +301,6 @@ fn parse_method_unsupported_returns_error() {
 }
 
 #[test]
-fn is_body_method_post() {
-    assert!(is_body_method(&reqwest::Method::POST));
-}
-
-#[test]
-fn is_body_method_put() {
-    assert!(is_body_method(&reqwest::Method::PUT));
-}
-
-#[test]
-fn is_body_method_patch() {
-    assert!(is_body_method(&reqwest::Method::PATCH));
-}
-
-#[test]
-fn is_body_method_get_returns_false() {
-    assert!(!is_body_method(&reqwest::Method::GET));
-}
-
-#[test]
-fn is_body_method_delete_returns_false() {
-    assert!(!is_body_method(&reqwest::Method::DELETE));
-}
-
-#[test]
-fn is_body_method_head_returns_false() {
-    assert!(!is_body_method(&reqwest::Method::HEAD));
-}
-
-#[test]
-fn is_body_method_options_returns_false() {
-    assert!(!is_body_method(&reqwest::Method::OPTIONS));
-}
-
-#[test]
 fn build_reqwest_request_get_with_query() {
     let transport = EvasionTransport::builder().build();
     let request = FuzzRequest {
@@ -340,6 +308,7 @@ fn build_reqwest_request_get_with_query() {
         endpoint: "http://localhost:9999/test".to_string(),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "search term".to_string(),
         headers: vec![],
     };
@@ -353,22 +322,46 @@ fn build_reqwest_request_get_with_query() {
 }
 
 #[test]
-fn build_reqwest_request_post_with_body() {
+fn build_reqwest_request_post_with_query_location_uses_query_string() {
     let transport = EvasionTransport::builder().build();
     let request = FuzzRequest {
         request_id: 2,
         endpoint: "http://localhost:9999/submit".to_string(),
         method: "POST".to_string(),
         parameter_name: "name".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "value".to_string(),
         headers: vec![],
     };
-    let transformed = vec![];
-    let built = transport
-        .build_reqwest_request(&request, &transformed)
-        .unwrap();
+    let built = transport.build_reqwest_request(&request, &[]).unwrap();
+    assert_eq!(*built.method(), reqwest::Method::POST);
+    assert!(built.url().as_str().contains("name=value"));
+    assert!(built.body().is_none());
+}
+
+#[test]
+fn build_reqwest_request_post_with_body_location_sets_json_body() {
+    let transport = EvasionTransport::builder().build();
+    let request = FuzzRequest {
+        request_id: 2,
+        endpoint: "http://localhost:9999/submit".to_string(),
+        method: "POST".to_string(),
+        parameter_name: "name".to_string(),
+        parameter_location: ParameterLocation::Body,
+        payload: "value".to_string(),
+        headers: vec![],
+    };
+    let built = transport.build_reqwest_request(&request, &[]).unwrap();
     assert_eq!(*built.method(), reqwest::Method::POST);
     assert!(built.body().is_some());
+    let body_bytes = built.body().unwrap().as_bytes().unwrap();
+    let body_str = std::str::from_utf8(body_bytes).unwrap();
+    let parsed: serde_json::Value = serde_json::from_str(body_str).unwrap();
+    assert_eq!(parsed["name"], "value");
+    assert_eq!(
+        built.headers().get("Content-Type").unwrap(),
+        "application/json"
+    );
 }
 
 #[test]
@@ -379,6 +372,7 @@ fn build_reqwest_request_invalid_method_returns_error() {
         endpoint: "http://localhost:9999/test".to_string(),
         method: "INVALID".to_string(),
         parameter_name: "x".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "y".to_string(),
         headers: vec![],
     };
@@ -387,19 +381,21 @@ fn build_reqwest_request_invalid_method_returns_error() {
 }
 
 #[test]
-fn build_reqwest_request_put_attaches_body() {
+fn build_reqwest_request_put_with_query_location_uses_query_string() {
     let transport = EvasionTransport::builder().build();
     let request = FuzzRequest {
         request_id: 4,
         endpoint: "http://localhost:9999/update".to_string(),
         method: "PUT".to_string(),
         parameter_name: "field".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "data".to_string(),
         headers: vec![],
     };
     let built = transport.build_reqwest_request(&request, &[]).unwrap();
     assert_eq!(*built.method(), reqwest::Method::PUT);
-    assert!(built.body().is_some());
+    assert!(built.url().as_str().contains("field=data"));
+    assert!(built.body().is_none());
 }
 
 #[test]
@@ -410,6 +406,7 @@ fn build_reqwest_request_delete_uses_query() {
         endpoint: "http://localhost:9999/remove".to_string(),
         method: "DELETE".to_string(),
         parameter_name: "id".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "42".to_string(),
         headers: vec![],
     };
@@ -426,6 +423,7 @@ fn build_reqwest_request_multiple_headers() {
         endpoint: "http://localhost:9999/api".to_string(),
         method: "GET".to_string(),
         parameter_name: "p".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "v".to_string(),
         headers: vec![],
     };
@@ -441,71 +439,130 @@ fn build_reqwest_request_multiple_headers() {
 }
 
 #[test]
-fn attach_payload_get_uses_query() {
-    let client = reqwest::Client::new();
-    let builder = client.get("http://localhost:9999/test");
+fn resolve_query_location_appends_query_string() {
     let request = FuzzRequest {
         request_id: 1,
         endpoint: "http://localhost:9999/test".to_string(),
         method: "GET".to_string(),
         parameter_name: "key".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "val".to_string(),
         headers: vec![],
     };
-    let result = attach_payload(builder, &reqwest::Method::GET, &request);
-    let built = result.build().unwrap();
-    assert!(built.url().query().unwrap().contains("key=val"));
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/test?key=val");
+    assert!(body.is_none());
+    assert!(extra_headers.is_empty());
 }
 
 #[test]
-fn attach_payload_post_uses_form() {
-    let client = reqwest::Client::new();
-    let builder = client.post("http://localhost:9999/test");
+fn resolve_query_location_empty_param_leaves_url_unchanged() {
     let request = FuzzRequest {
         request_id: 1,
         endpoint: "http://localhost:9999/test".to_string(),
+        method: "GET".to_string(),
+        parameter_name: String::new(),
+        parameter_location: ParameterLocation::Query,
+        payload: "val".to_string(),
+        headers: vec![],
+    };
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/test");
+    assert!(body.is_none());
+    assert!(extra_headers.is_empty());
+}
+
+#[test]
+fn resolve_body_location_sets_json_body_and_content_type() {
+    let request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://localhost:9999/submit".to_string(),
         method: "POST".to_string(),
-        parameter_name: "key".to_string(),
-        payload: "val".to_string(),
-        headers: vec![],
-    };
-    let result = attach_payload(builder, &reqwest::Method::POST, &request);
-    let built = result.build().unwrap();
-    assert!(built.body().is_some());
-}
-
-#[test]
-fn attach_payload_patch_uses_form() {
-    let client = reqwest::Client::new();
-    let builder = client.patch("http://localhost:9999/test");
-    let request = FuzzRequest {
-        request_id: 1,
-        endpoint: "http://localhost:9999/test".to_string(),
-        method: "PATCH".to_string(),
         parameter_name: "field".to_string(),
-        payload: "updated".to_string(),
+        parameter_location: ParameterLocation::Body,
+        payload: "injected".to_string(),
         headers: vec![],
     };
-    let result = attach_payload(builder, &reqwest::Method::PATCH, &request);
-    let built = result.build().unwrap();
-    assert!(built.body().is_some());
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/submit");
+    let body_str = body.expect("body should be set for Body location");
+    let parsed: serde_json::Value = serde_json::from_str(&body_str).unwrap();
+    assert_eq!(parsed["field"], "injected");
+    assert_eq!(extra_headers.len(), 1);
+    assert_eq!(extra_headers[0].0, "Content-Type");
+    assert_eq!(extra_headers[0].1, "application/json");
 }
 
 #[test]
-fn attach_payload_head_uses_query() {
-    let client = reqwest::Client::new();
-    let builder = client.head("http://localhost:9999/test");
+fn resolve_body_location_empty_param_uses_raw_payload() {
     let request = FuzzRequest {
         request_id: 1,
-        endpoint: "http://localhost:9999/test".to_string(),
-        method: "HEAD".to_string(),
-        parameter_name: "check".to_string(),
-        payload: "true".to_string(),
+        endpoint: "http://localhost:9999/submit".to_string(),
+        method: "POST".to_string(),
+        parameter_name: String::new(),
+        parameter_location: ParameterLocation::Body,
+        payload: "{\"raw\":true}".to_string(),
         headers: vec![],
     };
-    let result = attach_payload(builder, &reqwest::Method::HEAD, &request);
-    let built = result.build().unwrap();
-    assert!(built.url().query().unwrap().contains("check=true"));
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/submit");
+    assert_eq!(body.unwrap(), "{\"raw\":true}");
+    assert_eq!(extra_headers[0].0, "Content-Type");
+}
+
+#[test]
+fn resolve_path_location_replaces_placeholder_in_url() {
+    let request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://localhost:9999/users/{id}/profile".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "id".to_string(),
+        parameter_location: ParameterLocation::Path,
+        payload: "42".to_string(),
+        headers: vec![],
+    };
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/users/42/profile");
+    assert!(body.is_none());
+    assert!(extra_headers.is_empty());
+}
+
+#[test]
+fn resolve_header_location_adds_header() {
+    let request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://localhost:9999/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "X-Api-Key".to_string(),
+        parameter_location: ParameterLocation::Header,
+        payload: "secret".to_string(),
+        headers: vec![],
+    };
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/api");
+    assert!(body.is_none());
+    assert_eq!(extra_headers.len(), 1);
+    assert_eq!(extra_headers[0].0, "X-Api-Key");
+    assert_eq!(extra_headers[0].1, "secret");
+}
+
+#[test]
+fn resolve_cookie_location_adds_cookie_header() {
+    let request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://localhost:9999/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "session".to_string(),
+        parameter_location: ParameterLocation::Cookie,
+        payload: "abc123".to_string(),
+        headers: vec![],
+    };
+    let (url, body, extra_headers) = resolve_parameter_injection(&request);
+    assert_eq!(url, "http://localhost:9999/api");
+    assert!(body.is_none());
+    assert_eq!(extra_headers.len(), 1);
+    assert_eq!(extra_headers[0].0, "Cookie");
+    assert_eq!(extra_headers[0].1, "session=abc123");
 }
 
 #[test]
@@ -552,6 +609,7 @@ async fn send_get_request_returns_response() {
         endpoint: format!("{}/path", server.uri()),
         method: "GET".to_string(),
         parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "test".to_string(),
         headers: vec![],
     };
@@ -578,6 +636,7 @@ async fn send_post_request_returns_response() {
         endpoint: format!("{}/submit", server.uri()),
         method: "POST".to_string(),
         parameter_name: "name".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "value".to_string(),
         headers: vec![],
     };
@@ -603,6 +662,7 @@ async fn send_records_request_in_session() {
         endpoint: endpoint.clone(),
         method: "GET".to_string(),
         parameter_name: "x".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "y".to_string(),
         headers: vec![],
     };
@@ -630,6 +690,7 @@ async fn send_processes_set_cookie_header() {
         endpoint: format!("{}/login", server.uri()),
         method: "POST".to_string(),
         parameter_name: "user".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "admin".to_string(),
         headers: vec![],
     };
@@ -656,6 +717,7 @@ async fn send_with_custom_headers() {
         endpoint: format!("{}/api", server.uri()),
         method: "GET".to_string(),
         parameter_name: "k".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "v".to_string(),
         headers: vec![("X-Custom".to_string(), "myval".to_string())],
     };
@@ -673,6 +735,7 @@ async fn send_to_nonexistent_server_returns_network_error() {
         endpoint: "http://127.0.0.1:1/unreachable".to_string(),
         method: "GET".to_string(),
         parameter_name: "x".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "y".to_string(),
         headers: vec![],
     };
@@ -702,6 +765,7 @@ async fn send_returns_response_headers() {
         endpoint: format!("{}/headers", server.uri()),
         method: "GET".to_string(),
         parameter_name: "a".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "b".to_string(),
         headers: vec![],
     };
@@ -730,6 +794,7 @@ async fn send_measures_response_time() {
         endpoint: format!("{}/timing", server.uri()),
         method: "GET".to_string(),
         parameter_name: "t".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: "1".to_string(),
         headers: vec![],
     };
@@ -758,6 +823,7 @@ async fn send_auto_rotates_session_at_threshold() {
         endpoint: format!("{}/r", server.uri()),
         method: "GET".to_string(),
         parameter_name: "n".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: id.to_string(),
         headers: vec![],
     };
@@ -808,6 +874,7 @@ async fn persona_changes_after_rotation_interval() {
         endpoint: format!("{}/r", server.uri()),
         method: "GET".to_string(),
         parameter_name: "n".to_string(),
+        parameter_location: ParameterLocation::Query,
         payload: id.to_string(),
         headers: vec![],
     };
@@ -852,4 +919,110 @@ fn builder_accept_self_signed_chains_with_other_options() {
         .build();
 
     assert_eq!(transport.session_id(), 0);
+}
+
+#[tokio::test]
+async fn send_body_location_delivers_json_payload() {
+    let server = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("POST"))
+        .and(wiremock::matchers::header(
+            "content-type",
+            "application/json",
+        ))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_string("ok"))
+        .mount(&server)
+        .await;
+
+    let mut transport = EvasionTransport::builder().with_timing_seed(0).build();
+
+    let request = FuzzRequest {
+        request_id: 200,
+        endpoint: format!("{}/submit", server.uri()),
+        method: "POST".to_string(),
+        parameter_name: "username".to_string(),
+        parameter_location: ParameterLocation::Body,
+        payload: "admin".to_string(),
+        headers: vec![],
+    };
+
+    let response = transport.send(&request).await.unwrap();
+    assert_eq!(response.status_code, 200);
+    assert_eq!(response.body, "ok");
+}
+
+#[tokio::test]
+async fn send_query_location_appends_query_string() {
+    let server = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("GET"))
+        .and(wiremock::matchers::query_param("search", "test"))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_string("found"))
+        .mount(&server)
+        .await;
+
+    let mut transport = EvasionTransport::builder().with_timing_seed(0).build();
+
+    let request = FuzzRequest {
+        request_id: 201,
+        endpoint: format!("{}/api", server.uri()),
+        method: "GET".to_string(),
+        parameter_name: "search".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let response = transport.send(&request).await.unwrap();
+    assert_eq!(response.status_code, 200);
+    assert_eq!(response.body, "found");
+}
+
+#[test]
+fn build_reqwest_request_path_location_replaces_placeholder() {
+    let transport = EvasionTransport::builder().build();
+    let request = FuzzRequest {
+        request_id: 7,
+        endpoint: "http://localhost:9999/users/{id}".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "id".to_string(),
+        parameter_location: ParameterLocation::Path,
+        payload: "42".to_string(),
+        headers: vec![],
+    };
+    let built = transport.build_reqwest_request(&request, &[]).unwrap();
+    assert_eq!(built.url().path(), "/users/42");
+    assert!(built.body().is_none());
+}
+
+#[test]
+fn build_reqwest_request_header_location_adds_header() {
+    let transport = EvasionTransport::builder().build();
+    let request = FuzzRequest {
+        request_id: 8,
+        endpoint: "http://localhost:9999/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "X-Api-Key".to_string(),
+        parameter_location: ParameterLocation::Header,
+        payload: "secret".to_string(),
+        headers: vec![],
+    };
+    let built = transport.build_reqwest_request(&request, &[]).unwrap();
+    assert_eq!(built.headers().get("X-Api-Key").unwrap(), "secret");
+    assert!(built.body().is_none());
+}
+
+#[test]
+fn build_reqwest_request_cookie_location_adds_cookie_header() {
+    let transport = EvasionTransport::builder().build();
+    let request = FuzzRequest {
+        request_id: 9,
+        endpoint: "http://localhost:9999/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "session".to_string(),
+        parameter_location: ParameterLocation::Cookie,
+        payload: "abc123".to_string(),
+        headers: vec![],
+    };
+    let built = transport.build_reqwest_request(&request, &[]).unwrap();
+    assert_eq!(built.headers().get("Cookie").unwrap(), "session=abc123");
+    assert!(built.body().is_none());
 }
