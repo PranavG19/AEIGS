@@ -3,7 +3,11 @@ use std::collections::{HashSet, VecDeque};
 use regex::Regex;
 
 use crate::error::CrawlError;
-use crate::types::{CrawlConfig, CrawlResult, NormalizedUrl};
+use crate::page_fetcher::PageFetcher;
+use crate::types::{
+    CrawlConfig, CrawlResult, DiscoveredEndpoint, DiscoveredForm, DiscoveredParameter,
+    DiscoverySource, InterceptedApiCall, NormalizedUrl,
+};
 
 /// Headless browser crawler for localhost-only target discovery.
 ///
@@ -11,9 +15,7 @@ use crate::types::{CrawlConfig, CrawlResult, NormalizedUrl};
 /// event handlers, and script sources from visited pages. Enforces localhost-only
 /// targeting to prevent accidental remote scanning.
 pub struct Crawler {
-    #[allow(dead_code)]
     pub(crate) config: CrawlConfig,
-    #[allow(dead_code)]
     pub(crate) visited: HashSet<NormalizedUrl>,
     pub(crate) queue: VecDeque<(NormalizedUrl, u32)>,
     scope_regex: Option<Regex>,
@@ -57,11 +59,109 @@ impl Crawler {
 
     /// Crawl all seeded URLs via BFS, extracting discovered endpoints and forms.
     ///
-    /// Currently a stub that returns an empty result. Browser-based crawling
-    /// will be implemented when the headless browser dependency is added.
-    pub async fn crawl(&mut self) -> Result<CrawlResult, CrawlError> {
-        Ok(CrawlResult::default())
+    /// Visits pages breadth-first up to `config.max_depth` and `config.max_pages`.
+    /// Errors on individual pages are recorded but do not abort the crawl.
+    pub async fn crawl<F: PageFetcher>(
+        &mut self,
+        fetcher: &mut F,
+    ) -> Result<CrawlResult, CrawlError> {
+        let mut result = CrawlResult::default();
+        let mut all_endpoints: Vec<DiscoveredEndpoint> = Vec::new();
+
+        while let Some((url, depth)) = self.queue.pop_front() {
+            if result.pages_visited >= self.config.max_pages {
+                break;
+            }
+            if self.visited.contains(&url) {
+                continue;
+            }
+            if depth > self.config.max_depth {
+                continue;
+            }
+
+            self.visited.insert(url.clone());
+
+            match fetcher.fetch_page(url.as_str()).await {
+                Ok(content) => {
+                    result.pages_visited += 1;
+                    self.enqueue_links(&content.links, depth);
+                    all_endpoints.extend(links_to_endpoints(&content.links));
+                    all_endpoints.extend(forms_to_endpoints(&content.forms));
+                    all_endpoints.extend(api_calls_to_endpoints(&content.intercepted_api_calls));
+                    result.discovered_forms.extend(content.forms);
+                    result.event_handlers.extend(content.event_handlers);
+                    result.script_sources.extend(content.script_sources);
+                }
+                Err(err) => {
+                    result.errors.push(err.to_string());
+                }
+            }
+        }
+
+        dedup_endpoints(&mut all_endpoints);
+        result.discovered_endpoints = all_endpoints;
+        Ok(result)
     }
+
+    fn enqueue_links(&mut self, links: &[String], current_depth: u32) {
+        for link in links {
+            if self.is_in_scope(link) {
+                let normalized = NormalizedUrl::from(link.as_str());
+                if !self.visited.contains(&normalized) {
+                    self.queue.push_back((normalized, current_depth + 1));
+                }
+            }
+        }
+    }
+}
+
+fn links_to_endpoints(links: &[String]) -> Vec<DiscoveredEndpoint> {
+    links
+        .iter()
+        .map(|link| DiscoveredEndpoint {
+            url: link.clone(),
+            method: "GET".to_string(),
+            parameters: Vec::new(),
+            source: DiscoverySource::Link,
+        })
+        .collect()
+}
+
+fn forms_to_endpoints(forms: &[DiscoveredForm]) -> Vec<DiscoveredEndpoint> {
+    forms
+        .iter()
+        .map(|form| DiscoveredEndpoint {
+            url: form.action.clone(),
+            method: form.method.clone(),
+            parameters: form
+                .inputs
+                .iter()
+                .map(|input| DiscoveredParameter {
+                    name: input.name.clone(),
+                    location: aegis_protocol::request::ParameterLocation::Body,
+                    example_value: input.value.clone(),
+                })
+                .collect(),
+            source: DiscoverySource::Form,
+        })
+        .collect()
+}
+
+fn api_calls_to_endpoints(api_calls: &[InterceptedApiCall]) -> Vec<DiscoveredEndpoint> {
+    api_calls
+        .iter()
+        .map(|call| DiscoveredEndpoint {
+            url: call.url.clone(),
+            method: call.method.clone(),
+            parameters: Vec::new(),
+            source: DiscoverySource::ApiCall,
+        })
+        .collect()
+}
+
+fn dedup_endpoints(endpoints: &mut Vec<DiscoveredEndpoint>) {
+    let mut seen = HashSet::new();
+    endpoints.retain(|ep| seen.insert((ep.url.clone(), ep.method.clone())));
 }
 
 fn is_localhost_url(url: &str) -> bool {
