@@ -1,4 +1,6 @@
+use crate::confirmation::{ConfirmFn, build_confirmation_registry};
 use crate::executor::FuzzResponse;
+use aegis_protocol::finding::VulnerabilityClass;
 use rand::Rng;
 use regex::Regex;
 use std::collections::HashMap;
@@ -101,6 +103,7 @@ pub struct FuzzOracle {
     error_patterns: Vec<String>,
     randomize_order: bool,
     inter_request_spacing: Duration,
+    confirmation_registry: HashMap<VulnerabilityClass, Vec<ConfirmFn>>,
 }
 
 impl FuzzOracle {
@@ -110,8 +113,8 @@ impl FuzzOracle {
             anomaly_threshold,
             error_patterns: build_default_error_patterns(),
             randomize_order: true,
-            // 100ms default spacing between control/treatment requests
             inter_request_spacing: Duration::from_millis(100),
+            confirmation_registry: build_confirmation_registry(),
         }
     }
 
@@ -211,6 +214,52 @@ impl FuzzOracle {
             .filter(|a| {
                 a.anomaly_type == AnomalyType::ReflectionDetected
                     || !control_types.contains(&a.anomaly_type)
+            })
+            .collect()
+    }
+
+    pub fn analyze_response_with_confirmation(
+        &self,
+        treatment: &FuzzResponse,
+        control: &FuzzResponse,
+        payload: &str,
+        endpoint: &str,
+        method: &str,
+        vuln_class: VulnerabilityClass,
+    ) -> Vec<Anomaly> {
+        let generic =
+            self.analyze_response_with_control(treatment, control, payload, endpoint, method);
+
+        let key = (endpoint.to_string(), method.to_string());
+        let default_baseline = BaselineProfile::from_responses(endpoint, method, &[]);
+        let baseline = self.baselines.get(&key).unwrap_or(&default_baseline);
+
+        let class_anomalies =
+            self.run_confirmation_functions(treatment, control, payload, baseline, vuln_class);
+
+        merge_and_deduplicate(generic, class_anomalies, self.anomaly_threshold)
+    }
+
+    fn run_confirmation_functions(
+        &self,
+        treatment: &FuzzResponse,
+        control: &FuzzResponse,
+        payload: &str,
+        baseline: &BaselineProfile,
+        vuln_class: VulnerabilityClass,
+    ) -> Vec<Anomaly> {
+        let Some(confirm_fns) = self.confirmation_registry.get(&vuln_class) else {
+            return Vec::new();
+        };
+
+        confirm_fns
+            .iter()
+            .filter_map(|f| f(treatment, control, payload, baseline))
+            .map(|evidence| Anomaly {
+                request_id: treatment.request_id,
+                anomaly_type: AnomalyType::ContentAnomaly,
+                score: evidence.confidence,
+                description: format!("[{vuln_class}] {}", evidence.description),
             })
             .collect()
     }
@@ -442,6 +491,30 @@ pub fn measure_endpoint_variance(responses: &[FuzzResponse]) -> VarianceReport {
         body_similarity,
         is_deterministic,
     }
+}
+
+fn merge_and_deduplicate(
+    generic: Vec<Anomaly>,
+    class_specific: Vec<Anomaly>,
+    threshold: f64,
+) -> Vec<Anomaly> {
+    let mut best_by_type: HashMap<AnomalyType, Anomaly> = HashMap::new();
+
+    for anomaly in generic.into_iter().chain(class_specific) {
+        best_by_type
+            .entry(anomaly.anomaly_type)
+            .and_modify(|existing| {
+                if anomaly.score > existing.score {
+                    *existing = anomaly.clone();
+                }
+            })
+            .or_insert(anomaly);
+    }
+
+    best_by_type
+        .into_values()
+        .filter(|a| a.score >= threshold)
+        .collect()
 }
 
 fn build_default_error_patterns() -> Vec<String> {

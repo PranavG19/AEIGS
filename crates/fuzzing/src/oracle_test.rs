@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod tests {
+    use aegis_protocol::finding::VulnerabilityClass;
+
     use crate::executor::FuzzResponse;
     use crate::oracle::{AnomalyType, BaselineProfile, CounterfactualOrder, FuzzOracle};
     use std::time::Duration;
@@ -599,6 +601,212 @@ mod tests {
             !report.is_deterministic,
             "genuinely different bodies should be non-deterministic, similarity={}",
             report.body_similarity
+        );
+    }
+
+    #[test]
+    fn confirmation_detects_sql_error_in_treatment() {
+        let oracle = FuzzOracle::new(0.5);
+
+        let treatment = response(
+            500,
+            "You have an error in your SQL syntax near '1'",
+            50,
+            100,
+        );
+        let control = response(200, "ok", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "POST",
+            VulnerabilityClass::SqlInjection,
+        );
+
+        assert!(
+            anomalies
+                .iter()
+                .any(|a| a.description.contains("[SQL Injection]")),
+            "should contain class-specific SQL Injection anomaly"
+        );
+    }
+
+    #[test]
+    fn confirmation_returns_empty_for_unregistered_class() {
+        let oracle = FuzzOracle::new(0.5);
+
+        let treatment = response(200, "ok", 50, 100);
+        let control = response(200, "ok", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "test",
+            "/api/data",
+            "GET",
+            VulnerabilityClass::BrokenAuthentication,
+        );
+
+        assert!(
+            anomalies.is_empty(),
+            "unregistered vuln class should produce no class-specific anomalies"
+        );
+    }
+
+    #[test]
+    fn confirmation_deduplicates_keeping_higher_score() {
+        let oracle = FuzzOracle::new(0.5);
+
+        let treatment = response(
+            500,
+            "You have an error in your SQL syntax near '1'",
+            50,
+            100,
+        );
+        let control = response(200, "ok", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "POST",
+            VulnerabilityClass::SqlInjection,
+        );
+
+        let content_anomalies: Vec<_> = anomalies
+            .iter()
+            .filter(|a| a.anomaly_type == AnomalyType::ContentAnomaly)
+            .collect();
+
+        assert_eq!(
+            content_anomalies.len(),
+            1,
+            "dedup should keep exactly one ContentAnomaly, got {}",
+            content_anomalies.len()
+        );
+
+        assert!(
+            content_anomalies[0].score >= 0.9,
+            "should keep the higher-scoring anomaly, got {}",
+            content_anomalies[0].score
+        );
+    }
+
+    #[test]
+    fn confirmation_works_without_baseline() {
+        let oracle = FuzzOracle::new(0.5);
+
+        let treatment = response(
+            200,
+            "You have an error in your SQL syntax near '1'",
+            50,
+            100,
+        );
+        let control = response(200, "ok", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/no/baseline/here",
+            "POST",
+            VulnerabilityClass::SqlInjection,
+        );
+
+        assert!(
+            !anomalies.is_empty(),
+            "should detect anomalies even without a stored baseline"
+        );
+    }
+
+    #[test]
+    fn confirmation_threshold_filters_low_confidence() {
+        let oracle = FuzzOracle::new(0.99);
+
+        let treatment = response(
+            500,
+            "You have an error in your SQL syntax near '1'",
+            50,
+            100,
+        );
+        let control = response(200, "ok", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "POST",
+            VulnerabilityClass::SqlInjection,
+        );
+
+        assert!(
+            anomalies.is_empty(),
+            "threshold 0.99 should filter out all anomalies"
+        );
+    }
+
+    #[test]
+    fn confirmation_preserves_generic_anomalies_for_different_types() {
+        let mut oracle = FuzzOracle::new(0.5);
+        oracle.add_baseline(baseline());
+
+        let treatment = response(
+            500,
+            "You have an error in your SQL syntax near '1'",
+            50,
+            500,
+        );
+        let control = response(200, "ok", 50, 500);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "GET",
+            VulnerabilityClass::SqlInjection,
+        );
+
+        let has_status = anomalies
+            .iter()
+            .any(|a| a.anomaly_type == AnomalyType::StatusCodeAnomaly);
+        let has_content = anomalies
+            .iter()
+            .any(|a| a.anomaly_type == AnomalyType::ContentAnomaly);
+
+        assert!(has_status, "should preserve generic StatusCodeAnomaly");
+        assert!(
+            has_content,
+            "should have ContentAnomaly from confirmation or generic"
+        );
+    }
+
+    #[test]
+    fn confirmation_xss_reflection_tagged_with_class() {
+        let oracle = FuzzOracle::new(0.5);
+
+        let payload = "<script>alert(1)</script>";
+        let treatment = response(200, &format!("Result: {payload}"), 50, 100);
+        let control = response(200, "Result: benign", 50, 100);
+
+        let anomalies = oracle.analyze_response_with_confirmation(
+            &treatment,
+            &control,
+            payload,
+            "/search",
+            "GET",
+            VulnerabilityClass::CrossSiteScripting,
+        );
+
+        assert!(
+            anomalies
+                .iter()
+                .any(|a| a.description.contains("[Cross-Site Scripting]")),
+            "should contain class-specific XSS anomaly"
         );
     }
 }
