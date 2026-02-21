@@ -145,6 +145,7 @@ fn make_ctx_with_fake_graph() -> pipeline::ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 
@@ -158,6 +159,7 @@ fn make_ctx_with_real_graph() -> pipeline::ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 

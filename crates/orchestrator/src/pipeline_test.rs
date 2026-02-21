@@ -6,6 +6,7 @@ use aegis_protocol::node::{NodeData, NodeType};
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_supervisor::capability_manager::CapabilityManager;
+use clap::Parser;
 
 use super::*;
 
@@ -330,6 +331,7 @@ fn scan_context_fields_accessible() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert_eq!(ctx.config.target, "http://localhost:8080");
     assert!(ctx.defense_profile.is_none());
@@ -350,6 +352,7 @@ fn scan_context_with_defense_profile() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert!(ctx.defense_profile.is_some());
 }
@@ -613,6 +616,7 @@ fn fake_graph_store_satisfies_scan_context() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert_eq!(ctx.graph.node_count().unwrap(), 0);
     assert_eq!(ctx.graph.total_operations_applied().unwrap(), 0);
@@ -865,6 +869,7 @@ fn scan_context_has_capabilities_field() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::PassiveRecon));
     assert!(ctx.capabilities.has_policy(ModuleIdentifier::Fuzzing));
@@ -1050,6 +1055,7 @@ fn build_hypothesis_context_returns_scan_context_json() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
@@ -1071,6 +1077,7 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
@@ -1241,6 +1248,7 @@ fn scan_context_scope_attestation_field_stores_value() {
         scope_attestation: Some(attestation.clone()),
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert!(ctx.scope_attestation.is_some());
     let stored = ctx.scope_attestation.unwrap();
@@ -1260,6 +1268,7 @@ fn scan_context_scope_attestation_default_is_none() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     assert!(ctx.scope_attestation.is_none());
 }
@@ -1296,6 +1305,7 @@ fn build_hypothesis_context_serializes_to_valid_json() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     let context = pipeline::build_hypothesis_context(&ctx);
     let json = serde_json::to_value(&context).unwrap();
@@ -1303,4 +1313,437 @@ fn build_hypothesis_context_serializes_to_valid_json() {
     assert!(json["findings_summary"].is_array());
     assert!(json["high_centrality_nodes"].is_array());
     assert!(json["defense_posture"].is_object());
+}
+
+// --- LLM feedback loop tests ---
+
+struct CapturingTransport {
+    captured_requests: Vec<aegis_protocol::request::FuzzRequest>,
+}
+
+impl CapturingTransport {
+    fn new() -> Self {
+        Self {
+            captured_requests: Vec::new(),
+        }
+    }
+}
+
+impl phase_fuzz::FuzzTransport for CapturingTransport {
+    async fn send(
+        &mut self,
+        request: &aegis_protocol::request::FuzzRequest,
+    ) -> Result<aegis_protocol::request::FuzzResponse, String> {
+        self.captured_requests.push(request.clone());
+        Ok(aegis_protocol::request::FuzzResponse {
+            request_id: request.request_id,
+            status_code: 200,
+            body: String::new(),
+            headers: vec![],
+            response_time: std::time::Duration::from_millis(10),
+            body_size_bytes: 0,
+        })
+    }
+}
+
+fn make_fuzz_phase_result(
+    findings_count: u64,
+    transport_errors: u64,
+) -> crate::phase_fuzz::FuzzPhaseResult {
+    crate::phase_fuzz::FuzzPhaseResult {
+        phase: PhaseResult {
+            operations_applied: 0,
+            findings_count,
+        },
+        origin_counts: std::collections::HashMap::new(),
+        discovered_endpoints: Vec::new(),
+        transport_errors,
+        was_authenticated: false,
+    }
+}
+
+#[test]
+fn build_feedback_summary_no_defense_profile() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let feedback = pipeline::FuzzIterationFeedback {
+        endpoints_fuzzed: vec!["/api/users".to_string(), "/api/admin".to_string()],
+        vuln_classes_tested: vec!["SQL Injection".to_string(), "XSS".to_string()],
+        findings_count: 3,
+        transport_errors: 1,
+    };
+    let summary = pipeline::build_feedback_summary(&feedback, &ctx);
+    assert!(summary.contains("2 endpoints"));
+    assert!(summary.contains("SQL Injection"));
+    assert!(summary.contains("XSS"));
+    assert!(summary.contains("3 anomalies"));
+    assert!(summary.contains("1 transport errors"));
+    assert!(!summary.contains("WAF"));
+    assert!(!summary.contains("Tech stack"));
+}
+
+#[test]
+fn build_feedback_summary_with_waf_and_rate_limit() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let profile = aegis_fuzzing::DefenseProfile::empty(1000)
+        .with_waf(aegis_fuzzing::defense_profile::WafProfile {
+            vendor: aegis_fuzzing::defense_profile::WafVendor::ModSecurity,
+            paranoia_level: Some(2),
+            blocked_response_code: 403,
+            blocked_categories: Vec::new(),
+        })
+        .with_rate_limit(aegis_fuzzing::defense_profile::RateLimitProfile {
+            requests_per_second: Some(10.0),
+            burst_allowance: Some(20),
+            limit_response_code: 429,
+            limit_window_seconds: Some(60),
+        })
+        .with_bot_detection(aegis_fuzzing::defense_profile::BotDetectionProfile {
+            detected: true,
+            detection_method: "ua-scoring".to_string(),
+            challenge_response_code: None,
+        });
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: Some(profile),
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let feedback = pipeline::FuzzIterationFeedback {
+        endpoints_fuzzed: vec!["/api/test".to_string()],
+        vuln_classes_tested: vec!["SQL Injection".to_string()],
+        findings_count: 0,
+        transport_errors: 0,
+    };
+    let summary = pipeline::build_feedback_summary(&feedback, &ctx);
+    assert!(summary.contains("WAF: ModSecurity"));
+    assert!(summary.contains("Rate limit: 10 rps"));
+    assert!(summary.contains("Bot detection present"));
+}
+
+#[test]
+fn build_feedback_summary_with_tech_stack() {
+    use aegis_protocol::node::NodeType;
+
+    let config = localhost_config();
+    let mut graph: Box<dyn GraphStore> = Box::new(aegis_knowledge_graph::KnowledgeGraph::new());
+    graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 1,
+            module: ModuleIdentifier::PassiveRecon,
+            operation: aegis_protocol::operation::GraphOperation::AddNode {
+                node_type: NodeType::Dependency,
+                properties: vec![("name".to_string(), "express".to_string())],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let feedback = pipeline::FuzzIterationFeedback {
+        endpoints_fuzzed: vec![],
+        vuln_classes_tested: vec![],
+        findings_count: 0,
+        transport_errors: 0,
+    };
+    let summary = pipeline::build_feedback_summary(&feedback, &ctx);
+    assert!(
+        summary.contains("Tech stack: express"),
+        "summary should include tech stack from Dependency nodes, got: {summary}"
+    );
+}
+
+#[test]
+fn build_feedback_summary_with_refuted_hypotheses() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let mut refuted = convergence::RefutedTracker::new();
+    refuted.record_refuted("payload-a".to_string());
+    refuted.record_refuted("payload-b".to_string());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted,
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let feedback = pipeline::FuzzIterationFeedback {
+        endpoints_fuzzed: vec![],
+        vuln_classes_tested: vec![],
+        findings_count: 0,
+        transport_errors: 0,
+    };
+    let summary = pipeline::build_feedback_summary(&feedback, &ctx);
+    assert!(
+        summary.contains("Refuted hypotheses: 2"),
+        "summary should include refuted count, got: {summary}"
+    );
+}
+
+#[test]
+fn dedup_and_filter_payloads_removes_duplicates() {
+    let refuted = convergence::RefutedTracker::new();
+    let payloads = vec![
+        "payload-a".to_string(),
+        "payload-b".to_string(),
+        "payload-a".to_string(),
+        "payload-c".to_string(),
+    ];
+    let filtered = pipeline::dedup_and_filter_payloads(payloads, &refuted);
+    assert_eq!(filtered.len(), 3);
+    assert_eq!(filtered[0], "payload-a");
+    assert_eq!(filtered[1], "payload-b");
+    assert_eq!(filtered[2], "payload-c");
+}
+
+#[test]
+fn dedup_and_filter_payloads_removes_refuted() {
+    let mut refuted = convergence::RefutedTracker::new();
+    refuted.record_refuted("payload-b".to_string());
+    let payloads = vec![
+        "payload-a".to_string(),
+        "payload-b".to_string(),
+        "payload-c".to_string(),
+    ];
+    let filtered = pipeline::dedup_and_filter_payloads(payloads, &refuted);
+    assert_eq!(filtered.len(), 2);
+    assert!(filtered.contains(&"payload-a".to_string()));
+    assert!(filtered.contains(&"payload-c".to_string()));
+    assert!(!filtered.contains(&"payload-b".to_string()));
+}
+
+#[test]
+fn dedup_and_filter_payloads_removes_empty_strings() {
+    let refuted = convergence::RefutedTracker::new();
+    let payloads = vec!["".to_string(), "payload-a".to_string(), "".to_string()];
+    let filtered = pipeline::dedup_and_filter_payloads(payloads, &refuted);
+    assert_eq!(filtered.len(), 1);
+    assert_eq!(filtered[0], "payload-a");
+}
+
+#[test]
+fn dedup_and_filter_payloads_empty_input_returns_empty() {
+    let refuted = convergence::RefutedTracker::new();
+    let filtered = pipeline::dedup_and_filter_payloads(Vec::new(), &refuted);
+    assert!(filtered.is_empty());
+}
+
+#[test]
+fn extract_feedback_from_fuzz_captures_findings_and_errors() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let fuzz_result = make_fuzz_phase_result(5, 2);
+    let feedback = pipeline::extract_feedback_from_fuzz(&fuzz_result, &ctx);
+    assert_eq!(feedback.findings_count, 5);
+    assert_eq!(feedback.transport_errors, 2);
+    assert!(!feedback.vuln_classes_tested.is_empty());
+}
+
+#[test]
+fn record_refuted_payloads_when_no_findings_refutes_all() {
+    let fuzz_result = Some(make_fuzz_phase_result(0, 0));
+    let payloads = vec!["p1".to_string(), "p2".to_string()];
+    let mut refuted = convergence::RefutedTracker::new();
+    pipeline::record_refuted_payloads(&fuzz_result, payloads, &mut refuted);
+    assert!(refuted.is_refuted("p1"));
+    assert!(refuted.is_refuted("p2"));
+    assert_eq!(refuted.refuted_count(), 2);
+}
+
+#[test]
+fn record_refuted_payloads_when_findings_present_refutes_none() {
+    let fuzz_result = Some(make_fuzz_phase_result(3, 0));
+    let payloads = vec!["p1".to_string(), "p2".to_string()];
+    let mut refuted = convergence::RefutedTracker::new();
+    pipeline::record_refuted_payloads(&fuzz_result, payloads, &mut refuted);
+    assert!(!refuted.is_refuted("p1"));
+    assert!(!refuted.is_refuted("p2"));
+    assert_eq!(refuted.refuted_count(), 0);
+}
+
+#[test]
+fn record_refuted_payloads_with_no_fuzz_result_refutes_none() {
+    let payloads = vec!["p1".to_string()];
+    let mut refuted = convergence::RefutedTracker::new();
+    pipeline::record_refuted_payloads(&None, payloads, &mut refuted);
+    assert!(!refuted.is_refuted("p1"));
+    assert_eq!(refuted.refuted_count(), 0);
+}
+
+#[test]
+fn record_refuted_payloads_empty_payloads_is_noop() {
+    let fuzz_result = Some(make_fuzz_phase_result(0, 0));
+    let mut refuted = convergence::RefutedTracker::new();
+    pipeline::record_refuted_payloads(&fuzz_result, Vec::new(), &mut refuted);
+    assert_eq!(refuted.refuted_count(), 0);
+}
+
+#[test]
+fn dedup_and_filter_combined_with_refuted_tracker() {
+    let mut refuted = convergence::RefutedTracker::new();
+    refuted.record_refuted("already-tried".to_string());
+    let payloads = vec![
+        "new-payload".to_string(),
+        "already-tried".to_string(),
+        "new-payload".to_string(),
+        "another-new".to_string(),
+        "".to_string(),
+    ];
+    let filtered = pipeline::dedup_and_filter_payloads(payloads, &refuted);
+    assert_eq!(filtered.len(), 2);
+    assert_eq!(filtered[0], "new-payload");
+    assert_eq!(filtered[1], "another-new");
+}
+
+#[tokio::test]
+async fn run_fuzz_with_llm_payloads_merges_into_static() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
+    let mut ctx = ScanContext {
+        config,
+        graph: Box::new(aegis_knowledge_graph::KnowledgeGraph::new()),
+        defense_profile: None,
+        capabilities,
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: vec![
+            "' UNION SELECT 1,2,3--".to_string(),
+            "<img src=x onerror=alert(1)>".to_string(),
+        ],
+    };
+
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/search".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let mut transport = CapturingTransport::new();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+
+    assert!(
+        !transport.captured_requests.is_empty(),
+        "should have sent fuzz requests"
+    );
+    let request_payloads: Vec<&str> = transport
+        .captured_requests
+        .iter()
+        .map(|r| r.payload.as_str())
+        .collect();
+    assert!(
+        request_payloads.contains(&"' UNION SELECT 1,2,3--"),
+        "LLM payload should be present in fuzz requests"
+    );
+    assert!(
+        ctx.llm_payloads.is_empty(),
+        "llm_payloads should be drained after run_fuzz"
+    );
+    let _ = result;
+}
+
+#[tokio::test]
+async fn run_fuzz_without_llm_payloads_works_unchanged() {
+    use aegis_protocol::node::NodeType;
+    use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    let mut capabilities =
+        aegis_supervisor::capability_manager::CapabilityManager::new(vec![0u8; 32]);
+    pipeline::register_default_policies(&mut capabilities);
+    let mut ctx = ScanContext {
+        config,
+        graph: Box::new(aegis_knowledge_graph::KnowledgeGraph::new()),
+        defense_profile: None,
+        capabilities,
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    ctx.graph
+        .apply_operations(&[OperationLogEntry {
+            sequence_number: 0,
+            module: ModuleIdentifier::Enumeration,
+            operation: GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![
+                    ("path".to_string(), "/api/test".to_string()),
+                    ("method".to_string(), "GET".to_string()),
+                ],
+            },
+            timestamp_unix_ms: 1000,
+        }])
+        .unwrap();
+
+    let mut transport = CapturingTransport::new();
+    let result = phase_fuzz::run_fuzz(&mut ctx, &mut transport)
+        .await
+        .unwrap();
+    assert!(
+        !transport.captured_requests.is_empty(),
+        "should still generate static payloads"
+    );
+    assert_eq!(result.phase.findings_count, 0);
 }

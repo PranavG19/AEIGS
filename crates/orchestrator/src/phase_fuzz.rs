@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use aegis_fuzzing::mutator::PayloadMutator;
+use aegis_fuzzing::mutator::{MutatedPayload, MutationStrategy, PayloadMutator};
 use aegis_fuzzing::oracle::FuzzOracle;
 use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
 use aegis_protocol::finding::VulnerabilityClass;
@@ -111,12 +111,16 @@ pub async fn run_fuzz<T: FuzzTransport>(
     let mut next_request_id = 0u64;
     let target_base = ctx.config.target.clone();
 
+    let llm_payloads = std::mem::take(&mut ctx.llm_payloads);
+
     while let Some(target) = scheduler.next_target() {
-        let payloads = if ctx.config.stealth.stealth {
+        let mut payloads = if ctx.config.stealth.stealth {
             mutator.generate_stealth_payloads(target.vulnerability_class, 10)
         } else {
             mutator.generate_payloads(target.vulnerability_class, 10)
         };
+
+        merge_llm_payloads(&mut payloads, &llm_payloads, target.vulnerability_class);
 
         let endpoint_node_id = endpoint_node_map.get(&target.endpoint).copied();
         let linked = endpoint_node_id.map(|id| vec![id]).unwrap_or_default();
@@ -356,6 +360,29 @@ pub(crate) fn build_stealth_config(
         StealthLevel::Default => aegis_fuzzing::stealth_config::StealthConfig::default(),
         StealthLevel::Aggressive => aegis_fuzzing::stealth_config::StealthConfig::aggressive(),
         StealthLevel::Paranoid => aegis_fuzzing::stealth_config::StealthConfig::paranoid(),
+    }
+}
+
+/// Merges LLM-generated payload strings into the static payload vector,
+/// deduplicating against existing payloads by raw string.
+fn merge_llm_payloads(
+    payloads: &mut Vec<MutatedPayload>,
+    llm_payloads: &[String],
+    vulnerability_class: VulnerabilityClass,
+) {
+    if llm_payloads.is_empty() {
+        return;
+    }
+    let existing: std::collections::HashSet<String> =
+        payloads.iter().map(|p| p.raw.clone()).collect();
+    for raw in llm_payloads {
+        if !existing.contains(raw) {
+            payloads.push(MutatedPayload {
+                raw: raw.clone(),
+                vulnerability_class,
+                mutation_strategy: MutationStrategy::Generative,
+            });
+        }
     }
 }
 

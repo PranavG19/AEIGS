@@ -30,6 +30,7 @@ fn make_context(source_dir: Option<PathBuf>) -> ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 

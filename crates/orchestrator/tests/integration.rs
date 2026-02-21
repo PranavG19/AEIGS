@@ -190,6 +190,7 @@ fn make_scan_context_fake() -> ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 
@@ -203,6 +204,7 @@ fn make_scan_context_real() -> ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 

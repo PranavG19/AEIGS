@@ -67,6 +67,7 @@ fn make_context(args: &[&str]) -> ScanContext {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     }
 }
 
@@ -324,6 +325,7 @@ fn make_context_with_context_file(context_json: &str) -> (ScanContext, tempfile:
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
     (ctx, tmp)
 }
@@ -660,6 +662,7 @@ async fn run_fuzz_with_bypass_corpus_loads_and_succeeds() {
         scope_attestation: None,
         auth_flow: None,
         auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
     };
 
     let mut transport = MockTransport::ok_200();

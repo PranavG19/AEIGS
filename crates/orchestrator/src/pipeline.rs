@@ -43,6 +43,9 @@ pub struct ScanContext {
     pub scope_attestation: Option<SignedScopeAttestation>,
     pub auth_flow: Option<AuthFlow>,
     pub auth_inputs: std::collections::HashMap<String, String>,
+    /// LLM-generated payloads to merge into the next fuzz iteration.
+    /// Populated by the hypothesis bridge feedback loop, consumed by `run_fuzz`.
+    pub llm_payloads: Vec<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -631,17 +634,149 @@ pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
     }
 }
 
-/// Invokes the hypothesis bridge and records metrics. Returns silently on failure
-/// (graceful degradation).
+/// Captures fuzz iteration results used to build LLM feedback context.
+pub(crate) struct FuzzIterationFeedback {
+    pub endpoints_fuzzed: Vec<String>,
+    pub vuln_classes_tested: Vec<String>,
+    pub findings_count: u64,
+    pub transport_errors: u64,
+}
+
+/// Builds a human-readable feedback summary for the hypothesis bridge.
+///
+/// Includes endpoints fuzzed, vuln classes tested, finding counts, defense posture
+/// (WAF vendor, rate limits, bot detection), inferred tech stack from Dependency
+/// nodes, and the number of refuted hypotheses.
+pub(crate) fn build_feedback_summary(
+    feedback: &FuzzIterationFeedback,
+    ctx: &ScanContext,
+) -> String {
+    let mut parts = Vec::new();
+
+    let ep_count = feedback.endpoints_fuzzed.len();
+    let classes_str = feedback.vuln_classes_tested.join(", ");
+    parts.push(format!(
+        "Fuzzed {ep_count} endpoints testing {classes_str}."
+    ));
+
+    parts.push(format!(
+        "Found {} anomalies, {} transport errors.",
+        feedback.findings_count, feedback.transport_errors
+    ));
+
+    if let Some(ref profile) = ctx.defense_profile {
+        if let Some(ref waf) = profile.waf {
+            parts.push(format!("WAF: {:?}.", waf.vendor));
+        }
+        if let Some(ref rl) = profile.rate_limit
+            && let Some(rps) = rl.requests_per_second
+        {
+            parts.push(format!("Rate limit: {rps:.0} rps."));
+        }
+        if let Some(ref bd) = profile.bot_detection
+            && bd.detected
+        {
+            parts.push("Bot detection present.".to_string());
+        }
+    }
+
+    let tech_stack: Vec<String> = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Dependency)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|&id| {
+            ctx.graph
+                .get_node(id)
+                .ok()
+                .flatten()
+                .and_then(|n| n.properties.get("name").cloned())
+        })
+        .collect();
+    if !tech_stack.is_empty() {
+        parts.push(format!("Tech stack: {}.", tech_stack.join(", ")));
+    }
+
+    let refuted = ctx.refuted.refuted_count();
+    if refuted > 0 {
+        parts.push(format!("Refuted hypotheses: {refuted}."));
+    }
+
+    parts.join(" ")
+}
+
+/// Extracts endpoint paths from the fuzz result's discovered endpoints and the
+/// graph's Endpoint nodes, plus the distinct vulnerability classes that were tested.
+pub(crate) fn extract_feedback_from_fuzz(
+    fuzz_result: &crate::phase_fuzz::FuzzPhaseResult,
+    ctx: &ScanContext,
+) -> FuzzIterationFeedback {
+    let endpoints_fuzzed: Vec<String> = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|&id| {
+            ctx.graph
+                .get_node(id)
+                .ok()
+                .flatten()
+                .and_then(|n| n.properties.get("path").cloned())
+        })
+        .collect();
+
+    let vuln_classes_tested: Vec<String> = crate::phase_fuzz::fuzzable_classes()
+        .iter()
+        .map(|c| format!("{c}"))
+        .collect();
+
+    FuzzIterationFeedback {
+        endpoints_fuzzed,
+        vuln_classes_tested,
+        findings_count: fuzz_result.phase.findings_count,
+        transport_errors: fuzz_result.transport_errors,
+    }
+}
+
+/// Filters LLM-generated payloads against the refuted tracker, removing any
+/// payload whose refuted key (the payload string itself) was already tested
+/// and produced no findings. Also deduplicates payloads.
+pub(crate) fn dedup_and_filter_payloads(
+    payloads: Vec<String>,
+    refuted: &RefutedTracker,
+) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    payloads
+        .into_iter()
+        .filter(|p| !p.is_empty() && !refuted.is_refuted(p) && seen.insert(p.clone()))
+        .collect()
+}
+
+/// Invokes the hypothesis bridge with optional feedback from the previous fuzz
+/// iteration. Generates hypotheses, compiles them to payloads, and returns the
+/// payload strings. Returns an empty Vec on failure (graceful degradation).
 fn run_hypothesis_step(
     ctx: &ScanContext,
     scan_metrics: &mut ScanMetrics,
     bridge: &mut HypothesisBridge,
-) {
+    feedback_summary: Option<String>,
+) -> Vec<String> {
     let scan_context = build_hypothesis_context(ctx);
+    let hypotheses = generate_hypotheses_step(bridge, scan_context, feedback_summary, scan_metrics);
+    if hypotheses.is_empty() {
+        return Vec::new();
+    }
+    compile_payloads_step(bridge, hypotheses, scan_metrics)
+}
 
+fn generate_hypotheses_step(
+    bridge: &mut HypothesisBridge,
+    scan_context: ScanContextJson,
+    feedback_summary: Option<String>,
+    scan_metrics: &mut ScanMetrics,
+) -> Vec<crate::hypothesis_bridge::HypothesisJson> {
     let llm_start = std::time::Instant::now();
-    match bridge.generate_hypotheses(scan_context, String::new(), None) {
+    match bridge.generate_hypotheses(scan_context, String::new(), feedback_summary) {
         Ok(result) => {
             let latency = llm_start.elapsed();
             let tokens = result.input_tokens + result.output_tokens;
@@ -652,12 +787,43 @@ fn run_hypothesis_step(
                 output_tokens = result.output_tokens,
                 "hypothesis bridge generated hypotheses"
             );
+            result.hypotheses
         }
         Err(e) => {
             tracing::warn!(
                 error = %e,
-                "hypothesis bridge call failed, continuing without LLM hypotheses"
+                "hypothesis bridge generate failed, continuing without LLM hypotheses"
             );
+            Vec::new()
+        }
+    }
+}
+
+fn compile_payloads_step(
+    bridge: &mut HypothesisBridge,
+    hypotheses: Vec<crate::hypothesis_bridge::HypothesisJson>,
+    scan_metrics: &mut ScanMetrics,
+) -> Vec<String> {
+    let llm_start = std::time::Instant::now();
+    match bridge.compile_payloads(hypotheses) {
+        Ok(result) => {
+            let latency = llm_start.elapsed();
+            let tokens = result.input_tokens + result.output_tokens;
+            scan_metrics.llm_metrics.record_call(latency, tokens);
+            tracing::info!(
+                payloads = result.payloads.len(),
+                input_tokens = result.input_tokens,
+                output_tokens = result.output_tokens,
+                "hypothesis bridge compiled payloads"
+            );
+            result.payloads
+        }
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "hypothesis bridge compile failed, continuing without LLM payloads"
+            );
+            Vec::new()
         }
     }
 }
@@ -701,6 +867,9 @@ async fn run_fuzz_analyze_loop(
 
         let mut fuzz_findings = 0u64;
         let mut analyze_findings = 0u64;
+        let mut last_fuzz_result: Option<crate::phase_fuzz::FuzzPhaseResult> = None;
+
+        let payloads_used_this_iteration = ctx.llm_payloads.clone();
 
         if !should_skip_phase_from_checkpoint(checkpoint, &fuzz_phase) {
             let result = run_single_fuzz(
@@ -711,13 +880,32 @@ async fn run_fuzz_analyze_loop(
                 &mut fuzz_cumulative,
             )
             .await?;
-            fuzz_findings = result.findings_count;
+            fuzz_findings = result.phase.findings_count;
+            last_fuzz_result = Some(result);
             progress.completed_phases.push(fuzz_phase);
             try_save_checkpoint(progress, iteration, graph_db_path);
         }
 
+        record_refuted_payloads(
+            &last_fuzz_result,
+            payloads_used_this_iteration,
+            &mut ctx.refuted,
+        );
+
         if let Some(ref mut b) = bridge {
-            run_hypothesis_step(ctx, scan_metrics, b);
+            let feedback_summary = last_fuzz_result.as_ref().map(|fuzz_result| {
+                let feedback = extract_feedback_from_fuzz(fuzz_result, ctx);
+                build_feedback_summary(&feedback, ctx)
+            });
+            let llm_payloads = run_hypothesis_step(ctx, scan_metrics, b, feedback_summary);
+            let filtered = dedup_and_filter_payloads(llm_payloads, &ctx.refuted);
+            if !filtered.is_empty() {
+                tracing::info!(
+                    count = filtered.len(),
+                    "injecting LLM-generated payloads into next fuzz iteration"
+                );
+            }
+            ctx.llm_payloads = filtered;
         }
 
         if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase) {
@@ -748,7 +936,7 @@ async fn run_single_fuzz(
     progress: &mut ScanProgress,
     transport: &mut aegis_evasion_engine::EvasionTransport,
     cumulative: &mut std::time::Duration,
-) -> Result<PhaseResult, PipelineError> {
+) -> Result<crate::phase_fuzz::FuzzPhaseResult, PipelineError> {
     let fuzz_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Fuzzing);
     emit_event(
         audit_writer,
@@ -765,7 +953,7 @@ async fn run_single_fuzz(
     progress.phases += 1;
     *cumulative += fuzz_start.elapsed();
     validate_phase_token(&ctx.capabilities, &fuzz_token, "fuzz");
-    Ok(fuzz_result.phase)
+    Ok(fuzz_result)
 }
 
 fn run_single_analyze(
@@ -796,6 +984,29 @@ fn update_convergence(progress: &mut ScanProgress, fuzz_findings: u64, analyze_f
         progress.consecutive_zero_findings += 1;
     } else {
         progress.consecutive_zero_findings = 0;
+    }
+}
+
+/// Records LLM-generated payloads that produced no findings as refuted.
+///
+/// When a fuzz iteration used LLM payloads and produced zero findings, all those
+/// payloads are marked as refuted so future iterations skip them.
+pub(crate) fn record_refuted_payloads(
+    fuzz_result: &Option<crate::phase_fuzz::FuzzPhaseResult>,
+    payloads_used: Vec<String>,
+    refuted: &mut RefutedTracker,
+) {
+    if payloads_used.is_empty() {
+        return;
+    }
+    let Some(result) = fuzz_result else {
+        return;
+    };
+    if result.phase.findings_count > 0 {
+        return;
+    }
+    for payload in payloads_used {
+        refuted.record_refuted(payload);
     }
 }
 
@@ -1022,6 +1233,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         scope_attestation,
         auth_flow,
         auth_inputs,
+        llm_payloads: Vec::new(),
     };
 
     let phases_result = run_scan_phases(
