@@ -12,3 +12,7 @@ tracing = { workspace = true }
 rusqlite = { workspace = true }
 semver = { workspace = true }
 cargo-lock = { workspace = true }
+
+[dev-dependencies]
+aegis-test-support = { path = "../test-support" }
+tempfile = { workspace = true }
