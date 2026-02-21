@@ -1334,14 +1334,11 @@ fn telemetry_never_contains_raw_findings() {
     );
     // The error should be sanitized
     for event in collector.events() {
-        match &event.payload {
-            TelemetryPayload::ScanError { error_category } => {
-                assert!(
-                    !error_category.contains("/api/secret"),
-                    "error_category should not contain endpoint details"
-                );
-            }
-            _ => {}
+        if let TelemetryPayload::ScanError { error_category } = &event.payload {
+            assert!(
+                !error_category.contains("/api/secret"),
+                "error_category should not contain endpoint details"
+            );
         }
     }
 }
@@ -1953,4 +1950,248 @@ async fn full_pipeline_with_graph_db_produces_diff_counts() {
     let summary = run_scan(config).await.unwrap();
     assert!(summary.new_findings_count.is_some());
     assert!(summary.previously_known_count.is_some());
+}
+
+// ===========================================================================
+// Remote target attestation tests
+// ===========================================================================
+
+use aegis_protocol::scope_attestation::{
+    ScopeDocument, SignedScopeAttestation, load_attestation, sign_scope_document,
+    verify_attestation,
+};
+use aegis_protocol::target_validation::validate_target;
+use ed25519_dalek::SigningKey;
+
+fn make_test_attestation(target: &str, valid_until: &str) -> (SignedScopeAttestation, SigningKey) {
+    let key = SigningKey::from_bytes(&[42u8; 32]);
+    let doc = ScopeDocument {
+        target: target.to_string(),
+        authorized_by: "integration-test".to_string(),
+        valid_until: valid_until.to_string(),
+        scope_id: "test-scope-001".to_string(),
+    };
+    (sign_scope_document(&doc, &key), key)
+}
+
+// 1: remote_rejected_without_attestation
+#[test]
+fn remote_rejected_without_attestation() {
+    let result = validate_target("http://remote.example.com:3000", None);
+    assert!(
+        result.is_err(),
+        "remote target without attestation must be rejected"
+    );
+}
+
+// 2: remote_accepted_with_valid_attestation
+#[test]
+fn remote_accepted_with_valid_attestation() {
+    let (att, _key) = make_test_attestation("http://remote.example.com:3000", "2030-12-31");
+    let result = validate_target("http://remote.example.com:3000", Some(&att));
+    assert!(
+        result.is_ok(),
+        "remote target with valid attestation must be accepted: {result:?}"
+    );
+}
+
+// 3: remote_rejected_expired_attestation
+#[test]
+fn remote_rejected_expired_attestation() {
+    let (att, _key) = make_test_attestation("http://remote.example.com:3000", "2020-01-01");
+    let result = validate_target("http://remote.example.com:3000", Some(&att));
+    assert!(result.is_err(), "expired attestation must be rejected");
+    let err = result.unwrap_err();
+    assert!(
+        matches!(
+            err,
+            aegis_protocol::target_validation::TargetValidationError::AttestationFailed { .. }
+        ),
+        "error should be AttestationFailed, got: {err}"
+    );
+}
+
+// 4: remote_rejected_wrong_target
+#[test]
+fn remote_rejected_wrong_target() {
+    let (att, _key) = make_test_attestation("http://other-host.example.com:3000", "2030-12-31");
+    let result = validate_target("http://remote.example.com:3000", Some(&att));
+    assert!(
+        result.is_err(),
+        "attestation for wrong target must be rejected"
+    );
+}
+
+// 5: remote_rejected_tampered_signature
+#[test]
+fn remote_rejected_tampered_signature() {
+    let (mut att, _key) = make_test_attestation("http://remote.example.com:3000", "2030-12-31");
+    // Flip the first byte of the signature hex to corrupt it
+    let mut sig_bytes: Vec<u8> = (0..att.signature_hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&att.signature_hex[i..i + 2], 16).unwrap())
+        .collect();
+    sig_bytes[0] ^= 0xff;
+    att.signature_hex = sig_bytes.iter().map(|b| format!("{b:02x}")).collect();
+
+    let result = validate_target("http://remote.example.com:3000", Some(&att));
+    assert!(
+        result.is_err(),
+        "tampered signature must be rejected"
+    );
+}
+
+// 6: localhost_always_accepted
+#[test]
+fn localhost_always_accepted() {
+    let result1 = validate_target("http://localhost:3000", None);
+    assert!(
+        result1.is_ok(),
+        "localhost must be accepted without attestation: {result1:?}"
+    );
+
+    let result2 = validate_target("http://127.0.0.1:8080", None);
+    assert!(
+        result2.is_ok(),
+        "127.0.0.1 must be accepted without attestation: {result2:?}"
+    );
+}
+
+// 7: transport_enforces_on_remote
+#[tokio::test]
+async fn transport_enforces_on_remote() {
+    use aegis_evasion_engine::EvasionTransport;
+    use aegis_protocol::request::{FuzzRequest, ParameterLocation};
+
+    // Without attestation: send to remote should fail with TargetNotAllowed
+    let mut transport_no_att = EvasionTransport::builder().build();
+    let request = FuzzRequest {
+        request_id: 1,
+        endpoint: "http://remote.example.com:3000/api/test".to_string(),
+        method: "GET".to_string(),
+        headers: vec![],
+        payload: String::new(),
+        parameter_name: String::new(),
+        parameter_location: ParameterLocation::Query,
+    };
+    let err = transport_no_att.send(&request).await.unwrap_err();
+    assert!(
+        matches!(err, aegis_evasion_engine::TransportError::TargetNotAllowed(_)),
+        "transport without attestation should reject remote target, got: {err}"
+    );
+
+    // With valid attestation: should pass validation but fail with network error
+    let (att, _key) =
+        make_test_attestation("http://remote.example.com:3000/api/test", "2030-12-31");
+    let mut transport_with_att = EvasionTransport::builder()
+        .with_scope_attestation(att)
+        .build();
+    let err2 = transport_with_att.send(&request).await.unwrap_err();
+    assert!(
+        !matches!(err2, aegis_evasion_engine::TransportError::TargetNotAllowed(_)),
+        "transport with valid attestation should NOT fail with TargetNotAllowed, got: {err2}"
+    );
+}
+
+// 8: executor_enforces_on_remote
+#[test]
+fn executor_enforces_on_remote() {
+    use aegis_fuzzing::executor::RequestExecutor;
+    use std::time::Duration;
+
+    // Without attestation: construction should fail
+    let result = RequestExecutor::new(
+        "http://remote.example.com:3000".to_string(),
+        10,
+        Duration::from_secs(5),
+        None,
+    );
+    assert!(result.is_err(), "executor must reject remote target without attestation");
+    match result {
+        Err(aegis_fuzzing::executor::ExecutorError::TargetNotAllowed(_)) => {}
+        Err(other) => panic!("expected TargetNotAllowed, got: {other}"),
+        Ok(_) => panic!("expected error, got Ok"),
+    }
+}
+
+// 9: pipeline_loads_attestation_from_cli
+#[test]
+fn pipeline_loads_attestation_from_cli() {
+    let dir = tempfile::tempdir().unwrap();
+    let att_path = dir.path().join("test-attestation.json");
+
+    let (att, _key) = make_test_attestation("http://remote.example.com:3000", "2030-12-31");
+    let json = serde_json::to_string_pretty(&att).unwrap();
+    std::fs::write(&att_path, json).unwrap();
+
+    // Load the attestation from file (same path the pipeline uses)
+    let loaded = load_attestation(&att_path).unwrap();
+    assert_eq!(loaded.document.target, "http://remote.example.com:3000");
+    assert_eq!(loaded.document.authorized_by, "integration-test");
+    assert_eq!(loaded.document.valid_until, "2030-12-31");
+
+    // Verify the loaded attestation passes verification
+    let verify_result =
+        verify_attestation(&loaded, "http://remote.example.com:3000");
+    assert!(
+        verify_result.is_ok(),
+        "loaded attestation must verify: {verify_result:?}"
+    );
+
+    // Verify the ScanConfig path field wires correctly
+    let mut config = localhost_config();
+    config.audit.scope_attestation = Some(att_path.clone());
+    assert_eq!(
+        config.audit.scope_attestation.as_ref().unwrap(),
+        &att_path,
+        "ScanConfig should store the attestation path"
+    );
+}
+
+// 10: generation_roundtrip
+#[test]
+fn generation_roundtrip() {
+    use aegis_orchestrator::attest::{AttestArgs, run_attest};
+
+    let dir = tempfile::tempdir().unwrap();
+    let key_path = dir.path().join("test-key.bin");
+    let output_path = dir.path().join("generated-attestation.json");
+
+    let args = AttestArgs {
+        target: "http://staging.example.com:8080".to_string(),
+        authorized_by: "roundtrip-test".to_string(),
+        valid_days: 30,
+        key_path,
+        output_path: output_path.clone(),
+    };
+
+    let result_path = run_attest(&args).unwrap();
+    assert_eq!(result_path, output_path);
+    assert!(output_path.exists(), "attestation file must be created");
+
+    // Load it back and verify
+    let loaded = load_attestation(&output_path).unwrap();
+    assert_eq!(loaded.document.target, "http://staging.example.com:8080");
+    assert_eq!(loaded.document.authorized_by, "roundtrip-test");
+
+    let verify_result =
+        verify_attestation(&loaded, "http://staging.example.com:8080");
+    assert!(
+        verify_result.is_ok(),
+        "generated attestation must verify against its target: {verify_result:?}"
+    );
+}
+
+// 11: url_normalization_matches
+#[test]
+fn url_normalization_matches() {
+    // Attestation with uppercase + trailing slash
+    let (att, _key) = make_test_attestation("http://EXAMPLE.COM:3000/", "2030-12-31");
+
+    // Validate against lowercase + no trailing slash
+    let result = validate_target("http://example.com:3000", Some(&att));
+    assert!(
+        result.is_ok(),
+        "URL normalization should match case/slash variants: {result:?}"
+    );
 }
