@@ -19,6 +19,7 @@ aegis-fuzzing = { path = "../fuzzing" }
 aegis-chain-synthesis = { path = "../chain-synthesis" }
 aegis-reporting = { path = "../reporting" }
 aegis-evasion-engine = { path = "../evasion-engine" }
+aegis-crawler = { path = "../crawler" }
 clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

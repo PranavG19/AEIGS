@@ -144,6 +144,52 @@ fn emit_endpoint_events(ctx: &ScanContext) -> Vec<ScanEventEnvelope> {
     events
 }
 
+/// Source actor that discovers endpoints via headless browser crawling.
+///
+/// Ignores input events. Converts a `CrawlResult` into graph operations and
+/// emits a `PhaseCompleted` event. Currently uses an empty crawl result as a
+/// placeholder until browser integration is activated.
+pub struct CrawlActor;
+
+impl ScanActor for CrawlActor {
+    fn name(&self) -> &str {
+        "crawl"
+    }
+
+    fn process(
+        &mut self,
+        ctx: &mut ScanContext,
+        _events: &[ScanEventEnvelope],
+    ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
+        let start = std::time::Instant::now();
+        let crawl_result = aegis_crawler::CrawlResult::default();
+
+        let mut seq = ctx
+            .graph
+            .total_operations_applied()
+            .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+        let crawl_ops = crate::phase_crawl::crawl_result_to_operations(&crawl_result, &mut seq);
+        let ops_count = crawl_ops.len() as u64;
+
+        if !crawl_ops.is_empty() {
+            ctx.graph
+                .apply_operations(&crawl_ops)
+                .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+        }
+
+        let event = phase_completed_event(
+            ModuleIdentifier::Enumeration,
+            "crawl",
+            &PhaseResult {
+                operations_applied: ops_count,
+                findings_count: 0,
+            },
+            start,
+        );
+        Ok(vec![event])
+    }
+}
+
 /// Source actor that probes defense posture (WAF, rate limits, bot detection).
 ///
 /// Ignores input events. Calls `collect_fingerprint_ops()`, applies to the graph,
@@ -405,6 +451,10 @@ pub async fn run_actor_pipeline<T: FuzzTransport>(
     let mut recon = ReconActor;
     let recon_events = recon.process(ctx, &[])?;
     all_events.extend(recon_events);
+
+    let mut crawl = CrawlActor;
+    let crawl_events = crawl.process(ctx, &[])?;
+    all_events.extend(crawl_events);
 
     if !ctx.config.pipeline.skip_fingerprint {
         let mut fingerprint = FingerprintActor;

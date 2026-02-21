@@ -316,12 +316,13 @@ pub fn topological_order(definition: &PipelineDefinition) -> Result<Vec<String>,
 pub fn default_pipeline() -> PipelineDefinition {
     let mut def = PipelineDefinition::new();
     def.add_stage(PipelineStage::new("recon", PhaseType::Source));
+    def.add_stage(PipelineStage::new("crawl", PhaseType::Source).with_dependency("recon"));
     def.add_stage(
         PipelineStage::new("fingerprint", PhaseType::Source)
-            .with_dependency("recon")
+            .with_dependency("crawl")
             .with_optional(true),
     );
-    def.add_stage(PipelineStage::new("fuzz", PhaseType::Transform).with_dependency("recon"));
+    def.add_stage(PipelineStage::new("fuzz", PhaseType::Transform).with_dependency("crawl"));
     def.add_stage(PipelineStage::new("analyze", PhaseType::Transform).with_dependency("fuzz"));
     def.add_stage(PipelineStage::new("report", PhaseType::Sink).with_dependency("analyze"));
     def.max_iterations = 1;

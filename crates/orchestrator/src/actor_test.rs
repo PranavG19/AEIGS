@@ -498,6 +498,7 @@ async fn run_actor_pipeline_emits_all_phase_completed_events() {
         .unwrap();
 
     assert!(has_phase_completed(&events, "recon"));
+    assert!(has_phase_completed(&events, "crawl"));
     assert!(has_phase_completed(&events, "fingerprint"));
     assert!(has_phase_completed(&events, "fuzz"));
     assert!(has_phase_completed(&events, "analyze"));
@@ -514,6 +515,7 @@ async fn run_actor_pipeline_skip_fingerprint() {
         .unwrap();
 
     assert!(has_phase_completed(&events, "recon"));
+    assert!(has_phase_completed(&events, "crawl"));
     assert!(!has_phase_completed(&events, "fingerprint"));
     assert!(has_phase_completed(&events, "fuzz"));
 }

@@ -11,6 +11,7 @@ mod graph_persistence;
 pub mod hypothesis_bridge;
 pub mod interactive;
 mod phase_analyze;
+mod phase_crawl;
 mod phase_fingerprint;
 mod phase_fuzz;
 mod phase_recon;
@@ -32,6 +33,7 @@ pub use graph_persistence::*;
 pub use hypothesis_bridge::*;
 pub use interactive::*;
 pub use phase_analyze::*;
+pub use phase_crawl::*;
 pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
 pub use phase_recon::*;
@@ -57,6 +59,10 @@ mod pipeline_test;
 #[cfg(test)]
 #[path = "phase_recon_test.rs"]
 mod phase_recon_test;
+
+#[cfg(test)]
+#[path = "phase_crawl_test.rs"]
+mod phase_crawl_test;
 
 #[cfg(test)]
 #[path = "phase_fingerprint_test.rs"]

@@ -24,6 +24,7 @@ use crate::convergence::RefutedTracker;
 use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::hypothesis_bridge::{HypothesisBridge, ScanContextJson};
 use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
+use crate::phase_crawl::crawl_result_to_operations;
 use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::run_recon_standalone;
@@ -79,6 +80,7 @@ pub enum PipelineError {
     Config(ConfigError),
     AuditLog(String),
     Recon(String),
+    Crawl(String),
     Fingerprint(String),
     Fuzz(String),
     Analysis(String),
@@ -91,6 +93,7 @@ impl std::fmt::Display for PipelineError {
             Self::Config(e) => write!(f, "config: {e}"),
             Self::AuditLog(e) => write!(f, "audit log: {e}"),
             Self::Recon(e) => write!(f, "recon: {e}"),
+            Self::Crawl(e) => write!(f, "crawl: {e}"),
             Self::Fingerprint(e) => write!(f, "fingerprint: {e}"),
             Self::Fuzz(e) => write!(f, "fuzz: {e}"),
             Self::Analysis(e) => write!(f, "analysis: {e}"),
@@ -529,6 +532,42 @@ fn run_recon_phase(
         .phase_timings
         .record("recon", recon_start.elapsed());
     validate_phase_token(&ctx.capabilities, &recon_token, "recon");
+    Ok(())
+}
+
+fn run_crawl_phase(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    scan_metrics: &mut ScanMetrics,
+    crawl_result: &aegis_crawler::CrawlResult,
+) -> Result<(), PipelineError> {
+    let crawl_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Enumeration);
+    emit_event(
+        audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::Enumeration,
+        },
+    );
+    let crawl_start = std::time::Instant::now();
+    let mut seq = ctx
+        .graph
+        .total_operations_applied()
+        .map_err(|e| PipelineError::Crawl(format!("{e:?}")))?;
+    let crawl_ops = crawl_result_to_operations(crawl_result, &mut seq);
+    let crawl_ops_count = crawl_ops.len() as u64;
+    if !crawl_ops.is_empty() {
+        ctx.graph
+            .apply_operations(&crawl_ops)
+            .map_err(|e| PipelineError::Crawl(format!("{e:?}")))?;
+    }
+    progress.total_ops += crawl_ops_count;
+    progress.phases += 1;
+    progress.completed_phases.push("crawl".to_string());
+    scan_metrics
+        .phase_timings
+        .record("crawl", crawl_start.elapsed());
+    validate_phase_token(&ctx.capabilities, &crawl_token, "crawl");
     Ok(())
 }
 
@@ -1069,6 +1108,18 @@ async fn run_scan_phases(
 
     if !should_skip_phase_from_checkpoint(checkpoint, "recon") {
         run_recon_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
+        try_save_checkpoint(&progress, 0, graph_db_path);
+    }
+
+    if !should_skip_phase_from_checkpoint(checkpoint, "crawl") {
+        let crawl_result = aegis_crawler::CrawlResult::default();
+        run_crawl_phase(
+            ctx,
+            audit_writer,
+            &mut progress,
+            &mut scan_metrics,
+            &crawl_result,
+        )?;
         try_save_checkpoint(&progress, 0, graph_db_path);
     }
 

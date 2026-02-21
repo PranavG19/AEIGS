@@ -266,7 +266,7 @@ async fn run_scan_localhost_no_source_dir_succeeds() {
     let result = run_scan(config).await;
     assert!(result.is_ok(), "run_scan failed: {:?}", result.err());
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 5);
+    assert_eq!(summary.phases_completed, 6);
     assert!(summary.sarif_path.contains("aegis-pipeline-test.sarif"));
 }
 
@@ -296,7 +296,7 @@ async fn run_scan_skip_fingerprint_reduces_phases() {
     let result = run_scan(config).await;
     assert!(result.is_ok());
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 4);
+    assert_eq!(summary.phases_completed, 5);
 }
 
 #[tokio::test]
@@ -362,7 +362,7 @@ async fn run_scan_no_source_dir_has_fingerprint_ops() {
     let config = localhost_config();
     let result = run_scan(config).await.unwrap();
     assert!(result.total_operations >= 1);
-    assert_eq!(result.phases_completed, 5);
+    assert_eq!(result.phases_completed, 6);
 }
 
 #[tokio::test]
@@ -463,7 +463,7 @@ async fn run_scan_concurrent_recon_and_fingerprint() {
         result.err()
     );
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 5);
+    assert_eq!(summary.phases_completed, 6);
     assert!(summary.total_operations >= 1);
 }
 
@@ -479,7 +479,7 @@ async fn run_scan_concurrent_with_skip_fingerprint() {
         result.err()
     );
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 4);
+    assert_eq!(summary.phases_completed, 5);
 }
 
 #[test]
@@ -508,7 +508,7 @@ async fn run_scan_phase_timings_non_zero() {
     let config = localhost_config();
     let summary = run_scan(config).await.unwrap();
     let timings = &summary.metrics.phase_timings.timings;
-    for phase in &["recon", "fingerprint", "fuzz", "analyze", "report"] {
+    for phase in &["recon", "crawl", "fingerprint", "fuzz", "analyze", "report"] {
         assert!(
             timings.contains_key(*phase),
             "missing phase timing for {phase}"
@@ -1016,7 +1016,11 @@ async fn run_scan_saves_and_resumes_from_checkpoint() {
     assert!(graph_db_path.exists());
 
     let cp = crate::checkpoint::ScanCheckpoint {
-        completed_phases: vec!["recon".to_string(), "fingerprint".to_string()],
+        completed_phases: vec![
+            "recon".to_string(),
+            "crawl".to_string(),
+            "fingerprint".to_string(),
+        ],
         current_iteration: 0,
         total_operations: 5,
         total_findings: 0,
