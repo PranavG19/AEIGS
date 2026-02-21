@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 /// Request sent to the Python hypothesis-engine CLI via stdin.
@@ -56,6 +56,8 @@ pub enum HypothesisBridgeError {
         exit_code: Option<i32>,
     },
     PythonError(String),
+    FrameWriteFailed(std::io::Error),
+    FrameReadFailed(String),
 }
 
 impl std::fmt::Display for HypothesisBridgeError {
@@ -79,6 +81,8 @@ impl std::fmt::Display for HypothesisBridgeError {
                 )
             }
             Self::PythonError(msg) => write!(f, "hypothesis-engine returned error: {msg}"),
+            Self::FrameWriteFailed(e) => write!(f, "failed to write IPC frame: {e}"),
+            Self::FrameReadFailed(msg) => write!(f, "failed to read IPC frame: {msg}"),
         }
     }
 }
@@ -132,4 +136,136 @@ pub fn invoke_hypothesis_engine(
     }
 
     Ok(result)
+}
+
+// ---------------------------------------------------------------------------
+// IPC message types for persistent Unix domain socket bridge (Task 8.x)
+// ---------------------------------------------------------------------------
+
+/// Scan context serialized for IPC transport to the Python bridge.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScanContextJson {
+    pub technology_stack: Vec<String>,
+    pub findings_summary: Vec<String>,
+    pub high_centrality_nodes: Vec<String>,
+    pub defense_posture: serde_json::Value,
+}
+
+/// Hypothesis serialized for IPC transport.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HypothesisJson {
+    pub vulnerability_class: String,
+    pub description: String,
+    pub confidence: f64,
+    pub test_specification: Option<String>,
+}
+
+/// Defense context serialized for IPC transport.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DefenseContextJson {
+    pub has_waf: bool,
+    pub waf_vendor: Option<String>,
+    pub rate_limit_rps: Option<f64>,
+    pub bot_detection_present: bool,
+}
+
+/// Request sent from the Rust orchestrator to the Python bridge process
+/// over a persistent Unix domain socket connection.
+///
+/// Uses serde's internally-tagged representation with `"type"` as the tag field.
+#[derive(Debug, Serialize)]
+#[serde(tag = "type")]
+pub enum BridgeRequest {
+    GenerateHypotheses {
+        request_id: u64,
+        scan_context: ScanContextJson,
+        vulnerability_class: String,
+        feedback_summary: Option<String>,
+    },
+    CompilePayloads {
+        request_id: u64,
+        hypotheses: Vec<HypothesisJson>,
+    },
+    EvasionGenerate {
+        request_id: u64,
+        defense_context: DefenseContextJson,
+    },
+    Shutdown,
+}
+
+/// Response received from the Python bridge process over the persistent
+/// Unix domain socket connection.
+///
+/// Uses serde's internally-tagged representation with `"type"` as the tag field.
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
+pub enum BridgeResponse {
+    Ready,
+    Hypotheses {
+        request_id: u64,
+        hypotheses: Vec<HypothesisJson>,
+        reasoning_trace: String,
+        input_tokens: u64,
+        output_tokens: u64,
+    },
+    CompiledPayloads {
+        request_id: u64,
+        payloads: Vec<String>,
+        input_tokens: u64,
+        output_tokens: u64,
+    },
+    EvasionPayloads {
+        request_id: u64,
+        payloads: Vec<String>,
+        input_tokens: u64,
+        output_tokens: u64,
+    },
+    Error {
+        request_id: u64,
+        message: String,
+    },
+}
+
+/// Writes a length-prefixed JSON frame to the given writer.
+///
+/// Protocol: 4-byte little-endian u32 length prefix followed by the JSON payload.
+pub fn write_ipc_frame<W: Write>(
+    writer: &mut W,
+    msg: &impl Serialize,
+) -> Result<(), HypothesisBridgeError> {
+    let payload =
+        serde_json::to_vec(msg).map_err(|e| HypothesisBridgeError::FrameWriteFailed(e.into()))?;
+    let len = u32::try_from(payload.len()).map_err(|_| {
+        HypothesisBridgeError::FrameWriteFailed(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "IPC frame payload exceeds u32::MAX bytes",
+        ))
+    })?;
+    writer
+        .write_all(&len.to_le_bytes())
+        .map_err(HypothesisBridgeError::FrameWriteFailed)?;
+    writer
+        .write_all(&payload)
+        .map_err(HypothesisBridgeError::FrameWriteFailed)?;
+    Ok(())
+}
+
+/// Reads a length-prefixed JSON frame from the given reader and deserializes
+/// it as a `BridgeResponse`.
+///
+/// Protocol: 4-byte little-endian u32 length prefix followed by the JSON payload.
+pub fn read_ipc_frame<R: Read>(reader: &mut R) -> Result<BridgeResponse, HypothesisBridgeError> {
+    let mut len_buf = [0u8; 4];
+    reader.read_exact(&mut len_buf).map_err(|e| {
+        HypothesisBridgeError::FrameReadFailed(format!("reading length prefix: {e}"))
+    })?;
+    let len = u32::from_le_bytes(len_buf) as usize;
+    let mut payload = vec![0u8; len];
+    if len > 0 {
+        reader.read_exact(&mut payload).map_err(|e| {
+            HypothesisBridgeError::FrameReadFailed(format!("reading payload ({len} bytes): {e}"))
+        })?;
+    }
+    serde_json::from_slice(&payload)
+        .map_err(|e| HypothesisBridgeError::FrameReadFailed(format!("deserializing payload: {e}")))
 }

@@ -1,7 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::hypothesis_bridge::{
-        HypothesisBridgeError, HypothesisRequest, HypothesisResult, invoke_hypothesis_engine,
+        BridgeRequest, BridgeResponse, DefenseContextJson, HypothesisBridgeError, HypothesisJson,
+        HypothesisRequest, HypothesisResult, ScanContextJson, invoke_hypothesis_engine,
+        read_ipc_frame, write_ipc_frame,
     };
     use serde_json::json;
 
@@ -387,5 +389,217 @@ json.dump(response, sys.stdout)
         let echoed_context: serde_json::Value =
             serde_json::from_str(&result.reasoning_trace).unwrap();
         assert_eq!(echoed_context["marker"], "round-trip-test");
+    }
+
+    // -----------------------------------------------------------------------
+    // IPC message type tests (Task 8.1)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn bridge_request_serializes_generate() {
+        let req = BridgeRequest::GenerateHypotheses {
+            request_id: 1,
+            scan_context: ScanContextJson {
+                technology_stack: vec!["express".to_string()],
+                findings_summary: vec!["SQLi in /login".to_string()],
+                high_centrality_nodes: vec![],
+                defense_posture: json!({"has_waf": false}),
+            },
+            vulnerability_class: "SqlInjection".to_string(),
+            feedback_summary: Some("prior run found 2 issues".to_string()),
+        };
+        let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+        assert_eq!(v["type"], "GenerateHypotheses");
+        assert_eq!(v["request_id"], 1);
+        assert_eq!(v["scan_context"]["technology_stack"][0], "express");
+        assert_eq!(v["vulnerability_class"], "SqlInjection");
+        assert_eq!(v["feedback_summary"], "prior run found 2 issues");
+    }
+
+    #[test]
+    fn bridge_request_serializes_compile() {
+        let req = BridgeRequest::CompilePayloads {
+            request_id: 42,
+            hypotheses: vec![HypothesisJson {
+                vulnerability_class: "XSS".to_string(),
+                description: "reflected XSS in search".to_string(),
+                confidence: 0.85,
+                test_specification: Some("inject <script>".to_string()),
+            }],
+        };
+        let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+        assert_eq!(v["type"], "CompilePayloads");
+        assert_eq!(v["request_id"], 42);
+        assert_eq!(v["hypotheses"][0]["vulnerability_class"], "XSS");
+        assert_eq!(v["hypotheses"][0]["confidence"], 0.85);
+    }
+
+    #[test]
+    fn bridge_request_serializes_evasion() {
+        let req = BridgeRequest::EvasionGenerate {
+            request_id: 7,
+            defense_context: DefenseContextJson {
+                has_waf: true,
+                waf_vendor: Some("ModSecurity".to_string()),
+                rate_limit_rps: Some(10.0),
+                bot_detection_present: false,
+            },
+        };
+        let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+        assert_eq!(v["type"], "EvasionGenerate");
+        assert_eq!(v["request_id"], 7);
+        assert_eq!(v["defense_context"]["has_waf"], true);
+        assert_eq!(v["defense_context"]["waf_vendor"], "ModSecurity");
+        assert_eq!(v["defense_context"]["rate_limit_rps"], 10.0);
+        assert_eq!(v["defense_context"]["bot_detection_present"], false);
+    }
+
+    #[test]
+    fn bridge_request_serializes_shutdown() {
+        let req = BridgeRequest::Shutdown;
+        let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+        assert_eq!(v, json!({"type": "Shutdown"}));
+    }
+
+    #[test]
+    fn bridge_response_deserializes_ready() {
+        let json_str = r#"{"type": "Ready"}"#;
+        let resp: BridgeResponse = serde_json::from_str(json_str).unwrap();
+        assert!(matches!(resp, BridgeResponse::Ready));
+    }
+
+    #[test]
+    fn bridge_response_deserializes_hypotheses() {
+        let json_str = r#"{
+            "type": "Hypotheses",
+            "request_id": 1,
+            "hypotheses": [
+                {
+                    "vulnerability_class": "SqlInjection",
+                    "description": "blind sqli in /users",
+                    "confidence": 0.9,
+                    "test_specification": null
+                }
+            ],
+            "reasoning_trace": "analyzed endpoints for injection points",
+            "input_tokens": 500,
+            "output_tokens": 120
+        }"#;
+        let resp: BridgeResponse = serde_json::from_str(json_str).unwrap();
+        match resp {
+            BridgeResponse::Hypotheses {
+                request_id,
+                hypotheses,
+                reasoning_trace,
+                input_tokens,
+                output_tokens,
+            } => {
+                assert_eq!(request_id, 1);
+                assert_eq!(hypotheses.len(), 1);
+                assert_eq!(hypotheses[0].vulnerability_class, "SqlInjection");
+                assert_eq!(hypotheses[0].confidence, 0.9);
+                assert!(hypotheses[0].test_specification.is_none());
+                assert_eq!(reasoning_trace, "analyzed endpoints for injection points");
+                assert_eq!(input_tokens, 500);
+                assert_eq!(output_tokens, 120);
+            }
+            other => panic!("expected Hypotheses, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn bridge_response_deserializes_error() {
+        let json_str = r#"{
+            "type": "Error",
+            "request_id": 99,
+            "message": "backend timeout after 120s"
+        }"#;
+        let resp: BridgeResponse = serde_json::from_str(json_str).unwrap();
+        match resp {
+            BridgeResponse::Error {
+                request_id,
+                message,
+            } => {
+                assert_eq!(request_id, 99);
+                assert_eq!(message, "backend timeout after 120s");
+            }
+            other => panic!("expected Error, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn ipc_frame_roundtrip() {
+        let req = BridgeRequest::GenerateHypotheses {
+            request_id: 5,
+            scan_context: ScanContextJson {
+                technology_stack: vec!["flask".to_string()],
+                findings_summary: vec![],
+                high_centrality_nodes: vec![],
+                defense_posture: json!({}),
+            },
+            vulnerability_class: "SSTI".to_string(),
+            feedback_summary: None,
+        };
+
+        let mut buf = Vec::new();
+        write_ipc_frame(&mut buf, &req).unwrap();
+
+        assert!(buf.len() > 4);
+        let payload_len = u32::from_le_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
+        assert_eq!(payload_len + 4, buf.len());
+
+        let json_payload: serde_json::Value = serde_json::from_slice(&buf[4..]).unwrap();
+        assert_eq!(json_payload["type"], "GenerateHypotheses");
+        assert_eq!(json_payload["request_id"], 5);
+    }
+
+    #[test]
+    fn ipc_frame_handles_empty_payload() {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(&0u32.to_le_bytes());
+
+        let mut cursor = std::io::Cursor::new(buf);
+        let result = read_ipc_frame(&mut cursor);
+        assert!(result.is_err());
+        let err_msg = match result.unwrap_err() {
+            HypothesisBridgeError::FrameReadFailed(msg) => msg,
+            other => panic!("expected FrameReadFailed, got {other:?}"),
+        };
+        assert!(err_msg.contains("deserializing payload"), "got: {err_msg}");
+    }
+
+    #[test]
+    fn scan_context_json_serializes() {
+        let ctx = ScanContextJson {
+            technology_stack: vec!["express".to_string(), "postgresql".to_string()],
+            findings_summary: vec!["SQLi found".to_string()],
+            high_centrality_nodes: vec!["/api/users".to_string()],
+            defense_posture: json!({"has_waf": true, "waf_vendor": "ModSecurity"}),
+        };
+        let json_str = serde_json::to_string(&ctx).unwrap();
+        let roundtripped: ScanContextJson = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(roundtripped.technology_stack, ctx.technology_stack);
+        assert_eq!(roundtripped.findings_summary, ctx.findings_summary);
+        assert_eq!(
+            roundtripped.high_centrality_nodes,
+            ctx.high_centrality_nodes
+        );
+        assert_eq!(roundtripped.defense_posture, ctx.defense_posture);
+    }
+
+    #[test]
+    fn hypothesis_json_serializes() {
+        let h = HypothesisJson {
+            vulnerability_class: "PathTraversal".to_string(),
+            description: "directory traversal via filename param".to_string(),
+            confidence: 0.75,
+            test_specification: Some("../../etc/passwd".to_string()),
+        };
+        let json_str = serde_json::to_string(&h).unwrap();
+        let roundtripped: HypothesisJson = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(roundtripped.vulnerability_class, h.vulnerability_class);
+        assert_eq!(roundtripped.description, h.description);
+        assert_eq!(roundtripped.confidence, h.confidence);
+        assert_eq!(roundtripped.test_specification, h.test_specification);
     }
 }

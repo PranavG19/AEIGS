@@ -187,7 +187,10 @@ fn url_normalization_non_default_port_preserved() {
     };
     let attestation = sign_scope_document(&doc, &key);
     let result = verify_attestation(&attestation, "http://example.com");
-    assert!(result.is_err(), "non-default port :3000 should NOT match no-port URL");
+    assert!(
+        result.is_err(),
+        "non-default port :3000 should NOT match no-port URL"
+    );
 }
 
 #[test]
