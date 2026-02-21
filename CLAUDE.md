@@ -1,16 +1,16 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,374 Rust tests, 229 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,377 Rust tests, 229 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 2,374 tests across 11 crates
+cargo test --workspace                                                # 2,377 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --all --check                                               # formatting gate
 cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 229 Python tests
 AEGIS_INTEGRATION_TESTS=1 cargo test -p aegis-orchestrator \
-  --test docker_integration -- --test-threads=1                       # 28 Docker Tier 2 tests (requires Docker/Colima)
+  --test docker_integration -- --test-threads=1                       # 34 Docker Tier 2 tests (requires Docker/Colima)
 ```
 
 ## Architecture
@@ -130,14 +130,15 @@ defense-stacks/
 
 ### Docker Tier 2 Integration Tests
 
-`crates/orchestrator/tests/docker_integration.rs` — 25 tests gated behind `AEGIS_INTEGRATION_TESTS=1`:
-- **7 Express tests**: ground truth validation, OpenAPI-guided scanning, recon-only, ModSecurity bypass, rate limit stealth, bot detect evasion, full defense
-- **3 Flask tests**: ground truth, SSTI detection, recon-only
-- **3 GraphQL tests**: introspection-based, fallback discovery, auth bypass
-- **4 Cross-scan tests**: checkpoint resume, diff-mode SARIF, convergence detection, scan history
+`crates/orchestrator/tests/docker_integration.rs` — 34 tests (28 Docker + 6 ground truth unit tests) gated behind `AEGIS_INTEGRATION_TESTS=1`:
+- **8 Express tests**: E2E ground truth, full scan ground truth, OpenAPI discovery, source recon, ModSecurity bypass, rate limit stealth, bot detect evasion, full defense
+- **4 Flask tests**: E2E ground truth, full scan ground truth, SSTI detection, source recon
+- **4 GraphQL tests**: E2E ground truth, introspection discovery, fallback (no-introspection), auth bypass
+- **4 Cross-scan tests**: checkpoint resume, diff-mode SARIF, graph persistence, scan history adaptive selection
 - **3 Report format tests**: developer SARIF, security ATT&CK, executive summary
-- **3 Stealth mode tests**: aggressive, paranoid, benchmark
+- **3 Stealth mode tests**: default, aggressive, paranoid
 - **2 Audit trail tests**: full scan integrity, replay matches scan results
+- **6 Ground truth unit tests**: comparison metrics, empty sets, fixture parsing (no Docker required)
 
 Uses `DockerCompose` RAII struct with Drop-based teardown. Requires Docker or Colima runtime.
 
