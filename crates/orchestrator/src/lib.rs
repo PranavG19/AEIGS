@@ -1,4 +1,5 @@
 pub mod actor;
+pub mod attest;
 pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;

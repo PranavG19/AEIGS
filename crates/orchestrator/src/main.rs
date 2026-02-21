@@ -1,3 +1,4 @@
+use aegis_orchestrator::attest::{parse_attest_args, run_attest};
 use aegis_orchestrator::pipeline::run_scan;
 use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::ScanConfig;
@@ -9,6 +10,11 @@ async fn main() {
 
     if args.len() > 1 && args[1] == "recon" {
         run_recon_command(&args[2..]);
+        return;
+    }
+
+    if args.len() > 1 && args[1] == "attest" {
+        run_attest_command(&args[2..]);
         return;
     }
 
@@ -54,6 +60,22 @@ fn run_recon_command(args: &[String]) {
         }
         Err(e) => {
             eprintln!("Recon failed: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run_attest_command(args: &[String]) {
+    match parse_attest_args(args) {
+        Ok(attest_args) => match run_attest(&attest_args) {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Attestation failed: {e}");
+                std::process::exit(1);
+            }
+        },
+        Err(e) => {
+            eprintln!("Attestation failed: {e}");
             std::process::exit(1);
         }
     }
