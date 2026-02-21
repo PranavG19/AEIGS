@@ -709,6 +709,7 @@ json.dump(response, sys.stdout)
             socket: stream,
             request_counter: 0,
             socket_path,
+            shutdown_called: false,
         }
     }
 
@@ -1236,6 +1237,15 @@ json.dump(response, sys.stdout)
             "permission denied",
         ));
         assert!(err.to_string().contains("clean up socket"));
+    }
+
+    #[test]
+    fn bridge_error_display_unexpected_response() {
+        let err =
+            HypothesisBridgeError::UnexpectedResponse("expected Hypotheses, got Ready".into());
+        let msg = err.to_string();
+        assert!(msg.contains("unexpected bridge response"), "got: {msg}");
+        assert!(msg.contains("expected Hypotheses"), "got: {msg}");
     }
 
     #[test]

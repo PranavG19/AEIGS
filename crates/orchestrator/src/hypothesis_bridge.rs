@@ -68,6 +68,7 @@ pub enum HypothesisBridgeError {
     },
     Timeout(String),
     SocketCleanupFailed(std::io::Error),
+    UnexpectedResponse(String),
 }
 
 impl std::fmt::Display for HypothesisBridgeError {
@@ -99,6 +100,9 @@ impl std::fmt::Display for HypothesisBridgeError {
             }
             Self::Timeout(msg) => write!(f, "bridge timeout: {msg}"),
             Self::SocketCleanupFailed(e) => write!(f, "failed to clean up socket: {e}"),
+            Self::UnexpectedResponse(msg) => {
+                write!(f, "unexpected bridge response: {msg}")
+            }
         }
     }
 }
@@ -342,6 +346,7 @@ pub struct HypothesisBridge {
     pub(crate) socket: UnixStream,
     pub(crate) request_counter: u64,
     pub(crate) socket_path: PathBuf,
+    pub(crate) shutdown_called: bool,
 }
 
 impl HypothesisBridge {
@@ -351,8 +356,14 @@ impl HypothesisBridge {
     /// `python_cmd -m hypothesis_engine.bridge --socket <path>`, and waits
     /// up to 10 seconds for the Python side to connect and send `Ready`.
     pub fn start(python_cmd: &str) -> Result<Self, HypothesisBridgeError> {
-        let socket_path =
-            PathBuf::from(format!("/tmp/aegis-hypothesis-{}.sock", std::process::id()));
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos();
+        let socket_path = PathBuf::from(format!(
+            "/tmp/aegis-hypothesis-{}-{timestamp}.sock",
+            std::process::id()
+        ));
         Self::start_with_path(python_cmd, socket_path)
     }
 
@@ -382,9 +393,6 @@ impl HypothesisBridge {
             .spawn()
             .map_err(HypothesisBridgeError::SpawnFailed)?;
 
-        listener
-            .set_nonblocking(false)
-            .map_err(HypothesisBridgeError::SpawnFailed)?;
         let socket = accept_with_timeout(&listener, HANDSHAKE_TIMEOUT)?;
 
         socket
@@ -398,6 +406,7 @@ impl HypothesisBridge {
             socket,
             request_counter: 0,
             socket_path,
+            shutdown_called: false,
         };
         bridge.read_handshake()?;
         Ok(bridge)
@@ -457,7 +466,7 @@ impl HypothesisBridge {
                 Self::validate_request_id(request_id, resp_id)?;
                 Err(HypothesisBridgeError::PythonError(message))
             }
-            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+            other => Err(HypothesisBridgeError::UnexpectedResponse(format!(
                 "expected Hypotheses or Error, got {other:?}"
             ))),
         }
@@ -501,7 +510,7 @@ impl HypothesisBridge {
                 Self::validate_request_id(request_id, resp_id)?;
                 Err(HypothesisBridgeError::PythonError(message))
             }
-            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+            other => Err(HypothesisBridgeError::UnexpectedResponse(format!(
                 "expected CompiledPayloads or Error, got {other:?}"
             ))),
         }
@@ -545,7 +554,7 @@ impl HypothesisBridge {
                 Self::validate_request_id(request_id, resp_id)?;
                 Err(HypothesisBridgeError::PythonError(message))
             }
-            other => Err(HypothesisBridgeError::HandshakeFailed(format!(
+            other => Err(HypothesisBridgeError::UnexpectedResponse(format!(
                 "expected EvasionPayloads or Error, got {other:?}"
             ))),
         }
@@ -556,6 +565,10 @@ impl HypothesisBridge {
     /// If the child does not exit within 2 seconds after receiving Shutdown,
     /// it is killed.
     pub fn shutdown(&mut self) -> Result<(), HypothesisBridgeError> {
+        if self.shutdown_called {
+            return Ok(());
+        }
+        self.shutdown_called = true;
         let _ = self.send_request(&BridgeRequest::Shutdown);
         self.wait_or_kill_child();
         self.cleanup_socket()
