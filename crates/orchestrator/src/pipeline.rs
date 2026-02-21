@@ -29,7 +29,8 @@ use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::{export_attack_graph, run_report_with_previous};
 use crate::scan_config::{
-    ConfigError, ScanConfig, ScanMetrics, parse_stealth_level, resolve_report_format,
+    ConfigError, ScanConfig, ScanMetrics, load_auth_flow, parse_auth_inputs, parse_stealth_level,
+    resolve_report_format,
 };
 use crate::util::timestamp_ms;
 
@@ -1002,6 +1003,13 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     let mut capabilities = CapabilityManager::new(master_key.to_vec());
     register_default_policies(&mut capabilities);
 
+    let auth_flow = if let Some(ref path) = config.auth.auth_flow {
+        Some(load_auth_flow(path)?)
+    } else {
+        None
+    };
+    let auth_inputs = parse_auth_inputs(&config.auth.auth_input)?;
+
     let mut ctx = ScanContext {
         config,
         graph,
@@ -1009,8 +1017,8 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         capabilities,
         refuted: RefutedTracker::new(),
         scope_attestation,
-        auth_flow: None,
-        auth_inputs: std::collections::HashMap::new(),
+        auth_flow,
+        auth_inputs,
     };
 
     let phases_result = run_scan_phases(

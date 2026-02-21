@@ -559,3 +559,241 @@ fn scan_config_accept_self_signed_flag_sets_true() {
     .unwrap();
     assert!(config.stealth.accept_self_signed);
 }
+
+#[test]
+fn scan_config_default_auth_flow_is_none() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.auth.auth_flow.is_none());
+}
+
+#[test]
+fn scan_config_default_auth_input_is_empty() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.auth.auth_input.is_empty());
+}
+
+#[test]
+fn scan_config_auth_flow_flag_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--auth-flow",
+        "/tmp/auth.json",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.auth.auth_flow.unwrap(),
+        std::path::PathBuf::from("/tmp/auth.json")
+    );
+}
+
+#[test]
+fn scan_config_single_auth_input_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--auth-input",
+        "username=admin",
+    ])
+    .unwrap();
+    assert_eq!(config.auth.auth_input, vec!["username=admin".to_string()]);
+}
+
+#[test]
+fn scan_config_multiple_auth_inputs_parse() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--auth-input",
+        "username=admin",
+        "--auth-input",
+        "password=secret",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.auth.auth_input,
+        vec!["username=admin".to_string(), "password=secret".to_string()]
+    );
+}
+
+#[test]
+fn scan_config_auth_flow_and_inputs_together() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--auth-flow",
+        "/tmp/login.json",
+        "--auth-input",
+        "user=test",
+        "--auth-input",
+        "pass=pw",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.auth.auth_flow.unwrap(),
+        std::path::PathBuf::from("/tmp/login.json")
+    );
+    assert_eq!(config.auth.auth_input.len(), 2);
+}
+
+#[test]
+fn load_auth_flow_valid_json() {
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    let json = serde_json::json!({
+        "name": "login",
+        "steps": [
+            {
+                "step_id": "login",
+                "endpoint": "/api/login",
+                "method": "POST",
+                "body_template": "{\"username\": \"{{username}}\"}",
+                "extract_from_response": [
+                    {
+                        "variable_name": "token",
+                        "source": {"Header": "Authorization"}
+                    }
+                ],
+                "expected_status": 200
+            }
+        ],
+        "required_inputs": ["username"]
+    });
+    write!(tmp, "{json}").unwrap();
+    let flow = load_auth_flow(tmp.path()).unwrap();
+    assert_eq!(flow.name, "login");
+    assert_eq!(flow.steps.len(), 1);
+    assert_eq!(flow.steps[0].step_id, "login");
+    assert_eq!(flow.steps[0].endpoint, "/api/login");
+    assert_eq!(flow.steps[0].method, "POST");
+    assert_eq!(flow.steps[0].expected_status, 200);
+    assert_eq!(flow.required_inputs, vec!["username"]);
+}
+
+#[test]
+fn load_auth_flow_missing_file_returns_error() {
+    let result = load_auth_flow(Path::new("/nonexistent/auth.json"));
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::AuthFlowFileRead(_)
+    ));
+}
+
+#[test]
+fn load_auth_flow_invalid_json_returns_parse_error() {
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, "{{ not valid json !!").unwrap();
+    let result = load_auth_flow(tmp.path());
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::AuthFlowFileParse(_)
+    ));
+}
+
+#[test]
+fn load_auth_flow_wrong_schema_returns_parse_error() {
+    let mut tmp = tempfile::NamedTempFile::new().unwrap();
+    write!(tmp, r#"{{"unrelated": true}}"#).unwrap();
+    let result = load_auth_flow(tmp.path());
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::AuthFlowFileParse(_)
+    ));
+}
+
+#[test]
+fn parse_auth_inputs_empty_vec() {
+    let result = parse_auth_inputs(&[]).unwrap();
+    assert!(result.is_empty());
+}
+
+#[test]
+fn parse_auth_inputs_single_pair() {
+    let inputs = vec!["username=admin".to_string()];
+    let result = parse_auth_inputs(&inputs).unwrap();
+    assert_eq!(result.len(), 1);
+    assert_eq!(result["username"], "admin");
+}
+
+#[test]
+fn parse_auth_inputs_multiple_pairs() {
+    let inputs = vec![
+        "username=admin".to_string(),
+        "password=secret123".to_string(),
+    ];
+    let result = parse_auth_inputs(&inputs).unwrap();
+    assert_eq!(result.len(), 2);
+    assert_eq!(result["username"], "admin");
+    assert_eq!(result["password"], "secret123");
+}
+
+#[test]
+fn parse_auth_inputs_value_with_equals_sign() {
+    let inputs = vec!["token=abc=def=ghi".to_string()];
+    let result = parse_auth_inputs(&inputs).unwrap();
+    assert_eq!(result["token"], "abc=def=ghi");
+}
+
+#[test]
+fn parse_auth_inputs_empty_value() {
+    let inputs = vec!["key=".to_string()];
+    let result = parse_auth_inputs(&inputs).unwrap();
+    assert_eq!(result["key"], "");
+}
+
+#[test]
+fn parse_auth_inputs_missing_equals_returns_error() {
+    let inputs = vec!["noequals".to_string()];
+    let result = parse_auth_inputs(&inputs);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::AuthInputParse(msg) if msg.contains("missing '='")
+    ));
+}
+
+#[test]
+fn parse_auth_inputs_empty_key_returns_error() {
+    let inputs = vec!["=value".to_string()];
+    let result = parse_auth_inputs(&inputs);
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        ConfigError::AuthInputParse(msg) if msg.contains("empty key")
+    ));
+}
+
+#[test]
+fn config_error_display_auth_flow_file_read() {
+    let err = ConfigError::AuthFlowFileRead("file not found".to_string());
+    assert_eq!(
+        err.to_string(),
+        "cannot read auth flow file: file not found"
+    );
+}
+
+#[test]
+fn config_error_display_auth_flow_file_parse() {
+    let err = ConfigError::AuthFlowFileParse("expected string at line 1".to_string());
+    assert_eq!(
+        err.to_string(),
+        "cannot parse auth flow file: expected string at line 1"
+    );
+}
+
+#[test]
+fn config_error_display_auth_input_parse() {
+    let err = ConfigError::AuthInputParse("missing '=' in: noequals".to_string());
+    assert_eq!(
+        err.to_string(),
+        "invalid auth input: missing '=' in: noequals"
+    );
+}

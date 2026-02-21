@@ -1,8 +1,10 @@
+use aegis_enumeration::auth_flow::AuthFlow;
 use aegis_evasion_engine::PersonaId;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_reporting::report_format::ReportFormat;
 use clap::{Args, Parser};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -44,6 +46,9 @@ pub enum ConfigError {
     InvalidReportFormat(String),
     ContextFileRead(String),
     ContextFileParse(String),
+    AuthFlowFileRead(String),
+    AuthFlowFileParse(String),
+    AuthInputParse(String),
 }
 
 impl std::fmt::Display for ConfigError {
@@ -56,6 +61,9 @@ impl std::fmt::Display for ConfigError {
             Self::InvalidReportFormat(fmt) => write!(f, "unknown report format: {fmt}"),
             Self::ContextFileRead(msg) => write!(f, "cannot read context file: {msg}"),
             Self::ContextFileParse(msg) => write!(f, "cannot parse context file: {msg}"),
+            Self::AuthFlowFileRead(msg) => write!(f, "cannot read auth flow file: {msg}"),
+            Self::AuthFlowFileParse(msg) => write!(f, "cannot parse auth flow file: {msg}"),
+            Self::AuthInputParse(msg) => write!(f, "invalid auth input: {msg}"),
         }
     }
 }
@@ -145,6 +153,19 @@ pub struct AuditOptions {
     pub signed_config: Option<PathBuf>,
 }
 
+/// Authentication flow options for authenticated scanning.
+#[derive(Args, Debug, Clone)]
+pub struct AuthOptions {
+    /// Path to an auth flow JSON file defining multi-step authentication.
+    #[arg(long, value_name = "PATH")]
+    pub auth_flow: Option<PathBuf>,
+
+    /// Key=value pairs for auth flow template variables (repeatable).
+    /// Example: --auth-input username=admin --auth-input password=secret
+    #[arg(long, value_name = "KEY=VALUE")]
+    pub auth_input: Vec<String>,
+}
+
 /// Scope filtering options.
 #[derive(Args, Debug, Clone)]
 pub struct ScopeOptions {
@@ -206,6 +227,9 @@ pub struct ScanConfig {
 
     #[command(flatten)]
     pub scope: ScopeOptions,
+
+    #[command(flatten)]
+    pub auth: AuthOptions,
 }
 
 pub fn validate_localhost(target: &str) -> Result<(), ConfigError> {
@@ -294,4 +318,28 @@ pub fn load_business_context(path: &Path) -> Result<BusinessContext, ConfigError
 pub fn resolve_report_format(name: &str) -> Result<ReportFormat, ConfigError> {
     aegis_reporting::report_format::parse_report_format(name)
         .map_err(|_| ConfigError::InvalidReportFormat(name.to_string()))
+}
+
+pub fn load_auth_flow(path: &Path) -> Result<AuthFlow, ConfigError> {
+    let contents =
+        std::fs::read_to_string(path).map_err(|e| ConfigError::AuthFlowFileRead(e.to_string()))?;
+    serde_json::from_str(&contents).map_err(|e| ConfigError::AuthFlowFileParse(e.to_string()))
+}
+
+pub fn parse_auth_inputs(inputs: &[String]) -> Result<HashMap<String, String>, ConfigError> {
+    let mut map = HashMap::new();
+    for input in inputs {
+        let eq_pos = input
+            .find('=')
+            .ok_or_else(|| ConfigError::AuthInputParse(format!("missing '=' in: {input}")))?;
+        let key = &input[..eq_pos];
+        if key.is_empty() {
+            return Err(ConfigError::AuthInputParse(format!(
+                "empty key in: {input}"
+            )));
+        }
+        let value = &input[eq_pos + 1..];
+        map.insert(key.to_string(), value.to_string());
+    }
+    Ok(map)
 }

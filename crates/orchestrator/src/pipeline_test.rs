@@ -116,6 +116,10 @@ fn localhost_config() -> ScanConfig {
             history_db: None,
             export_graph: None,
         },
+        auth: scan_config::AuthOptions {
+            auth_flow: None,
+            auth_input: Vec::new(),
+        },
     }
 }
 
