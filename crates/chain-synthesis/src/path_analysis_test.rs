@@ -106,8 +106,8 @@ mod tests {
         let g = diamond_graph();
         let centrality = betweenness_centrality(&g);
 
-        assert!(centrality.get(&1).is_some());
-        assert!(centrality.get(&2).is_some());
+        assert!(centrality.contains_key(&1));
+        assert!(centrality.contains_key(&2));
     }
 
     #[test]

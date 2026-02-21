@@ -595,7 +595,7 @@ mod tests {
         assert_eq!(deserialized.findings.len(), 1);
         assert_eq!(deserialized.findings[0].finding_id, 42);
         assert_eq!(deserialized.total_findings, Some(1));
-        assert_eq!(deserialized.is_complete, true);
+        assert!(deserialized.is_complete);
         assert_eq!(deserialized.last_sequence, 5);
     }
 

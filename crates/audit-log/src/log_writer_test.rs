@@ -221,7 +221,7 @@ mod tests {
     fn noop_writer_default_trait() {
         use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
 
-        let writer = NoOpAuditLogWriter::default();
+        let writer = NoOpAuditLogWriter;
         assert_eq!(writer.sequence_number(), 0);
     }
 

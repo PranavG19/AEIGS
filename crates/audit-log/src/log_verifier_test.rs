@@ -74,7 +74,7 @@ mod tests {
     #[test]
     fn verify_empty_log_passes() {
         let path = temp_log_path("empty");
-        fs::write(&path, &[]).unwrap();
+        fs::write(&path, []).unwrap();
 
         let report = verify_log(&path, b"key").unwrap();
         assert_eq!(report.entries_checked, 0);
