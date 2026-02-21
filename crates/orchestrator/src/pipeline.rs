@@ -635,6 +635,7 @@ pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
 }
 
 /// Captures fuzz iteration results used to build LLM feedback context.
+#[derive(Debug)]
 pub(crate) struct FuzzIterationFeedback {
     pub endpoints_fuzzed: Vec<String>,
     pub vuln_classes_tested: Vec<String>,
@@ -658,28 +659,42 @@ pub(crate) fn build_feedback_summary(
     parts.push(format!(
         "Fuzzed {ep_count} endpoints testing {classes_str}."
     ));
-
     parts.push(format!(
         "Found {} anomalies, {} transport errors.",
         feedback.findings_count, feedback.transport_errors
     ));
 
-    if let Some(ref profile) = ctx.defense_profile {
-        if let Some(ref waf) = profile.waf {
-            parts.push(format!("WAF: {:?}.", waf.vendor));
-        }
-        if let Some(ref rl) = profile.rate_limit
-            && let Some(rps) = rl.requests_per_second
-        {
-            parts.push(format!("Rate limit: {rps:.0} rps."));
-        }
-        if let Some(ref bd) = profile.bot_detection
-            && bd.detected
-        {
-            parts.push("Bot detection present.".to_string());
-        }
+    append_defense_posture_parts(&mut parts, ctx);
+    append_tech_stack_parts(&mut parts, ctx);
+
+    let refuted = ctx.refuted.refuted_count();
+    if refuted > 0 {
+        parts.push(format!("Refuted hypotheses: {refuted}."));
     }
 
+    parts.join(" ")
+}
+
+fn append_defense_posture_parts(parts: &mut Vec<String>, ctx: &ScanContext) {
+    let Some(ref profile) = ctx.defense_profile else {
+        return;
+    };
+    if let Some(ref waf) = profile.waf {
+        parts.push(format!("WAF: {:?}.", waf.vendor));
+    }
+    if let Some(ref rl) = profile.rate_limit
+        && let Some(rps) = rl.requests_per_second
+    {
+        parts.push(format!("Rate limit: {rps:.0} rps."));
+    }
+    if let Some(ref bd) = profile.bot_detection
+        && bd.detected
+    {
+        parts.push("Bot detection present.".to_string());
+    }
+}
+
+fn append_tech_stack_parts(parts: &mut Vec<String>, ctx: &ScanContext) {
     let tech_stack: Vec<String> = ctx
         .graph
         .nodes_by_type(aegis_protocol::node::NodeType::Dependency)
@@ -696,17 +711,13 @@ pub(crate) fn build_feedback_summary(
     if !tech_stack.is_empty() {
         parts.push(format!("Tech stack: {}.", tech_stack.join(", ")));
     }
-
-    let refuted = ctx.refuted.refuted_count();
-    if refuted > 0 {
-        parts.push(format!("Refuted hypotheses: {refuted}."));
-    }
-
-    parts.join(" ")
 }
 
-/// Extracts endpoint paths from the fuzz result's discovered endpoints and the
-/// graph's Endpoint nodes, plus the distinct vulnerability classes that were tested.
+/// Extracts feedback from a fuzz iteration for the hypothesis bridge.
+///
+/// Endpoints are approximated from the graph's Endpoint nodes (not per-iteration
+/// tracking). Vulnerability classes use the static fuzzable set. Finding counts
+/// and transport errors come from the actual `FuzzPhaseResult`.
 pub(crate) fn extract_feedback_from_fuzz(
     fuzz_result: &crate::phase_fuzz::FuzzPhaseResult,
     ctx: &ScanContext,
@@ -991,6 +1002,12 @@ fn update_convergence(progress: &mut ScanProgress, fuzz_findings: u64, analyze_f
 ///
 /// When a fuzz iteration used LLM payloads and produced zero findings, all those
 /// payloads are marked as refuted so future iterations skip them.
+///
+/// This is coarse-grained: if any finding was produced (even from static payloads),
+/// no LLM payloads are refuted. Per-payload outcome tracking would require
+/// propagating payload identity through `FuzzPhaseResult`, which is not yet
+/// supported. The coarse approach is conservative — it avoids prematurely
+/// discarding payloads that might succeed on different endpoints.
 pub(crate) fn record_refuted_payloads(
     fuzz_result: &Option<crate::phase_fuzz::FuzzPhaseResult>,
     payloads_used: Vec<String>,

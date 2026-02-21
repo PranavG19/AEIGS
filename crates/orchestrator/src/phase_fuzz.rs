@@ -100,14 +100,16 @@ pub async fn run_fuzz<T: FuzzTransport>(
     let mut authenticated_session = attempt_auth(ctx, transport, "initial auth").await;
 
     let oracle = FuzzOracle::new(0.7);
-    let mut entries = Vec::new();
-    let mut sequence = ctx
-        .graph
-        .total_operations_applied()
-        .map_err(|e| format!("{e:?}"))?;
-    let mut findings_count = 0u64;
+    let mut acc = FuzzAccumulators {
+        sequence: ctx
+            .graph
+            .total_operations_applied()
+            .map_err(|e| format!("{e:?}"))?,
+        findings_count: 0,
+        origin_counts: HashMap::new(),
+        entries: Vec::new(),
+    };
     let mut transport_errors = 0u64;
-    let mut origin_counts: HashMap<FindingOrigin, u64> = HashMap::new();
     let mut next_request_id = 0u64;
     let target_base = ctx.config.target.clone();
 
@@ -174,32 +176,31 @@ pub async fn run_fuzz<T: FuzzTransport>(
             let anomalies =
                 oracle.analyze_response(&response, &payload.raw, &target.endpoint, &target.method);
 
+            let origin = origin_for_strategy(payload.mutation_strategy);
             append_anomaly_entries(
                 &anomalies,
                 target.vulnerability_class,
                 &linked,
-                &mut sequence,
-                &mut findings_count,
-                &mut origin_counts,
-                &mut entries,
+                origin,
+                &mut acc,
             );
         }
         scheduler.mark_completed(target);
     }
 
-    let ops_count = entries.len() as u64;
-    if !entries.is_empty() {
+    let ops_count = acc.entries.len() as u64;
+    if !acc.entries.is_empty() {
         ctx.graph
-            .apply_operations(&entries)
+            .apply_operations(&acc.entries)
             .map_err(|e| format!("{e:?}"))?;
     }
 
     Ok(FuzzPhaseResult {
         phase: PhaseResult {
             operations_applied: ops_count,
-            findings_count,
+            findings_count: acc.findings_count,
         },
-        origin_counts,
+        origin_counts: acc.origin_counts,
         discovered_endpoints: Vec::new(),
         transport_errors,
         was_authenticated: authenticated_session.is_some(),
@@ -394,21 +395,33 @@ impl FuzzTransport for aegis_evasion_engine::EvasionTransport {
     }
 }
 
+pub(crate) fn origin_for_strategy(strategy: MutationStrategy) -> FindingOrigin {
+    match strategy {
+        MutationStrategy::Generative => FindingOrigin::LlmHypothesis,
+        _ => FindingOrigin::Mutation,
+    }
+}
+
+pub(crate) struct FuzzAccumulators {
+    pub sequence: u64,
+    pub findings_count: u64,
+    pub origin_counts: HashMap<FindingOrigin, u64>,
+    pub entries: Vec<OperationLogEntry>,
+}
+
 pub(crate) fn append_anomaly_entries(
     anomalies: &[aegis_fuzzing::oracle::Anomaly],
     vulnerability_class: VulnerabilityClass,
     linked_node_ids: &[u64],
-    sequence: &mut u64,
-    findings_count: &mut u64,
-    origin_counts: &mut HashMap<FindingOrigin, u64>,
-    entries: &mut Vec<OperationLogEntry>,
+    origin: FindingOrigin,
+    acc: &mut FuzzAccumulators,
 ) {
     for anomaly in anomalies {
-        *sequence += 1;
-        *findings_count += 1;
-        *origin_counts.entry(FindingOrigin::Mutation).or_insert(0) += 1;
-        entries.push(OperationLogEntry {
-            sequence_number: *sequence,
+        acc.sequence += 1;
+        acc.findings_count += 1;
+        *acc.origin_counts.entry(origin).or_insert(0) += 1;
+        acc.entries.push(OperationLogEntry {
+            sequence_number: acc.sequence,
             module: ModuleIdentifier::Fuzzing,
             operation: GraphOperation::AddFinding {
                 linked_node_ids: linked_node_ids.to_vec(),

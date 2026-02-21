@@ -468,27 +468,31 @@ async fn run_fuzz_empty_excluded_endpoints_is_noop() {
 
 // --- append_anomaly_entries tests ---
 
+fn new_acc(sequence: u64) -> phase_fuzz::FuzzAccumulators {
+    phase_fuzz::FuzzAccumulators {
+        sequence,
+        findings_count: 0,
+        origin_counts: std::collections::HashMap::new(),
+        entries: Vec::new(),
+    }
+}
+
 #[test]
 fn append_anomaly_entries_empty_slice_does_nothing() {
-    let mut sequence = 5u64;
-    let mut findings_count = 0u64;
-    let mut origin_counts = std::collections::HashMap::new();
-    let mut entries = Vec::new();
+    let mut acc = new_acc(5);
 
     phase_fuzz::append_anomaly_entries(
         &[],
         VulnerabilityClass::SqlInjection,
         &[],
-        &mut sequence,
-        &mut findings_count,
-        &mut origin_counts,
-        &mut entries,
+        phase_fuzz::FindingOrigin::Mutation,
+        &mut acc,
     );
 
-    assert_eq!(sequence, 5);
-    assert_eq!(findings_count, 0);
-    assert!(entries.is_empty());
-    assert!(origin_counts.is_empty());
+    assert_eq!(acc.sequence, 5);
+    assert_eq!(acc.findings_count, 0);
+    assert!(acc.entries.is_empty());
+    assert!(acc.origin_counts.is_empty());
 }
 
 #[test]
@@ -502,32 +506,27 @@ fn append_anomaly_entries_single_anomaly_increments_counts() {
         description: "sql error in response".to_string(),
     };
 
-    let mut sequence = 10u64;
-    let mut findings_count = 0u64;
-    let mut origin_counts = std::collections::HashMap::new();
-    let mut entries = Vec::new();
+    let mut acc = new_acc(10);
 
     phase_fuzz::append_anomaly_entries(
         &[anomaly],
         VulnerabilityClass::SqlInjection,
         &[42],
-        &mut sequence,
-        &mut findings_count,
-        &mut origin_counts,
-        &mut entries,
+        phase_fuzz::FindingOrigin::Mutation,
+        &mut acc,
     );
 
-    assert_eq!(sequence, 11);
-    assert_eq!(findings_count, 1);
+    assert_eq!(acc.sequence, 11);
+    assert_eq!(acc.findings_count, 1);
     assert_eq!(
-        origin_counts
+        acc.origin_counts
             .get(&phase_fuzz::FindingOrigin::Mutation)
             .copied()
             .unwrap_or(0),
         1
     );
-    assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0].sequence_number, 11);
+    assert_eq!(acc.entries.len(), 1);
+    assert_eq!(acc.entries[0].sequence_number, 11);
 }
 
 #[test]
@@ -543,34 +542,29 @@ fn append_anomaly_entries_multiple_anomalies_accumulate_correctly() {
         })
         .collect();
 
-    let mut sequence = 0u64;
-    let mut findings_count = 0u64;
-    let mut origin_counts = std::collections::HashMap::new();
-    let mut entries = Vec::new();
+    let mut acc = new_acc(0);
 
     phase_fuzz::append_anomaly_entries(
         &anomalies,
         VulnerabilityClass::CrossSiteScripting,
         &[],
-        &mut sequence,
-        &mut findings_count,
-        &mut origin_counts,
-        &mut entries,
+        phase_fuzz::FindingOrigin::Mutation,
+        &mut acc,
     );
 
-    assert_eq!(sequence, 3);
-    assert_eq!(findings_count, 3);
+    assert_eq!(acc.sequence, 3);
+    assert_eq!(acc.findings_count, 3);
     assert_eq!(
-        origin_counts
+        acc.origin_counts
             .get(&phase_fuzz::FindingOrigin::Mutation)
             .copied()
             .unwrap_or(0),
         3
     );
-    assert_eq!(entries.len(), 3);
-    assert_eq!(entries[0].sequence_number, 1);
-    assert_eq!(entries[1].sequence_number, 2);
-    assert_eq!(entries[2].sequence_number, 3);
+    assert_eq!(acc.entries.len(), 3);
+    assert_eq!(acc.entries[0].sequence_number, 1);
+    assert_eq!(acc.entries[1].sequence_number, 2);
+    assert_eq!(acc.entries[2].sequence_number, 3);
 }
 
 #[test]
@@ -585,19 +579,14 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
         description: "status anomaly".to_string(),
     };
 
-    let mut sequence = 0u64;
-    let mut findings_count = 0u64;
-    let mut origin_counts = std::collections::HashMap::new();
-    let mut entries = Vec::new();
+    let mut acc = new_acc(0);
 
     phase_fuzz::append_anomaly_entries(
         &[anomaly],
         VulnerabilityClass::CommandInjection,
         &[7],
-        &mut sequence,
-        &mut findings_count,
-        &mut origin_counts,
-        &mut entries,
+        phase_fuzz::FindingOrigin::Mutation,
+        &mut acc,
     );
 
     if let GraphOperation::AddFinding {
@@ -606,7 +595,7 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
         vulnerability_class,
         linked_node_ids,
         ..
-    } = &entries[0].operation
+    } = &acc.entries[0].operation
     {
         assert!((severity - 0.8).abs() < 1e-9);
         assert!((confidence - 0.64).abs() < 1e-9);
@@ -615,6 +604,69 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
     } else {
         panic!("expected AddFinding operation");
     }
+}
+
+#[test]
+fn origin_for_strategy_generative_maps_to_llm_hypothesis() {
+    use aegis_fuzzing::mutator::MutationStrategy;
+    assert_eq!(
+        phase_fuzz::origin_for_strategy(MutationStrategy::Generative),
+        phase_fuzz::FindingOrigin::LlmHypothesis
+    );
+}
+
+#[test]
+fn origin_for_strategy_non_generative_maps_to_mutation() {
+    use aegis_fuzzing::mutator::MutationStrategy;
+    assert_eq!(
+        phase_fuzz::origin_for_strategy(MutationStrategy::Template),
+        phase_fuzz::FindingOrigin::Mutation
+    );
+    assert_eq!(
+        phase_fuzz::origin_for_strategy(MutationStrategy::BitFlip),
+        phase_fuzz::FindingOrigin::Mutation
+    );
+    assert_eq!(
+        phase_fuzz::origin_for_strategy(MutationStrategy::Boundary),
+        phase_fuzz::FindingOrigin::Mutation
+    );
+}
+
+#[test]
+fn append_anomaly_entries_with_llm_origin_counts_llm_hypothesis() {
+    use aegis_fuzzing::oracle::{Anomaly, AnomalyType};
+
+    let anomaly = Anomaly {
+        request_id: 0,
+        anomaly_type: AnomalyType::ContentAnomaly,
+        score: 0.9,
+        description: "llm-generated finding".to_string(),
+    };
+
+    let mut acc = new_acc(0);
+
+    phase_fuzz::append_anomaly_entries(
+        &[anomaly],
+        VulnerabilityClass::SqlInjection,
+        &[],
+        phase_fuzz::FindingOrigin::LlmHypothesis,
+        &mut acc,
+    );
+
+    assert_eq!(
+        acc.origin_counts
+            .get(&phase_fuzz::FindingOrigin::LlmHypothesis)
+            .copied()
+            .unwrap_or(0),
+        1
+    );
+    assert_eq!(
+        acc.origin_counts
+            .get(&phase_fuzz::FindingOrigin::Mutation)
+            .copied()
+            .unwrap_or(0),
+        0
+    );
 }
 
 #[test]
