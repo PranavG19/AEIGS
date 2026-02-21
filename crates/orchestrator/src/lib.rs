@@ -1,5 +1,6 @@
 pub mod actor;
 pub mod attest;
+pub mod auth_session;
 pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
@@ -22,6 +23,7 @@ pub mod telemetry;
 mod util;
 
 pub use actor::*;
+pub use auth_session::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use distributed::*;
@@ -107,3 +109,7 @@ mod distributed_test;
 #[cfg(test)]
 #[path = "hypothesis_bridge_test.rs"]
 mod hypothesis_bridge_test;
+
+#[cfg(test)]
+#[path = "auth_session_test.rs"]
+mod auth_session_test;
