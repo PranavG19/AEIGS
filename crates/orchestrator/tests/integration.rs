@@ -2112,6 +2112,20 @@ fn executor_enforces_on_remote() {
         Err(other) => panic!("expected TargetNotAllowed, got: {other}"),
         Ok(_) => panic!("expected error, got Ok"),
     }
+
+    // With attestation: construction should succeed
+    let (att, _key) = make_test_attestation("http://remote.example.com:3000", "2030-12-31");
+    let result_ok = RequestExecutor::new(
+        "http://remote.example.com:3000".to_string(),
+        10,
+        Duration::from_secs(5),
+        Some(att),
+    );
+    assert!(
+        result_ok.is_ok(),
+        "executor must accept remote target with valid attestation: {:?}",
+        result_ok.err()
+    );
 }
 
 // 9: pipeline_loads_attestation_from_cli
@@ -2193,5 +2207,19 @@ fn url_normalization_matches() {
     assert!(
         result.is_ok(),
         "URL normalization should match case/slash variants: {result:?}"
+    );
+}
+
+// 12: url_normalization_default_port
+#[test]
+fn url_normalization_default_port() {
+    // Attestation with explicit :80
+    let (att, _key) = make_test_attestation("http://example.com:80/path", "2030-12-31");
+
+    // Validate against no-port URL (default port stripped)
+    let result = validate_target("http://example.com/path", Some(&att));
+    assert!(
+        result.is_ok(),
+        "default port :80 should normalize to match no-port URL: {result:?}"
     );
 }

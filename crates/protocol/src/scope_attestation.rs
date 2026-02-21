@@ -107,15 +107,31 @@ fn normalize_url(url: &str) -> String {
         let scheme = &lower[..scheme_end];
         let rest = &trimmed[scheme_end + 3..];
         if let Some(path_start) = rest.find('/') {
-            let host = rest[..path_start].to_lowercase();
+            let host = strip_default_port(scheme, &rest[..path_start].to_lowercase());
             let path = &rest[path_start..];
             let path = path.trim_end_matches('/');
             format!("{scheme}://{host}{path}")
         } else {
-            format!("{scheme}://{}", rest.to_lowercase())
+            let host = strip_default_port(scheme, &rest.to_lowercase());
+            format!("{scheme}://{host}")
         }
     } else {
         lower.to_string()
+    }
+}
+
+fn strip_default_port(scheme: &str, host_port: &str) -> String {
+    let default = match scheme {
+        "http" => Some(":80"),
+        "https" => Some(":443"),
+        _ => None,
+    };
+    if let Some(suffix) = default
+        && host_port.ends_with(suffix)
+    {
+        host_port[..host_port.len() - suffix.len()].to_string()
+    } else {
+        host_port.to_string()
     }
 }
 

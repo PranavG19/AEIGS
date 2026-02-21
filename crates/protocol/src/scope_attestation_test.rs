@@ -143,6 +143,54 @@ fn url_normalization_case_insensitive_scheme_and_host() {
 }
 
 #[test]
+fn url_normalization_default_http_port() {
+    let key = test_signing_key();
+    let doc = ScopeDocument {
+        target: "http://example.com:80/path".to_string(),
+        authorized_by: "tester".to_string(),
+        valid_until: "2099-12-31".to_string(),
+        scope_id: "test-scope".to_string(),
+    };
+    let attestation = sign_scope_document(&doc, &key);
+    let result = verify_attestation(&attestation, "http://example.com/path");
+    assert!(
+        result.is_ok(),
+        "http :80 should normalize to match no-port URL: {result:?}"
+    );
+}
+
+#[test]
+fn url_normalization_default_https_port() {
+    let key = test_signing_key();
+    let doc = ScopeDocument {
+        target: "https://example.com:443/api".to_string(),
+        authorized_by: "tester".to_string(),
+        valid_until: "2099-12-31".to_string(),
+        scope_id: "test-scope".to_string(),
+    };
+    let attestation = sign_scope_document(&doc, &key);
+    let result = verify_attestation(&attestation, "https://example.com/api");
+    assert!(
+        result.is_ok(),
+        "https :443 should normalize to match no-port URL: {result:?}"
+    );
+}
+
+#[test]
+fn url_normalization_non_default_port_preserved() {
+    let key = test_signing_key();
+    let doc = ScopeDocument {
+        target: "http://example.com:3000".to_string(),
+        authorized_by: "tester".to_string(),
+        valid_until: "2099-12-31".to_string(),
+        scope_id: "test-scope".to_string(),
+    };
+    let attestation = sign_scope_document(&doc, &key);
+    let result = verify_attestation(&attestation, "http://example.com");
+    assert!(result.is_err(), "non-default port :3000 should NOT match no-port URL");
+}
+
+#[test]
 fn attestation_error_display_invalid_signature() {
     let err = AttestationError::InvalidSignature;
     assert_eq!(format!("{err}"), "invalid Ed25519 signature");
