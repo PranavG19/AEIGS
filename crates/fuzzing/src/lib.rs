@@ -7,6 +7,7 @@ pub mod payload_selector;
 pub mod rate_limit_detector;
 pub mod scheduler;
 pub mod stealth_config;
+pub mod streaming_fuzzer;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
