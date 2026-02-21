@@ -13,6 +13,7 @@ mod phase_report;
 pub mod pipeline;
 pub mod scan_config;
 pub mod scan_history;
+pub mod telemetry;
 mod util;
 
 pub use actor::*;
@@ -28,6 +29,7 @@ pub use phase_report::*;
 pub use pipeline::*;
 pub use scan_config::*;
 pub use scan_history::*;
+pub use telemetry::*;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]
