@@ -14,12 +14,19 @@ pub enum DiscoverySource {
     EventHandler,
 }
 
+/// Resource type of an intercepted API call.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ApiResourceType {
+    Xhr,
+    Fetch,
+}
+
 /// An API call intercepted via CDP Network domain (XHR or fetch).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct InterceptedApiCall {
     pub url: String,
     pub method: String,
-    pub resource_type: String,
+    pub resource_type: ApiResourceType,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

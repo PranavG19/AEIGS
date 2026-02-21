@@ -1,5 +1,5 @@
 use super::*;
-use crate::types::InterceptedApiCall;
+use crate::types::{ApiResourceType, InterceptedApiCall};
 
 #[test]
 fn page_content_default_is_empty() {
@@ -34,7 +34,7 @@ fn page_content_collects_intercepted_api_calls() {
         intercepted_api_calls: vec![InterceptedApiCall {
             url: "http://localhost:3000/api/data".to_string(),
             method: "POST".to_string(),
-            resource_type: "XHR".to_string(),
+            resource_type: ApiResourceType::Xhr,
         }],
         ..Default::default()
     };
@@ -44,5 +44,8 @@ fn page_content_collects_intercepted_api_calls() {
         "http://localhost:3000/api/data"
     );
     assert_eq!(content.intercepted_api_calls[0].method, "POST");
-    assert_eq!(content.intercepted_api_calls[0].resource_type, "XHR");
+    assert_eq!(
+        content.intercepted_api_calls[0].resource_type,
+        ApiResourceType::Xhr
+    );
 }

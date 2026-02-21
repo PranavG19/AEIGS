@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::*;
 use crate::page_fetcher::{PageContent, PageFetcher};
-use crate::types::{CrawlConfig, DomEventHandler, FormInput, InterceptedApiCall};
+use crate::types::{ApiResourceType, CrawlConfig, DomEventHandler, FormInput, InterceptedApiCall};
 
 struct MockFetcher {
     pages: HashMap<String, PageContent>,
@@ -490,12 +490,12 @@ async fn crawl_collects_intercepted_api_calls() {
                 InterceptedApiCall {
                     url: "http://localhost:3000/api/users".to_string(),
                     method: "GET".to_string(),
-                    resource_type: "XHR".to_string(),
+                    resource_type: ApiResourceType::Xhr,
                 },
                 InterceptedApiCall {
                     url: "http://localhost:3000/api/data".to_string(),
                     method: "POST".to_string(),
-                    resource_type: "Fetch".to_string(),
+                    resource_type: ApiResourceType::Fetch,
                 },
             ],
             ..Default::default()
@@ -529,7 +529,7 @@ async fn crawl_deduplicates_api_call_endpoints() {
     let api_call = InterceptedApiCall {
         url: "http://localhost:3000/api/shared".to_string(),
         method: "GET".to_string(),
-        resource_type: "XHR".to_string(),
+        resource_type: ApiResourceType::Xhr,
     };
 
     let mut fetcher = MockFetcher::new();
@@ -570,17 +570,17 @@ fn api_calls_to_endpoints_preserves_method() {
         InterceptedApiCall {
             url: "http://localhost:3000/api/create".to_string(),
             method: "POST".to_string(),
-            resource_type: "Fetch".to_string(),
+            resource_type: ApiResourceType::Fetch,
         },
         InterceptedApiCall {
             url: "http://localhost:3000/api/update".to_string(),
             method: "PUT".to_string(),
-            resource_type: "XHR".to_string(),
+            resource_type: ApiResourceType::Xhr,
         },
         InterceptedApiCall {
             url: "http://localhost:3000/api/remove".to_string(),
             method: "DELETE".to_string(),
-            resource_type: "Fetch".to_string(),
+            resource_type: ApiResourceType::Fetch,
         },
     ];
 

@@ -9,7 +9,9 @@ use futures::StreamExt;
 
 use crate::error::CrawlError;
 use crate::page_fetcher::{PageContent, PageFetcher};
-use crate::types::{CrawlConfig, DiscoveredForm, DomEventHandler, FormInput, InterceptedApiCall};
+use crate::types::{
+    ApiResourceType, CrawlConfig, DiscoveredForm, DomEventHandler, FormInput, InterceptedApiCall,
+};
 
 /// PageFetcher backed by a headless Chrome browser via CDP.
 ///
@@ -51,8 +53,8 @@ impl PageFetcher for BrowserFetcher {
         let listener_handle = tokio::spawn(async move {
             while let Some(event) = event_stream.next().await {
                 let resource_type = match event.r#type {
-                    Some(ResourceType::Xhr) => "XHR",
-                    Some(ResourceType::Fetch) => "Fetch",
+                    Some(ResourceType::Xhr) => ApiResourceType::Xhr,
+                    Some(ResourceType::Fetch) => ApiResourceType::Fetch,
                     _ => continue,
                 };
 
@@ -64,7 +66,7 @@ impl PageFetcher for BrowserFetcher {
                 let call = InterceptedApiCall {
                     url: call_url.clone(),
                     method: event.request.method.clone(),
-                    resource_type: resource_type.to_string(),
+                    resource_type,
                 };
 
                 if let Ok(mut locked) = intercepted_clone.lock() {
