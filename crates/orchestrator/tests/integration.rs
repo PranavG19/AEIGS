@@ -2227,3 +2227,507 @@ fn url_normalization_default_port() {
         "default port :80 should normalize to match no-port URL: {result:?}"
     );
 }
+
+// ===========================================================================
+// IPC bridge integration tests (cross-process Unix domain socket)
+// ===========================================================================
+
+use aegis_orchestrator::hypothesis_bridge::{
+    DefenseContextJson, HypothesisBridge, HypothesisJson, ScanContextJson,
+};
+
+fn bridge_socket_path(test_name: &str) -> std::path::PathBuf {
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::path::PathBuf::from(format!("/tmp/aegis-it-{}-{ts}.sock", test_name,))
+}
+
+/// Creates a mock `hypothesis_engine.bridge` Python module and a wrapper
+/// script that acts as `python_cmd`. Returns `(TempDir, wrapper_path)`.
+/// The `TempDir` must be kept alive for the duration of the test.
+///
+/// `bridge_main_body` is the Python code placed inside the `main(socket_path)`
+/// function of the mock bridge module. It has access to `socket_path`,
+/// `socket`, `json`, `struct`, `sys`, and the helper functions
+/// `recv_exactly`, `read_frame`, `send_frame`.
+fn create_mock_bridge_env(bridge_main_body: &str) -> (tempfile::TempDir, std::path::PathBuf) {
+    let tmp = tempfile::tempdir().expect("create temp dir");
+    let pkg_dir = tmp.path().join("hypothesis_engine");
+    std::fs::create_dir(&pkg_dir).expect("create package dir");
+    std::fs::write(pkg_dir.join("__init__.py"), "").expect("write __init__.py");
+
+    let bridge_py = format!(
+        r#"import argparse
+import json
+import socket
+import struct
+import sys
+
+
+def recv_exactly(sock, n):
+    data = b""
+    while len(data) < n:
+        chunk = sock.recv(n - len(data))
+        if not chunk:
+            return data
+        data += chunk
+    return data
+
+
+def read_frame(sock):
+    length_bytes = recv_exactly(sock, 4)
+    if len(length_bytes) < 4:
+        return None
+    length = struct.unpack("<I", length_bytes)[0]
+    payload = recv_exactly(sock, length)
+    return json.loads(payload)
+
+
+def send_frame(sock, msg):
+    payload = json.dumps(msg).encode()
+    sock.sendall(struct.pack("<I", len(payload)) + payload)
+
+
+def main(socket_path):
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    sock.connect(socket_path)
+    try:
+{body}
+    finally:
+        sock.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--socket", required=True)
+    args = parser.parse_args()
+    main(args.socket)
+"#,
+        body = bridge_main_body
+            .lines()
+            .map(|line| format!("        {line}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    );
+
+    std::fs::write(pkg_dir.join("bridge.py"), bridge_py).expect("write bridge.py");
+
+    let wrapper = tmp.path().join("python_wrapper.sh");
+    let wrapper_contents = format!(
+        "#!/bin/bash\nexport PYTHONPATH=\"{}\"\nexec python3 \"$@\"\n",
+        tmp.path().display()
+    );
+    std::fs::write(&wrapper, wrapper_contents).expect("write wrapper script");
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&wrapper, std::fs::Permissions::from_mode(0o755))
+            .expect("chmod wrapper");
+    }
+
+    (tmp, wrapper)
+}
+
+fn make_bridge_scan_context() -> ScanContextJson {
+    ScanContextJson {
+        technology_stack: vec!["express".to_string()],
+        findings_summary: vec!["SQLi in /login".to_string()],
+        high_centrality_nodes: vec!["/api/users".to_string()],
+        defense_posture: serde_json::json!({"has_waf": false}),
+    }
+}
+
+fn make_bridge_defense_context() -> DefenseContextJson {
+    DefenseContextJson {
+        has_waf: true,
+        waf_vendor: Some("ModSecurity".to_string()),
+        rate_limit_rps: Some(10.0),
+        bot_detection_present: false,
+    }
+}
+
+// 1: bridge_starts_and_handshakes
+#[test]
+fn bridge_starts_and_handshakes() {
+    let sock = bridge_socket_path("handshake");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge = HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone())
+        .unwrap_or_else(|e| panic!("bridge start failed: {e}"));
+
+    bridge.shutdown().unwrap();
+    assert!(
+        !sock.exists(),
+        "socket file should be cleaned up after shutdown"
+    );
+}
+
+// 2: bridge_generates_hypotheses_via_socket
+#[test]
+fn bridge_generates_hypotheses_via_socket() {
+    let sock = bridge_socket_path("gen_hyp");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+assert req["type"] == "GenerateHypotheses", f"expected GenerateHypotheses, got {req['type']}"
+send_frame(sock, {
+    "type": "Hypotheses",
+    "request_id": req["request_id"],
+    "hypotheses": [
+        {
+            "vulnerability_class": "SqlInjection",
+            "description": "blind sqli in /users",
+            "confidence": 0.9,
+            "test_specification": "test with single quote"
+        }
+    ],
+    "reasoning_trace": "analyzed endpoint patterns",
+    "input_tokens": 500,
+    "output_tokens": 120
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let result = bridge
+        .generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None)
+        .unwrap();
+
+    assert_eq!(result.hypotheses.len(), 1);
+    assert_eq!(result.hypotheses[0].vulnerability_class, "SqlInjection");
+    assert_eq!(result.hypotheses[0].description, "blind sqli in /users");
+    assert!((result.hypotheses[0].confidence - 0.9).abs() < 1e-9);
+    assert_eq!(result.reasoning_trace, "analyzed endpoint patterns");
+    assert_eq!(result.input_tokens, 500);
+    assert_eq!(result.output_tokens, 120);
+
+    bridge.shutdown().unwrap();
+}
+
+// 3: bridge_compiles_payloads_via_socket
+#[test]
+fn bridge_compiles_payloads_via_socket() {
+    let sock = bridge_socket_path("compile");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+assert req["type"] == "CompilePayloads", f"expected CompilePayloads, got {req['type']}"
+assert len(req["hypotheses"]) == 1
+send_frame(sock, {
+    "type": "CompiledPayloads",
+    "request_id": req["request_id"],
+    "payloads": ["' OR 1=1--", "1' AND SLEEP(5)--"],
+    "input_tokens": 200,
+    "output_tokens": 80
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let hypotheses = vec![HypothesisJson {
+        vulnerability_class: "SqlInjection".to_string(),
+        description: "sqli in /search".to_string(),
+        confidence: 0.85,
+        test_specification: None,
+    }];
+
+    let result = bridge.compile_payloads(hypotheses).unwrap();
+
+    assert_eq!(result.payloads.len(), 2);
+    assert_eq!(result.payloads[0], "' OR 1=1--");
+    assert_eq!(result.payloads[1], "1' AND SLEEP(5)--");
+    assert_eq!(result.input_tokens, 200);
+    assert_eq!(result.output_tokens, 80);
+
+    bridge.shutdown().unwrap();
+}
+
+// 4: bridge_generates_evasion_via_socket
+#[test]
+fn bridge_generates_evasion_via_socket() {
+    let sock = bridge_socket_path("evasion");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+assert req["type"] == "EvasionGenerate", f"expected EvasionGenerate, got {req['type']}"
+assert req["defense_context"]["has_waf"] == True
+send_frame(sock, {
+    "type": "EvasionPayloads",
+    "request_id": req["request_id"],
+    "payloads": ["/**/UNION/**/SELECT", "0x27 OR 1=1--"],
+    "input_tokens": 300,
+    "output_tokens": 60
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let result = bridge
+        .generate_evasion(make_bridge_defense_context())
+        .unwrap();
+
+    assert_eq!(result.payloads.len(), 2);
+    assert_eq!(result.payloads[0], "/**/UNION/**/SELECT");
+    assert_eq!(result.payloads[1], "0x27 OR 1=1--");
+    assert_eq!(result.input_tokens, 300);
+    assert_eq!(result.output_tokens, 60);
+
+    bridge.shutdown().unwrap();
+}
+
+// 5: bridge_handles_python_error_gracefully
+#[test]
+fn bridge_handles_python_error_gracefully() {
+    let sock = bridge_socket_path("py_err");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+send_frame(sock, {
+    "type": "Error",
+    "request_id": req["request_id"],
+    "message": "backend unavailable: connection refused"
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let result =
+        bridge.generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None);
+
+    let err = result.unwrap_err();
+    let msg = err.to_string();
+    assert!(
+        msg.contains("backend unavailable"),
+        "error should contain Python message: {msg}"
+    );
+
+    bridge.shutdown().unwrap();
+}
+
+// 6: bridge_handles_python_crash
+#[test]
+fn bridge_handles_python_crash() {
+    let sock = bridge_socket_path("crash");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+import time
+send_frame(sock, {"type": "Ready"})
+# Wait for Rust to complete the handshake before crashing
+time.sleep(0.5)
+sock.close()
+sys.exit(1)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let result =
+        bridge.generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None);
+
+    assert!(
+        result.is_err(),
+        "call after crash should return error, not panic"
+    );
+
+    let _ = bridge.shutdown();
+}
+
+// 7: bridge_respects_shutdown
+#[test]
+fn bridge_respects_shutdown() {
+    let sock = bridge_socket_path("shutdown");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    assert!(sock.exists(), "socket should exist before shutdown");
+
+    let result = bridge.shutdown();
+    assert!(result.is_ok(), "shutdown should succeed: {result:?}");
+    assert!(
+        !sock.exists(),
+        "socket file should be cleaned up after shutdown"
+    );
+}
+
+// 8: bridge_request_id_increments_across_calls
+#[test]
+fn bridge_request_id_increments_across_calls() {
+    let sock = bridge_socket_path("req_ids");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+for i in range(1, 4):
+    req = read_frame(sock)
+    rid = req["request_id"]
+    assert rid == i, f"expected request_id={i}, got {rid}"
+    if req["type"] == "GenerateHypotheses":
+        send_frame(sock, {
+            "type": "Hypotheses",
+            "request_id": rid,
+            "hypotheses": [],
+            "reasoning_trace": "",
+            "input_tokens": 0,
+            "output_tokens": 0
+        })
+    elif req["type"] == "CompilePayloads":
+        send_frame(sock, {
+            "type": "CompiledPayloads",
+            "request_id": rid,
+            "payloads": [],
+            "input_tokens": 0,
+            "output_tokens": 0
+        })
+    elif req["type"] == "EvasionGenerate":
+        send_frame(sock, {
+            "type": "EvasionPayloads",
+            "request_id": rid,
+            "payloads": [],
+            "input_tokens": 0,
+            "output_tokens": 0
+        })
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    bridge
+        .generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None)
+        .expect("call 1 should succeed (request_id=1)");
+    bridge
+        .compile_payloads(vec![])
+        .expect("call 2 should succeed (request_id=2)");
+    bridge
+        .generate_evasion(make_bridge_defense_context())
+        .expect("call 3 should succeed (request_id=3)");
+
+    // The mock Python script asserts request_id increments (1, 2, 3) and
+    // would have crashed with a non-zero exit if any assertion failed,
+    // causing the Rust calls above to return errors.
+
+    bridge.shutdown().unwrap();
+}
+
+// 9: bridge_request_response_id_matching
+#[test]
+fn bridge_request_response_id_matching() {
+    let sock = bridge_socket_path("id_mismatch");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+send_frame(sock, {
+    "type": "Hypotheses",
+    "request_id": 99,
+    "hypotheses": [],
+    "reasoning_trace": "",
+    "input_tokens": 0,
+    "output_tokens": 0
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let result =
+        bridge.generate_hypotheses(make_bridge_scan_context(), "SqlInjection".to_string(), None);
+
+    let err = result.unwrap_err();
+    let msg = err.to_string();
+    assert!(msg.contains("mismatch"), "should report ID mismatch: {msg}");
+    assert!(msg.contains("expected 1"), "should show expected ID: {msg}");
+    assert!(msg.contains("99"), "should show actual ID: {msg}");
+
+    let _ = bridge.shutdown();
+}
+
+// 10: bridge_integrates_with_pipeline_metrics
+#[test]
+fn bridge_integrates_with_pipeline_metrics() {
+    let sock = bridge_socket_path("metrics");
+    let (_tmp, wrapper) = create_mock_bridge_env(
+        r#"
+send_frame(sock, {"type": "Ready"})
+req = read_frame(sock)
+assert req["type"] == "GenerateHypotheses"
+assert "technology_stack" in req["scan_context"]
+assert "findings_summary" in req["scan_context"]
+send_frame(sock, {
+    "type": "Hypotheses",
+    "request_id": req["request_id"],
+    "hypotheses": [
+        {
+            "vulnerability_class": "SqlInjection",
+            "description": "test hypothesis",
+            "confidence": 0.7,
+            "test_specification": None
+        }
+    ],
+    "reasoning_trace": "pipeline context received",
+    "input_tokens": 1500,
+    "output_tokens": 350
+})
+req = read_frame(sock)
+"#,
+    );
+
+    let mut bridge =
+        HypothesisBridge::start_with_path(wrapper.to_str().unwrap(), sock.clone()).unwrap();
+
+    let context = ScanContextJson {
+        technology_stack: vec!["express".to_string(), "postgresql".to_string()],
+        findings_summary: vec!["prior SQLi in /login".to_string()],
+        high_centrality_nodes: vec!["/api/admin".to_string()],
+        defense_posture: serde_json::json!({"has_waf": true, "waf_vendor": "ModSecurity"}),
+    };
+
+    let result = bridge
+        .generate_hypotheses(
+            context,
+            "SqlInjection".to_string(),
+            Some("found 2 SQLi last round".to_string()),
+        )
+        .unwrap();
+
+    assert_eq!(result.input_tokens, 1500);
+    assert_eq!(result.output_tokens, 350);
+    assert_eq!(result.hypotheses.len(), 1);
+    assert_eq!(result.reasoning_trace, "pipeline context received");
+
+    bridge.shutdown().unwrap();
+}
