@@ -12,6 +12,7 @@ mod phase_fuzz;
 mod phase_recon;
 mod phase_report;
 pub mod pipeline;
+pub mod pipeline_composer;
 pub mod scan_config;
 pub mod scan_history;
 pub mod telemetry;
@@ -29,6 +30,7 @@ pub use phase_fuzz::*;
 pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
+pub use pipeline_composer::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use telemetry::*;
@@ -88,3 +90,7 @@ mod actor_test;
 #[cfg(test)]
 #[path = "interactive_test.rs"]
 mod interactive_test;
+
+#[cfg(test)]
+#[path = "pipeline_composer_test.rs"]
+mod pipeline_composer_test;
