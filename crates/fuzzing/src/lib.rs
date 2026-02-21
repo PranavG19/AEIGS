@@ -1,4 +1,5 @@
 pub mod bot_detection_probe;
+pub mod confirmation;
 pub mod defense_profile;
 pub mod executor;
 pub mod mutator;
@@ -12,6 +13,7 @@ pub mod streaming_fuzzer;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
+pub use confirmation::*;
 pub use defense_profile::*;
 pub use rate_limit_detector::*;
 pub use waf_fingerprinter::*;
@@ -47,3 +49,7 @@ mod payload_selector_test;
 #[cfg(test)]
 #[path = "request_patterns_test.rs"]
 mod request_patterns_test;
+
+#[cfg(test)]
+#[path = "confirmation_test.rs"]
+mod confirmation_test;
