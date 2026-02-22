@@ -1,11 +1,11 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,826 Rust tests, 337 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,829 Rust tests, 337 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 2,826 tests across 11 crates
+cargo test --workspace                                                # 2,829 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --all --check                                               # formatting gate
 cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 337 Python tests
@@ -27,7 +27,8 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
     │     │                    event sourcing (replay, snapshot, diff, timeline)
     │     └── supervisor       Process lifecycle + capability tokens
     │
-    ├── passive-recon          Lock file parsing (cargo-lock), vuln DB (SQLite), filesystem walking
+    ├── passive-recon          Lock file parsing (cargo-lock), vuln DB (SQLite, persistent file or in-memory),
+    │                          filesystem walking, ecosystem OSV name mapping
     ├── enumeration            Route discovery, OpenAPI (openapiv3), GraphQL (graphql-parser), auth matrix,
     │                          GraphQL fallback discovery (error-based + brute-force), auth flow modeling
     ├── fuzzing                Priority scheduler (novelty-based), payload mutation (tagged), stealth mode,
@@ -49,7 +50,7 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
                                scan checkpoints/resume, benchmark evaluation, confidence calibration,
                                endpoint similarity (TF-IDF), scan history (SQLite), interactive mode,
                                pipeline composition (topological ordering), distributed coordination,
-                               opt-in telemetry
+                               opt-in telemetry, vulnerability database updater (OSV API)
 
 hypothesis-engine        (Python) LLM hypothesis generation via pluggable backends (Bedrock, OpenAI, ollama),
                          XML-structured prompts with <thinking>/<hypotheses> tags,
@@ -185,7 +186,8 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **DefenseProfile** — Optional WAF/rate-limit/bot-detection profiles. Builder pattern with `with_*` methods.
 - **StealthConfig** — 4 presets: `default()`, `aggressive()`, `paranoid()`, `benchmark()`. Builder pattern with `with_*` methods.
 - **PersonaId** — 10 variants: ChromeDesktop, FirefoxDesktop, SafariDesktop, ChromeMobile, Googlebot, EdgeDesktop, OperaDesktop, SafariMobile, CurlClient, PythonRequests. Persona rotation supported.
-- **SarifFinding** — input struct for SARIF emission. Includes optional `defense_context`, `vulnerability_class`, `evidence_level`, `cve_id`, `mitigation_rank`, `confidence_score`.
+- **Confidence** — Newtype wrapper over `f64` enforcing `[0.0, 1.0]` range and finiteness. `Confidence::new(v)` validates, `Confidence::from_evidence(level)` maps `EvidenceLevel` to default score. Implements `Serialize` (as f64), `Deserialize` (tolerant: invalid→default 0.5), `Display`. Replaces the prior `Option<f64> confidence_score` + `effective_confidence()` dual path.
+- **SarifFinding** — input struct for SARIF emission. Includes optional `defense_context`, `vulnerability_class`, `evidence_level`, `cve_id`, `mitigation_rank`.
 - **MitigationResult** — Result of graph-theoretic mitigation impact estimate: removed_findings, findings_remaining, impact_score.
 - **FindingOrigin** — 3-variant enum: LlmHypothesis, StaticRule, Mutation. Tags fuzz findings by origin.
 - **FuzzPhaseResult** — Wraps PhaseResult + origin_counts + discovered_endpoints.
@@ -227,6 +229,8 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **DistributedConfig / CoordinatorState / WorkAssignment** — Distributed scan coordination: worker partitioning (RoundRobin, PriorityBased), heartbeat failure detection, rebalancing.
 - **TelemetryConfig / TelemetryCollector** — Opt-in aggregate telemetry: scan duration, finding counts, phase timing. Never raw findings/payloads. Disabled by default.
 - **ScanActor** — Trait for pipeline phase actors (name, required capabilities, execute). Implementations: ReconActor, FingerprintActor, FuzzActor\<T\>, AnalyzeActor, ReportActor, ConvergenceActor.
+- **UpdateDbArgs / UpdateDbSummary / UpdateDbError** — `update-db` CLI subcommand types. Args: `db_path`, `source_dir`, `full_refresh`. Summary: `new_records`, `total_records`, `packages_queried`. Error: MissingArg, Http, Database, Io, NoPackagesFound.
+- **OsvBatchResponse / OsvVulnerability / OsvAffected / OsvRange / OsvEvent** — OSV API response deserialization types (private to `update_db` module). Batch response contains per-package vulnerability lists with affected version ranges.
 
 ## LLM Configuration
 
@@ -267,7 +271,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - sarif_rust types for SARIF 2.1.0 output (not custom structs) — ensures schema compliance; tool interoperability with GitHub, Azure DevOps, VS Code
 - openapiv3 for OpenAPI parsing, graphql-parser for GraphQL SDL/introspection — spec-compliant parsers; avoids hand-rolling schema parsers
 - cargo-lock crate for Cargo.lock parsing (filters to default registry only) — handles all Cargo.lock format versions; registry filter prevents scanning private registries
-- SQLite in-memory for vuln database — zero external deps — full SQL query capability with zero deployment overhead; bundled C library via rusqlite
+- SQLite for vuln database — persistent file (`~/.aegis/vuln.db`) populated by `update-db` subcommand via OSV API; falls back gracefully when DB doesn't exist; bundled C library via rusqlite
 - CBOR (ciborium) for certificate serialization — compact, binary-safe, versioned envelope — ~40% smaller than JSON, self-describing unlike Protobuf, no schema compilation step
 - `let` chains (Rust 2024) for collapsible-if patterns
 - parking_lot::RwLock\<Inner\> pattern for KnowledgeGraph facade concurrency — single contention point is acceptable for single-process localhost scope; readers never block each other; parking_lot chosen over std for upgradable read locks (no lock poisoning)
@@ -283,7 +287,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Pluggable LLM backends — `LlmBackend` ABC with `BedrockClient` and `OpenAiClient` implementations; `create_backend("bedrock"|"openai"|"ollama")` factory; `HypothesisGenerator` uses composition over inheritance
 - Graph-theoretic mitigation estimation — `estimated_mitigation_impact(node)` computes which findings become unreachable if a node is removed; `graph_influence_ranking()` sorts nodes by estimated mitigation value; complements betweenness centrality with actionable prioritization. These are structural graph estimates, not causal claims.
 - Endpoint response variance detection — `measure_endpoint_variance()` sends N identical requests and measures status code/body size variance; high-variance endpoints flagged as non-deterministic to reduce false positives in counterfactual testing
-- Continuous confidence scoring — `confidence_score: Option<f64>` on FindingData complements discrete EvidenceLevel; `confidence_from_evidence()` maps EvidenceLevel to base confidence; `effective_confidence()` resolves to score or falls back to evidence-based calculation
+- Confidence newtype — `Confidence` wraps `f64` with `[0.0, 1.0]` validation; `FindingData.confidence` is always present (no Option); `Confidence::from_evidence()` maps `EvidenceLevel` to default score; custom `Deserialize` handles legacy `confidence_score` field for backwards compatibility
 - Defense-fingerprinting merged into fuzzing crate — eliminates a leaf crate with no consumers other than orchestrator and reporting; reduces workspace crate count from 12 to 11; WAF/rate-limit/bot-detection types now re-exported from `aegis_fuzzing` root alongside scheduler/mutator types
 - Ed25519 (ed25519-dalek) for scope attestation and config signing — asymmetric signatures allow offline verification without shared secrets; SHA3-256 content hash for config integrity
 - Event sourcing for audit log — `replay_from_entries()` reconstructs scan state from audit events; `diff_snapshots()` computes deltas between states; enables post-hoc analysis without separate state persistence
@@ -307,6 +311,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Pipeline composition via topological sort — Kahn's algorithm for dependency resolution; execution waves group independent stages; validates no cycles, no missing dependencies
 - Distributed scan coordination — worker partitioning strategies (RoundRobin, PriorityBased, VulnerabilityClass); heartbeat-based failure detection; automatic rebalancing on worker failure
 - Opt-in telemetry — disabled by default, explicit `TelemetryConfig { enabled: true }` required; aggregate-only (scan duration, finding counts, phase timing); never raw findings, payloads, or endpoint URLs
+- Dependency-driven OSV vulnerability queries — `update-db` parses lockfiles from `--source-dir` to extract `(package, ecosystem)` tuples, batch-queries `https://api.osv.dev/v1/querybatch` (up to 1000 per request), converts to `VulnerabilityRecord` rows with `INSERT OR IGNORE` deduplication; targeted approach avoids downloading entire vulnerability databases
 - Uncertainty quantification (Python) — structural evidence pattern detection ("input flows to", "no validation", "concatenated into sql", "graph shows") vs speculative pattern detection ("commonly vulnerable", "technology stack suggests", "default configuration") in LLM reasoning traces; formula: `structural / (structural + speculative)`; replaces prior hedging/confidence word-counting approach
 - XML-structured prompts — all LLM prompts use semantic XML tags (`<role>`, `<task>`, `<constraints>`, `<output_format>`, etc.) to prevent instruction bleed between sections; response extraction tries XML tags first (`<hypotheses>`, `<test_specs>`, `<evasion_payloads>`) with bracket-based JSON fallback for robustness
 - Confidence calibration (Python) — `calibration.py` provides sigmoid temperature scaling `sigmoid(a*raw + b)` fit via gradient descent on log loss; `CalibrationReport` with ECE, overconfident/underconfident range detection; complements Rust-side `CalibrationReport` in orchestrator
@@ -350,7 +355,7 @@ The knowledge graph enforces these constraints during batch validation:
 - KnowledgeGraph methods return `Result` — `GraphError::LockPoisoned` removed (parking_lot doesn't poison); `GraphError::Io` added for persistence errors
 - `OperationLog::new()` defaults to relaxed sequencing — use `new_strict()` for gap detection
 - Adding new `NodeType` or `EdgeLabel` variants requires updating `is_valid_edge()` whitelist AND the exhaustive coverage test in `protocol_test.rs`
-- `FindingData` has `confidence_score: Option<f64>` with `#[serde(default)]` — existing JSON without this field deserializes as None
+- `FindingData.confidence` is `Confidence` newtype (not raw `f64`) — access inner value via `.value()`; construction via `Confidence::new(v)` or `Confidence::from_evidence(level)`; custom `Deserialize` handles legacy `confidence_score` and raw f64 `confidence` fields for backwards compat
 - `run_fuzz()` returns `FuzzPhaseResult` (not `PhaseResult`) — access phase data via `.phase` field
 - `run_report()` takes optional `&ScanMetrics` parameter — pass `None` when metrics not needed
 - `HypothesisGenerator` uses composition (not inheritance) — accepts `client: LlmBackend` parameter; `create_backend()` factory for backend selection
@@ -358,7 +363,7 @@ The knowledge graph enforces these constraints during batch validation:
 - `KnowledgeGraph::save_to_file()` takes `&GraphMetadata` — caller provides metadata at save time
 - `KnowledgeGraph::load_from_file()` returns fresh `OperationLog` — operation history not persisted, only store state
 - Stores (`NodeStore`, `EdgeStore`, `FindingStore`) serialize full struct including index HashMaps — indexes are redundant with Vec data but ensures correctness on restore
-- `run_recon_standalone(source_dir)` in `phase_recon.rs` — standalone entry point returning `Vec<OperationLogEntry>` without requiring a `ScanContext`; near-duplicate of `collect_recon_ops` in `pipeline.rs`
+- `run_recon_standalone(source_dir, vuln_db_path)` in `phase_recon.rs` — standalone entry point returning `Vec<OperationLogEntry>` without requiring a `ScanContext`; second arg is `Option<&Path>` for vuln DB (pass `None` to use `~/.aegis/vuln.db` default); near-duplicate of `collect_recon_ops` in `pipeline.rs`
 - Endpoint filtering is wired via `filter_scheduler_by_endpoints()` in `phase_fuzz.rs` — drains + re-enqueues scheduler; only called on freshly-enqueued targets (attempts=0); do not call after targets have been partially consumed
 - `timestamp_ms()` is defined in `util.rs` and imported via `crate::util::timestamp_ms` by all orchestrator phases — do not add duplicate definitions
 - Intra-batch duplicate edge detection uses `HashSet<(u64, u64, EdgeLabel)>` in `operation_log.rs` `validate_batch()` — catches duplicates within the same batch, not just against existing store
@@ -405,3 +410,9 @@ The knowledge graph enforces these constraints during batch validation:
 - Python test suite runs from two directories: `src/hypothesis_engine/` (unit tests) + `tests/` (integration/evaluation) — both must be included in pytest invocation
 - `compiler.py` parses `<test_specs>` XML tags first, falls back to bracket JSON — same pattern as generator and evasion_mode
 - `evasion_mode.py` parses `<evasion_payloads>` XML tags first, falls back to bracket JSON — `_build_system_prompt()` injects `<bypass_examples>` only when corpus has relevant entries
+- `update_db` uses `reqwest::blocking::Client` (not async) — runs before tokio runtime; 3 retries with exponential backoff (2s/4s/8s); 120s timeout per batch request
+- `vuln_lookup()` now takes 3 args `(deps, seq, vuln_db_path)` — third arg is `Option<&Path>`; when `None`, falls back to `~/.aegis/vuln.db` if it exists, otherwise returns empty (no findings)
+- `Ecosystem` derives `PartialOrd, Ord` — required for sorting `(String, Ecosystem)` tuples in `update_db::run_update_db`; variant order follows enum declaration order
+- `--vuln-db` CLI flag on `ScopeOptions` — overrides default `~/.aegis/vuln.db` path; passed through `ctx.config.scope.vuln_db` to `vuln_lookup`
+- `update-db` subcommand dispatched before clap parsing — same pattern as `recon` and `attest` subcommands; `if args[1] == "update-db"` in main.rs
+- OSV version range sentinel `"999999.0.0"` — used when an `introduced` event has no corresponding `fixed` or `last_affected` event; indicates vulnerability is still unfixed
