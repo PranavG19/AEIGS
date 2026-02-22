@@ -659,8 +659,9 @@ fn run_fingerprint_phase(
 
 /// Extracts scan context into the struct expected by the hypothesis bridge.
 ///
-/// Populates `technology_stack` from the graph's Dependency nodes and `findings_summary`
-/// from existing findings. Remaining fields are left empty for the LLM to infer.
+/// Populates `technology_stack` from the graph's Dependency nodes, `findings_summary`
+/// from existing findings, and `class_confirmation_rates` from the scan history DB
+/// when available. Remaining fields are left empty for the LLM to infer.
 pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
     let technology_stack: Vec<String> = ctx
         .graph
@@ -684,11 +685,31 @@ pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
         .map(|f| format!("{}", f.vulnerability_class))
         .collect();
 
+    let class_confirmation_rates = load_class_confirmation_rates(ctx);
+
     ScanContextJson {
         technology_stack,
         findings_summary,
         high_centrality_nodes: Vec::new(),
         defense_posture: serde_json::json!({}),
+        class_confirmation_rates,
+        model_id: None,
+    }
+}
+
+/// Loads per-class confirmation rates from the scan history DB, if configured.
+///
+/// Returns an empty map when no history DB path is set or on query failure.
+fn load_class_confirmation_rates(ctx: &ScanContext) -> std::collections::HashMap<String, f64> {
+    let Some(ref db_path) = ctx.config.scope.history_db else {
+        return std::collections::HashMap::new();
+    };
+    match crate::scan_history::ScanHistoryDb::open(db_path) {
+        Ok(db) => db.success_rates_all_classes().unwrap_or_default(),
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to load class confirmation rates from history DB");
+            std::collections::HashMap::new()
+        }
     }
 }
 

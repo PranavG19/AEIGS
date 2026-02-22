@@ -2361,6 +2361,8 @@ fn make_bridge_scan_context() -> ScanContextJson {
         findings_summary: vec!["SQLi in /login".to_string()],
         high_centrality_nodes: vec!["/api/users".to_string()],
         defense_posture: serde_json::json!({"has_waf": false}),
+        class_confirmation_rates: std::collections::HashMap::new(),
+        model_id: None,
     }
 }
 
@@ -2741,6 +2743,8 @@ req = read_frame(sock)
         findings_summary: vec!["prior SQLi in /login".to_string()],
         high_centrality_nodes: vec!["/api/admin".to_string()],
         defense_posture: serde_json::json!({"has_waf": true, "waf_vendor": "ModSecurity"}),
+        class_confirmation_rates: std::collections::HashMap::new(),
+        model_id: None,
     };
 
     let result = bridge

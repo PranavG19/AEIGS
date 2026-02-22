@@ -22,6 +22,7 @@ class ScanContext(BaseModel):
     graph_edges: list[dict[str, Any]] = Field(default_factory=list)
     defense_posture: dict[str, Any] = Field(default_factory=dict)
     attack_paths: list[dict[str, Any]] = Field(default_factory=list)
+    class_confirmation_rates: dict[str, float] = Field(default_factory=dict)
 
 
 class Hypothesis(BaseModel):
@@ -190,6 +191,13 @@ def build_user_prompt(context: ScanContext) -> str:
 
     if context.feedback_summary:
         parts.append("<prior_feedback>\n" + context.feedback_summary + "</prior_feedback>")
+
+    if context.class_confirmation_rates:
+        rate_lines = [
+            f"  {cls}: {rate * 100:.0f}%"
+            for cls, rate in sorted(context.class_confirmation_rates.items())
+        ]
+        parts.append("<prior_performance>\n" + "\n".join(rate_lines) + "\n</prior_performance>")
 
     parts.append("</application_context>")
 

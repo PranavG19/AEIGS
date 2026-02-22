@@ -687,3 +687,57 @@ class TestConsistencyMedianConfidence:
         )
         assert result.input_tokens == 50
         assert result.output_tokens == 100
+
+
+class TestClassConfirmationRates:
+    def test_scan_context_default_empty_rates(self) -> None:
+        ctx = ScanContext()
+        assert ctx.class_confirmation_rates == {}
+
+    def test_scan_context_accepts_rates(self) -> None:
+        rates = {"SQL Injection": 0.75, "Cross-Site Scripting": 0.25}
+        ctx = ScanContext(class_confirmation_rates=rates)
+        assert ctx.class_confirmation_rates["SQL Injection"] == 0.75
+        assert ctx.class_confirmation_rates["Cross-Site Scripting"] == 0.25
+
+    def test_prior_performance_excluded_when_empty(self) -> None:
+        ctx = ScanContext(technology_stack=["Flask"])
+        prompt = build_user_prompt(ctx)
+        assert "<prior_performance>" not in prompt
+
+    def test_prior_performance_included_when_present(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Express"],
+            class_confirmation_rates={
+                "SQL Injection": 0.80,
+                "Cross-Site Scripting": 0.25,
+            },
+        )
+        prompt = build_user_prompt(ctx)
+        assert "<prior_performance>" in prompt
+        assert "</prior_performance>" in prompt
+        assert "SQL Injection: 80%" in prompt
+        assert "Cross-Site Scripting: 25%" in prompt
+
+    def test_prior_performance_rates_sorted_alphabetically(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Express"],
+            class_confirmation_rates={
+                "Path Traversal": 0.50,
+                "Command Injection": 0.90,
+            },
+        )
+        prompt = build_user_prompt(ctx)
+        cmd_pos = prompt.find("Command Injection")
+        path_pos = prompt.find("Path Traversal")
+        assert cmd_pos < path_pos
+
+    def test_prior_performance_before_closing_tag(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Flask"],
+            class_confirmation_rates={"SQL Injection": 0.5},
+        )
+        prompt = build_user_prompt(ctx)
+        perf_pos = prompt.find("</prior_performance>")
+        close_pos = prompt.find("</application_context>")
+        assert perf_pos < close_pos

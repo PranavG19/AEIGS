@@ -1102,6 +1102,8 @@ fn build_hypothesis_context_returns_scan_context_json() {
     assert!(context.findings_summary.is_empty());
     assert!(context.high_centrality_nodes.is_empty());
     assert!(context.defense_posture.is_object());
+    assert!(context.class_confirmation_rates.is_empty());
+    assert!(context.model_id.is_none());
 }
 
 #[test]
@@ -1122,6 +1124,79 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
     assert!(context.findings_summary.is_empty());
+}
+
+#[test]
+fn build_hypothesis_context_no_history_db_has_empty_rates() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert!(context.class_confirmation_rates.is_empty());
+    assert!(context.model_id.is_none());
+}
+
+#[test]
+fn build_hypothesis_context_with_history_db_populates_rates() {
+    use crate::scan_history::{ScanHistoryDb, ScanHistoryEntry};
+
+    let dir = tempfile::tempdir().unwrap();
+    let db_path = dir.path().join("test-history.db");
+
+    let db = ScanHistoryDb::open(&db_path).unwrap();
+    db.insert(&ScanHistoryEntry {
+        endpoint_pattern: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+        payload: "' OR 1=1--".to_string(),
+        anomaly_score: 0.9,
+        is_true_positive: true,
+        timestamp_unix_ms: 1_700_000_000_000,
+        target_app_hash: "test".to_string(),
+    })
+    .unwrap();
+    db.insert(&ScanHistoryEntry {
+        endpoint_pattern: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+        payload: "' OR 1=1--".to_string(),
+        anomaly_score: 0.9,
+        is_true_positive: false,
+        timestamp_unix_ms: 1_700_000_000_000,
+        target_app_hash: "test".to_string(),
+    })
+    .unwrap();
+    drop(db);
+
+    let mut config = localhost_config();
+    config.scope.history_db = Some(db_path);
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert_eq!(context.class_confirmation_rates.len(), 1);
+    assert!(
+        (context.class_confirmation_rates["SQL Injection"] - 0.5).abs() < f64::EPSILON,
+        "SQL Injection rate should be 0.5, got: {}",
+        context.class_confirmation_rates["SQL Injection"]
+    );
 }
 
 #[tokio::test]
@@ -1353,6 +1428,7 @@ fn build_hypothesis_context_serializes_to_valid_json() {
     assert!(json["findings_summary"].is_array());
     assert!(json["high_centrality_nodes"].is_array());
     assert!(json["defense_posture"].is_object());
+    assert!(json["class_confirmation_rates"].is_object());
 }
 
 // --- LLM feedback loop tests ---

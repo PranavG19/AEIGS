@@ -234,6 +234,36 @@ impl ScanHistoryDb {
         Ok(rows)
     }
 
+    /// Returns confirmation rates for all vulnerability classes that have records.
+    ///
+    /// The returned map uses the `Display` representation of `VulnerabilityClass`
+    /// as keys (e.g., "SQL Injection") and the fraction of true positives as values.
+    /// Classes with zero records are omitted.
+    pub fn success_rates_all_classes(
+        &self,
+    ) -> Result<std::collections::HashMap<String, f64>, ScanHistoryError> {
+        let mut stmt = self.connection.prepare(
+            "SELECT vulnerability_class, COUNT(*), COALESCE(SUM(is_true_positive), 0)
+             FROM scan_history
+             GROUP BY vulnerability_class",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                let class_str: String = row.get(0)?;
+                let total: i64 = row.get(1)?;
+                let positives: i64 = row.get(2)?;
+                Ok((class_str, total, positives))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut rates = std::collections::HashMap::new();
+        for (class_str, total, positives) in rows {
+            if total > 0 {
+                rates.insert(class_str, positives as f64 / total as f64);
+            }
+        }
+        Ok(rates)
+    }
+
     /// Returns the total number of records in the database.
     pub fn total_records(&self) -> Result<u64, ScanHistoryError> {
         let count: i64 =

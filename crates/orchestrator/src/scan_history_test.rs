@@ -336,4 +336,42 @@ mod tests {
 
         std::fs::remove_file(&db_path).ok();
     }
+
+    #[test]
+    fn success_rates_all_classes_returns_all_with_records() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        db.insert(&sample_entry("/a", VulnerabilityClass::SqlInjection, true))
+            .unwrap();
+        db.insert(&sample_entry("/b", VulnerabilityClass::SqlInjection, false))
+            .unwrap();
+        db.insert(&sample_entry("/c", VulnerabilityClass::PathTraversal, true))
+            .unwrap();
+
+        let rates = db.success_rates_all_classes().unwrap();
+        assert_eq!(rates.len(), 2);
+        assert!((rates["SQL Injection"] - 0.5).abs() < f64::EPSILON);
+        assert!((rates["Path Traversal"] - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn success_rates_all_classes_empty_db_returns_empty() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        let rates = db.success_rates_all_classes().unwrap();
+        assert!(rates.is_empty());
+    }
+
+    #[test]
+    fn success_rates_all_classes_omits_zero_total() {
+        let db = ScanHistoryDb::open_in_memory().unwrap();
+        db.insert(&sample_entry(
+            "/a",
+            VulnerabilityClass::CrossSiteScripting,
+            true,
+        ))
+        .unwrap();
+        let rates = db.success_rates_all_classes().unwrap();
+        assert_eq!(rates.len(), 1);
+        assert!(rates.contains_key("Cross-Site Scripting"));
+        assert!(!rates.contains_key("SQL Injection"));
+    }
 }

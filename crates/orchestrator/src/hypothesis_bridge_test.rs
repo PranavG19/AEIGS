@@ -407,6 +407,8 @@ json.dump(response, sys.stdout)
                 findings_summary: vec!["SQLi in /login".to_string()],
                 high_centrality_nodes: vec![],
                 defense_posture: json!({"has_waf": false}),
+                class_confirmation_rates: std::collections::HashMap::new(),
+                model_id: None,
             },
             vulnerability_class: "SqlInjection".to_string(),
             feedback_summary: Some("prior run found 2 issues".to_string()),
@@ -539,6 +541,8 @@ json.dump(response, sys.stdout)
                 findings_summary: vec![],
                 high_centrality_nodes: vec![],
                 defense_posture: json!({}),
+                class_confirmation_rates: std::collections::HashMap::new(),
+                model_id: None,
             },
             vulnerability_class: "SSTI".to_string(),
             feedback_summary: None,
@@ -608,6 +612,8 @@ json.dump(response, sys.stdout)
             findings_summary: vec!["SQLi found".to_string()],
             high_centrality_nodes: vec!["/api/users".to_string()],
             defense_posture: json!({"has_waf": true, "waf_vendor": "ModSecurity"}),
+            class_confirmation_rates: std::collections::HashMap::new(),
+            model_id: None,
         };
         let json_str = serde_json::to_string(&ctx).unwrap();
         let roundtripped: ScanContextJson = serde_json::from_str(&json_str).unwrap();
@@ -659,6 +665,8 @@ json.dump(response, sys.stdout)
             findings_summary: vec![],
             high_centrality_nodes: vec![],
             defense_posture: json!({"has_waf": false}),
+            class_confirmation_rates: std::collections::HashMap::new(),
+            model_id: None,
         }
     }
 
@@ -1157,6 +1165,8 @@ json.dump(response, sys.stdout)
             findings_summary: vec!["XSS found".to_string()],
             high_centrality_nodes: vec!["/api".to_string()],
             defense_posture: json!({"has_waf": true}),
+            class_confirmation_rates: std::collections::HashMap::new(),
+            model_id: None,
         };
         bridge
             .generate_hypotheses(
@@ -1308,5 +1318,61 @@ json.dump(response, sys.stdout)
         let _ = bridge.child.kill();
         let _ = std::fs::remove_file(&sock);
         mock.join().unwrap();
+    }
+
+    #[test]
+    fn scan_context_json_class_confirmation_rates_serializes() {
+        let mut rates = std::collections::HashMap::new();
+        rates.insert("SQL Injection".to_string(), 0.75);
+        rates.insert("Cross-Site Scripting".to_string(), 0.25);
+        let ctx = ScanContextJson {
+            technology_stack: vec![],
+            findings_summary: vec![],
+            high_centrality_nodes: vec![],
+            defense_posture: json!({}),
+            class_confirmation_rates: rates,
+            model_id: Some("test-model".to_string()),
+        };
+        let json_str = serde_json::to_string(&ctx).unwrap();
+        let roundtripped: ScanContextJson = serde_json::from_str(&json_str).unwrap();
+        assert_eq!(roundtripped.class_confirmation_rates.len(), 2);
+        assert_eq!(roundtripped.class_confirmation_rates["SQL Injection"], 0.75);
+        assert_eq!(
+            roundtripped.class_confirmation_rates["Cross-Site Scripting"],
+            0.25
+        );
+        assert_eq!(roundtripped.model_id.as_deref(), Some("test-model"));
+    }
+
+    #[test]
+    fn scan_context_json_defaults_empty_rates_and_no_model() {
+        let json_str = r#"{
+            "technology_stack": [],
+            "findings_summary": [],
+            "high_centrality_nodes": [],
+            "defense_posture": {}
+        }"#;
+        let ctx: ScanContextJson = serde_json::from_str(json_str).unwrap();
+        assert!(ctx.class_confirmation_rates.is_empty());
+        assert!(ctx.model_id.is_none());
+    }
+
+    #[test]
+    fn bridge_request_generate_carries_rates_via_scan_context() {
+        let mut rates = std::collections::HashMap::new();
+        rates.insert("SQL Injection".to_string(), 0.8);
+        let mut ctx = make_scan_context();
+        ctx.class_confirmation_rates = rates;
+        let req = BridgeRequest::GenerateHypotheses {
+            request_id: 1,
+            scan_context: ctx,
+            vulnerability_class: "SqlInjection".to_string(),
+            feedback_summary: None,
+        };
+        let v: serde_json::Value = serde_json::to_value(&req).unwrap();
+        assert_eq!(
+            v["scan_context"]["class_confirmation_rates"]["SQL Injection"],
+            0.8
+        );
     }
 }

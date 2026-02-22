@@ -169,6 +169,10 @@ pub struct ScanContextJson {
     pub findings_summary: Vec<String>,
     pub high_centrality_nodes: Vec<String>,
     pub defense_posture: serde_json::Value,
+    #[serde(default)]
+    pub class_confirmation_rates: std::collections::HashMap<String, f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_id: Option<String>,
 }
 
 /// Hypothesis serialized for IPC transport.
