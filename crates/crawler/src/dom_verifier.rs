@@ -258,7 +258,7 @@ pub async fn verify_xss_in_dom(
 
     let url = inject_payload_into_url(endpoint, payload, method);
 
-    inject_auth_cookies(&page, auth_cookies).await?;
+    inject_auth_cookies(&page, auth_cookies, endpoint).await?;
     inject_xss_instrumentation(&page).await?;
 
     let evidence = match navigate_and_check(&page, &url, timeout_secs).await {
@@ -281,12 +281,20 @@ pub async fn verify_xss_in_dom(
 async fn inject_auth_cookies(
     page: &chromiumoxide::Page,
     auth_cookies: Option<&[(String, String)]>,
+    endpoint: &str,
 ) -> Result<(), CrawlError> {
     let Some(cookies) = auth_cookies else {
         return Ok(());
     };
+    let domain = url::Url::parse(endpoint)
+        .ok()
+        .and_then(|u| u.host_str().map(|h| h.to_string()));
     for (name, value) in cookies {
-        let cookie = chromiumoxide::cdp::browser_protocol::network::CookieParam::new(name, value);
+        let mut cookie =
+            chromiumoxide::cdp::browser_protocol::network::CookieParam::new(name, value);
+        if let Some(ref d) = domain {
+            cookie.domain = Some(d.clone());
+        }
         page.set_cookie(cookie)
             .await
             .map_err(|e| CrawlError::Internal(format!("failed to set cookie {name}: {e}")))?;
