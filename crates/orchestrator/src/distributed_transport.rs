@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::distributed::{WorkAssignment, WorkerId, WorkerRole};
+use crate::distributed::{
+    CoordinatorState, DistributedConfig, WorkAssignment, WorkerId, WorkerRole, WorkerState,
+};
 
 static MESSAGE_COUNTER: AtomicU64 = AtomicU64::new(1);
 
@@ -227,5 +229,143 @@ pub fn wrap_worker_message(msg: WorkerMessage) -> TransportEnvelope {
         message_id: MESSAGE_COUNTER.fetch_add(1, Ordering::Relaxed),
         timestamp_ms: crate::util::timestamp_ms(),
         payload: TransportPayload::FromWorker(msg),
+    }
+}
+
+/// Handle to a connected worker stream.
+struct WorkerConnection {
+    #[allow(dead_code)]
+    stream: std::net::TcpStream,
+    #[allow(dead_code)]
+    worker_id: Option<WorkerId>,
+}
+
+/// Coordinator runtime state machine that processes worker messages and
+/// manages the distributed scan lifecycle.
+///
+/// Wraps `CoordinatorState` with message dispatch logic. The actual TCP
+/// accept loop is wired externally; this struct is a pure state machine.
+pub struct Coordinator {
+    config: DistributedConfig,
+    pub state: CoordinatorState,
+    #[allow(dead_code)]
+    connections: Vec<WorkerConnection>,
+    findings_received: Vec<FindingData>,
+}
+
+impl Coordinator {
+    /// Creates a new coordinator with the given transport and distributed configs.
+    pub fn new(transport: TransportConfig, distributed: DistributedConfig) -> Self {
+        let _ = transport;
+        let state = CoordinatorState::new(&distributed);
+        Self {
+            config: distributed,
+            state,
+            connections: Vec::new(),
+            findings_received: Vec::new(),
+        }
+    }
+
+    /// Processes a single `WorkerMessage`, updating internal state and returning
+    /// an optional `CoordinatorMessage` to send back to the worker.
+    pub fn handle_message(&mut self, msg: &WorkerMessage) -> Option<CoordinatorMessage> {
+        match msg {
+            WorkerMessage::Register { worker_id, role } => self.handle_register(worker_id, *role),
+            WorkerMessage::Heartbeat {
+                worker_id,
+                targets_completed,
+                targets_remaining,
+                findings_count,
+            } => {
+                self.handle_heartbeat(
+                    worker_id,
+                    *targets_completed,
+                    *targets_remaining,
+                    *findings_count,
+                );
+                None
+            }
+            WorkerMessage::FindingsBatch {
+                worker_id,
+                findings,
+            } => {
+                self.handle_findings_batch(worker_id, findings);
+                None
+            }
+            WorkerMessage::WorkComplete { worker_id } => self.handle_work_complete(worker_id),
+            WorkerMessage::Error { worker_id, message } => self.handle_error(worker_id, message),
+        }
+    }
+
+    /// Checks if all registered workers have completed (or failed).
+    pub fn all_workers_complete(&self) -> bool {
+        self.state.all_complete()
+    }
+
+    /// Returns the findings collected from workers so far.
+    pub fn collected_findings(&self) -> &[FindingData] {
+        &self.findings_received
+    }
+
+    /// Returns the current coordinator state snapshot.
+    pub fn state(&self) -> &CoordinatorState {
+        &self.state
+    }
+
+    fn handle_register(
+        &mut self,
+        worker_id: &WorkerId,
+        role: WorkerRole,
+    ) -> Option<CoordinatorMessage> {
+        self.state.register_worker(worker_id.clone(), role);
+        None
+    }
+
+    fn handle_heartbeat(
+        &mut self,
+        worker_id: &WorkerId,
+        targets_completed: u64,
+        targets_remaining: u64,
+        findings_count: u64,
+    ) {
+        self.state.update_worker_status(
+            worker_id,
+            WorkerState::Working,
+            targets_completed,
+            targets_remaining,
+            findings_count,
+        );
+    }
+
+    fn handle_findings_batch(&mut self, worker_id: &WorkerId, findings: &[FindingData]) {
+        self.findings_received.extend_from_slice(findings);
+        if let Some(ws) = self
+            .state
+            .workers
+            .iter_mut()
+            .find(|w| w.worker_id == *worker_id)
+        {
+            ws.findings_count += findings.len() as u64;
+        }
+    }
+
+    fn handle_work_complete(&mut self, worker_id: &WorkerId) -> Option<CoordinatorMessage> {
+        self.state
+            .update_worker_status(worker_id, WorkerState::Completed, 0, 0, 0);
+        None
+    }
+
+    fn handle_error(&mut self, worker_id: &WorkerId, _message: &str) -> Option<CoordinatorMessage> {
+        self.state
+            .update_worker_status(worker_id, WorkerState::Failed, 0, 0, 0);
+        if self.config.rebalance_on_failure
+            && let Some(new_assignments) = self.state.rebalance(worker_id)
+        {
+            return new_assignments
+                .into_iter()
+                .next()
+                .map(CoordinatorMessage::AssignWork);
+        }
+        None
     }
 }

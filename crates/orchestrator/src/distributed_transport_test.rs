@@ -1,4 +1,5 @@
-use crate::distributed::{WorkAssignment, WorkerId, WorkerRole};
+use crate::distributed::{AssignmentStrategy, default_distributed_config};
+use crate::distributed::{WorkAssignment, WorkerId, WorkerRole, WorkerState};
 use crate::distributed_transport::*;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::operation::ModuleIdentifier;
@@ -178,4 +179,171 @@ fn wrap_worker_message_has_timestamp() {
         worker_id: make_worker_id("w1"),
     });
     assert!(env.timestamp_ms > 0);
+}
+
+fn make_coordinator() -> Coordinator {
+    Coordinator::new(TransportConfig::default(), default_distributed_config(2))
+}
+
+#[test]
+fn coordinator_new_creates_empty_state() {
+    let coord = make_coordinator();
+    assert!(coord.state().workers.is_empty());
+    assert!(coord.collected_findings().is_empty());
+}
+
+#[test]
+fn coordinator_handles_register() {
+    let mut coord = make_coordinator();
+    let msg = WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_none());
+    assert_eq!(coord.state().workers.len(), 1);
+    assert_eq!(coord.state().workers[0].worker_id, make_worker_id("w1"));
+    assert_eq!(coord.state().workers[0].state, WorkerState::Idle);
+}
+
+#[test]
+fn coordinator_handles_heartbeat() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    let msg = WorkerMessage::Heartbeat {
+        worker_id: make_worker_id("w1"),
+        targets_completed: 5,
+        targets_remaining: 10,
+        findings_count: 2,
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_none());
+    assert_eq!(coord.state().workers[0].state, WorkerState::Working);
+    assert_eq!(coord.state().workers[0].targets_completed, 5);
+    assert_eq!(coord.state().workers[0].targets_remaining, 10);
+}
+
+#[test]
+fn coordinator_handles_findings_batch() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    let msg = WorkerMessage::FindingsBatch {
+        worker_id: make_worker_id("w1"),
+        findings: vec![make_finding(), make_finding()],
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_none());
+    assert_eq!(coord.collected_findings().len(), 2);
+    assert_eq!(coord.state().workers[0].findings_count, 2);
+}
+
+#[test]
+fn coordinator_handles_work_complete() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    let msg = WorkerMessage::WorkComplete {
+        worker_id: make_worker_id("w1"),
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_none());
+    assert_eq!(coord.state().workers[0].state, WorkerState::Completed);
+}
+
+#[test]
+fn coordinator_handles_error_message() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    let msg = WorkerMessage::Error {
+        worker_id: make_worker_id("w1"),
+        message: "connection lost".to_string(),
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_none());
+    assert_eq!(coord.state().workers[0].state, WorkerState::Failed);
+}
+
+#[test]
+fn coordinator_all_workers_complete_when_all_done() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w2"),
+        role: WorkerRole::FuzzWorker,
+    });
+    assert!(!coord.all_workers_complete());
+    coord.handle_message(&WorkerMessage::WorkComplete {
+        worker_id: make_worker_id("w1"),
+    });
+    coord.handle_message(&WorkerMessage::WorkComplete {
+        worker_id: make_worker_id("w2"),
+    });
+    assert!(coord.all_workers_complete());
+}
+
+#[test]
+fn coordinator_not_complete_with_active_workers() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w2"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::WorkComplete {
+        worker_id: make_worker_id("w1"),
+    });
+    assert!(!coord.all_workers_complete());
+}
+
+#[test]
+fn coordinator_error_triggers_rebalance() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w2"),
+        role: WorkerRole::FuzzWorker,
+    });
+    let endpoints: Vec<String> = vec!["/a".to_string(), "/b".to_string(), "/c".to_string()];
+    coord
+        .state
+        .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
+        .unwrap();
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w1"), WorkerState::Working, 0, 2, 0);
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w2"), WorkerState::Working, 0, 1, 0);
+
+    let msg = WorkerMessage::Error {
+        worker_id: make_worker_id("w2"),
+        message: "crashed".to_string(),
+    };
+    let reply = coord.handle_message(&msg);
+    assert!(reply.is_some());
+    if let Some(CoordinatorMessage::AssignWork(assignment)) = reply {
+        assert_eq!(assignment.worker_id, make_worker_id("w1"));
+    } else {
+        panic!("expected AssignWork response after rebalance");
+    }
 }
