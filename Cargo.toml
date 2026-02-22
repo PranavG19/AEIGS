@@ -12,6 +12,8 @@ members = [
     "crates/evasion-engine",
     "crates/orchestrator",
     "crates/crawler",
+    "crates/compliance",
+    "crates/discovery",
     "crates/exploiter",
     "crates/test-support",
 ]

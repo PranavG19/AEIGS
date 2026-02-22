@@ -1,0 +1,9 @@
+[package]
+name = "aegis-discovery"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+reqwest = { workspace = true, features = ["blocking"] }
+url = { workspace = true }

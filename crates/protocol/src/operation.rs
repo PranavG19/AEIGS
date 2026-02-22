@@ -32,6 +32,7 @@ pub enum ModuleIdentifier {
     Fuzzing,
     HypothesisEngine,
     ChainSynthesis,
+    Discovery,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
