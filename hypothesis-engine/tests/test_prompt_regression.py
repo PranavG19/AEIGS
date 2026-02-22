@@ -98,7 +98,7 @@ class TestParsingRobustness:
             '"reasoning": "test", "test_approach": "test", "confidence": 0.8}]\n'
             '</hypotheses>'
         )
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert trace == "Analyzing the application..."
         assert len(hypotheses) == 1
         assert hypotheses[0].vulnerability_class == "SQL Injection"
@@ -109,17 +109,17 @@ class TestParsingRobustness:
             '[{"condition": "IF /api/test", "vulnerability_class": "XSS", '
             '"reasoning": "test", "test_approach": "test", "confidence": 0.5}]'
         )
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert len(hypotheses) == 1
         assert trace == "Here is my analysis:"
 
     def test_parse_empty_response(self) -> None:
-        trace, hypotheses = parse_hypotheses_from_response("")
+        trace, hypotheses, _method = parse_hypotheses_from_response("")
         assert len(hypotheses) == 0
 
     def test_parse_malformed_json(self) -> None:
         response = '<hypotheses>\n{not valid json}\n</hypotheses>'
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert len(hypotheses) == 0
 
     def test_golden_hypotheses_round_trip(self) -> None:
@@ -127,7 +127,7 @@ class TestParsingRobustness:
         golden = fixture["golden_hypotheses"]
         json_str = json.dumps(golden)
         response = f"<thinking>\nGolden test\n</thinking>\n<hypotheses>\n{json_str}\n</hypotheses>"
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert len(hypotheses) == len(golden)
         for h, g in zip(hypotheses, golden):
             assert h.vulnerability_class == g["vulnerability_class"]

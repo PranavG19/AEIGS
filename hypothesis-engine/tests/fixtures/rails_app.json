@@ -1,0 +1,61 @@
+{
+  "app_name": "rails-app",
+  "scan_context": {
+    "technology_stack": ["Ruby on Rails", "Ruby", "ERB", "ActiveRecord", "SQLite3"],
+    "high_centrality_nodes": [
+      {"label": "/users/search", "type": "Endpoint"},
+      {"label": "/comments/new", "type": "Endpoint"},
+      {"label": "/api/data", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/users/search", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/comments/new", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/data", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "UsersController", "type": "Function", "protected_by": []},
+      {"id": 5, "label": "CommentsController", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "app_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 4, "label": "Calls", "weight": 1.0},
+      {"source_id": 4, "target_id": 6, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 6, "label": "Writes", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/users/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/comments/new", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/api/data", "vulnerability_class": "Insecure Deserialization"},
+    {"endpoint": "/comments/new", "vulnerability_class": "Insufficient Input Validation"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /users/search passes user-supplied query to ActiveRecord where clause via string interpolation",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/users/search) --[Calls]--> Function(UsersController) --[Reads]--> DataStore(app_db) and Rails raw SQL via string interpolation bypasses ActiveRecord sanitization",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- in search parameter and comparing result counts",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /comments/new renders user-supplied comment content without html_safe escaping in ERB template",
+      "vulnerability_class": "Cross-Site Scripting",
+      "reasoning": "BECAUSE graph shows comment data flows from Endpoint to DataStore via Writes and ERB raw output bypasses Rails auto-escaping",
+      "test_approach": "CAN BE TESTED BY submitting <script>alert(1)</script> as comment and checking if script executes in rendered page",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/data accepts YAML or Marshal payload for deserialization",
+      "vulnerability_class": "Insecure Deserialization",
+      "reasoning": "BECAUSE Ruby on Rails historically allows YAML deserialization in API endpoints and technology stack uses Ruby which has known unsafe deserializers",
+      "test_approach": "CAN BE TESTED BY sending crafted YAML payload with command execution gadget and observing server response",
+      "confidence": 0.6
+    }
+  ]
+}

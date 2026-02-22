@@ -130,7 +130,7 @@ class TestGenerateWithConsistency:
         assert result.input_tokens == 30
         assert result.output_tokens == 60
 
-    def test_keeps_highest_confidence_version(self) -> None:
+    def test_uses_median_confidence_not_max(self) -> None:
         low = Hypothesis(
             condition="IF endpoint /api/search is injectable",
             vulnerability_class="SQL Injection",
@@ -145,9 +145,16 @@ class TestGenerateWithConsistency:
             test_approach="test",
             confidence=0.9,
         )
-        gen = self._make_generator_with_rounds([[low], [high], [low]])
+        mid = Hypothesis(
+            condition="IF endpoint /api/search has no parameterization",
+            vulnerability_class="SQL Injection",
+            reasoning="mid",
+            test_approach="test",
+            confidence=0.7,
+        )
+        gen = self._make_generator_with_rounds([[low], [high], [mid]])
 
         ctx = ScanContext()
         result = gen.generate_with_consistency(ctx, num_rounds=3, agreement_threshold=2)
         assert len(result.hypotheses) == 1
-        assert result.hypotheses[0].confidence == 0.9
+        assert result.hypotheses[0].confidence == 0.7

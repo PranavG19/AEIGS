@@ -5,6 +5,7 @@ use aegis_reporting::report_format::{DefenseSummary, ReportFormat, ReportMetadat
 use aegis_reporting::risk_scorer::{RiskInput, compute_risk_score};
 use aegis_reporting::sarif_emitter::{SarifFinding, SarifLevel};
 
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{
     BusinessContext, KnownIssue, ScanMetrics, load_business_context, resolve_report_format,
@@ -34,7 +35,7 @@ pub fn compute_new_findings<'a>(
 pub fn run_report(
     ctx: &mut ScanContext,
     metrics: Option<&ScanMetrics>,
-) -> Result<PhaseResult, String> {
+) -> Result<PhaseResult, PhaseError> {
     run_report_with_previous(ctx, metrics, None)
 }
 
@@ -46,7 +47,7 @@ pub fn run_report_with_previous(
     ctx: &mut ScanContext,
     metrics: Option<&ScanMetrics>,
     previous_findings: Option<&[FindingData]>,
-) -> Result<PhaseResult, String> {
+) -> Result<PhaseResult, PhaseError> {
     let finding_ids = all_finding_ids(ctx);
     let mut sarif_findings = Vec::new();
 
@@ -93,7 +94,7 @@ pub fn run_report_with_previous(
             attack_path_count: 1,
             reachable_critical_assets: 1,
             asset_pii_weight: 0.5,
-            confidence: finding.confidence,
+            confidence: finding.confidence.composite.value(),
         };
 
         let base_score = compute_risk_score(&risk_input);
@@ -134,7 +135,7 @@ pub fn run_report_with_previous(
             logical_location_name: None,
             logical_location_kind: None,
             severity: finding.severity,
-            confidence: finding.confidence,
+            confidence: finding.confidence.composite.value(),
             composite_score: composite,
             vulnerability_class: Some(finding.vulnerability_class),
             related_locations: vec![],
@@ -142,7 +143,6 @@ pub fn run_report_with_previous(
             evidence_level: None,
             cve_id: None,
             mitigation_rank: None,
-            confidence_score: None,
             suppression_kind,
             suppression_message,
             endpoint: endpoint_opt,
@@ -160,7 +160,7 @@ pub fn run_report_with_previous(
         previously_known_count,
         ctx,
     )?;
-    std::fs::write(&ctx.config.output, json).map_err(|e| e.to_string())?;
+    std::fs::write(&ctx.config.output, json)?;
 
     Ok(PhaseResult {
         operations_applied: 0,
@@ -174,7 +174,7 @@ fn build_formatted_output(
     metrics: Option<&ScanMetrics>,
     previously_known_count: Option<u64>,
     ctx: &ScanContext,
-) -> Result<String, String> {
+) -> Result<String, PhaseError> {
     match report_format {
         ReportFormat::Executive => {
             let report_metadata = metrics.map(|m| {
@@ -203,18 +203,19 @@ fn build_formatted_output(
                 report_metadata.as_ref(),
                 defense_summary.as_ref(),
             )
+            .map_err(PhaseError::ReportFormat)
         }
         _ => {
-            let json_str = format_report(sarif_findings, report_format, "0.1.0", None, None)?;
-            let mut json_value: serde_json::Value =
-                serde_json::from_str(&json_str).map_err(|e| e.to_string())?;
+            let json_str = format_report(sarif_findings, report_format, "0.1.0", None, None)
+                .map_err(PhaseError::ReportFormat)?;
+            let mut json_value: serde_json::Value = serde_json::from_str(&json_str)?;
             if let Some(m) = metrics {
                 inject_metrics_into_sarif(&mut json_value, m);
             }
             if let Some(known) = previously_known_count {
                 inject_diff_stats_into_sarif(&mut json_value, sarif_findings.len() as u64, known);
             }
-            serde_json::to_string_pretty(&json_value).map_err(|e| e.to_string())
+            Ok(serde_json::to_string_pretty(&json_value)?)
         }
     }
 }
@@ -402,7 +403,7 @@ pub(crate) fn inject_diff_stats_into_sarif(
 pub(crate) fn export_attack_graph(
     ctx: &ScanContext,
     attack_graph: &AttackGraph,
-) -> Result<(), String> {
+) -> Result<(), PhaseError> {
     let Some(ref format) = ctx.config.scope.export_graph else {
         return Ok(());
     };
@@ -413,14 +414,14 @@ pub(crate) fn export_attack_graph(
         "dot" => {
             let dot = graph_export::export_dot(attack_graph);
             let path = output_base.with_extension("dot");
-            std::fs::write(&path, dot).map_err(|e| format!("write DOT export: {e}"))?;
+            std::fs::write(&path, dot)?;
         }
         "d3json" => {
             let json = graph_export::export_d3_json(attack_graph);
             let path = output_base.with_extension("d3.json");
-            std::fs::write(&path, json).map_err(|e| format!("write D3 JSON export: {e}"))?;
+            std::fs::write(&path, json)?;
         }
-        other => return Err(format!("unknown graph export format: {other}")),
+        other => return Err(PhaseError::UnknownExportFormat(other.to_string())),
     }
 
     Ok(())

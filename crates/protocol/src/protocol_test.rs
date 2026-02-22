@@ -3,7 +3,7 @@ mod tests {
     use crate::defense_context::DefenseContext;
     use crate::edge::{EdgeData, EdgeLabel, is_valid_edge, valid_edge_count};
     use crate::finding::{
-        EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence,
+        Confidence, EvidenceLevel, FindingData, VulnerabilityClass, confidence_from_evidence,
     };
     use crate::ipc::{GraphQuery, IpcFrame, IpcMessage};
     use crate::node::{NodeData, NodeType};
@@ -707,7 +707,7 @@ mod tests {
     fn all_evidence_levels_serialize() {
         let levels = [
             EvidenceLevel::Statistical,
-            EvidenceLevel::Counterfactual,
+            EvidenceLevel::Controlled,
             EvidenceLevel::Confirmed,
             EvidenceLevel::Chained,
         ];
@@ -1071,7 +1071,7 @@ mod tests {
     fn evidence_level_display_produces_human_readable_output() {
         let levels = [
             (EvidenceLevel::Statistical, "Statistical"),
-            (EvidenceLevel::Counterfactual, "Counterfactual"),
+            (EvidenceLevel::Controlled, "Controlled"),
             (EvidenceLevel::Confirmed, "Confirmed"),
             (EvidenceLevel::Chained, "Chained"),
         ];
@@ -1089,7 +1089,33 @@ mod tests {
     }
 
     #[test]
-    fn confidence_score_clamps_to_bounds() {
+    fn confidence_new_clamps_invalid_to_error() {
+        assert!(Confidence::new(1.5).is_err());
+        assert!(Confidence::new(-0.5).is_err());
+        assert!(Confidence::new(f64::NAN).is_err());
+        assert!(Confidence::new(f64::INFINITY).is_err());
+    }
+
+    #[test]
+    fn confidence_new_accepts_valid_range() {
+        assert!((Confidence::new(0.0).unwrap().value() - 0.0).abs() < f64::EPSILON);
+        assert!((Confidence::new(1.0).unwrap().value() - 1.0).abs() < f64::EPSILON);
+        assert!((Confidence::new(0.5).unwrap().value() - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_default_is_half() {
+        assert!((Confidence::default().value() - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn confidence_display() {
+        let c = Confidence::new(0.75).unwrap();
+        assert_eq!(format!("{c}"), "0.75");
+    }
+
+    #[test]
+    fn confidence_with_confidence_sets_value() {
         let finding = FindingData::new(
             1,
             VulnerabilityClass::SqlInjection,
@@ -1098,36 +1124,36 @@ mod tests {
             ModuleIdentifier::Fuzzing,
             1700000000000,
         )
-        .with_confidence_score(1.5);
+        .with_confidence(Confidence::new(0.75).unwrap());
 
-        assert!((finding.confidence_score.unwrap() - 1.0).abs() < f64::EPSILON);
-
-        let finding2 = finding.with_confidence_score(-0.5);
-        assert!((finding2.confidence_score.unwrap() - 0.0).abs() < f64::EPSILON);
+        assert!((finding.confidence.composite.value() - 0.75).abs() < f64::EPSILON);
     }
 
     #[test]
     fn confidence_from_evidence_confirmed_is_high() {
         let score = confidence_from_evidence(EvidenceLevel::Confirmed);
-        assert!((score - 0.9).abs() < f64::EPSILON);
+        assert!((score.value() - 0.9).abs() < f64::EPSILON);
     }
 
     #[test]
     fn confidence_from_evidence_statistical_is_low() {
         let score = confidence_from_evidence(EvidenceLevel::Statistical);
-        assert!((score - 0.4).abs() < f64::EPSILON);
+        assert!((score.value() - 0.4).abs() < f64::EPSILON);
     }
 
     #[test]
     fn confidence_from_evidence_all_levels() {
         assert!(
-            (confidence_from_evidence(EvidenceLevel::Counterfactual) - 0.7).abs() < f64::EPSILON
+            (confidence_from_evidence(EvidenceLevel::Controlled).value() - 0.7).abs()
+                < f64::EPSILON
         );
-        assert!((confidence_from_evidence(EvidenceLevel::Chained) - 0.95).abs() < f64::EPSILON);
+        assert!(
+            (confidence_from_evidence(EvidenceLevel::Chained).value() - 0.95).abs() < f64::EPSILON
+        );
     }
 
     #[test]
-    fn effective_confidence_uses_score_when_set() {
+    fn confidence_serializes_roundtrip() {
         let finding = FindingData::new(
             1,
             VulnerabilityClass::SqlInjection,
@@ -1136,57 +1162,70 @@ mod tests {
             ModuleIdentifier::Fuzzing,
             1700000000000,
         )
-        .with_confidence_score(0.75);
-
-        assert!((finding.effective_confidence() - 0.75).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn effective_confidence_falls_back_to_evidence_level() {
-        let finding = FindingData::new(
-            1,
-            VulnerabilityClass::SqlInjection,
-            9.0,
-            0.9,
-            ModuleIdentifier::Fuzzing,
-            1700000000000,
-        )
-        .with_evidence_level(EvidenceLevel::Confirmed);
-
-        assert!((finding.effective_confidence() - 0.9).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn confidence_score_serializes_roundtrip() {
-        let finding = FindingData::new(
-            1,
-            VulnerabilityClass::SqlInjection,
-            9.0,
-            0.9,
-            ModuleIdentifier::Fuzzing,
-            1700000000000,
-        )
-        .with_confidence_score(0.85);
+        .with_confidence(Confidence::new(0.85).unwrap());
 
         let json = serde_json::to_string(&finding).unwrap();
         let deserialized: FindingData = serde_json::from_str(&json).unwrap();
-        assert!((deserialized.confidence_score.unwrap() - 0.85).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON);
     }
 
     #[test]
-    fn confidence_score_absent_deserializes_as_none() {
-        let finding = FindingData::new(
-            1,
-            VulnerabilityClass::SqlInjection,
-            9.0,
-            0.9,
-            ModuleIdentifier::Fuzzing,
-            1700000000000,
+    fn legacy_confidence_score_deserializes_to_confidence() {
+        let json = r#"{
+            "id": 1,
+            "linked_node_ids": [],
+            "vulnerability_class": "SqlInjection",
+            "severity": 9.0,
+            "confidence": 0.9,
+            "certificate": [],
+            "provenance_module": "Fuzzing",
+            "timestamp_unix_ms": 1700000000000,
+            "evidence_level": "Statistical",
+            "confidence_score": 0.7
+        }"#;
+        let deserialized: FindingData = serde_json::from_str(json).unwrap();
+        assert!(
+            (deserialized.confidence.composite.value() - 0.7).abs() < f64::EPSILON,
+            "confidence_score should take precedence over confidence field"
         );
+    }
 
-        let json = serde_json::to_string(&finding).unwrap();
-        let deserialized: FindingData = serde_json::from_str(&json).unwrap();
-        assert!(deserialized.confidence_score.is_none());
+    #[test]
+    fn legacy_null_confidence_score_deserializes_to_confidence_field() {
+        let json = r#"{
+            "id": 1,
+            "linked_node_ids": [],
+            "vulnerability_class": "SqlInjection",
+            "severity": 9.0,
+            "confidence": 0.85,
+            "certificate": [],
+            "provenance_module": "Fuzzing",
+            "timestamp_unix_ms": 1700000000000,
+            "evidence_level": "Statistical",
+            "confidence_score": null
+        }"#;
+        let deserialized: FindingData = serde_json::from_str(json).unwrap();
+        assert!(
+            (deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON,
+            "null confidence_score should fall back to confidence field"
+        );
+    }
+
+    #[test]
+    fn legacy_absent_confidence_score_uses_confidence_field() {
+        let json = r#"{
+            "id": 1,
+            "linked_node_ids": [],
+            "vulnerability_class": "SqlInjection",
+            "severity": 9.0,
+            "confidence": 0.9,
+            "certificate": [],
+            "provenance_module": "Fuzzing",
+            "timestamp_unix_ms": 1700000000000,
+            "evidence_level": "Statistical"
+        }"#;
+        let deserialized: FindingData = serde_json::from_str(json).unwrap();
+        assert!((deserialized.confidence.composite.value() - 0.9).abs() < f64::EPSILON);
     }
 
     #[test]

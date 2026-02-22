@@ -238,7 +238,7 @@ impl OperationLog {
                     if !severity.is_finite() || !(0.0..=10.0).contains(severity) {
                         return Err(ValidationError::InvalidSeverity(*severity));
                     }
-                    if !confidence.is_finite() || !(0.0..=1.0).contains(confidence) {
+                    if aegis_protocol::finding::Confidence::new(*confidence).is_err() {
                         return Err(ValidationError::InvalidConfidence(*confidence));
                     }
                 }

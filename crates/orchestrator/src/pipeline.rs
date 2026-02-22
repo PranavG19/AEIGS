@@ -26,6 +26,7 @@ use crate::hypothesis_bridge::{HypothesisBridge, ScanContextJson};
 use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
 use crate::phase_crawl::crawl_result_to_operations;
 use crate::phase_dom_verify::run_dom_verify;
+use crate::phase_error::PhaseError;
 use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::run_recon_standalone;
@@ -80,13 +81,13 @@ pub struct ScanSummary {
 pub enum PipelineError {
     Config(ConfigError),
     AuditLog(String),
-    Recon(String),
-    Crawl(String),
-    Fingerprint(String),
-    Fuzz(String),
-    Analysis(String),
-    DomVerify(String),
-    Report(String),
+    Recon(PhaseError),
+    Crawl(PhaseError),
+    Fingerprint(PhaseError),
+    Fuzz(PhaseError),
+    Analysis(PhaseError),
+    DomVerify(PhaseError),
+    Report(PhaseError),
 }
 
 impl std::fmt::Display for PipelineError {
@@ -105,7 +106,20 @@ impl std::fmt::Display for PipelineError {
     }
 }
 
-impl std::error::Error for PipelineError {}
+impl std::error::Error for PipelineError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Recon(e)
+            | Self::Crawl(e)
+            | Self::Fingerprint(e)
+            | Self::Fuzz(e)
+            | Self::Analysis(e)
+            | Self::DomVerify(e)
+            | Self::Report(e) => Some(e),
+            Self::Config(_) | Self::AuditLog(_) => None,
+        }
+    }
+}
 
 impl From<ConfigError> for PipelineError {
     fn from(e: ConfigError) -> Self {
@@ -528,7 +542,7 @@ fn run_recon_phase(
     if !recon_ops.is_empty() {
         ctx.graph
             .apply_operations(&recon_ops)
-            .map_err(|e| PipelineError::Recon(format!("{e:?}")))?;
+            .map_err(|e| PipelineError::Recon(PhaseError::from(e)))?;
     }
     progress.total_ops += recon_ops_count;
     progress.phases += 1;
@@ -558,13 +572,13 @@ fn run_crawl_phase(
     let mut seq = ctx
         .graph
         .total_operations_applied()
-        .map_err(|e| PipelineError::Crawl(format!("{e:?}")))?;
+        .map_err(|e| PipelineError::Crawl(PhaseError::from(e)))?;
     let crawl_ops = crawl_result_to_operations(crawl_result, &mut seq);
     let crawl_ops_count = crawl_ops.len() as u64;
     if !crawl_ops.is_empty() {
         ctx.graph
             .apply_operations(&crawl_ops)
-            .map_err(|e| PipelineError::Crawl(format!("{e:?}")))?;
+            .map_err(|e| PipelineError::Crawl(PhaseError::from(e)))?;
     }
     progress.total_ops += crawl_ops_count;
     progress.phases += 1;
@@ -593,13 +607,13 @@ fn run_fingerprint_phase(
     let mut seq = ctx
         .graph
         .total_operations_applied()
-        .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+        .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
     let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
     let fp_ops_count = fp_ops.len() as u64;
     if !fp_ops.is_empty() {
         ctx.graph
             .apply_operations(&fp_ops)
-            .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+            .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
     }
     ctx.defense_profile = Some(profile);
 
@@ -629,7 +643,7 @@ fn run_fingerprint_phase(
         if !endpoint_ops.is_empty() {
             ctx.graph
                 .apply_operations(&endpoint_ops)
-                .map_err(|e| PipelineError::Fingerprint(format!("{e:?}")))?;
+                .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
         }
     }
 
@@ -645,8 +659,9 @@ fn run_fingerprint_phase(
 
 /// Extracts scan context into the struct expected by the hypothesis bridge.
 ///
-/// Populates `technology_stack` from the graph's Dependency nodes and `findings_summary`
-/// from existing findings. Remaining fields are left empty for the LLM to infer.
+/// Populates `technology_stack` from the graph's Dependency nodes, `findings_summary`
+/// from existing findings, and `class_confirmation_rates` from the scan history DB
+/// when available. Remaining fields are left empty for the LLM to infer.
 pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
     let technology_stack: Vec<String> = ctx
         .graph
@@ -670,11 +685,31 @@ pub(crate) fn build_hypothesis_context(ctx: &ScanContext) -> ScanContextJson {
         .map(|f| format!("{}", f.vulnerability_class))
         .collect();
 
+    let class_confirmation_rates = load_class_confirmation_rates(ctx);
+
     ScanContextJson {
         technology_stack,
         findings_summary,
         high_centrality_nodes: Vec::new(),
         defense_posture: serde_json::json!({}),
+        class_confirmation_rates,
+        model_id: None,
+    }
+}
+
+/// Loads per-class confirmation rates from the scan history DB, if configured.
+///
+/// Returns an empty map when no history DB path is set or on query failure.
+fn load_class_confirmation_rates(ctx: &ScanContext) -> std::collections::HashMap<String, f64> {
+    let Some(ref db_path) = ctx.config.scope.history_db else {
+        return std::collections::HashMap::new();
+    };
+    match crate::scan_history::ScanHistoryDb::open(db_path) {
+        Ok(db) => db.success_rates_all_classes().unwrap_or_default(),
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to load class confirmation rates from history DB");
+            std::collections::HashMap::new()
+        }
     }
 }
 

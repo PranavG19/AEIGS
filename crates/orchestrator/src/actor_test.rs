@@ -89,6 +89,7 @@ fn test_capability_manager() -> CapabilityManager {
 
 fn localhost_config() -> scan_config::ScanConfig {
     scan_config::ScanConfig {
+        preset: None,
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-actor-test.sarif"),
         report_format: "developer".to_string(),
@@ -473,8 +474,12 @@ fn convergence_actor_ignores_non_analyze_phase_completed() {
 
 #[test]
 fn actor_error_display_phase() {
-    let err = actor::ActorError::Phase("recon failed".to_string());
-    assert_eq!(format!("{err}"), "phase: recon failed");
+    let err = actor::ActorError::Phase(phase_error::PhaseError::FilesystemWalk(
+        "recon failed".to_string(),
+    ));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("phase:"));
+    assert!(msg.contains("recon failed"));
 }
 
 #[test]
@@ -485,14 +490,14 @@ fn actor_error_display_internal() {
 
 #[test]
 fn actor_error_debug() {
-    let err = actor::ActorError::Phase("test".to_string());
+    let err = actor::ActorError::Phase(phase_error::PhaseError::FilesystemWalk("test".to_string()));
     let dbg = format!("{err:?}");
     assert!(dbg.contains("Phase"));
 }
 
 #[test]
 fn actor_error_is_std_error() {
-    let err = actor::ActorError::Phase("boom".to_string());
+    let err = actor::ActorError::Phase(phase_error::PhaseError::FilesystemWalk("boom".to_string()));
     let _: &dyn std::error::Error = &err;
 }
 

@@ -1,0 +1,65 @@
+{
+  "app_name": "microservices-app",
+  "scan_context": {
+    "technology_stack": ["Express.js", "Node.js", "Flask", "Python", "Redis", "nginx"],
+    "high_centrality_nodes": [
+      {"label": "/api/gateway/fetch", "type": "Endpoint"},
+      {"label": "/api/gateway/users", "type": "Endpoint"},
+      {"label": "/internal/service-b/data", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "gateway endpoints are public; internal service endpoints should not be directly accessible",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/gateway/fetch", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/gateway/users", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/internal/service-b/data", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/internal/service-c/admin", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "gatewayProxy", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "service_b_handler", "type": "Function", "protected_by": []},
+      {"id": 7, "label": "redis_cache", "type": "DataStore", "protected_by": []},
+      {"id": 8, "label": "users_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 3, "label": "Calls", "weight": 1.0},
+      {"source_id": 3, "target_id": 6, "label": "Calls", "weight": 1.0},
+      {"source_id": 6, "target_id": 7, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 8, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/gateway/fetch", "vulnerability_class": "Server-Side Request Forgery"},
+    {"endpoint": "/api/gateway/users", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/internal/service-b/data", "vulnerability_class": "Broken Authorization"},
+    {"endpoint": "/internal/service-c/admin", "vulnerability_class": "Broken Authorization"},
+    {"endpoint": "/api/gateway/fetch", "vulnerability_class": "Header Injection"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/gateway/fetch forwards user-supplied URL to internal services via gatewayProxy without origin validation",
+      "vulnerability_class": "Server-Side Request Forgery",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/gateway/fetch) --[Calls]--> Function(gatewayProxy) --[Calls]--> Endpoint(/internal/service-b/data) and the gateway can be tricked into reaching internal services not meant to be publicly accessible",
+      "test_approach": "CAN BE TESTED BY supplying internal service URLs like http://service-c:5000/admin and checking if internal data is returned",
+      "confidence": 0.85
+    },
+    {
+      "condition": "IF endpoint /internal/service-b/data is directly accessible without gateway authentication because no network segmentation exists",
+      "vulnerability_class": "Broken Authorization",
+      "reasoning": "BECAUSE authorization matrix states internal endpoints should not be directly accessible but graph shows no ProtectedBy defense on internal endpoints",
+      "test_approach": "CAN BE TESTED BY directly requesting /internal/service-b/data without going through gateway and checking if data is returned",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/gateway/fetch passes user-controlled headers to upstream internal service requests",
+      "vulnerability_class": "Header Injection",
+      "reasoning": "BECAUSE gateway proxy patterns commonly forward user-supplied headers and graph shows gatewayProxy calls internal endpoints with no header sanitization",
+      "test_approach": "CAN BE TESTED BY injecting X-Internal-Auth: admin header in request to gateway and checking if internal service treats it as authenticated",
+      "confidence": 0.6
+    }
+  ]
+}

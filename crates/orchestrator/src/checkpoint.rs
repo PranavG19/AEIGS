@@ -40,15 +40,24 @@ pub fn checkpoint_path(graph_db_path: &Path) -> PathBuf {
     PathBuf::from(p)
 }
 
-/// Persists a checkpoint to disk as JSON.
+/// Persists a checkpoint to disk as JSON using atomic write (temp file + rename).
+///
+/// Writes to a `.tmp` sibling first, then renames to the final path. This ensures
+/// a concurrent reader never sees a partially-written checkpoint file. On rename
+/// failure the temp file is cleaned up on a best-effort basis.
 pub fn save_checkpoint(
     checkpoint: &ScanCheckpoint,
     graph_db_path: &Path,
 ) -> Result<(), CheckpointError> {
     let path = checkpoint_path(graph_db_path);
+    let tmp_path = path.with_extension("json.tmp");
     let json = serde_json::to_string_pretty(checkpoint)
         .map_err(|e| CheckpointError::SerializationError(e.to_string()))?;
-    std::fs::write(&path, json).map_err(|e| CheckpointError::IoError(e.to_string()))
+    std::fs::write(&tmp_path, &json).map_err(|e| CheckpointError::IoError(e.to_string()))?;
+    std::fs::rename(&tmp_path, &path).map_err(|e| {
+        let _ = std::fs::remove_file(&tmp_path);
+        CheckpointError::IoError(e.to_string())
+    })
 }
 
 /// Loads a checkpoint from disk, returning `None` if the file does not exist.

@@ -6,6 +6,7 @@ use aegis_protocol::scan_event::{ScanEvent, ScanEventEnvelope};
 
 use crate::phase_analyze::run_analyze;
 use crate::phase_dom_verify::run_dom_verify;
+use crate::phase_error::PhaseError;
 use crate::phase_fuzz::{FuzzPhaseResult, FuzzTransport, run_fuzz};
 use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::run_report_with_previous;
@@ -15,20 +16,33 @@ use crate::scan_config::ScanMetrics;
 /// Errors produced by actor processing.
 #[derive(Debug)]
 pub enum ActorError {
-    Phase(String),
+    Phase(PhaseError),
     Internal(String),
 }
 
 impl std::fmt::Display for ActorError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Phase(msg) => write!(f, "phase: {msg}"),
+            Self::Phase(e) => write!(f, "phase: {e}"),
             Self::Internal(msg) => write!(f, "internal: {msg}"),
         }
     }
 }
 
-impl std::error::Error for ActorError {}
+impl std::error::Error for ActorError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Phase(e) => Some(e),
+            Self::Internal(_) => None,
+        }
+    }
+}
+
+impl From<PhaseError> for ActorError {
+    fn from(e: PhaseError) -> Self {
+        Self::Phase(e)
+    }
+}
 
 /// A scan phase wrapped as an actor that processes events and emits events.
 ///
@@ -102,7 +116,7 @@ impl ScanActor for ReconActor {
         if !recon_ops.is_empty() {
             ctx.graph
                 .apply_operations(&recon_ops)
-                .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+                .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         }
 
         let mut output = emit_endpoint_events(ctx);
@@ -170,14 +184,14 @@ impl ScanActor for CrawlActor {
         let mut seq = ctx
             .graph
             .total_operations_applied()
-            .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+            .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         let crawl_ops = crate::phase_crawl::crawl_result_to_operations(&crawl_result, &mut seq);
         let ops_count = crawl_ops.len() as u64;
 
         if !crawl_ops.is_empty() {
             ctx.graph
                 .apply_operations(&crawl_ops)
-                .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+                .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         }
 
         let event = phase_completed_event(
@@ -213,14 +227,14 @@ impl ScanActor for FingerprintActor {
         let mut seq = ctx
             .graph
             .total_operations_applied()
-            .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+            .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
         let ops_count = fp_ops.len() as u64;
 
         if !fp_ops.is_empty() {
             ctx.graph
                 .apply_operations(&fp_ops)
-                .map_err(|e| ActorError::Phase(format!("{e:?}")))?;
+                .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         }
         ctx.defense_profile = Some(profile);
 

@@ -1,0 +1,62 @@
+{
+  "app_name": "spring-boot-app",
+  "scan_context": {
+    "technology_stack": ["Spring Boot", "Java", "Hibernate", "Thymeleaf", "Jackson"],
+    "high_centrality_nodes": [
+      {"label": "/api/users/search", "type": "Endpoint"},
+      {"label": "/api/webhook", "type": "Endpoint"},
+      {"label": "/api/import", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/users/search", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/webhook", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/import", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/profile", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "userRepository", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "webhookService", "type": "Function", "protected_by": []},
+      {"id": 7, "label": "users_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 7, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 6, "label": "Calls", "weight": 1.0},
+      {"source_id": 3, "target_id": 7, "label": "Writes", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/users/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/api/webhook", "vulnerability_class": "Server-Side Request Forgery"},
+    {"endpoint": "/api/import", "vulnerability_class": "Insecure Deserialization"},
+    {"endpoint": "/api/profile", "vulnerability_class": "Insufficient Input Validation"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/users/search passes user-supplied query parameter to Hibernate HQL query in userRepository",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/users/search) --[Calls]--> Function(userRepository) --[Reads]--> DataStore(users_db) and Spring Boot apps using string concatenation in HQL are injectable",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- in search parameter and comparing result counts against ' AND 1=0--",
+      "confidence": 0.85
+    },
+    {
+      "condition": "IF endpoint /api/webhook fetches user-supplied URL without allowlist validation",
+      "vulnerability_class": "Server-Side Request Forgery",
+      "reasoning": "BECAUSE endpoint name suggests outbound HTTP requests driven by user input and graph shows no URL validation function",
+      "test_approach": "CAN BE TESTED BY sending http://169.254.169.254/latest/meta-data/ as webhook URL and checking response for metadata",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/import deserializes user-supplied Java object data via Jackson with default typing enabled",
+      "vulnerability_class": "Insecure Deserialization",
+      "reasoning": "BECAUSE technology stack includes Jackson and endpoint name suggests data import with object deserialization",
+      "test_approach": "CAN BE TESTED BY sending polymorphic JSON payload with known gadget chain class and observing server behavior",
+      "confidence": 0.65
+    }
+  ]
+}

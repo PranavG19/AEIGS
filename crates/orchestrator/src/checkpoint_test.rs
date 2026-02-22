@@ -252,3 +252,64 @@ fn checkpoint_preserves_graph_state_across_save_load() {
     assert!(!should_skip_phase(&loaded, "fuzz:2"));
     assert!(!should_skip_phase(&loaded, "report"));
 }
+
+#[test]
+fn atomic_save_does_not_leave_temp_file_on_success() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db = dir.path().join("graph.json");
+    let cp = sample_checkpoint();
+
+    save_checkpoint(&cp, &graph_db).unwrap();
+
+    let tmp_path = checkpoint_path(&graph_db).with_extension("json.tmp");
+    assert!(
+        !tmp_path.exists(),
+        "temp file should not remain after successful save"
+    );
+    assert!(checkpoint_path(&graph_db).exists());
+}
+
+#[test]
+fn atomic_save_preserves_previous_checkpoint_on_serialization_failure() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db = dir.path().join("graph.json");
+    let cp = sample_checkpoint();
+
+    save_checkpoint(&cp, &graph_db).unwrap();
+    let original_contents = std::fs::read_to_string(checkpoint_path(&graph_db)).unwrap();
+
+    let cp2 = ScanCheckpoint {
+        completed_phases: vec!["recon".to_string(), "fuzz:0".to_string()],
+        current_iteration: 99,
+        total_operations: 999,
+        total_findings: 50,
+        consecutive_zero_findings: 3,
+        timestamp_unix_ms: 1700000099999,
+    };
+    save_checkpoint(&cp2, &graph_db).unwrap();
+
+    let loaded = load_checkpoint(&graph_db).unwrap().unwrap();
+    assert_eq!(loaded.current_iteration, 99);
+    assert_eq!(loaded.total_findings, 50);
+
+    let final_contents = std::fs::read_to_string(checkpoint_path(&graph_db)).unwrap();
+    assert_ne!(
+        original_contents, final_contents,
+        "checkpoint should have been updated"
+    );
+}
+
+#[test]
+fn atomic_save_to_read_only_dir_returns_io_error() {
+    let path = std::path::Path::new("/nonexistent/deep/dir/graph.json");
+    let cp = sample_checkpoint();
+    let result = save_checkpoint(&cp, path);
+    assert!(result.is_err());
+    assert!(matches!(result.unwrap_err(), CheckpointError::IoError(_)));
+
+    let tmp_path = checkpoint_path(path).with_extension("json.tmp");
+    assert!(
+        !tmp_path.exists(),
+        "temp file should not exist after failed save"
+    );
+}

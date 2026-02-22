@@ -4,8 +4,6 @@ import argparse
 import json
 import socket
 import struct
-import sys
-from typing import Any
 
 from hypothesis_engine.compiler import HypothesisCompiler
 from hypothesis_engine.evasion_mode import EvasionContext, EvasionHypothesisGenerator
@@ -14,6 +12,19 @@ from hypothesis_engine.generator import (
     HypothesisGenerator,
     ScanContext,
     create_backend,
+)
+from hypothesis_engine.ipc_types import (
+    CompiledPayloadsResponse,
+    CompilePayloadsRequest,
+    ErrorResponse,
+    EvasionGenerateRequest,
+    EvasionPayloadsResponse,
+    GenerateHypothesesRequest,
+    HypothesisIpc,
+    HypothesesResponse,
+    ReadyResponse,
+    ShutdownRequest,
+    parse_bridge_request,
 )
 
 MAX_FRAME_SIZE = 64 * 1024 * 1024
@@ -54,58 +65,56 @@ def send_frame(sock: socket.socket, msg: dict) -> None:
     sock.sendall(payload)
 
 
-def _build_scan_context(request: dict) -> ScanContext:
-    """Map IPC scan_context fields to the Python ScanContext model."""
-    sc = request.get("scan_context", {})
+def _build_scan_context(req: GenerateHypothesesRequest) -> ScanContext:
+    """Map validated IPC request to the Python ScanContext model."""
+    sc = req.scan_context
     return ScanContext(
-        technology_stack=sc.get("technology_stack", []),
-        findings_summary=sc.get("findings_summary", []),
+        technology_stack=sc.technology_stack,
+        findings_summary=sc.findings_summary,
         high_centrality_nodes=[
             {"label": n} if isinstance(n, str) else n
-            for n in sc.get("high_centrality_nodes", [])
+            for n in sc.high_centrality_nodes
         ],
-        defense_posture=sc.get("defense_posture", {}),
-        feedback_summary=request.get("feedback_summary", "") or "",
+        defense_posture=sc.defense_posture,
+        feedback_summary=req.feedback_summary or "",
     )
 
 
-def _build_hypotheses(raw_list: list[dict[str, Any]]) -> list[Hypothesis]:
-    """Map IPC HypothesisJson dicts to Python Hypothesis models."""
-    result: list[Hypothesis] = []
-    for h in raw_list:
-        result.append(
-            Hypothesis(
-                condition=h.get("description", ""),
-                vulnerability_class=h.get("vulnerability_class", ""),
-                reasoning=h.get("description", ""),
-                test_approach=h.get("test_specification", "") or "",
-                confidence=h.get("confidence", 0.5),
-            )
+def _build_hypotheses(ipc_list: list[HypothesisIpc]) -> list[Hypothesis]:
+    """Map validated IPC HypothesisIpc models to Python Hypothesis models."""
+    return [
+        Hypothesis(
+            condition=h.description,
+            vulnerability_class=h.vulnerability_class,
+            reasoning=h.description,
+            test_approach=h.test_specification or "",
+            confidence=h.confidence,
         )
-    return result
+        for h in ipc_list
+    ]
 
 
-def _build_evasion_context(defense_context: dict) -> EvasionContext:
-    """Map IPC DefenseContextJson to the Python EvasionContext model."""
-    has_waf = defense_context.get("has_waf", False)
+def _build_evasion_context(req: EvasionGenerateRequest) -> EvasionContext:
+    """Map validated IPC request to the Python EvasionContext model."""
+    dc = req.defense_context
     return EvasionContext(
         vulnerability_class="",
         blocked_payload="",
-        defense_type="waf" if has_waf else "unknown",
-        defense_vendor=defense_context.get("waf_vendor") or "unknown",
+        defense_type="waf" if dc.has_waf else "unknown",
+        defense_vendor=dc.waf_vendor or "unknown",
         response_code=0,
         response_snippet="",
     )
 
 
-def _hypothesis_to_ipc(h: Hypothesis) -> dict:
-    """Convert a Python Hypothesis to an IPC HypothesisJson dict."""
-    return {
-        "vulnerability_class": h.vulnerability_class,
-        "description": h.condition,
-        "confidence": h.confidence,
-        "test_specification": h.test_approach or None,
-    }
+def _hypothesis_to_ipc(h: Hypothesis) -> HypothesisIpc:
+    """Convert a Python Hypothesis to an IPC HypothesisIpc model."""
+    return HypothesisIpc(
+        vulnerability_class=h.vulnerability_class,
+        description=h.condition,
+        confidence=h.confidence,
+        test_specification=h.test_approach or None,
+    )
 
 
 class Bridge:
@@ -141,80 +150,84 @@ class Bridge:
             )
         return self._evasion_generator
 
-    def handle_generate_hypotheses(self, request: dict) -> dict:
+    def handle_generate_hypotheses(
+        self, req: GenerateHypothesesRequest
+    ) -> dict:
         """Handle a GenerateHypotheses request."""
-        request_id = request["request_id"]
-        context = _build_scan_context(request)
+        context = _build_scan_context(req)
         generator = self._get_generator()
         result = generator.generate(context)
-        return {
-            "type": "Hypotheses",
-            "request_id": request_id,
-            "hypotheses": [_hypothesis_to_ipc(h) for h in result.hypotheses],
-            "reasoning_trace": result.reasoning_trace,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }
+        resp = HypothesesResponse(
+            request_id=req.request_id,
+            hypotheses=[_hypothesis_to_ipc(h) for h in result.hypotheses],
+            reasoning_trace=result.reasoning_trace,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+        )
+        return resp.model_dump()
 
-    def handle_compile_payloads(self, request: dict) -> dict:
+    def handle_compile_payloads(self, req: CompilePayloadsRequest) -> dict:
         """Handle a CompilePayloads request."""
-        request_id = request["request_id"]
-        hypotheses = _build_hypotheses(request.get("hypotheses", []))
+        hypotheses = _build_hypotheses(req.hypotheses)
         compiler = self._get_compiler()
         result = compiler.compile_batch(hypotheses)
         payloads: list[str] = []
         for spec in result.specifications:
             payloads.extend(spec.payload_patterns)
-        return {
-            "type": "CompiledPayloads",
-            "request_id": request_id,
-            "payloads": payloads,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }
+        resp = CompiledPayloadsResponse(
+            request_id=req.request_id,
+            payloads=payloads,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+        )
+        return resp.model_dump()
 
-    def handle_evasion_generate(self, request: dict) -> dict:
+    def handle_evasion_generate(self, req: EvasionGenerateRequest) -> dict:
         """Handle an EvasionGenerate request."""
-        request_id = request["request_id"]
-        context = _build_evasion_context(request.get("defense_context", {}))
+        context = _build_evasion_context(req)
         evasion_gen = self._get_evasion_generator()
         result = evasion_gen.generate_evasions(context)
         payloads = [e.payload for e in result.evasions]
-        return {
-            "type": "EvasionPayloads",
-            "request_id": request_id,
-            "payloads": payloads,
-            "input_tokens": result.input_tokens,
-            "output_tokens": result.output_tokens,
-        }
+        resp = EvasionPayloadsResponse(
+            request_id=req.request_id,
+            payloads=payloads,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+        )
+        return resp.model_dump()
 
-    def dispatch(self, request: dict) -> dict | None:
+    def dispatch(self, raw_request: dict) -> dict | None:
         """Dispatch a single request, returning a response dict or None for shutdown."""
-        msg_type = request.get("type")
-        request_id = request.get("request_id", 0)
+        request_id = raw_request.get("request_id", 0)
 
-        if msg_type == "Shutdown":
+        try:
+            req = parse_bridge_request(raw_request)
+        except Exception as exc:
+            return ErrorResponse(
+                request_id=request_id,
+                message=f"invalid request: {exc}",
+            ).model_dump()
+
+        if isinstance(req, ShutdownRequest):
             return None
 
         try:
-            if msg_type == "GenerateHypotheses":
-                return self.handle_generate_hypotheses(request)
-            elif msg_type == "CompilePayloads":
-                return self.handle_compile_payloads(request)
-            elif msg_type == "EvasionGenerate":
-                return self.handle_evasion_generate(request)
+            if isinstance(req, GenerateHypothesesRequest):
+                return self.handle_generate_hypotheses(req)
+            elif isinstance(req, CompilePayloadsRequest):
+                return self.handle_compile_payloads(req)
+            elif isinstance(req, EvasionGenerateRequest):
+                return self.handle_evasion_generate(req)
             else:
-                return {
-                    "type": "Error",
-                    "request_id": request_id,
-                    "message": f"unknown request type: {msg_type}",
-                }
+                return ErrorResponse(
+                    request_id=request_id,
+                    message=f"unknown request type: {type(req).__name__}",
+                ).model_dump()
         except Exception as exc:
-            return {
-                "type": "Error",
-                "request_id": request_id,
-                "message": str(exc),
-            }
+            return ErrorResponse(
+                request_id=request_id,
+                message=str(exc),
+            ).model_dump()
 
 
 def main(socket_path: str) -> None:
@@ -223,7 +236,7 @@ def main(socket_path: str) -> None:
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
         sock.connect(socket_path)
-        send_frame(sock, {"type": "Ready"})
+        send_frame(sock, ReadyResponse().model_dump())
 
         while True:
             request = read_frame(sock)

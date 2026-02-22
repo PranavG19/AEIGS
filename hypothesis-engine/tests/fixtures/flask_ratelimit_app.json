@@ -1,0 +1,53 @@
+{
+  "app_name": "flask-ratelimit-app",
+  "scan_context": {
+    "technology_stack": ["Flask", "Python", "Jinja2", "SQLite3", "nginx"],
+    "high_centrality_nodes": [
+      {"label": "/search", "type": "Endpoint"},
+      {"label": "/login", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/search", "type": "Endpoint", "protected_by": ["nginx-rate-limiter"]},
+      {"id": 2, "label": "/login", "type": "Endpoint", "protected_by": ["nginx-rate-limiter"]},
+      {"id": 3, "label": "/comment", "type": "Endpoint", "protected_by": ["nginx-rate-limiter"]},
+      {"id": 4, "label": "nginx-rate-limiter", "type": "Defense", "protected_by": []},
+      {"id": 5, "label": "search_handler", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "app_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 6, "label": "Reads", "weight": 1.0},
+      {"source_id": 1, "target_id": 4, "label": "ProtectedBy", "weight": 1.0},
+      {"source_id": 2, "target_id": 4, "label": "ProtectedBy", "weight": 1.0},
+      {"source_id": 3, "target_id": 4, "label": "ProtectedBy", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 10},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/login", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/comment", "vulnerability_class": "Cross-Site Scripting"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /search is vulnerable to SQL injection with payloads delivered under the 10 req/s rate limit",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/search) --[Calls]--> Function(search_handler) --[Reads]--> DataStore(app_db) and rate limiting does not prevent slow SQL injection testing under the threshold",
+      "test_approach": "CAN BE TESTED BY sending tautology payload at 5 req/s pace and comparing response sizes against contradiction payload",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /login allows credential brute-force at rates just below the 10 req/s limit",
+      "vulnerability_class": "Broken Authentication",
+      "reasoning": "BECAUSE rate limit of 10 req/s still allows ~600 attempts per minute and no account lockout mechanism is indicated in graph",
+      "test_approach": "CAN BE TESTED BY sending common credential pairs at 9 req/s and checking for successful authentication",
+      "confidence": 0.6
+    }
+  ]
+}

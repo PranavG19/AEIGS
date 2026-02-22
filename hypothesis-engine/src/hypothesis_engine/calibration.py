@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -149,3 +151,104 @@ def apply_calibration(raw_confidence: float, a: float, b: float) -> float:
     logit = a * raw_confidence + b
     logit = max(-20.0, min(20.0, logit))
     return 1.0 / (1.0 + math.exp(-logit))
+
+
+def should_recalibrate(
+    current_model_id: str,
+    last_model_id: str | None,
+) -> bool:
+    """Return True when the LLM model has changed and recalibration is needed."""
+    if last_model_id is None:
+        return True
+    return current_model_id != last_model_id
+
+
+def compute_ece_for_fixtures(
+    fixtures_dir: Path,
+    model_id: str,
+) -> float | None:
+    """Compute expected calibration error against ground truth fixtures.
+
+    Loads all JSON fixture files from `fixtures_dir`, builds calibration bins
+    from golden hypothesis confidences matched against ground truth, and returns
+    the ECE. Returns None if no fixture files are found or no predictions can be
+    made.
+
+    The `model_id` parameter is recorded for provenance but does not affect the
+    computation — calibration is evaluated on the golden hypotheses in the
+    fixtures, not on live model output.
+    """
+    fixture_files = sorted(fixtures_dir.glob("*.json"))
+    if not fixture_files:
+        return None
+
+    bins = build_calibration_bins()
+    recorded_any = False
+
+    for fixture_path in fixture_files:
+        try:
+            fixture = json.loads(fixture_path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+
+        ground_truth = fixture.get("ground_truth", [])
+        golden_hypotheses = fixture.get("golden_hypotheses", [])
+        if not ground_truth or not golden_hypotheses:
+            continue
+
+        gt_set = {
+            (g["endpoint"], g["vulnerability_class"]) for g in ground_truth
+        }
+
+        for h in golden_hypotheses:
+            confidence = h.get("confidence", 0.5)
+            condition = h.get("condition", "")
+            vuln_class = h.get("vulnerability_class", "")
+            matched = any(
+                vuln_class == gt_class and gt_endpoint in condition
+                for gt_endpoint, gt_class in gt_set
+            )
+            record_prediction(bins, confidence, matched)
+            recorded_any = True
+
+    if not recorded_any:
+        return None
+
+    report = compute_calibration_report(bins)
+    return report.expected_calibration_error
+
+
+def fit_temperature_scaling_cv(
+    bins_groups: list[list[CalibrationBin]],
+    k: int = 3,
+) -> tuple[float, float]:
+    """Cross-validate temperature scaling across groups of calibration bins.
+
+    Implements leave-one-out cross-validation when enough groups are available.
+    Each fold trains on all groups except one and validates on the held-out group.
+    Returns the average (a, b) across folds.
+
+    Falls back to fitting on all groups combined if fewer than `k` groups are
+    provided.
+    """
+    if len(bins_groups) < k:
+        combined: list[CalibrationBin] = []
+        for group in bins_groups:
+            combined.extend(group)
+        return fit_temperature_scaling(combined)
+
+    fold_a_values: list[float] = []
+    fold_b_values: list[float] = []
+
+    for held_out_idx in range(len(bins_groups)):
+        train_bins: list[CalibrationBin] = []
+        for i, group in enumerate(bins_groups):
+            if i != held_out_idx:
+                train_bins.extend(group)
+        a, b = fit_temperature_scaling(train_bins)
+        fold_a_values.append(a)
+        fold_b_values.append(b)
+
+    avg_a = sum(fold_a_values) / len(fold_a_values)
+    avg_b = sum(fold_b_values) / len(fold_b_values)
+    return (avg_a, avg_b)

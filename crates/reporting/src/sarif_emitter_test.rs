@@ -25,7 +25,6 @@ mod tests {
             evidence_level: None,
             cve_id: None,
             mitigation_rank: None,
-            confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
             endpoint: None,
@@ -52,7 +51,6 @@ mod tests {
             evidence_level: None,
             cve_id: None,
             mitigation_rank: None,
-            confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
             endpoint: None,
@@ -88,7 +86,6 @@ mod tests {
             evidence_level: None,
             cve_id: None,
             mitigation_rank: None,
-            confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
             endpoint: None,
@@ -517,7 +514,6 @@ mod tests {
             evidence_level: None,
             cve_id: None,
             mitigation_rank: None,
-            confidence_score: None,
             suppression_kind: None,
             suppression_message: None,
             endpoint: None,
@@ -835,23 +831,13 @@ mod tests {
     }
 
     #[test]
-    fn sarif_confidence_score_present_in_properties() {
-        let mut finding = sample_finding();
-        finding.confidence_score = Some(0.85);
-        let report = emit_sarif(&[finding], "0.1.0");
-        let results = report.runs[0].results.as_ref().unwrap();
-        let props = results[0].properties.as_ref().unwrap();
-        let score = props["confidenceScore"].as_f64().unwrap();
-        assert!((score - 0.85).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn sarif_confidence_score_absent_when_none() {
+    fn sarif_confidence_always_present_in_properties() {
         let finding = sample_finding();
         let report = emit_sarif(&[finding], "0.1.0");
         let results = report.runs[0].results.as_ref().unwrap();
         let props = results[0].properties.as_ref().unwrap();
-        assert!(!props.contains_key("confidenceScore"));
+        let confidence = props["confidence"].as_f64().unwrap();
+        assert!((confidence - 0.95).abs() < f64::EPSILON);
     }
 
     #[test]

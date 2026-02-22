@@ -1,6 +1,6 @@
 use super::*;
 
-use aegis_protocol::finding::{EvidenceLevel, FindingData, VulnerabilityClass};
+use aegis_protocol::finding::{Confidence, EvidenceLevel, FindingData, VulnerabilityClass};
 use aegis_protocol::operation::ModuleIdentifier;
 
 use crate::benchmark::{GroundTruth, GroundTruthEntry};
@@ -15,7 +15,7 @@ fn make_finding_with_confidence(id: u64, class: VulnerabilityClass, score: f64) 
         1700000000000,
     )
     .with_evidence_level(EvidenceLevel::Confirmed)
-    .with_confidence_score(score)
+    .with_confidence(Confidence::new(score).unwrap())
 }
 
 fn make_finding(id: u64, class: VulnerabilityClass) -> FindingData {
@@ -195,7 +195,7 @@ fn collect_calibration_pairs_with_ground_truth() {
 }
 
 #[test]
-fn collect_calibration_pairs_uses_effective_confidence_fallback() {
+fn collect_calibration_pairs_uses_confidence_field() {
     let gt = GroundTruth {
         entries: vec![GroundTruthEntry {
             endpoint: "/api/search".to_string(),
@@ -203,14 +203,13 @@ fn collect_calibration_pairs_uses_effective_confidence_fallback() {
         }],
     };
 
-    // 0.9 confidence_from_evidence for Confirmed
     let findings = vec![make_finding(0, VulnerabilityClass::SqlInjection)];
 
     let pairs = collect_calibration_pairs(&findings, &gt);
 
     assert_eq!(pairs.len(), 1);
     assert!(pairs[0].is_true_positive);
-    assert!((pairs[0].confidence - 0.9).abs() < 1e-9);
+    assert!((pairs[0].confidence - 0.8).abs() < 1e-9);
 }
 
 #[test]

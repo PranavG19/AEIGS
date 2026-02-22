@@ -1,0 +1,61 @@
+{
+  "app_name": "fastapi-app",
+  "scan_context": {
+    "technology_stack": ["FastAPI", "Python", "SQLAlchemy", "Pydantic", "uvicorn"],
+    "high_centrality_nodes": [
+      {"label": "/api/v1/items", "type": "Endpoint"},
+      {"label": "/api/v1/fetch", "type": "Endpoint"},
+      {"label": "/api/v1/login", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/v1/items", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/v1/fetch", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/v1/login", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/v1/users/me", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "item_crud", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "fetch_service", "type": "Function", "protected_by": []},
+      {"id": 7, "label": "items_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 7, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 6, "label": "Calls", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/v1/items", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/api/v1/fetch", "vulnerability_class": "Server-Side Request Forgery"},
+    {"endpoint": "/api/v1/login", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/api/v1/users/me", "vulnerability_class": "Sensitive Data Exposure"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/v1/items passes user-supplied filter parameter to raw SQLAlchemy text() query in item_crud",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/v1/items) --[Calls]--> Function(item_crud) --[Reads]--> DataStore(items_db) and SQLAlchemy text() accepts raw SQL strings",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- in filter parameter and comparing result set sizes",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /api/v1/fetch makes HTTP request to user-supplied URL via fetch_service without domain validation",
+      "vulnerability_class": "Server-Side Request Forgery",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/v1/fetch) --[Calls]--> Function(fetch_service) and endpoint name suggests URL fetching with no validation node in graph",
+      "test_approach": "CAN BE TESTED BY requesting http://169.254.169.254/latest/meta-data/ and checking for cloud metadata in response",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /api/v1/login uses weak token generation or lacks brute-force protection",
+      "vulnerability_class": "Broken Authentication",
+      "reasoning": "BECAUSE login endpoint has no rate limiting in defense posture and no ProtectedBy edge in graph",
+      "test_approach": "CAN BE TESTED BY sending multiple invalid credentials rapidly and checking if account lockout or rate limiting is enforced",
+      "confidence": 0.65
+    }
+  ]
+}

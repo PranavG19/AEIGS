@@ -1,0 +1,64 @@
+{
+  "app_name": "express-waf-app",
+  "scan_context": {
+    "technology_stack": ["Express.js", "Node.js", "better-sqlite3", "ejs"],
+    "high_centrality_nodes": [
+      {"label": "/api/search", "type": "Endpoint"},
+      {"label": "/render", "type": "Endpoint"},
+      {"label": "/api/cmd", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/search", "type": "Endpoint", "protected_by": ["modsecurity-waf"]},
+      {"id": 2, "label": "/render", "type": "Endpoint", "protected_by": ["modsecurity-waf"]},
+      {"id": 3, "label": "/api/cmd", "type": "Endpoint", "protected_by": ["modsecurity-waf"]},
+      {"id": 4, "label": "/api/file", "type": "Endpoint", "protected_by": ["modsecurity-waf"]},
+      {"id": 5, "label": "modsecurity-waf", "type": "Defense", "protected_by": []},
+      {"id": 6, "label": "searchHandler", "type": "Function", "protected_by": []},
+      {"id": 7, "label": "users_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 6, "label": "Calls", "weight": 1.0},
+      {"source_id": 6, "target_id": 7, "label": "Reads", "weight": 1.0},
+      {"source_id": 1, "target_id": 5, "label": "ProtectedBy", "weight": 1.0},
+      {"source_id": 2, "target_id": 5, "label": "ProtectedBy", "weight": 1.0},
+      {"source_id": 3, "target_id": 5, "label": "ProtectedBy", "weight": 1.0},
+      {"source_id": 4, "target_id": 5, "label": "ProtectedBy", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": true, "waf_vendor": "ModSecurity CRS", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/render", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/api/cmd", "vulnerability_class": "Command Injection"},
+    {"endpoint": "/api/file", "vulnerability_class": "Path Traversal"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/search is vulnerable to SQL injection despite ModSecurity WAF using CRS evasion techniques",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/search) --[ProtectedBy]--> Defense(modsecurity-waf) but CRS rules can be bypassed via encoding tricks like URL-encoding, case variation, or comment injection in SQL",
+      "test_approach": "CAN BE TESTED BY sending WAF-evading payload like /*!50000OR*/ 1=1-- with URL encoding and comparing against baseline",
+      "confidence": 0.55
+    },
+    {
+      "condition": "IF endpoint /api/cmd is vulnerable to command injection via ModSecurity bypass using nested encoding",
+      "vulnerability_class": "Command Injection",
+      "reasoning": "BECAUSE ModSecurity CRS may not decode double-URL-encoded or Unicode-escaped payloads before matching rules",
+      "test_approach": "CAN BE TESTED BY sending double-URL-encoded shell metacharacters and checking for command execution indicators",
+      "confidence": 0.45
+    },
+    {
+      "condition": "IF endpoint /api/file allows path traversal via URL-encoded ../ sequences that bypass ModSecurity path rules",
+      "vulnerability_class": "Path Traversal",
+      "reasoning": "BECAUSE WAF path traversal rules often check for literal ../ but miss encoded variants like %2e%2e%2f or ..%252f",
+      "test_approach": "CAN BE TESTED BY sending %2e%2e%2f%2e%2e%2fetc/passwd and checking for file content in response",
+      "confidence": 0.5
+    }
+  ]
+}

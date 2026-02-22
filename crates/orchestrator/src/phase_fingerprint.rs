@@ -4,16 +4,14 @@ use aegis_protocol::edge::EdgeLabel;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::util::timestamp_ms;
 
-pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
+pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let profile = DefenseProfile::empty(timestamp_ms());
     let mut entries = Vec::new();
-    let mut sequence = ctx
-        .graph
-        .total_operations_applied()
-        .map_err(|e| format!("{e:?}"))?;
+    let mut sequence = ctx.graph.total_operations_applied()?;
 
     sequence += 1;
     entries.push(OperationLogEntry {
@@ -28,9 +26,7 @@ pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
-        ctx.graph
-            .apply_operations(&entries)
-            .map_err(|e| format!("{e:?}"))?;
+        ctx.graph.apply_operations(&entries)?;
     }
 
     ctx.defense_profile = Some(profile);

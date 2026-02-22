@@ -13,6 +13,7 @@ from pydantic import BaseModel
 class TokenUsage(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
+    latency_ms: float = 0.0
 
 
 class LlmBackend(ABC):
@@ -127,17 +128,20 @@ class BedrockClient(LlmBackend):
         )
         try:
             client = self._get_client()
+            t0 = time.monotonic()
             response = client.invoke_model(
                 modelId=self._model_id,
                 contentType="application/json",
                 accept="application/json",
                 body=body,
             )
+            elapsed_ms = (time.monotonic() - t0) * 1000
             response_body = json.loads(response["body"].read())
             raw_usage = response_body.get("usage", {})
             usage = TokenUsage(
                 input_tokens=raw_usage.get("input_tokens", 0),
                 output_tokens=raw_usage.get("output_tokens", 0),
+                latency_ms=elapsed_ms,
             )
             for block in response_body.get("content", []):
                 if block.get("type") == "tool_use" and block.get("name") == "structured_output":
@@ -156,6 +160,7 @@ class BedrockClient(LlmBackend):
         delays = [1.0, 2.0, 4.0]
 
         last_error: Exception | None = None
+        t0 = time.monotonic()
         for attempt in range(self._max_retries):
             try:
                 response = client.invoke_model(
@@ -164,12 +169,14 @@ class BedrockClient(LlmBackend):
                     accept="application/json",
                     body=body,
                 )
+                elapsed_ms = (time.monotonic() - t0) * 1000
                 response_body = json.loads(response["body"].read())
                 text = str(response_body.get("content", [{}])[0].get("text", ""))
                 raw_usage = response_body.get("usage", {})
                 usage = TokenUsage(
                     input_tokens=raw_usage.get("input_tokens", 0),
                     output_tokens=raw_usage.get("output_tokens", 0),
+                    latency_ms=elapsed_ms,
                 )
                 return (text, usage)
             except Exception as e:

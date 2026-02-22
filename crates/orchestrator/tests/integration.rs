@@ -134,6 +134,7 @@ fn test_capability_manager() -> CapabilityManager {
 
 fn localhost_config() -> ScanConfig {
     ScanConfig {
+        preset: None,
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-integration-test.sarif"),
         report_format: "developer".to_string(),
@@ -242,7 +243,7 @@ fn make_finding_with_confidence_score(
         ModuleIdentifier::Fuzzing,
         0,
     )
-    .with_confidence_score(confidence_score)
+    .with_confidence(aegis_protocol::finding::Confidence::new(confidence_score).unwrap())
 }
 
 // ===========================================================================
@@ -2360,6 +2361,8 @@ fn make_bridge_scan_context() -> ScanContextJson {
         findings_summary: vec!["SQLi in /login".to_string()],
         high_centrality_nodes: vec!["/api/users".to_string()],
         defense_posture: serde_json::json!({"has_waf": false}),
+        class_confirmation_rates: std::collections::HashMap::new(),
+        model_id: None,
     }
 }
 
@@ -2740,6 +2743,8 @@ req = read_frame(sock)
         findings_summary: vec!["prior SQLi in /login".to_string()],
         high_centrality_nodes: vec!["/api/admin".to_string()],
         defense_posture: serde_json::json!({"has_waf": true, "waf_vendor": "ModSecurity"}),
+        class_confirmation_rates: std::collections::HashMap::new(),
+        model_id: None,
     };
 
     let result = bridge

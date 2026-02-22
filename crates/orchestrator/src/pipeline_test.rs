@@ -78,6 +78,7 @@ fn test_capability_manager() -> CapabilityManager {
 
 fn localhost_config() -> ScanConfig {
     ScanConfig {
+        preset: None,
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-pipeline-test.sarif"),
         report_format: "developer".to_string(),
@@ -189,50 +190,62 @@ fn pipeline_error_display_config() {
 
 #[test]
 fn pipeline_error_display_recon() {
-    let err = PipelineError::Recon("recon failed".to_string());
-    assert_eq!(format!("{err}"), "recon: recon failed");
+    let err = PipelineError::Recon(PhaseError::FilesystemWalk("recon failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("recon:"));
+    assert!(msg.contains("recon failed"));
 }
 
 #[test]
 fn pipeline_error_display_fingerprint() {
-    let err = PipelineError::Fingerprint("fp failed".to_string());
-    assert_eq!(format!("{err}"), "fingerprint: fp failed");
+    let err = PipelineError::Fingerprint(PhaseError::FilesystemWalk("fp failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("fingerprint:"));
+    assert!(msg.contains("fp failed"));
 }
 
 #[test]
 fn pipeline_error_display_fuzz() {
-    let err = PipelineError::Fuzz("fuzz failed".to_string());
-    assert_eq!(format!("{err}"), "fuzz: fuzz failed");
+    let err = PipelineError::Fuzz(PhaseError::FilesystemWalk("fuzz failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("fuzz:"));
+    assert!(msg.contains("fuzz failed"));
 }
 
 #[test]
 fn pipeline_error_display_analysis() {
-    let err = PipelineError::Analysis("analysis failed".to_string());
-    assert_eq!(format!("{err}"), "analysis: analysis failed");
+    let err = PipelineError::Analysis(PhaseError::FilesystemWalk("analysis failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("analysis:"));
+    assert!(msg.contains("analysis failed"));
 }
 
 #[test]
 fn pipeline_error_display_dom_verify() {
-    let err = PipelineError::DomVerify("dom verify failed".to_string());
-    assert_eq!(format!("{err}"), "dom_verify: dom verify failed");
+    let err = PipelineError::DomVerify(PhaseError::FilesystemWalk("dom verify failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("dom_verify:"));
+    assert!(msg.contains("dom verify failed"));
 }
 
 #[test]
 fn pipeline_error_display_report() {
-    let err = PipelineError::Report("report failed".to_string());
-    assert_eq!(format!("{err}"), "report: report failed");
+    let err = PipelineError::Report(PhaseError::ReportFormat("report failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("report:"));
+    assert!(msg.contains("report failed"));
 }
 
 #[test]
 fn pipeline_error_debug() {
-    let err = PipelineError::Recon("test".to_string());
+    let err = PipelineError::Recon(PhaseError::FilesystemWalk("test".to_string()));
     let dbg = format!("{err:?}");
     assert!(dbg.contains("Recon"));
 }
 
 #[test]
 fn pipeline_error_is_std_error() {
-    let err = PipelineError::Fuzz("boom".to_string());
+    let err = PipelineError::Fuzz(PhaseError::FilesystemWalk("boom".to_string()));
     let _: &dyn std::error::Error = &err;
 }
 
@@ -1089,6 +1102,8 @@ fn build_hypothesis_context_returns_scan_context_json() {
     assert!(context.findings_summary.is_empty());
     assert!(context.high_centrality_nodes.is_empty());
     assert!(context.defense_posture.is_object());
+    assert!(context.class_confirmation_rates.is_empty());
+    assert!(context.model_id.is_none());
 }
 
 #[test]
@@ -1109,6 +1124,79 @@ fn build_hypothesis_context_empty_graph_has_empty_fields() {
     let context = pipeline::build_hypothesis_context(&ctx);
     assert!(context.technology_stack.is_empty());
     assert!(context.findings_summary.is_empty());
+}
+
+#[test]
+fn build_hypothesis_context_no_history_db_has_empty_rates() {
+    let config = localhost_config();
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert!(context.class_confirmation_rates.is_empty());
+    assert!(context.model_id.is_none());
+}
+
+#[test]
+fn build_hypothesis_context_with_history_db_populates_rates() {
+    use crate::scan_history::{ScanHistoryDb, ScanHistoryEntry};
+
+    let dir = tempfile::tempdir().unwrap();
+    let db_path = dir.path().join("test-history.db");
+
+    let db = ScanHistoryDb::open(&db_path).unwrap();
+    db.insert(&ScanHistoryEntry {
+        endpoint_pattern: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+        payload: "' OR 1=1--".to_string(),
+        anomaly_score: 0.9,
+        is_true_positive: true,
+        timestamp_unix_ms: 1_700_000_000_000,
+        target_app_hash: "test".to_string(),
+    })
+    .unwrap();
+    db.insert(&ScanHistoryEntry {
+        endpoint_pattern: "/api/users".to_string(),
+        vulnerability_class: VulnerabilityClass::SqlInjection,
+        payload: "' OR 1=1--".to_string(),
+        anomaly_score: 0.9,
+        is_true_positive: false,
+        timestamp_unix_ms: 1_700_000_000_000,
+        target_app_hash: "test".to_string(),
+    })
+    .unwrap();
+    drop(db);
+
+    let mut config = localhost_config();
+    config.scope.history_db = Some(db_path);
+    let graph: Box<dyn GraphStore> = Box::new(FakeGraphStore::new());
+    let ctx = ScanContext {
+        config,
+        graph,
+        defense_profile: None,
+        capabilities: test_capability_manager(),
+        refuted: convergence::RefutedTracker::new(),
+        scope_attestation: None,
+        auth_flow: None,
+        auth_inputs: std::collections::HashMap::new(),
+        llm_payloads: Vec::new(),
+    };
+    let context = pipeline::build_hypothesis_context(&ctx);
+    assert_eq!(context.class_confirmation_rates.len(), 1);
+    assert!(
+        (context.class_confirmation_rates["SQL Injection"] - 0.5).abs() < f64::EPSILON,
+        "SQL Injection rate should be 0.5, got: {}",
+        context.class_confirmation_rates["SQL Injection"]
+    );
 }
 
 #[tokio::test]
@@ -1340,6 +1428,7 @@ fn build_hypothesis_context_serializes_to_valid_json() {
     assert!(json["findings_summary"].is_array());
     assert!(json["high_centrality_nodes"].is_array());
     assert!(json["defense_posture"].is_object());
+    assert!(json["class_confirmation_rates"].is_object());
 }
 
 // --- LLM feedback loop tests ---

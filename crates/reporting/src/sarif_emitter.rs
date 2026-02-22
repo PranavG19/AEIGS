@@ -34,7 +34,6 @@ pub struct SarifFinding {
     pub evidence_level: Option<String>,
     pub cve_id: Option<String>,
     pub mitigation_rank: Option<u32>,
-    pub confidence_score: Option<f64>,
     /// When set, the SARIF result is annotated with a suppression of this kind.
     /// Use `"inSource"` for known issues accepted as risk.
     pub suppression_kind: Option<String>,
@@ -366,12 +365,6 @@ fn build_result(finding: &SarifFinding) -> sarif_rust::types::Result {
     }
     if let Some(rank) = finding.mitigation_rank {
         props.insert("mitigationRank".to_string(), serde_json::Value::from(rank));
-    }
-    if let Some(score) = finding.confidence_score {
-        props.insert(
-            "confidenceScore".to_string(),
-            serde_json::Value::from(score),
-        );
     }
     if let Some(ref ep) = finding.endpoint {
         props.insert(

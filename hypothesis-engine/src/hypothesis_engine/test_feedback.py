@@ -355,3 +355,66 @@ class TestBiasDetector:
         assert report.dominant_fraction == 3 / 5
         assert report.is_skewed is True
         assert report.dominant_class == "SQLi"
+
+
+class TestFromHistory:
+    def test_high_rate_lowers_threshold(self) -> None:
+        rates = {"SqlInjection": 0.85}
+        thresholds = FeedbackManager.from_history(rates)
+        assert thresholds["SqlInjection"] == 0.3
+
+    def test_low_rate_raises_threshold(self) -> None:
+        rates = {"PathTraversal": 0.1}
+        thresholds = FeedbackManager.from_history(rates)
+        assert thresholds["PathTraversal"] == 0.7
+
+    def test_moderate_rate_keeps_default(self) -> None:
+        rates = {"CommandInjection": 0.5}
+        thresholds = FeedbackManager.from_history(rates)
+        assert thresholds["CommandInjection"] == 0.5
+
+    def test_empty_rates_returns_empty(self) -> None:
+        thresholds = FeedbackManager.from_history({})
+        assert thresholds == {}
+
+    def test_boundary_values(self) -> None:
+        rates = {"A": 0.7, "B": 0.3, "C": 0.71, "D": 0.29}
+        thresholds = FeedbackManager.from_history(rates)
+        assert thresholds["A"] == 0.5
+        assert thresholds["B"] == 0.5
+        assert thresholds["C"] == 0.3
+        assert thresholds["D"] == 0.7
+
+
+class TestHistoricalRatesBlending:
+    def test_historical_rates_blend_with_defaults(self) -> None:
+        fm = FeedbackManager(historical_rates={"SqlInjection": 0.9})
+        threshold = fm._threshold_for("SqlInjection")
+        expected = 0.5 * DEFAULT_CLASS_THRESHOLDS["SqlInjection"] + 0.5 * 0.3
+        assert abs(threshold - expected) < 1e-9
+
+    def test_historical_rates_introduce_new_class(self) -> None:
+        fm = FeedbackManager(
+            confirmation_threshold=0.5,
+            historical_rates={"PathTraversal": 0.1},
+        )
+        threshold = fm._threshold_for("PathTraversal")
+        expected = 0.5 * 0.5 + 0.5 * 0.7
+        assert abs(threshold - expected) < 1e-9
+
+    def test_no_historical_rates_uses_defaults(self) -> None:
+        fm = FeedbackManager()
+        assert fm._threshold_for("SqlInjection") == DEFAULT_CLASS_THRESHOLDS["SqlInjection"]
+
+    def test_none_historical_rates_same_as_no_rates(self) -> None:
+        fm_none = FeedbackManager(historical_rates=None)
+        fm_default = FeedbackManager()
+        assert fm_none._threshold_for("SqlInjection") == fm_default._threshold_for("SqlInjection")
+        assert fm_none._threshold_for("UnknownClass") == fm_default._threshold_for("UnknownClass")
+
+    def test_historical_rates_affect_labeling(self) -> None:
+        fm = FeedbackManager(historical_rates={"SqlInjection": 0.9})
+        h = make_hypothesis("SqlInjection")
+        threshold = fm._threshold_for("SqlInjection")
+        labeled = fm.label_hypothesis(h, anomaly_detected=True, anomaly_score=threshold)
+        assert labeled.outcome == HypothesisOutcome.CONFIRMED

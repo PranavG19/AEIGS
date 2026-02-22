@@ -35,10 +35,21 @@ impl From<io::Error> for LogWriterError {
 /// Both `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter`
 /// (intentionally discards events) implement this trait, allowing
 /// pipeline code to use `Box<dyn AuditWriter>` without branching.
+///
+/// Implementors must provide `append_event_full` and `sequence_number`;
+/// `append_event` has a default implementation that delegates to
+/// `append_event_full` and discards the returned entry.
 pub trait AuditWriter {
-    /// Appends an audit event. For real writers, this persists to disk.
-    /// For no-op writers, this intentionally discards the event.
-    fn append_event(&mut self, event: AuditEventType) -> Result<(), LogWriterError>;
+    /// Appends an audit event and returns the full `AuditEntry` including
+    /// metadata such as sequence number, hash chain, and HMAC.
+    fn append_event_full(&mut self, event: AuditEventType) -> Result<AuditEntry, LogWriterError>;
+
+    /// Appends an audit event, discarding the returned entry metadata.
+    fn append_event(&mut self, event: AuditEventType) -> Result<(), LogWriterError> {
+        self.append_event_full(event)?;
+        Ok(())
+    }
+
     fn sequence_number(&self) -> u64;
 }
 
@@ -65,13 +76,28 @@ impl AuditLogWriter {
         })
     }
 
-    /// Appends an event and returns the full `AuditEntry` including
-    /// hash chain data and HMAC. Use this when the caller needs the
-    /// entry metadata (e.g. for verification tests).
-    pub fn append_event_full(
+    fn write_entry_to_file(
         &mut self,
-        event: AuditEventType,
-    ) -> Result<AuditEntry, LogWriterError> {
+        entry_hash: &Hash,
+        payload_cbor: &[u8],
+        hmac: &MacBytes,
+    ) -> Result<(), LogWriterError> {
+        let seq_bytes = self.sequence.to_le_bytes();
+        let payload_len = (payload_cbor.len() as u32).to_le_bytes();
+
+        self.file.write_all(&seq_bytes)?;
+        self.file.write_all(entry_hash)?;
+        self.file.write_all(&payload_len)?;
+        self.file.write_all(payload_cbor)?;
+        self.file.write_all(hmac)?;
+        self.file.flush()?;
+
+        Ok(())
+    }
+}
+
+impl AuditWriter for AuditLogWriter {
+    fn append_event_full(&mut self, event: AuditEventType) -> Result<AuditEntry, LogWriterError> {
         let timestamp_unix_ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -97,32 +123,6 @@ impl AuditLogWriter {
         Ok(entry)
     }
 
-    fn write_entry_to_file(
-        &mut self,
-        entry_hash: &Hash,
-        payload_cbor: &[u8],
-        hmac: &MacBytes,
-    ) -> Result<(), LogWriterError> {
-        let seq_bytes = self.sequence.to_le_bytes();
-        let payload_len = (payload_cbor.len() as u32).to_le_bytes();
-
-        self.file.write_all(&seq_bytes)?;
-        self.file.write_all(entry_hash)?;
-        self.file.write_all(&payload_len)?;
-        self.file.write_all(payload_cbor)?;
-        self.file.write_all(hmac)?;
-        self.file.flush()?;
-
-        Ok(())
-    }
-}
-
-impl AuditWriter for AuditLogWriter {
-    fn append_event(&mut self, event: AuditEventType) -> Result<(), LogWriterError> {
-        self.append_event_full(event)?;
-        Ok(())
-    }
-
     fn sequence_number(&self) -> u64 {
         self.sequence
     }
@@ -133,11 +133,16 @@ impl AuditWriter for AuditLogWriter {
 /// This is not a broken implementation — the behavioral contract explicitly
 /// states that events are silently dropped. Callers opt into this by
 /// constructing a `NoOpAuditLogWriter` instead of an `AuditLogWriter`.
-pub struct NoOpAuditLogWriter;
+///
+/// `append_event_full` returns a synthetic `AuditEntry` with zeroed
+/// hashes, empty CBOR payload, and an incrementing sequence number.
+pub struct NoOpAuditLogWriter {
+    sequence: u64,
+}
 
 impl NoOpAuditLogWriter {
     pub fn new() -> Self {
-        Self
+        Self { sequence: 0 }
     }
 }
 
@@ -148,12 +153,27 @@ impl Default for NoOpAuditLogWriter {
 }
 
 impl AuditWriter for NoOpAuditLogWriter {
-    fn append_event(&mut self, _event: AuditEventType) -> Result<(), LogWriterError> {
-        Ok(())
+    fn append_event_full(&mut self, event: AuditEventType) -> Result<AuditEntry, LogWriterError> {
+        let timestamp_unix_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
+
+        let entry = AuditEntry {
+            sequence_number: self.sequence,
+            previous_hash: [0u8; 32],
+            timestamp_unix_ms,
+            event,
+            payload_cbor: Vec::new(),
+            hmac: [0u8; 32],
+        };
+
+        self.sequence += 1;
+        Ok(entry)
     }
 
     fn sequence_number(&self) -> u64 {
-        0
+        self.sequence
     }
 }
 

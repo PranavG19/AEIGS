@@ -214,15 +214,74 @@ mod tests {
             target_description: "test".to_string(),
         });
         assert!(result.is_ok());
-        assert_eq!(writer.sequence_number(), 0);
+        assert_eq!(writer.sequence_number(), 1);
     }
 
     #[test]
     fn noop_writer_default_trait() {
         use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
 
-        let writer = NoOpAuditLogWriter;
+        let writer = NoOpAuditLogWriter::default();
         assert_eq!(writer.sequence_number(), 0);
+    }
+
+    #[test]
+    fn noop_writer_append_event_full_returns_synthetic_entry() {
+        use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
+
+        let mut writer = NoOpAuditLogWriter::new();
+        let entry = writer
+            .append_event_full(AuditEventType::ScanStarted {
+                target_description: "noop-test".to_string(),
+            })
+            .unwrap();
+
+        assert_eq!(entry.sequence_number, 0);
+        assert_eq!(entry.previous_hash, [0u8; 32]);
+        assert!(entry.payload_cbor.is_empty());
+        assert_eq!(entry.hmac, [0u8; 32]);
+        assert!(entry.timestamp_unix_ms > 0);
+        assert_eq!(writer.sequence_number(), 1);
+    }
+
+    #[test]
+    fn noop_writer_increments_sequence_across_events() {
+        use crate::log_writer::{AuditWriter, NoOpAuditLogWriter};
+
+        let mut writer = NoOpAuditLogWriter::new();
+
+        let entry1 = writer
+            .append_event_full(AuditEventType::ScanStarted {
+                target_description: "app".to_string(),
+            })
+            .unwrap();
+
+        let entry2 = writer
+            .append_event_full(AuditEventType::ScanCompleted { total_findings: 0 })
+            .unwrap();
+
+        assert_eq!(entry1.sequence_number, 0);
+        assert_eq!(entry2.sequence_number, 1);
+        assert_eq!(writer.sequence_number(), 2);
+    }
+
+    #[test]
+    fn append_event_full_via_dyn_trait() {
+        let path = temp_log_path("dyn-trait");
+        let mut writer: Box<dyn AuditWriter> =
+            Box::new(AuditLogWriter::create(&path, b"key").unwrap());
+
+        let entry = writer
+            .append_event_full(AuditEventType::KeyEvent {
+                description: "through trait object".to_string(),
+            })
+            .unwrap();
+
+        assert_eq!(entry.sequence_number, 0);
+        assert!(!entry.payload_cbor.is_empty());
+        assert_eq!(writer.sequence_number(), 1);
+
+        fs::remove_file(&path).ok();
     }
 
     /// Verify that ciborium produces deterministic CBOR output for the same input.

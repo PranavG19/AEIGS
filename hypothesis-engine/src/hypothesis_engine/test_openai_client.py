@@ -453,3 +453,19 @@ class TestInvokeStructured:
 
         assert text == "fallback text"
         assert mock_urlopen.call_count == 2
+
+
+class TestOpenAiLatencyTracking:
+    @patch("hypothesis_engine.openai_client.urllib.request.urlopen")
+    def test_invoke_returns_positive_latency(self, mock_urlopen: MagicMock) -> None:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = _make_openai_response("hello")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        mock_urlopen.return_value = mock_resp
+
+        client = OpenAiClient()
+        _text, usage = client.invoke(
+            messages=[{"role": "user", "content": "test"}],
+        )
+        assert usage.latency_ms >= 0.0

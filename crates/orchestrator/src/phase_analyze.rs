@@ -6,10 +6,11 @@ use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::util::timestamp_ms;
 
-pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
+pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let mut attack_graph = AttackGraph::new();
     let mut kg_to_ag: std::collections::HashMap<u64, u64> = std::collections::HashMap::new();
 
@@ -21,10 +22,7 @@ pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
     let entry_points = attack_graph.entry_points();
     let assets = attack_graph.assets();
     let mut chain_findings = Vec::new();
-    let mut sequence = ctx
-        .graph
-        .total_operations_applied()
-        .map_err(|e| format!("{e:?}"))?;
+    let mut sequence = ctx.graph.total_operations_applied()?;
 
     for &entry in &entry_points {
         for &asset in &assets {
@@ -48,9 +46,7 @@ pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
 
     let findings_count = chain_findings.len() as u64;
     if !chain_findings.is_empty() {
-        ctx.graph
-            .apply_operations(&chain_findings)
-            .map_err(|e| format!("{e:?}"))?;
+        ctx.graph.apply_operations(&chain_findings)?;
     }
 
     Ok(PhaseResult {

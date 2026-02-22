@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use aegis_fuzzing::mutator::{MutatedPayload, MutationStrategy, PayloadMutator};
 use aegis_fuzzing::oracle::FuzzOracle;
 use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
-use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::finding::{EvidenceLevel, FindingConfidence, VulnerabilityClass};
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
 use crate::auth_session::{AuthenticatedSession, execute_auth_flow, inject_auth_into_request};
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::scan_config::{load_business_context, parse_stealth_level};
 use crate::util::timestamp_ms;
@@ -61,12 +62,11 @@ pub fn build_fuzz_request(
 pub async fn run_fuzz<T: FuzzTransport>(
     ctx: &mut ScanContext,
     transport: &mut T,
-) -> Result<FuzzPhaseResult, String> {
+) -> Result<FuzzPhaseResult, PhaseError> {
     let mut scheduler = FuzzScheduler::new();
     let endpoints = ctx
         .graph
-        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
-        .map_err(|e| format!("{e:?}"))?;
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)?;
 
     let endpoint_node_map = build_endpoint_node_map(&endpoints, ctx);
     enqueue_targets_for_endpoints(&mut scheduler, &endpoints, ctx);
@@ -101,10 +101,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
 
     let oracle = FuzzOracle::new(0.7);
     let mut acc = FuzzAccumulators {
-        sequence: ctx
-            .graph
-            .total_operations_applied()
-            .map_err(|e| format!("{e:?}"))?,
+        sequence: ctx.graph.total_operations_applied()?,
         findings_count: 0,
         origin_counts: HashMap::new(),
         entries: Vec::new(),
@@ -190,9 +187,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
 
     let ops_count = acc.entries.len() as u64;
     if !acc.entries.is_empty() {
-        ctx.graph
-            .apply_operations(&acc.entries)
-            .map_err(|e| format!("{e:?}"))?;
+        ctx.graph.apply_operations(&acc.entries)?;
     }
 
     Ok(FuzzPhaseResult {
@@ -409,6 +404,15 @@ pub(crate) struct FuzzAccumulators {
     pub entries: Vec<OperationLogEntry>,
 }
 
+fn methodology_reliability_for_evidence(level: EvidenceLevel) -> f64 {
+    match level {
+        EvidenceLevel::Confirmed => 1.0,
+        EvidenceLevel::Controlled => 0.8,
+        EvidenceLevel::Statistical => 0.5,
+        EvidenceLevel::Chained => 0.9,
+    }
+}
+
 pub(crate) fn append_anomaly_entries(
     anomalies: &[aegis_fuzzing::oracle::Anomaly],
     vulnerability_class: VulnerabilityClass,
@@ -420,6 +424,12 @@ pub(crate) fn append_anomaly_entries(
         acc.sequence += 1;
         acc.findings_count += 1;
         *acc.origin_counts.entry(origin).or_insert(0) += 1;
+
+        let prior = 0.5;
+        let likelihood_ratio = anomaly.score.clamp(0.0, 10.0);
+        let reliability = methodology_reliability_for_evidence(EvidenceLevel::Statistical);
+        let provenance = FindingConfidence::compute(prior, likelihood_ratio, reliability);
+
         acc.entries.push(OperationLogEntry {
             sequence_number: acc.sequence,
             module: ModuleIdentifier::Fuzzing,
@@ -427,7 +437,7 @@ pub(crate) fn append_anomaly_entries(
                 linked_node_ids: linked_node_ids.to_vec(),
                 vulnerability_class,
                 severity: anomaly.score,
-                confidence: (anomaly.score * 0.8).min(1.0),
+                confidence: provenance.composite.value(),
                 certificate: Vec::new(),
             },
             timestamp_unix_ms: timestamp_ms(),

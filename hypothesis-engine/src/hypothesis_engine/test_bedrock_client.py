@@ -304,11 +304,16 @@ class TestTokenUsage:
         usage = TokenUsage()
         assert usage.input_tokens == 0
         assert usage.output_tokens == 0
+        assert usage.latency_ms == 0.0
 
     def test_token_usage_with_values(self) -> None:
         usage = TokenUsage(input_tokens=150, output_tokens=300)
         assert usage.input_tokens == 150
         assert usage.output_tokens == 300
+
+    def test_token_usage_with_latency(self) -> None:
+        usage = TokenUsage(input_tokens=10, output_tokens=20, latency_ms=150.5)
+        assert usage.latency_ms == 150.5
 
 
 class TestLlmBackend:
@@ -499,3 +504,57 @@ class TestInvokeStructured:
 
         assert text == "recovered"
         assert mock_boto.invoke_model.call_count == 2
+
+
+class TestLatencyTracking:
+    def _make_response(
+        self, text: str, input_tokens: int = 10, output_tokens: int = 20
+    ) -> dict:
+        body_bytes = json.dumps(
+            {
+                "content": [{"text": text}],
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                },
+            }
+        ).encode()
+        return {"body": io.BytesIO(body_bytes)}
+
+    def test_invoke_returns_positive_latency(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        mock_boto.invoke_model.return_value = self._make_response("hello")
+        client._client = mock_boto
+
+        _text, usage = client.invoke(
+            messages=[{"role": "user", "content": "test"}],
+            system="sys",
+        )
+        assert usage.latency_ms >= 0.0
+
+    def test_invoke_structured_returns_positive_latency(self) -> None:
+        client = BedrockClient()
+        mock_boto = MagicMock()
+        tool_response = json.dumps(
+            {
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": "toolu_01",
+                        "name": "structured_output",
+                        "input": {"x": 1},
+                    }
+                ],
+                "usage": {"input_tokens": 10, "output_tokens": 20},
+            }
+        ).encode()
+        mock_boto.invoke_model.return_value = {"body": io.BytesIO(tool_response)}
+        client._client = mock_boto
+
+        schema = {"type": "object", "properties": {"x": {"type": "integer"}}}
+        _text, usage = client.invoke_structured(
+            messages=[{"role": "user", "content": "test"}],
+            output_schema=schema,
+        )
+        assert usage.latency_ms >= 0.0

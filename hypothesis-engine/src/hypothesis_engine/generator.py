@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import warnings
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -22,6 +23,7 @@ class ScanContext(BaseModel):
     graph_edges: list[dict[str, Any]] = Field(default_factory=list)
     defense_posture: dict[str, Any] = Field(default_factory=dict)
     attack_paths: list[dict[str, Any]] = Field(default_factory=list)
+    class_confirmation_rates: dict[str, float] = Field(default_factory=dict)
 
 
 class Hypothesis(BaseModel):
@@ -40,6 +42,8 @@ class GenerationResult(BaseModel):
     reasoning_trace: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
+    parsing_method: str = "unknown"
+    latency_ms: float = 0.0
 
 
 SYSTEM_PROMPT = (
@@ -191,6 +195,13 @@ def build_user_prompt(context: ScanContext) -> str:
     if context.feedback_summary:
         parts.append("<prior_feedback>\n" + context.feedback_summary + "</prior_feedback>")
 
+    if context.class_confirmation_rates:
+        rate_lines = [
+            f"  {cls}: {rate * 100:.0f}%"
+            for cls, rate in sorted(context.class_confirmation_rates.items())
+        ]
+        parts.append("<prior_performance>\n" + "\n".join(rate_lines) + "\n</prior_performance>")
+
     parts.append("</application_context>")
 
     return "\n\n".join(parts) if len(parts) > 2 else "No context available. Generate general hypotheses."
@@ -198,35 +209,43 @@ def build_user_prompt(context: ScanContext) -> str:
 
 def parse_hypotheses_from_response(
     response_text: str,
-) -> tuple[str, list[Hypothesis]]:
+) -> tuple[str, list[Hypothesis], str]:
     cleaned = response_text.strip()
+    parsing_method = "failed"
 
-    # Try XML tag-based extraction first
     reasoning_trace = ""
     think_start = cleaned.find("<thinking>")
     think_end = cleaned.find("</thinking>")
     if think_start != -1 and think_end != -1:
         reasoning_trace = cleaned[think_start + len("<thinking>"):think_end].strip()
 
-    # Try extracting JSON from <hypotheses> tags
     hyp_start = cleaned.find("<hypotheses>")
     hyp_end = cleaned.find("</hypotheses>")
     if hyp_start != -1 and hyp_end != -1:
         json_str = cleaned[hyp_start + len("<hypotheses>"):hyp_end].strip()
+        parsing_method = "xml_tags"
     else:
-        # Fallback to bracket-based extraction
         start = cleaned.find("[")
         end = cleaned.rfind("]")
         if start == -1 or end == -1:
-            return (reasoning_trace, [])
-        if not reasoning_trace:
-            reasoning_trace = cleaned[:start].strip()
-        json_str = cleaned[start : end + 1]
+            single_start = cleaned.find("{")
+            single_end = cleaned.rfind("}")
+            if single_start != -1 and single_end != -1:
+                json_str = "[" + cleaned[single_start : single_end + 1] + "]"
+                parsing_method = "single_object_wrapped"
+            else:
+                return (reasoning_trace, [], parsing_method)
+        else:
+            if not reasoning_trace:
+                reasoning_trace = cleaned[:start].strip()
+            json_str = cleaned[start : end + 1]
+            parsing_method = "bracket_json"
 
     try:
         raw_list = json.loads(json_str)
     except json.JSONDecodeError:
-        return (reasoning_trace, [])
+        parsing_method = "failed"
+        return (reasoning_trace, [], parsing_method)
 
     hypotheses: list[Hypothesis] = []
     for item in raw_list:
@@ -246,7 +265,14 @@ def parse_hypotheses_from_response(
         except (ValueError, TypeError):
             continue
 
-    return (reasoning_trace, hypotheses)
+    if parsing_method != "xml_tags" and hypotheses:
+        warnings.warn(
+            f"LLM response required {parsing_method} parsing fallback",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    return (reasoning_trace, hypotheses, parsing_method)
 
 
 def _consistency_key(h: Hypothesis) -> tuple[str, str]:
@@ -261,6 +287,15 @@ def _consistency_key(h: Hypothesis) -> tuple[str, str]:
             endpoint = token.rstrip(".,;:")
             break
     return (h.vulnerability_class, endpoint)
+
+
+def _median(values: list[float]) -> float:
+    """Return the median of a non-empty list of floats."""
+    s = sorted(values)
+    n = len(s)
+    if n % 2 == 1:
+        return s[n // 2]
+    return (s[n // 2 - 1] + s[n // 2]) / 2
 
 
 def create_backend(backend_type: str, **kwargs: Any) -> LlmBackend:
@@ -318,6 +353,7 @@ class HypothesisGenerator:
         reasoning_trace = ""
         hypotheses: list[Hypothesis] = []
         usage = None
+        parsing_method = "structured"
 
         try:
             json_text, usage = self._client.invoke_structured(
@@ -334,7 +370,7 @@ class HypothesisGenerator:
                 system=SYSTEM_PROMPT,
                 max_tokens=8192,
             )
-            reasoning_trace, hypotheses = parse_hypotheses_from_response(raw_text)
+            reasoning_trace, hypotheses, parsing_method = parse_hypotheses_from_response(raw_text)
 
         elapsed_ms = (time.monotonic() - start_time) * 1000
         hypotheses = hypotheses[:max_hypotheses]
@@ -346,6 +382,8 @@ class HypothesisGenerator:
             reasoning_trace=reasoning_trace,
             input_tokens=usage.input_tokens if usage is not None else 0,
             output_tokens=usage.output_tokens if usage is not None else 0,
+            parsing_method=parsing_method,
+            latency_ms=usage.latency_ms if usage is not None else 0.0,
         )
 
     def generate_with_consistency(
@@ -376,9 +414,9 @@ class HypothesisGenerator:
             total_output_tokens += result.output_tokens
             total_time_ms += result.generation_time_ms
 
-        # Count occurrences by (vulnerability_class, endpoint_key)
         occurrence_counts: dict[tuple[str, str], int] = {}
         hypothesis_map: dict[tuple[str, str], Hypothesis] = {}
+        confidence_scores: dict[tuple[str, str], list[float]] = {}
 
         for result in all_results:
             seen_this_round: set[tuple[str, str]] = set()
@@ -387,16 +425,15 @@ class HypothesisGenerator:
                 if key not in seen_this_round:
                     seen_this_round.add(key)
                     occurrence_counts[key] = occurrence_counts.get(key, 0) + 1
-                    # Keep the highest-confidence version
-                    if key not in hypothesis_map or h.confidence > hypothesis_map[key].confidence:
-                        hypothesis_map[key] = h
+                    confidence_scores.setdefault(key, []).append(h.confidence)
+                    hypothesis_map[key] = h
 
-        # Filter to hypotheses meeting agreement threshold
-        consistent = [
-            hypothesis_map[key]
-            for key, count in occurrence_counts.items()
-            if count >= agreement_threshold
-        ]
+        consistent = []
+        for key, count in occurrence_counts.items():
+            if count >= agreement_threshold:
+                h = hypothesis_map[key].model_copy()
+                h.confidence = _median(confidence_scores[key])
+                consistent.append(h)
         consistent.sort(key=lambda h: h.confidence, reverse=True)
 
         # Combine reasoning traces

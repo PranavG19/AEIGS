@@ -1,6 +1,7 @@
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::util::timestamp_ms;
 
@@ -33,7 +34,8 @@ pub fn dom_verify_to_operations(
         .filter(|o| o.dom_executed && o.finding_index < findings.len())
         .map(|outcome| {
             let finding = &findings[outcome.finding_index];
-            let boosted = (finding.confidence + outcome.confidence_adjustment).clamp(0.0, 1.0);
+            let boosted = (finding.confidence.composite.value() + outcome.confidence_adjustment)
+                .clamp(0.0, 1.0);
             *seq += 1;
             OperationLogEntry {
                 sequence_number: *seq,
@@ -57,11 +59,10 @@ pub fn dom_verify_to_operations(
 /// browser DOM execution. Currently returns an empty result since
 /// browser-backed verification requires the `browser` feature on the
 /// crawler crate. The phase slot exists for future integration.
-pub fn run_dom_verify(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
+pub fn run_dom_verify(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let _xss_finding_ids = ctx
         .graph
-        .findings_by_class(VulnerabilityClass::CrossSiteScripting)
-        .map_err(|e| format!("{e:?}"))?;
+        .findings_by_class(VulnerabilityClass::CrossSiteScripting)?;
 
     Ok(PhaseResult {
         operations_applied: 0,

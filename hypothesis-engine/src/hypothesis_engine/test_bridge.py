@@ -25,6 +25,14 @@ from hypothesis_engine.generator import (
     Hypothesis,
     ScanContext,
 )
+from hypothesis_engine.ipc_types import (
+    CompilePayloadsRequest,
+    DefenseContextIpc,
+    EvasionGenerateRequest,
+    GenerateHypothesesRequest,
+    HypothesisIpc,
+    ScanContextIpc,
+)
 
 
 def _make_frame(data: dict) -> bytes:
@@ -100,18 +108,37 @@ class TestSendFrame:
         assert result == msg
 
 
+def _make_generate_request(
+    scan_context: ScanContextIpc | None = None,
+    feedback_summary: str | None = None,
+) -> GenerateHypothesesRequest:
+    sc = scan_context or ScanContextIpc(
+        technology_stack=[],
+        findings_summary=[],
+        high_centrality_nodes=[],
+        defense_posture={},
+    )
+    return GenerateHypothesesRequest(
+        type="GenerateHypotheses",
+        request_id=1,
+        scan_context=sc,
+        vulnerability_class="SqlInjection",
+        feedback_summary=feedback_summary,
+    )
+
+
 class TestBuildScanContext:
     def test_maps_ipc_fields_to_scan_context(self) -> None:
-        request = {
-            "scan_context": {
-                "technology_stack": ["Express", "PostgreSQL"],
-                "findings_summary": ["SQLi in /login"],
-                "high_centrality_nodes": ["auth_endpoint"],
-                "defense_posture": {"has_waf": True},
-            },
-            "feedback_summary": "round 1 results",
-        }
-        ctx = _build_scan_context(request)
+        req = _make_generate_request(
+            scan_context=ScanContextIpc(
+                technology_stack=["Express", "PostgreSQL"],
+                findings_summary=["SQLi in /login"],
+                high_centrality_nodes=["auth_endpoint"],
+                defense_posture={"has_waf": True},
+            ),
+            feedback_summary="round 1 results",
+        )
+        ctx = _build_scan_context(req)
         assert ctx.technology_stack == ["Express", "PostgreSQL"]
         assert ctx.findings_summary == ["SQLi in /login"]
         assert ctx.high_centrality_nodes == [{"label": "auth_endpoint"}]
@@ -119,26 +146,28 @@ class TestBuildScanContext:
         assert ctx.feedback_summary == "round 1 results"
 
     def test_empty_request_uses_defaults(self) -> None:
-        ctx = _build_scan_context({})
+        req = _make_generate_request()
+        ctx = _build_scan_context(req)
         assert ctx.technology_stack == []
         assert ctx.feedback_summary == ""
 
     def test_null_feedback_becomes_empty_string(self) -> None:
-        ctx = _build_scan_context({"feedback_summary": None})
+        req = _make_generate_request(feedback_summary=None)
+        ctx = _build_scan_context(req)
         assert ctx.feedback_summary == ""
 
 
 class TestBuildHypotheses:
     def test_maps_ipc_fields_to_hypothesis(self) -> None:
-        raw = [
-            {
-                "vulnerability_class": "SqlInjection",
-                "description": "IF login uses string concat",
-                "confidence": 0.8,
-                "test_specification": "send payloads to /login",
-            }
+        ipc_list = [
+            HypothesisIpc(
+                vulnerability_class="SqlInjection",
+                description="IF login uses string concat",
+                confidence=0.8,
+                test_specification="send payloads to /login",
+            )
         ]
-        result = _build_hypotheses(raw)
+        result = _build_hypotheses(ipc_list)
         assert len(result) == 1
         h = result[0]
         assert h.vulnerability_class == "SqlInjection"
@@ -148,55 +177,74 @@ class TestBuildHypotheses:
         assert h.confidence == 0.8
 
     def test_missing_test_specification_defaults_to_empty(self) -> None:
-        raw = [
-            {
-                "vulnerability_class": "XSS",
-                "description": "reflected input",
-                "confidence": 0.5,
-            }
+        ipc_list = [
+            HypothesisIpc(
+                vulnerability_class="XSS",
+                description="reflected input",
+                confidence=0.5,
+            )
         ]
-        result = _build_hypotheses(raw)
+        result = _build_hypotheses(ipc_list)
         assert result[0].test_approach == ""
 
     def test_null_test_specification_defaults_to_empty(self) -> None:
-        raw = [
-            {
-                "vulnerability_class": "XSS",
-                "description": "reflected input",
-                "confidence": 0.5,
-                "test_specification": None,
-            }
+        ipc_list = [
+            HypothesisIpc(
+                vulnerability_class="XSS",
+                description="reflected input",
+                confidence=0.5,
+                test_specification=None,
+            )
         ]
-        result = _build_hypotheses(raw)
+        result = _build_hypotheses(ipc_list)
         assert result[0].test_approach == ""
 
 
 class TestBuildEvasionContext:
     def test_maps_defense_context_with_waf(self) -> None:
-        dc = {
-            "has_waf": True,
-            "waf_vendor": "ModSecurity",
-            "rate_limit_rps": 10.0,
-            "bot_detection_present": True,
-        }
-        ctx = _build_evasion_context(dc)
+        req = EvasionGenerateRequest(
+            type="EvasionGenerate",
+            request_id=1,
+            defense_context=DefenseContextIpc(
+                has_waf=True,
+                waf_vendor="ModSecurity",
+                rate_limit_rps=10.0,
+                bot_detection_present=True,
+            ),
+        )
+        ctx = _build_evasion_context(req)
         assert ctx.defense_type == "waf"
         assert ctx.defense_vendor == "ModSecurity"
 
     def test_no_waf_sets_unknown_defense_type(self) -> None:
-        dc = {"has_waf": False, "bot_detection_present": False}
-        ctx = _build_evasion_context(dc)
+        req = EvasionGenerateRequest(
+            type="EvasionGenerate",
+            request_id=1,
+            defense_context=DefenseContextIpc(
+                has_waf=False,
+                bot_detection_present=False,
+            ),
+        )
+        ctx = _build_evasion_context(req)
         assert ctx.defense_type == "unknown"
         assert ctx.defense_vendor == "unknown"
 
     def test_null_waf_vendor_defaults_to_unknown(self) -> None:
-        dc = {"has_waf": True, "waf_vendor": None}
-        ctx = _build_evasion_context(dc)
+        req = EvasionGenerateRequest(
+            type="EvasionGenerate",
+            request_id=1,
+            defense_context=DefenseContextIpc(
+                has_waf=True,
+                waf_vendor=None,
+                bot_detection_present=False,
+            ),
+        )
+        ctx = _build_evasion_context(req)
         assert ctx.defense_vendor == "unknown"
 
 
 class TestHypothesisToIpc:
-    def test_converts_hypothesis_to_dict(self) -> None:
+    def test_converts_hypothesis_to_model(self) -> None:
         h = Hypothesis(
             condition="IF /login accepts SQL metacharacters",
             vulnerability_class="SqlInjection",
@@ -205,10 +253,10 @@ class TestHypothesisToIpc:
             confidence=0.9,
         )
         result = _hypothesis_to_ipc(h)
-        assert result["vulnerability_class"] == "SqlInjection"
-        assert result["description"] == "IF /login accepts SQL metacharacters"
-        assert result["confidence"] == 0.9
-        assert result["test_specification"] == "send payloads"
+        assert result.vulnerability_class == "SqlInjection"
+        assert result.description == "IF /login accepts SQL metacharacters"
+        assert result.confidence == 0.9
+        assert result.test_specification == "send payloads"
 
 
 class TestBridgeDispatch:
@@ -225,9 +273,20 @@ class TestBridgeDispatch:
             "input_tokens": 0,
             "output_tokens": 0,
         }
-        request = {"type": "GenerateHypotheses", "request_id": 1}
+        request = {
+            "type": "GenerateHypotheses",
+            "request_id": 1,
+            "scan_context": {
+                "technology_stack": [],
+                "findings_summary": [],
+                "high_centrality_nodes": [],
+                "defense_posture": {},
+            },
+            "vulnerability_class": "SqlInjection",
+        }
         result = self.bridge.dispatch(request)
-        mock_handler.assert_called_once_with(request)
+        mock_handler.assert_called_once()
+        assert isinstance(mock_handler.call_args[0][0], GenerateHypothesesRequest)
         assert result["type"] == "Hypotheses"
 
     @patch.object(Bridge, "handle_compile_payloads")
@@ -239,9 +298,14 @@ class TestBridgeDispatch:
             "input_tokens": 0,
             "output_tokens": 0,
         }
-        request = {"type": "CompilePayloads", "request_id": 2}
+        request = {
+            "type": "CompilePayloads",
+            "request_id": 2,
+            "hypotheses": [],
+        }
         result = self.bridge.dispatch(request)
-        mock_handler.assert_called_once_with(request)
+        mock_handler.assert_called_once()
+        assert isinstance(mock_handler.call_args[0][0], CompilePayloadsRequest)
         assert result["type"] == "CompiledPayloads"
 
     @patch.object(Bridge, "handle_evasion_generate")
@@ -253,9 +317,17 @@ class TestBridgeDispatch:
             "input_tokens": 0,
             "output_tokens": 0,
         }
-        request = {"type": "EvasionGenerate", "request_id": 3}
+        request = {
+            "type": "EvasionGenerate",
+            "request_id": 3,
+            "defense_context": {
+                "has_waf": False,
+                "bot_detection_present": False,
+            },
+        }
         result = self.bridge.dispatch(request)
-        mock_handler.assert_called_once_with(request)
+        mock_handler.assert_called_once()
+        assert isinstance(mock_handler.call_args[0][0], EvasionGenerateRequest)
         assert result["type"] == "EvasionPayloads"
 
     def test_unknown_type_returns_error(self) -> None:
@@ -263,13 +335,23 @@ class TestBridgeDispatch:
         result = self.bridge.dispatch(request)
         assert result["type"] == "Error"
         assert result["request_id"] == 99
-        assert "unknown request type" in result["message"]
+        assert "invalid request" in result["message"]
 
     def test_exception_returns_error(self) -> None:
         with patch.object(
             Bridge, "handle_generate_hypotheses", side_effect=RuntimeError("boom")
         ):
-            request = {"type": "GenerateHypotheses", "request_id": 7}
+            request = {
+                "type": "GenerateHypotheses",
+                "request_id": 7,
+                "scan_context": {
+                    "technology_stack": [],
+                    "findings_summary": [],
+                    "high_centrality_nodes": [],
+                    "defense_posture": {},
+                },
+                "vulnerability_class": "SqlInjection",
+            }
             result = self.bridge.dispatch(request)
             assert result["type"] == "Error"
             assert result["request_id"] == 7
@@ -305,14 +387,19 @@ class TestBridgeHandleGenerateHypotheses:
         )
         bridge._generator = mock_generator
 
-        request = {
-            "type": "GenerateHypotheses",
-            "request_id": 1,
-            "scan_context": {"technology_stack": ["Express"]},
-            "vulnerability_class": "SqlInjection",
-            "feedback_summary": "prior results",
-        }
-        result = bridge.handle_generate_hypotheses(request)
+        req = GenerateHypothesesRequest(
+            type="GenerateHypotheses",
+            request_id=1,
+            scan_context=ScanContextIpc(
+                technology_stack=["Express"],
+                findings_summary=[],
+                high_centrality_nodes=[],
+                defense_posture={},
+            ),
+            vulnerability_class="SqlInjection",
+            feedback_summary="prior results",
+        )
+        result = bridge.handle_generate_hypotheses(req)
 
         assert result["type"] == "Hypotheses"
         assert result["request_id"] == 1
@@ -346,19 +433,19 @@ class TestBridgeHandleCompilePayloads:
         )
         bridge._compiler = mock_compiler
 
-        request = {
-            "type": "CompilePayloads",
-            "request_id": 2,
-            "hypotheses": [
-                {
-                    "vulnerability_class": "SqlInjection",
-                    "description": "IF login is vulnerable",
-                    "confidence": 0.8,
-                    "test_specification": "send SQL payloads",
-                }
+        req = CompilePayloadsRequest(
+            type="CompilePayloads",
+            request_id=2,
+            hypotheses=[
+                HypothesisIpc(
+                    vulnerability_class="SqlInjection",
+                    description="IF login is vulnerable",
+                    confidence=0.8,
+                    test_specification="send SQL payloads",
+                )
             ],
-        }
-        result = bridge.handle_compile_payloads(request)
+        )
+        result = bridge.handle_compile_payloads(req)
 
         assert result["type"] == "CompiledPayloads"
         assert result["request_id"] == 2
@@ -389,17 +476,17 @@ class TestBridgeHandleEvasionGenerate:
         )
         bridge._evasion_generator = mock_evasion
 
-        request = {
-            "type": "EvasionGenerate",
-            "request_id": 3,
-            "defense_context": {
-                "has_waf": True,
-                "waf_vendor": "ModSecurity",
-                "rate_limit_rps": 10.0,
-                "bot_detection_present": False,
-            },
-        }
-        result = bridge.handle_evasion_generate(request)
+        req = EvasionGenerateRequest(
+            type="EvasionGenerate",
+            request_id=3,
+            defense_context=DefenseContextIpc(
+                has_waf=True,
+                waf_vendor="ModSecurity",
+                rate_limit_rps=10.0,
+                bot_detection_present=False,
+            ),
+        )
+        result = bridge.handle_evasion_generate(req)
 
         assert result["type"] == "EvasionPayloads"
         assert result["request_id"] == 3

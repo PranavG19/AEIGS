@@ -1,0 +1,60 @@
+{
+  "app_name": "django-app",
+  "scan_context": {
+    "technology_stack": ["Django", "Python", "Django Templates", "PostgreSQL"],
+    "high_centrality_nodes": [
+      {"label": "/search/", "type": "Endpoint"},
+      {"label": "/render/", "type": "Endpoint"},
+      {"label": "/download/", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/search/", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/render/", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/download/", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/admin/settings/", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "search_view", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "pg_database", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 6, "label": "Reads", "weight": 1.0},
+      {"source_id": 3, "target_id": 6, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/render/", "vulnerability_class": "Server-Side Template Injection"},
+    {"endpoint": "/download/", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/admin/settings/", "vulnerability_class": "Security Misconfiguration"},
+    {"endpoint": "/search/", "vulnerability_class": "SQL Injection"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /render/ passes user input to Django template engine via Template().render()",
+      "vulnerability_class": "Server-Side Template Injection",
+      "reasoning": "BECAUSE technology stack includes Django Templates and endpoint name suggests dynamic template rendering without pre-compiled templates",
+      "test_approach": "CAN BE TESTED BY sending {{7*7}} and checking if response contains 49",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /download/ constructs file path from user-supplied filename without path sanitization",
+      "vulnerability_class": "Path Traversal",
+      "reasoning": "BECAUSE endpoint name suggests file download and graph shows no path validation function in the call chain",
+      "test_approach": "CAN BE TESTED BY sending ../../etc/passwd as filename and checking for root: in response",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /admin/settings/ is accessible without authentication and exposes Django DEBUG mode",
+      "vulnerability_class": "Security Misconfiguration",
+      "reasoning": "BECAUSE admin endpoint has no ProtectedBy edge in graph and Django debug mode commonly leaks settings",
+      "test_approach": "CAN BE TESTED BY requesting endpoint without credentials and checking for Django debug information in response",
+      "confidence": 0.7
+    }
+  ]
+}

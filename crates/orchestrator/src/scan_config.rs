@@ -2,7 +2,7 @@ use aegis_enumeration::auth_flow::AuthFlow;
 use aegis_evasion_engine::PersonaId;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_reporting::report_format::ReportFormat;
-use clap::{Args, Parser};
+use clap::{Args, Parser, ValueEnum};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -12,6 +12,82 @@ pub enum StealthLevel {
     Default,
     Aggressive,
     Paranoid,
+}
+
+/// Predefined scan configuration bundles that set sensible defaults for
+/// common use cases. Explicit CLI flags always override preset values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum ScanPreset {
+    /// Fast single-pass scan without LLM hypothesis generation.
+    Quick,
+    /// Multi-iteration scan with LLM and convergence detection.
+    Thorough,
+    /// Maximum coverage with paranoid stealth and deep iteration.
+    Paranoid,
+    /// Evaluation mode with benchmark stealth settings and graph persistence.
+    Benchmark,
+}
+
+impl ScanPreset {
+    /// Applies preset defaults to a config, but only for fields that still
+    /// hold their clap default values. This ensures explicit CLI flags always
+    /// take precedence over preset values.
+    pub fn apply(&self, config: &mut ScanConfig) {
+        let defaults = ScanConfig::try_parse_from(["aegis", "--target", &config.target])
+            .expect("default config must parse");
+
+        match self {
+            Self::Quick => self.apply_quick(config, &defaults),
+            Self::Thorough => self.apply_thorough(config, &defaults),
+            Self::Paranoid => self.apply_paranoid(config, &defaults),
+            Self::Benchmark => self.apply_benchmark(config, &defaults),
+        }
+    }
+
+    fn apply_quick(&self, config: &mut ScanConfig, defaults: &ScanConfig) {
+        if config.pipeline.max_iterations == defaults.pipeline.max_iterations {
+            config.pipeline.max_iterations = 1;
+        }
+        if config.llm.no_llm == defaults.llm.no_llm {
+            config.llm.no_llm = true;
+        }
+        if config.stealth.stealth_level == defaults.stealth.stealth_level {
+            config.stealth.stealth_level = "default".to_string();
+        }
+    }
+
+    fn apply_thorough(&self, config: &mut ScanConfig, defaults: &ScanConfig) {
+        if config.pipeline.max_iterations == defaults.pipeline.max_iterations {
+            config.pipeline.max_iterations = 3;
+        }
+        if config.pipeline.convergence_threshold == defaults.pipeline.convergence_threshold {
+            config.pipeline.convergence_threshold = 2;
+        }
+        if config.stealth.stealth_level == defaults.stealth.stealth_level {
+            config.stealth.stealth_level = "default".to_string();
+        }
+    }
+
+    fn apply_paranoid(&self, config: &mut ScanConfig, defaults: &ScanConfig) {
+        if config.pipeline.max_iterations == defaults.pipeline.max_iterations {
+            config.pipeline.max_iterations = 5;
+        }
+        if config.pipeline.convergence_threshold == defaults.pipeline.convergence_threshold {
+            config.pipeline.convergence_threshold = 3;
+        }
+        if config.stealth.stealth_level == defaults.stealth.stealth_level {
+            config.stealth.stealth_level = "paranoid".to_string();
+        }
+    }
+
+    fn apply_benchmark(&self, config: &mut ScanConfig, defaults: &ScanConfig) {
+        if config.pipeline.max_iterations == defaults.pipeline.max_iterations {
+            config.pipeline.max_iterations = 1;
+        }
+        if config.stealth.stealth_level == defaults.stealth.stealth_level {
+            config.stealth.stealth_level = "default".to_string();
+        }
+    }
 }
 
 /// A known vulnerability that has already been triaged and accepted as a risk.
@@ -77,83 +153,83 @@ impl std::error::Error for ConfigError {}
 /// Stealth and evasion transport options.
 #[derive(Args, Debug, Clone)]
 pub struct StealthOptions {
-    #[arg(long, default_value = "chrome")]
+    #[arg(long, default_value = "chrome", help_heading = "Tuning")]
     pub persona: String,
 
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub stealth: bool,
 
-    #[arg(long, default_value = "default")]
+    #[arg(long, default_value = "default", help_heading = "Tuning")]
     pub stealth_level: String,
 
-    #[arg(long)]
+    #[arg(long, help_heading = "Tuning")]
     pub max_rps: Option<u32>,
 
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub skip_evasion: bool,
 
     /// Accept self-signed TLS certificates when connecting to localhost targets.
     /// Safe because target validation enforces localhost-only at request time.
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub accept_self_signed: bool,
 
     /// Path to a custom persona catalog JSON file. When omitted, uses the
     /// embedded default catalog compiled into the binary.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub persona_catalog: Option<PathBuf>,
 }
 
 /// Pipeline execution control options.
 #[derive(Args, Debug, Clone)]
 pub struct PipelineOptions {
-    #[arg(long, default_value_t = 1)]
+    #[arg(long, default_value_t = 1, help_heading = "Tuning")]
     pub max_iterations: u32,
 
-    #[arg(long, default_value_t = 2)]
+    #[arg(long, default_value_t = 2, help_heading = "Tuning")]
     pub convergence_threshold: u32,
 
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub skip_fingerprint: bool,
 
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub paranoia_sweep: bool,
 
     /// Resume a previously interrupted scan from its last checkpoint.
     /// Requires `--graph-db` to locate the checkpoint file.
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub resume: bool,
 }
 
 /// LLM hypothesis engine options.
 #[derive(Args, Debug, Clone)]
 pub struct LlmOptions {
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub no_llm: bool,
 
-    #[arg(long)]
+    #[arg(long, help_heading = "Advanced")]
     pub bypass_corpus: Option<PathBuf>,
 
     /// Path to Python interpreter for hypothesis-engine subprocess.
-    #[arg(long, default_value = "python3")]
+    #[arg(long, default_value = "python3", help_heading = "Advanced")]
     pub python_cmd: String,
 }
 
 /// Audit logging options.
 #[derive(Args, Debug, Clone)]
 pub struct AuditOptions {
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub no_audit: bool,
 
     /// Path to a signed scope attestation JSON file. When provided, the scan
     /// will only proceed if the attestation signature is valid, the target
     /// matches, and the document has not expired.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub scope_attestation: Option<PathBuf>,
 
     /// Path to a signed scan configuration JSON file. When provided, the scan
     /// verifies the Ed25519 signature on the config, checks its SHA3-256 hash,
     /// and ensures it matches the actual CLI parameters before proceeding.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub signed_config: Option<PathBuf>,
 }
 
@@ -161,12 +237,12 @@ pub struct AuditOptions {
 #[derive(Args, Debug, Clone)]
 pub struct AuthOptions {
     /// Path to an auth flow JSON file defining multi-step authentication.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub auth_flow: Option<PathBuf>,
 
     /// Key=value pairs for auth flow template variables (repeatable).
     /// Example: --auth-input username=admin --auth-input password=secret
-    #[arg(long, value_name = "KEY=VALUE")]
+    #[arg(long, value_name = "KEY=VALUE", help_heading = "Advanced")]
     pub auth_input: Vec<String>,
 }
 
@@ -174,76 +250,103 @@ pub struct AuthOptions {
 #[derive(Args, Debug, Clone)]
 pub struct DistributedOptions {
     /// Enable distributed scanning mode (coordinator).
-    #[arg(long, default_value_t = false)]
+    #[arg(long, default_value_t = false, help_heading = "Distributed")]
     pub distributed: bool,
 
     /// Bind address for coordinator listener (coordinator mode).
-    #[arg(long, default_value = "127.0.0.1:9100")]
+    #[arg(long, default_value = "127.0.0.1:9100", help_heading = "Distributed")]
     pub coordinator_addr: String,
 
     /// Number of workers to wait for before starting scan (coordinator mode).
-    #[arg(long, default_value_t = 1)]
+    #[arg(long, default_value_t = 1, help_heading = "Distributed")]
     pub workers: usize,
 
     /// Worker mode: connect to this coordinator address.
-    #[arg(long)]
+    #[arg(long, help_heading = "Distributed")]
     pub worker_connect: Option<String>,
 
     /// Worker ID (worker mode).
-    #[arg(long, default_value = "worker-0")]
+    #[arg(long, default_value = "worker-0", help_heading = "Distributed")]
     pub worker_id: String,
 }
 
 /// Scope filtering options.
 #[derive(Args, Debug, Clone)]
 pub struct ScopeOptions {
-    #[arg(long)]
+    #[arg(long, help_heading = "Tuning")]
     pub include_endpoints: Option<Vec<String>>,
 
-    #[arg(long)]
+    #[arg(long, help_heading = "Tuning")]
     pub exclude_endpoints: Option<Vec<String>>,
 
-    #[arg(long)]
+    #[arg(long, help_heading = "Advanced")]
     pub context_file: Option<PathBuf>,
 
     /// Path to persistent graph database file. When provided, the graph is loaded
     /// on scan start and saved on completion. Enables incremental scanning and
     /// diff-mode reporting.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub graph_db: Option<PathBuf>,
 
     /// Path to SQLite scan history database. When provided, payload outcomes are
     /// persisted across scans to enable adaptive payload selection and endpoint
     /// similarity analysis.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub history_db: Option<PathBuf>,
 
     /// Export the attack graph in the specified format (dot or d3json).
-    #[arg(long, value_name = "FORMAT")]
+    #[arg(long, value_name = "FORMAT", help_heading = "Advanced")]
     pub export_graph: Option<String>,
 
     /// Path to vulnerability database file for dependency scanning.
     /// Defaults to ~/.aegis/vuln.db if it exists.
-    #[arg(long, value_name = "PATH")]
+    #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub vuln_db: Option<PathBuf>,
 }
 
+const PRESET_HELP: &str = "\
+Preset Configurations:
+  quick      1 iteration, no LLM, default stealth
+  thorough   3 iterations, LLM enabled, convergence=2
+  paranoid   5 iterations, LLM enabled, convergence=3, paranoid stealth
+  benchmark  1 iteration, LLM enabled, benchmark-oriented defaults
+
+Explicit CLI flags always override preset values.";
+
 #[derive(Parser, Debug, Clone)]
-#[command(name = "aegis", about = "Adversarial vulnerability discovery")]
+#[command(
+    name = "aegis",
+    about = "Adversarial vulnerability discovery",
+    after_long_help = PRESET_HELP
+)]
 pub struct ScanConfig {
-    #[arg(long)]
+    /// Scan configuration preset that bundles common defaults.
+    #[arg(long, short = 'p', value_enum, help_heading = "Common Options")]
+    pub preset: Option<ScanPreset>,
+
+    #[arg(long, help_heading = "Common Options")]
     pub target: String,
 
-    #[arg(long, default_value = "aegis-report.sarif")]
+    #[arg(
+        long,
+        short = 'o',
+        default_value = "aegis-report.sarif",
+        help_heading = "Common Options"
+    )]
     pub output: PathBuf,
 
-    #[arg(long, default_value = "developer")]
+    #[arg(
+        long,
+        short = 'f',
+        default_value = "developer",
+        help_heading = "Common Options"
+    )]
     pub report_format: String,
 
-    #[arg(long)]
+    #[arg(long, help_heading = "Common Options")]
     pub source_dir: Option<PathBuf>,
 
-    #[arg(long, short)]
+    #[arg(long, short = 'v', help_heading = "Common Options")]
     pub verbose: bool,
 
     #[command(flatten)]
@@ -266,6 +369,18 @@ pub struct ScanConfig {
 
     #[command(flatten)]
     pub distributed: DistributedOptions,
+}
+
+impl ScanConfig {
+    /// Parses CLI arguments and applies any preset configuration. Explicit CLI
+    /// flags take precedence over preset defaults.
+    pub fn parse_and_apply_preset() -> Self {
+        let mut config = Self::parse();
+        if let Some(preset) = config.preset {
+            preset.apply(&mut config);
+        }
+        config
+    }
 }
 
 pub fn validate_localhost(target: &str) -> Result<(), ConfigError> {

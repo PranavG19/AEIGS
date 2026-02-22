@@ -50,6 +50,7 @@ class FeedbackManager:
         confirmation_threshold: float = 0.5,
         class_thresholds: dict[str, float] | None = None,
         default_threshold: float | None = None,
+        historical_rates: dict[str, float] | None = None,
     ) -> None:
         self._labeled: list[LabeledHypothesis] = []
         self._default_threshold = default_threshold if default_threshold is not None else confirmation_threshold
@@ -57,6 +58,31 @@ class FeedbackManager:
             self._class_thresholds = dict(class_thresholds)
         else:
             self._class_thresholds = dict(DEFAULT_CLASS_THRESHOLDS)
+        if historical_rates is not None:
+            learned = self.from_history(historical_rates)
+            for cls, learned_threshold in learned.items():
+                base = self._class_thresholds.get(cls, self._default_threshold)
+                self._class_thresholds[cls] = 0.5 * base + 0.5 * learned_threshold
+
+    @classmethod
+    def from_history(cls, class_rates: dict[str, float]) -> dict[str, float]:
+        """Compute adjusted thresholds from historical confirmation rates.
+
+        For classes with high historical rates (>0.7), the threshold is lowered
+        slightly (easier to confirm since the class is historically reliable).
+        For low rates (<0.3), the threshold is raised (require stronger evidence
+        since the class historically produces false positives).
+        Classes with moderate rates keep the default threshold of 0.5.
+        """
+        thresholds: dict[str, float] = {}
+        for vuln_class, rate in class_rates.items():
+            if rate > 0.7:
+                thresholds[vuln_class] = 0.3
+            elif rate < 0.3:
+                thresholds[vuln_class] = 0.7
+            else:
+                thresholds[vuln_class] = 0.5
+        return thresholds
 
     def _threshold_for(self, vulnerability_class: str) -> float:
         return self._class_thresholds.get(vulnerability_class, self._default_threshold)

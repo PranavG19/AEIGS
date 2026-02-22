@@ -112,6 +112,7 @@ class OpenAiClient(LlmBackend):
         delays = [1.0, 2.0, 4.0]
         last_error: Exception | None = None
 
+        t0 = time.monotonic()
         for attempt in range(self._max_retries):
             try:
                 req = urllib.request.Request(
@@ -120,11 +121,13 @@ class OpenAiClient(LlmBackend):
                 with urllib.request.urlopen(req, timeout=self._timeout_seconds) as resp:
                     response_body = json.loads(resp.read())
 
+                elapsed_ms = (time.monotonic() - t0) * 1000
                 text = response_body["choices"][0]["message"]["content"]
                 raw_usage = response_body.get("usage", {})
                 usage = TokenUsage(
                     input_tokens=raw_usage.get("prompt_tokens", 0),
                     output_tokens=raw_usage.get("completion_tokens", 0),
+                    latency_ms=elapsed_ms,
                 )
                 return (text, usage)
             except urllib.error.HTTPError as e:

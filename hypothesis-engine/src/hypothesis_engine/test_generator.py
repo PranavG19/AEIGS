@@ -8,6 +8,7 @@ from hypothesis_engine.generator import (
     Hypothesis,
     HypothesisGenerator,
     ScanContext,
+    _median,
     build_user_prompt,
     create_backend,
     parse_hypotheses_from_response,
@@ -243,7 +244,7 @@ class TestParseHypotheses:
     "confidence": 0.8
   }
 ]"""
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
         assert results[0].vulnerability_class == "SQL Injection"
         assert results[0].confidence == 0.8
@@ -253,36 +254,36 @@ class TestParseHypotheses:
   {"condition": "IF a", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.7},
   {"condition": "IF b", "vulnerability_class": "SQLi", "reasoning": "r", "test_approach": "t", "confidence": 0.6}
 ]"""
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 2
 
     def test_parse_empty_response(self) -> None:
-        _trace, results = parse_hypotheses_from_response("")
+        _trace, results, _method = parse_hypotheses_from_response("")
         assert results == []
 
     def test_parse_invalid_json(self) -> None:
-        _trace, results = parse_hypotheses_from_response("not json at all")
+        _trace, results, _method = parse_hypotheses_from_response("not json at all")
         assert results == []
 
     def test_parse_skips_invalid_items(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.5}, "not_an_object"]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
 
     def test_parse_skips_empty_condition(self) -> None:
         response = '[{"condition": "", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.5}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 0
 
     def test_parse_default_confidence(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t"}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
         assert results[0].confidence == 0.5
 
     def test_parse_with_surrounding_text(self) -> None:
         response = 'Here are my findings:\n[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.9}]\nEnd of analysis.'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
 
 
@@ -326,12 +327,12 @@ class TestHypothesisModel:
 class TestParseHypothesesEdgeCases:
     def test_parse_valid_brackets_invalid_json(self) -> None:
         response = "[{this is not valid json}]"
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert results == []
 
     def test_parse_value_error_in_hypothesis(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": "not_a_number"}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert results == []
 
 
@@ -351,14 +352,14 @@ class TestReasoningTrace:
             '[{"condition": "IF login uses string concat", "vulnerability_class": "SQLi", '
             '"reasoning": "r", "test_approach": "t", "confidence": 0.9}]'
         )
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert "Express" in trace
         assert "SQL injection" in trace
         assert len(hypotheses) == 1
 
     def test_pure_json_response_has_empty_reasoning_trace(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.7}]'
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert trace == ""
         assert len(hypotheses) == 1
 
@@ -562,3 +563,308 @@ class TestCreateBackend:
     def test_unknown_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="Unknown backend type: bogus"):
             create_backend("bogus")
+
+
+class TestMedianHelper:
+    def test_odd_count(self) -> None:
+        assert _median([0.3, 0.5, 0.7, 0.8, 0.9]) == 0.7
+
+    def test_even_count(self) -> None:
+        assert _median([0.3, 0.7]) == 0.5
+
+    def test_single_value(self) -> None:
+        assert _median([0.6]) == 0.6
+
+    def test_unsorted_input(self) -> None:
+        assert _median([0.9, 0.3, 0.7]) == 0.7
+
+
+class TestConsistencyMedianConfidence:
+    """Validate that generate_with_consistency uses median confidence, not max."""
+
+    def _make_generator_with_round_confidences(
+        self,
+        round_confidences: list[list[float]],
+        endpoint: str = "/api/users",
+        vuln_class: str = "SQL Injection",
+    ) -> HypothesisGenerator:
+        call_count = 0
+
+        class RoundMockBackend(LlmBackend):
+            def invoke(self, messages, system="", max_tokens=4096):
+                nonlocal call_count
+                idx = call_count
+                call_count += 1
+                confs = round_confidences[idx % len(round_confidences)]
+                hyps = [
+                    {
+                        "condition": f"IF endpoint {endpoint} accepts unvalidated input",
+                        "vulnerability_class": vuln_class,
+                        "reasoning": f"round {idx}",
+                        "test_approach": "test",
+                        "confidence": c,
+                    }
+                    for c in confs
+                ]
+                import json
+                return (json.dumps(hyps), TokenUsage(input_tokens=10, output_tokens=20))
+
+            def invoke_structured(self, messages, output_schema, system="", max_tokens=4096):
+                return self.invoke(messages, system, max_tokens)
+
+        return HypothesisGenerator(client=RoundMockBackend())
+
+    def test_five_rounds_uses_median_not_max(self) -> None:
+        gen = self._make_generator_with_round_confidences(
+            [[0.3], [0.5], [0.7], [0.8], [0.9]]
+        )
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=5, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == 0.7
+
+    def test_single_round_confidence_unchanged(self) -> None:
+        gen = self._make_generator_with_round_confidences([[0.6]])
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=1, agreement_threshold=1
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == 0.6
+
+    def test_two_rounds_even_count_median(self) -> None:
+        gen = self._make_generator_with_round_confidences([[0.4], [0.8]])
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=2, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == pytest.approx(0.6)
+
+    def test_partial_agreement_uses_median_of_agreeing_scores(self) -> None:
+        call_count = 0
+        confs_per_round = [[0.4], [0.8], []]
+
+        class PartialBackend(LlmBackend):
+            def invoke(self, messages, system="", max_tokens=4096):
+                nonlocal call_count
+                idx = call_count
+                call_count += 1
+                confs = confs_per_round[idx % len(confs_per_round)]
+                hyps = [
+                    {
+                        "condition": "IF endpoint /api/users accepts unvalidated input",
+                        "vulnerability_class": "SQL Injection",
+                        "reasoning": f"round {idx}",
+                        "test_approach": "test",
+                        "confidence": c,
+                    }
+                    for c in confs
+                ]
+                import json
+                return (json.dumps(hyps), TokenUsage(input_tokens=5, output_tokens=10))
+
+            def invoke_structured(self, messages, output_schema, system="", max_tokens=4096):
+                return self.invoke(messages, system, max_tokens)
+
+        gen = HypothesisGenerator(client=PartialBackend())
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=3, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == pytest.approx(0.6)
+
+    def test_cumulative_token_counts_across_rounds(self) -> None:
+        gen = self._make_generator_with_round_confidences(
+            [[0.5], [0.6], [0.7], [0.8], [0.9]]
+        )
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=5, agreement_threshold=2
+        )
+        assert result.input_tokens == 50
+        assert result.output_tokens == 100
+
+
+class TestClassConfirmationRates:
+    def test_scan_context_default_empty_rates(self) -> None:
+        ctx = ScanContext()
+        assert ctx.class_confirmation_rates == {}
+
+    def test_scan_context_accepts_rates(self) -> None:
+        rates = {"SQL Injection": 0.75, "Cross-Site Scripting": 0.25}
+        ctx = ScanContext(class_confirmation_rates=rates)
+        assert ctx.class_confirmation_rates["SQL Injection"] == 0.75
+        assert ctx.class_confirmation_rates["Cross-Site Scripting"] == 0.25
+
+    def test_prior_performance_excluded_when_empty(self) -> None:
+        ctx = ScanContext(technology_stack=["Flask"])
+        prompt = build_user_prompt(ctx)
+        assert "<prior_performance>" not in prompt
+
+    def test_prior_performance_included_when_present(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Express"],
+            class_confirmation_rates={
+                "SQL Injection": 0.80,
+                "Cross-Site Scripting": 0.25,
+            },
+        )
+        prompt = build_user_prompt(ctx)
+        assert "<prior_performance>" in prompt
+        assert "</prior_performance>" in prompt
+        assert "SQL Injection: 80%" in prompt
+        assert "Cross-Site Scripting: 25%" in prompt
+
+    def test_prior_performance_rates_sorted_alphabetically(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Express"],
+            class_confirmation_rates={
+                "Path Traversal": 0.50,
+                "Command Injection": 0.90,
+            },
+        )
+        prompt = build_user_prompt(ctx)
+        cmd_pos = prompt.find("Command Injection")
+        path_pos = prompt.find("Path Traversal")
+        assert cmd_pos < path_pos
+
+    def test_prior_performance_before_closing_tag(self) -> None:
+        ctx = ScanContext(
+            technology_stack=["Flask"],
+            class_confirmation_rates={"SQL Injection": 0.5},
+        )
+        prompt = build_user_prompt(ctx)
+        perf_pos = prompt.find("</prior_performance>")
+        close_pos = prompt.find("</application_context>")
+        assert perf_pos < close_pos
+
+
+class TestParsingMethod:
+    def test_xml_tags_parsing_method(self) -> None:
+        response = (
+            '<thinking>\nAnalyzing...\n</thinking>\n'
+            '<hypotheses>\n'
+            '[{"condition": "IF /api/search", "vulnerability_class": "SQL Injection", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.8}]\n'
+            '</hypotheses>'
+        )
+        _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "xml_tags"
+        assert len(results) == 1
+
+    def test_bracket_json_parsing_method(self) -> None:
+        response = (
+            'Here is my analysis:\n'
+            '[{"condition": "IF /test", "vulnerability_class": "XSS", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.5}]'
+        )
+        with pytest.warns(RuntimeWarning, match="bracket_json"):
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "bracket_json"
+        assert len(results) == 1
+
+    def test_single_object_wrapped_parsing_method(self) -> None:
+        response = (
+            '{"condition": "IF /login", "vulnerability_class": "SQLi", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.7}'
+        )
+        with pytest.warns(RuntimeWarning, match="single_object_wrapped"):
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "single_object_wrapped"
+        assert len(results) == 1
+
+    def test_failed_parsing_method_on_empty(self) -> None:
+        _trace, results, method = parse_hypotheses_from_response("")
+        assert method == "failed"
+        assert results == []
+
+    def test_failed_parsing_method_on_invalid_json(self) -> None:
+        response = '<hypotheses>\n{not valid json}\n</hypotheses>'
+        _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "failed"
+        assert results == []
+
+    def test_no_warning_for_xml_tags(self) -> None:
+        response = (
+            '<hypotheses>\n'
+            '[{"condition": "IF /api", "vulnerability_class": "XSS", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.6}]\n'
+            '</hypotheses>'
+        )
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "xml_tags"
+        assert len(results) == 1
+
+    def test_no_warning_when_fallback_produces_no_hypotheses(self) -> None:
+        response = "just some text with no json at all and no brackets"
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert results == []
+
+    def test_generation_result_has_parsing_method_field(self) -> None:
+        result = GenerationResult(
+            hypotheses=[],
+            model_id="test",
+            generation_time_ms=0.0,
+        )
+        assert result.parsing_method == "unknown"
+
+    def test_generation_result_has_latency_ms_field(self) -> None:
+        result = GenerationResult(
+            hypotheses=[],
+            model_id="test",
+            generation_time_ms=0.0,
+        )
+        assert result.latency_ms == 0.0
+
+    def test_generate_sets_parsing_method_structured(self) -> None:
+        import json as json_mod
+
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = HypothesisGenerator(client=mock_client)
+        hypotheses_data = [
+            {
+                "condition": "IF /api/test",
+                "vulnerability_class": "XSS",
+                "reasoning": "r",
+                "test_approach": "t",
+                "confidence": 0.6,
+            }
+        ]
+        mock_usage = TokenUsage(input_tokens=10, output_tokens=20, latency_ms=150.0)
+        mock_client.invoke_structured.return_value = (
+            json_mod.dumps(hypotheses_data),
+            mock_usage,
+        )
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = generator.generate(ctx)
+        assert result.parsing_method == "structured"
+        assert result.latency_ms == 150.0
+
+    def test_generate_sets_parsing_method_from_fallback(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = HypothesisGenerator(client=mock_client)
+        mock_client.invoke_structured.side_effect = RuntimeError("fail")
+        mock_response = (
+            '<hypotheses>\n'
+            '[{"condition": "IF /login", "vulnerability_class": "SQLi", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.9}]\n'
+            '</hypotheses>'
+        )
+        mock_usage = TokenUsage(input_tokens=10, output_tokens=20, latency_ms=200.0)
+        mock_client.invoke.return_value = (mock_response, mock_usage)
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = generator.generate(ctx)
+        assert result.parsing_method == "xml_tags"
+        assert result.latency_ms == 200.0

@@ -1,0 +1,59 @@
+{
+  "app_name": "go-gin-app",
+  "scan_context": {
+    "technology_stack": ["Gin", "Go", "database/sql", "html/template"],
+    "high_centrality_nodes": [
+      {"label": "/api/exec", "type": "Endpoint"},
+      {"label": "/api/files", "type": "Endpoint"},
+      {"label": "/api/login", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/exec", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/files", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/login", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/admin", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "execHandler", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "authService", "type": "Function", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 3, "target_id": 6, "label": "Calls", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/exec", "vulnerability_class": "Command Injection"},
+    {"endpoint": "/api/files", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/api/login", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/api/admin", "vulnerability_class": "Broken Authorization"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/exec passes user-supplied command string to os/exec.Command without input sanitization",
+      "vulnerability_class": "Command Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/exec) --[Calls]--> Function(execHandler) and endpoint name suggests command execution with no validation in the call chain",
+      "test_approach": "CAN BE TESTED BY sending ; echo AEGIS_MARKER as command parameter and checking for marker in response",
+      "confidence": 0.85
+    },
+    {
+      "condition": "IF endpoint /api/files serves files based on user-supplied path without filepath.Clean or chroot validation",
+      "vulnerability_class": "Path Traversal",
+      "reasoning": "BECAUSE endpoint name suggests file serving and Go's os.Open accepts relative paths with ../ traversal",
+      "test_approach": "CAN BE TESTED BY sending ../../../etc/passwd as file path and checking for root: in response",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/login uses weak JWT signing with hardcoded secret or accepts none algorithm",
+      "vulnerability_class": "Broken Authentication",
+      "reasoning": "BECAUSE login endpoint has no rate limiting in defense posture and Go JWT libraries have known none-algorithm bypass if not explicitly prevented",
+      "test_approach": "CAN BE TESTED BY generating JWT with alg:none and checking if protected endpoints accept it",
+      "confidence": 0.6
+    }
+  ]
+}

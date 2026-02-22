@@ -470,23 +470,21 @@ fn finding_data_confidence_roundtrip() {
         ModuleIdentifier::Fuzzing,
         1700000000000,
     )
-    .with_confidence_score(0.85);
-
-    assert!(finding.confidence_score.is_some());
+    .with_confidence(aegis_protocol::finding::Confidence::new(0.85).unwrap());
 
     let json = serde_json::to_string(&finding).unwrap();
     let deserialized: FindingData = serde_json::from_str(&json).unwrap();
     assert!(
-        (deserialized.confidence_score.unwrap() - 0.85).abs() < f64::EPSILON,
-        "confidence_score should survive serialization roundtrip"
+        (deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON,
+        "confidence should survive serialization roundtrip"
     );
 }
 
 // ---------------------------------------------------------------------------
-// 18. finding_data_missing_confidence_defaults_none
+// 18. finding_data_missing_confidence_score_uses_confidence
 // ---------------------------------------------------------------------------
 #[test]
-fn finding_data_missing_confidence_defaults_none() {
+fn finding_data_missing_confidence_score_uses_confidence() {
     let json = r#"{
         "id": 1,
         "linked_node_ids": [],
@@ -501,8 +499,8 @@ fn finding_data_missing_confidence_defaults_none() {
 
     let deserialized: FindingData = serde_json::from_str(json).unwrap();
     assert!(
-        deserialized.confidence_score.is_none(),
-        "confidence_score should default to None when absent from JSON"
+        (deserialized.confidence.composite.value() - 0.9).abs() < f64::EPSILON,
+        "confidence should be read from the confidence field"
     );
     assert!(
         deserialized.stable_id.is_none(),

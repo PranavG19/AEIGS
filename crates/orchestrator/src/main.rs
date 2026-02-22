@@ -3,7 +3,6 @@ use aegis_orchestrator::pipeline::run_scan;
 use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::ScanConfig;
 use aegis_orchestrator::update_db::{parse_update_db_args, run_update_db};
-use clap::Parser;
 
 #[tokio::main]
 async fn main() {
@@ -24,7 +23,7 @@ async fn main() {
         return;
     }
 
-    let config = ScanConfig::parse();
+    let config = ScanConfig::parse_and_apply_preset();
 
     if config.verbose {
         tracing_subscriber::fmt()
