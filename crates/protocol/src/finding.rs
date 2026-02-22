@@ -183,6 +183,24 @@ pub enum VulnerabilityClass {
     CrlfInjection,
     KnownVulnerableDependency,
     InsufficientInputValidation,
+    NoSqlInjection,
+    XmlExternalEntity,
+    CrossOriginMisconfiguration,
+    MissingSecurityHeader,
+    JwtVulnerability,
+    HttpRequestSmuggling,
+    RaceCondition,
+    SubdomainTakeover,
+    PrototypePollution,
+    GraphQlAbuse,
+    CloudMisconfiguration,
+    Clickjacking,
+    CachePoisoning,
+    HostHeaderInjection,
+    InsecureDirectObjectReference,
+    InformationDisclosure,
+    WeakCryptography,
+    MassAssignment,
 }
 
 impl fmt::Display for VulnerabilityClass {
@@ -212,6 +230,28 @@ impl fmt::Display for VulnerabilityClass {
             VulnerabilityClass::InsufficientInputValidation => {
                 write!(f, "Insufficient Input Validation")
             }
+            VulnerabilityClass::NoSqlInjection => write!(f, "NoSQL Injection"),
+            VulnerabilityClass::XmlExternalEntity => write!(f, "XML External Entity"),
+            VulnerabilityClass::CrossOriginMisconfiguration => {
+                write!(f, "Cross-Origin Misconfiguration")
+            }
+            VulnerabilityClass::MissingSecurityHeader => write!(f, "Missing Security Header"),
+            VulnerabilityClass::JwtVulnerability => write!(f, "JWT Vulnerability"),
+            VulnerabilityClass::HttpRequestSmuggling => write!(f, "HTTP Request Smuggling"),
+            VulnerabilityClass::RaceCondition => write!(f, "Race Condition"),
+            VulnerabilityClass::SubdomainTakeover => write!(f, "Subdomain Takeover"),
+            VulnerabilityClass::PrototypePollution => write!(f, "Prototype Pollution"),
+            VulnerabilityClass::GraphQlAbuse => write!(f, "GraphQL Abuse"),
+            VulnerabilityClass::CloudMisconfiguration => write!(f, "Cloud Misconfiguration"),
+            VulnerabilityClass::Clickjacking => write!(f, "Clickjacking"),
+            VulnerabilityClass::CachePoisoning => write!(f, "Cache Poisoning"),
+            VulnerabilityClass::HostHeaderInjection => write!(f, "Host Header Injection"),
+            VulnerabilityClass::InsecureDirectObjectReference => {
+                write!(f, "Insecure Direct Object Reference")
+            }
+            VulnerabilityClass::InformationDisclosure => write!(f, "Information Disclosure"),
+            VulnerabilityClass::WeakCryptography => write!(f, "Weak Cryptography"),
+            VulnerabilityClass::MassAssignment => write!(f, "Mass Assignment"),
         }
     }
 }

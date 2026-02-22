@@ -95,6 +95,24 @@ pub fn cwe_for(class: &VulnerabilityClass) -> &'static str {
         VulnerabilityClass::CrlfInjection => "CWE-93",
         VulnerabilityClass::KnownVulnerableDependency => "CWE-1395",
         VulnerabilityClass::InsufficientInputValidation => "CWE-20",
+        VulnerabilityClass::NoSqlInjection => "CWE-943",
+        VulnerabilityClass::XmlExternalEntity => "CWE-611",
+        VulnerabilityClass::CrossOriginMisconfiguration => "CWE-942",
+        VulnerabilityClass::MissingSecurityHeader => "CWE-693",
+        VulnerabilityClass::JwtVulnerability => "CWE-347",
+        VulnerabilityClass::HttpRequestSmuggling => "CWE-444",
+        VulnerabilityClass::RaceCondition => "CWE-362",
+        VulnerabilityClass::SubdomainTakeover => "CWE-284",
+        VulnerabilityClass::PrototypePollution => "CWE-1321",
+        VulnerabilityClass::GraphQlAbuse => "CWE-20",
+        VulnerabilityClass::CloudMisconfiguration => "CWE-16",
+        VulnerabilityClass::Clickjacking => "CWE-1021",
+        VulnerabilityClass::CachePoisoning => "CWE-349",
+        VulnerabilityClass::HostHeaderInjection => "CWE-644",
+        VulnerabilityClass::InsecureDirectObjectReference => "CWE-639",
+        VulnerabilityClass::InformationDisclosure => "CWE-200",
+        VulnerabilityClass::WeakCryptography => "CWE-327",
+        VulnerabilityClass::MassAssignment => "CWE-915",
     }
 }
 
@@ -116,6 +134,24 @@ pub fn attack_technique_for(class: &VulnerabilityClass) -> &'static str {
         VulnerabilityClass::CrlfInjection => "T1071",
         VulnerabilityClass::KnownVulnerableDependency => "T1195",
         VulnerabilityClass::InsufficientInputValidation => "T1190",
+        VulnerabilityClass::NoSqlInjection => "T1190",
+        VulnerabilityClass::XmlExternalEntity => "T1190",
+        VulnerabilityClass::CrossOriginMisconfiguration => "T1189",
+        VulnerabilityClass::MissingSecurityHeader => "T1574",
+        VulnerabilityClass::JwtVulnerability => "T1078",
+        VulnerabilityClass::HttpRequestSmuggling => "T1071",
+        VulnerabilityClass::RaceCondition => "T1190",
+        VulnerabilityClass::SubdomainTakeover => "T1584",
+        VulnerabilityClass::PrototypePollution => "T1190",
+        VulnerabilityClass::GraphQlAbuse => "T1190",
+        VulnerabilityClass::CloudMisconfiguration => "T1574",
+        VulnerabilityClass::Clickjacking => "T1189",
+        VulnerabilityClass::CachePoisoning => "T1557",
+        VulnerabilityClass::HostHeaderInjection => "T1071",
+        VulnerabilityClass::InsecureDirectObjectReference => "T1548",
+        VulnerabilityClass::InformationDisclosure => "T1005",
+        VulnerabilityClass::WeakCryptography => "T1600",
+        VulnerabilityClass::MassAssignment => "T1190",
     }
 }
 
@@ -168,6 +204,60 @@ pub fn remediation_for(class: &VulnerabilityClass) -> &'static str {
         }
         VulnerabilityClass::InsufficientInputValidation => {
             "Validate all input against strict schemas at the application boundary."
+        }
+        VulnerabilityClass::NoSqlInjection => {
+            "Use parameterized queries for NoSQL databases and validate input types strictly."
+        }
+        VulnerabilityClass::XmlExternalEntity => {
+            "Disable external entity processing in XML parsers and use less complex data formats."
+        }
+        VulnerabilityClass::CrossOriginMisconfiguration => {
+            "Configure CORS policies to allow only trusted origins and avoid wildcard patterns."
+        }
+        VulnerabilityClass::MissingSecurityHeader => {
+            "Add security headers: Content-Security-Policy, X-Frame-Options, Strict-Transport-Security."
+        }
+        VulnerabilityClass::JwtVulnerability => {
+            "Validate JWT signatures with a strong algorithm; reject 'none' and symmetric key confusion."
+        }
+        VulnerabilityClass::HttpRequestSmuggling => {
+            "Normalize HTTP parsing between front-end and back-end servers; reject ambiguous requests."
+        }
+        VulnerabilityClass::RaceCondition => {
+            "Use atomic operations or pessimistic locking for state-changing operations."
+        }
+        VulnerabilityClass::SubdomainTakeover => {
+            "Remove dangling DNS records and verify ownership of all subdomain targets."
+        }
+        VulnerabilityClass::PrototypePollution => {
+            "Freeze or seal object prototypes; validate and sanitize keys in user-controlled objects."
+        }
+        VulnerabilityClass::GraphQlAbuse => {
+            "Disable introspection in production; enforce query depth and complexity limits."
+        }
+        VulnerabilityClass::CloudMisconfiguration => {
+            "Apply least-privilege IAM policies and enable cloud security posture management."
+        }
+        VulnerabilityClass::Clickjacking => {
+            "Set X-Frame-Options to DENY or SAMEORIGIN and use Content-Security-Policy frame-ancestors."
+        }
+        VulnerabilityClass::CachePoisoning => {
+            "Normalize cache keys and validate Host headers; use cache-control directives."
+        }
+        VulnerabilityClass::HostHeaderInjection => {
+            "Validate the Host header against a whitelist of expected values."
+        }
+        VulnerabilityClass::InsecureDirectObjectReference => {
+            "Enforce authorization checks on every object access; use indirect references."
+        }
+        VulnerabilityClass::InformationDisclosure => {
+            "Remove verbose error messages, debug endpoints, and unnecessary server headers."
+        }
+        VulnerabilityClass::WeakCryptography => {
+            "Use strong, current cryptographic algorithms and proper key management."
+        }
+        VulnerabilityClass::MassAssignment => {
+            "Explicitly whitelist allowed fields for mass assignment; reject unexpected parameters."
         }
     }
 }

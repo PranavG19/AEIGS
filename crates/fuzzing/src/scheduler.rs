@@ -225,6 +225,13 @@ pub fn is_fuzzable(class: VulnerabilityClass) -> bool {
             | VulnerabilityClass::HeaderInjection
             | VulnerabilityClass::OpenRedirect
             | VulnerabilityClass::CrlfInjection
+            | VulnerabilityClass::NoSqlInjection
+            | VulnerabilityClass::XmlExternalEntity
+            | VulnerabilityClass::HttpRequestSmuggling
+            | VulnerabilityClass::PrototypePollution
+            | VulnerabilityClass::GraphQlAbuse
+            | VulnerabilityClass::HostHeaderInjection
+            | VulnerabilityClass::MassAssignment
     )
 }
 

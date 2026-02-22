@@ -229,6 +229,24 @@ mod tests {
             VulnerabilityClass::CrlfInjection,
             VulnerabilityClass::KnownVulnerableDependency,
             VulnerabilityClass::InsufficientInputValidation,
+            VulnerabilityClass::NoSqlInjection,
+            VulnerabilityClass::XmlExternalEntity,
+            VulnerabilityClass::CrossOriginMisconfiguration,
+            VulnerabilityClass::MissingSecurityHeader,
+            VulnerabilityClass::JwtVulnerability,
+            VulnerabilityClass::HttpRequestSmuggling,
+            VulnerabilityClass::RaceCondition,
+            VulnerabilityClass::SubdomainTakeover,
+            VulnerabilityClass::PrototypePollution,
+            VulnerabilityClass::GraphQlAbuse,
+            VulnerabilityClass::CloudMisconfiguration,
+            VulnerabilityClass::Clickjacking,
+            VulnerabilityClass::CachePoisoning,
+            VulnerabilityClass::HostHeaderInjection,
+            VulnerabilityClass::InsecureDirectObjectReference,
+            VulnerabilityClass::InformationDisclosure,
+            VulnerabilityClass::WeakCryptography,
+            VulnerabilityClass::MassAssignment,
         ];
 
         for class in classes {
@@ -1041,6 +1059,48 @@ mod tests {
                 VulnerabilityClass::InsufficientInputValidation,
                 "Insufficient Input Validation",
             ),
+            (VulnerabilityClass::NoSqlInjection, "NoSQL Injection"),
+            (VulnerabilityClass::XmlExternalEntity, "XML External Entity"),
+            (
+                VulnerabilityClass::CrossOriginMisconfiguration,
+                "Cross-Origin Misconfiguration",
+            ),
+            (
+                VulnerabilityClass::MissingSecurityHeader,
+                "Missing Security Header",
+            ),
+            (VulnerabilityClass::JwtVulnerability, "JWT Vulnerability"),
+            (
+                VulnerabilityClass::HttpRequestSmuggling,
+                "HTTP Request Smuggling",
+            ),
+            (VulnerabilityClass::RaceCondition, "Race Condition"),
+            (VulnerabilityClass::SubdomainTakeover, "Subdomain Takeover"),
+            (
+                VulnerabilityClass::PrototypePollution,
+                "Prototype Pollution",
+            ),
+            (VulnerabilityClass::GraphQlAbuse, "GraphQL Abuse"),
+            (
+                VulnerabilityClass::CloudMisconfiguration,
+                "Cloud Misconfiguration",
+            ),
+            (VulnerabilityClass::Clickjacking, "Clickjacking"),
+            (VulnerabilityClass::CachePoisoning, "Cache Poisoning"),
+            (
+                VulnerabilityClass::HostHeaderInjection,
+                "Host Header Injection",
+            ),
+            (
+                VulnerabilityClass::InsecureDirectObjectReference,
+                "Insecure Direct Object Reference",
+            ),
+            (
+                VulnerabilityClass::InformationDisclosure,
+                "Information Disclosure",
+            ),
+            (VulnerabilityClass::WeakCryptography, "Weak Cryptography"),
+            (VulnerabilityClass::MassAssignment, "Mass Assignment"),
         ];
 
         let mut seen = std::collections::HashSet::new();
