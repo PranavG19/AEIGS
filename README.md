@@ -1,8 +1,8 @@
 # AEGIS - Adversarial Vulnerability Discovery Framework
 
-An automated security scanner for web applications. AEGIS systematically discovers vulnerabilities by sending crafted malicious inputs to your app's endpoints, using counterfactual testing to eliminate false positives, and generating detailed reports.
+An automated security scanner for web applications. AEGIS systematically discovers vulnerabilities by sending crafted malicious inputs to your app's endpoints, using controlled experiment testing to eliminate false positives, and generating detailed reports with provenance-tracked confidence scores.
 
-**11 Rust crates + 1 Python package. 2,569 Rust tests, 229 Python tests.**
+**11 Rust crates + 1 Python package. 2,917 Rust tests, 511 Python tests.**
 
 > **Safety:** AEGIS only targets `localhost` by default. Remote targets require a cryptographically signed scope attestation (see [Remote Scanning](#remote-scanning-scope-attestation)).
 
@@ -40,13 +40,16 @@ An automated security scanner for web applications. AEGIS systematically discove
 ## Quick Start
 
 ```bash
-# Run a scan against a local app on port 3000
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --graph-db scan.json
+# Quick scan (no LLM, 1 iteration)
+cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset quick
 
-# Run with LLM-powered hypothesis generation
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --graph-db scan.json
+# Thorough scan with LLM hypothesis generation (3 iterations, convergence detection)
+cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset thorough --graph-db scan.json
 
-# Run without LLM (static fuzzing only)
+# Paranoid stealth scan (5 iterations, evasion mode)
+cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset paranoid --graph-db scan.json
+
+# Without presets (full control)
 cargo run -p aegis-orchestrator -- --target http://localhost:3000 --graph-db scan.json --no-llm
 
 # Scan a remote target you own (requires attestation)
@@ -506,10 +509,10 @@ The transport layer verifies the signature, checks the target URL matches, and c
 
 **Tier 1 -- Unit Tests (CI on every PR):**
 ```bash
-cargo test --workspace                    # 2,569 Rust tests
-cargo clippy --workspace -- -D warnings   # zero warnings policy
-cargo fmt --all --check                   # formatting gate
-cd hypothesis-engine && uv run pytest     # 229 Python tests
+cargo test --workspace                                                # 2,917 Rust tests
+cargo clippy --workspace -- -D warnings                               # zero warnings policy
+cargo fmt --all --check                                               # formatting gate
+cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 511 Python tests
 ```
 
 **Tier 2 -- Docker Integration (CI on main):**
@@ -529,7 +532,7 @@ scripts/validate-ground-truth.sh
 | Area | What's Verified |
 |---|---|
 | Knowledge graph | CRUD operations, 28 semantic edge rules, concurrency (10 threads x 100 ops), persistence roundtrips |
-| Counterfactual oracle | Flaky endpoint filtering, reflection preservation, all anomaly types |
+| Controlled experiment oracle | Flaky endpoint filtering, reflection preservation, all anomaly types |
 | Fuzzing | Scheduler priority ordering, payload mutation, UCB1 bandit convergence |
 | Evasion | All 10 personas, timing distributions, TLS fingerprint mapping, localhost enforcement |
 | SARIF output | Field extraction, vuln class mapping, empty result handling |

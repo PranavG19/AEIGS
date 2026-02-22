@@ -1,14 +1,14 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,829 Rust tests, 337 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,917 Rust tests, 511 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 2,829 tests across 11 crates
+cargo test --workspace                                                # 2,917 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --all --check                                               # formatting gate
-cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 337 Python tests
+cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 511 Python tests
 AEGIS_INTEGRATION_TESTS=1 cargo test -p aegis-orchestrator \
   --test docker_integration -- --test-threads=1                       # 34 Docker Tier 2 tests (requires Docker/Colima)
 ```
@@ -67,8 +67,9 @@ hypothesis-engine        (Python) LLM hypothesis generation via pluggable backen
 ```
 crates/
 ├── protocol/src/           node.rs  edge.rs  finding.rs  operation.rs  audit.rs  capability.rs
-│                           ipc.rs  target_validation.rs  request.rs  defense_context.rs
-│                           scope_attestation.rs  signed_config.rs  scan_event.rs
+│                           ipc.rs  hypothesis_ipc.rs  target_validation.rs  request.rs
+│                           defense_context.rs  scope_attestation.rs  signed_config.rs
+│                           scan_event.rs
 ├── knowledge-graph/src/    node_store.rs  edge_store.rs  finding_store.rs  operation_log.rs  graph.rs
 │                           graph_store.rs  query/{path_queries,reachability}.rs
 ├── audit-log/src/          hash_chain.rs  hmac_signer.rs  log_writer.rs  log_verifier.rs  event_store.rs
@@ -86,19 +87,24 @@ crates/
 ├── evasion-engine/src/     persona.rs  header_transformer.rs  encoding_transformer.rs  timing_controller.rs
 │                           session_manager.rs  transport.rs  tls_config.rs
 └── orchestrator/src/       scan_config.rs  pipeline.rs  phase_recon.rs  phase_fingerprint.rs
-                            phase_fuzz.rs  phase_analyze.rs  phase_report.rs  main.rs  util.rs
-                            actor.rs  benchmark.rs  calibration.rs  checkpoint.rs  convergence.rs
+                            phase_fuzz.rs  phase_analyze.rs  phase_report.rs  phase_error.rs
+                            main.rs  util.rs  actor.rs  benchmark.rs  calibration.rs
+                            checkpoint.rs  convergence.rs  hypothesis_bridge.rs
                             distributed.rs  endpoint_similarity.rs  graph_persistence.rs
                             interactive.rs  pipeline_composer.rs  scan_history.rs  telemetry.rs
                             update_db.rs
 
 hypothesis-engine/src/hypothesis_engine/
     bedrock_client.py  openai_client.py  generator.py  compiler.py  feedback.py  evasion_mode.py
-    uncertainty.py  calibration.py  bypass_examples.json
+    uncertainty.py  calibration.py  ipc_types.py  bridge.py  bypass_examples.json
 
 hypothesis-engine/tests/
     test_integration.py  test_evaluation.py  test_prompt_regression.py  test_llm_delta.py
     fixtures/express_app.json  fixtures/flask_app.json  fixtures/graphql_app.json
+    fixtures/spring_boot_app.json  fixtures/django_app.json  fixtures/rails_app.json
+    fixtures/fastapi_app.json  fixtures/nextjs_app.json  fixtures/php_laravel_app.json
+    fixtures/go_gin_app.json  fixtures/express_waf_app.json  fixtures/flask_ratelimit_app.json
+    fixtures/graphql_auth_app.json  fixtures/microservices_app.json  fixtures/aspnet_app.json
 
 .github/workflows/
     tier1-tests.yml                 PR/push: cargo fmt, clippy, workspace tests, pytest
@@ -176,7 +182,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **VulnerabilityClass** — 16-variant enum. Derives Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize. Implements Display with human-readable names (e.g., "SQL Injection", "Cross-Site Scripting").
 - **NodeType** — 9 variants including `Defense`. Implements Display. **EdgeLabel** — 8 variants including `ProtectedBy`. Implements Display.
 - **is_valid_edge(source, label, target)** — Semantic validation whitelist for (NodeType, EdgeLabel, NodeType) triples. 28 valid combinations.
-- **EvidenceLevel** — 4-variant enum: Statistical, Counterfactual, Confirmed, Chained. Tracks how strongly a finding is supported.
+- **EvidenceLevel** — 4-variant enum: Statistical, Controlled (renamed from Counterfactual, `#[serde(alias = "Counterfactual")]` for backwards compat), Confirmed, Chained. Tracks how strongly a finding is supported.
 - **GraphOperation** — AddNode, AddEdge, UpdateWeight, AddFinding. Applied via `KnowledgeGraph::apply_operations(&[OperationLogEntry])`. All public methods return `Result<T, GraphError>`.
 - **FuzzRequest / FuzzResponse** — Shared HTTP types in protocol crate. Re-exported by fuzzing crate for backwards compatibility.
 - **DefenseContext** — Abstract defense posture in protocol crate: has_waf, waf_vendor, waf_blocked_categories, rate_limit_rps, bot_detection_present/evaded.
@@ -186,7 +192,10 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **DefenseProfile** — Optional WAF/rate-limit/bot-detection profiles. Builder pattern with `with_*` methods.
 - **StealthConfig** — 4 presets: `default()`, `aggressive()`, `paranoid()`, `benchmark()`. Builder pattern with `with_*` methods.
 - **PersonaId** — 10 variants: ChromeDesktop, FirefoxDesktop, SafariDesktop, ChromeMobile, Googlebot, EdgeDesktop, OperaDesktop, SafariMobile, CurlClient, PythonRequests. Persona rotation supported.
-- **Confidence** — Newtype wrapper over `f64` enforcing `[0.0, 1.0]` range and finiteness. `Confidence::new(v)` validates, `Confidence::from_evidence(level)` maps `EvidenceLevel` to default score. Implements `Serialize` (as f64), `Deserialize` (tolerant: invalid→default 0.5), `Display`. Replaces the prior `Option<f64> confidence_score` + `effective_confidence()` dual path.
+- **Confidence** — Newtype wrapper over `f64` enforcing `[0.0, 1.0]` range and finiteness. `Confidence::new(v)` validates, `Confidence::from_evidence(level)` maps `EvidenceLevel` to default score. Implements `Serialize` (as f64), `Deserialize` (tolerant: invalid→default 0.5), `Display`.
+- **FindingConfidence** — Provenance-tracked confidence: `prior` (base rate), `likelihood_ratio` (evidence strength), `methodology_reliability` (test method trustworthiness), `composite: Confidence` (combined score). `FindingConfidence::compute(prior, lr, reliability)` clamps product to [0,1]. `FindingConfidence::from_simple(confidence)` wraps legacy scalar values. `FindingData.confidence` is now `FindingConfidence`, not raw `Confidence`.
+- **PhaseError** — Structured error enum for pipeline phases: Graph, Io, Serialization, Checkpoint, ReportFormat, UnknownExportFormat, FilesystemWalk. Implements `std::error::Error` with `source()`. Replaces `Result<T, String>` in all phase functions.
+- **ScanPreset** — 4-variant enum: Quick (1 iter, no LLM), Thorough (3 iter, LLM, convergence=2), Paranoid (5 iter, paranoid stealth), Benchmark (1 iter, LLM, auto graph-db). Applied via `--preset` / `-p` flag; explicit CLI flags override preset defaults.
 - **SarifFinding** — input struct for SARIF emission. Includes optional `defense_context`, `vulnerability_class`, `evidence_level`, `cve_id`, `mitigation_rank`.
 - **MitigationResult** — Result of graph-theoretic mitigation impact estimate: removed_findings, findings_remaining, impact_score.
 - **FindingOrigin** — 3-variant enum: LlmHypothesis, StaticRule, Mutation. Tags fuzz findings by origin.
@@ -196,13 +205,16 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **VarianceReport** — Endpoint response variance measurement: response_codes, body_similarity, is_deterministic.
 - **LlmBackend** — (Python) Abstract base class for LLM providers. Implementations: BedrockClient, OpenAiClient.
 - **CalibrationBin / CalibrationReport** — (Python) Confidence calibration in `calibration.py`: histogram binning with `mean_confidence`, `actual_positive_rate`, `calibration_error` per bin. `CalibrationReport` includes bins, ECE, overconfident/underconfident ranges, temperature parameters `(a, b)`.
-- **_consistency_key / generate_with_consistency** — (Python) Self-consistency in `generator.py`: `_consistency_key(h)` extracts `(vulnerability_class, endpoint)` tuple; `generate_with_consistency(ctx, rounds, threshold)` runs N generations and filters by agreement ratio.
-- **AuditWriter** — Trait with `append_event(&mut self, event) -> Result<(), LogWriterError>` and `sequence_number(&self) -> u64`. Implemented by `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter` (intentionally discards). Pipeline uses `Box<dyn AuditWriter>`.
+- **_consistency_key / generate_with_consistency** — (Python) Self-consistency in `generator.py`: `_consistency_key(h)` extracts `(vulnerability_class, endpoint)` tuple; `generate_with_consistency(ctx, rounds, threshold)` runs N generations, filters by agreement ratio, and uses **median confidence** (not max) across agreeing rounds to eliminate upward bias.
+- **AuditWriter** — Trait with `append_event_full(&mut self, event) -> Result<AuditEntry, LogWriterError>` (required), `append_event()` (default impl delegates to full and discards entry), and `sequence_number(&self) -> u64`. Implemented by `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter` (returns synthetic entries with zeroed hashes). Pipeline uses `Box<dyn AuditWriter>`. No downcasting needed to access full entries.
 - **NoOpAuditLogWriter** — Implements `AuditWriter`; intentionally discards all events. Used when `--no-audit` is set.
 - **AuditLogWriter::append_event_full()** — Returns `Result<AuditEntry, LogWriterError>` with full hash chain/HMAC data. Use when caller needs the entry metadata (e.g. verification tests). The trait method `append_event()` delegates to this but discards the entry.
 - **CertificateType** — 6 variants: Fuzzing, Taint, Chain, Config, Dependency, Evasion. Envelope versioned (current: v2).
 - **BusinessContext** — JSON-loadable business annotations: excluded_endpoints, critical_assets, pii_endpoints, known_issues.
-- **TokenUsage** — Pydantic model tracking input_tokens and output_tokens from Bedrock API calls.
+- **TokenUsage** — Pydantic model tracking input_tokens, output_tokens, and latency_ms from LLM API calls.
+- **ScanContextIpc / HypothesisIpc / DefenseContextIpc** — Canonical IPC types in `protocol::hypothesis_ipc` for the Python-Rust bridge boundary. Matching Pydantic models in `hypothesis_engine.ipc_types`. `BridgeRequest` and `BridgeResponse` are serde internally-tagged enums. Orchestrator re-exports as type aliases (`ScanContextJson = ScanContextIpc`, etc.).
+- **GenerationResult** — (Python) Extended with `parsing_method: str` ("xml_tags", "bracket_json", "single_object_wrapped", "failed") and `latency_ms: float` for LLM degradation monitoring.
+- **should_recalibrate / fit_temperature_scaling_cv** — (Python) Recalibration gate in `calibration.py`: detects model changes, runs cross-validated temperature scaling against ground truth fixtures, computes ECE.
 - **ScopeDocument / SignedScopeAttestation** — Ed25519-signed authorization documents binding target + authorized_by + expiry. Verified via `verify_attestation()`.
 - **SignableConfig / SignedConfig** — Ed25519-signed scan configuration with SHA3-256 content hash. Tamper detection via `verify_signed_config()`.
 - **ScanEvent** — Typed event enum (EndpointDiscovered, HypothesisGenerated, PayloadTested, AnomalyDetected, FindingConfirmed, etc.) for inter-module event bus.
@@ -355,7 +367,13 @@ The knowledge graph enforces these constraints during batch validation:
 - KnowledgeGraph methods return `Result` — `GraphError::LockPoisoned` removed (parking_lot doesn't poison); `GraphError::Io` added for persistence errors
 - `OperationLog::new()` defaults to relaxed sequencing — use `new_strict()` for gap detection
 - Adding new `NodeType` or `EdgeLabel` variants requires updating `is_valid_edge()` whitelist AND the exhaustive coverage test in `protocol_test.rs`
-- `FindingData.confidence` is `Confidence` newtype (not raw `f64`) — access inner value via `.value()`; construction via `Confidence::new(v)` or `Confidence::from_evidence(level)`; custom `Deserialize` handles legacy `confidence_score` and raw f64 `confidence` fields for backwards compat
+- `FindingData.confidence` is `FindingConfidence` (not raw `f64` or `Confidence`) — access composite score via `.confidence.composite.value()`; provenance components via `.confidence.prior`, `.confidence.likelihood_ratio`, `.confidence.methodology_reliability`; construction via `FindingConfidence::compute(prior, lr, reliability)` or `FindingConfidence::from_simple(confidence)` for legacy wrapping; custom `Deserialize` handles legacy `confidence_score`, scalar `confidence`, and full `FindingConfidence` JSON objects
+- `EvidenceLevel::Controlled` (renamed from `Counterfactual`) — `#[serde(alias = "Counterfactual")]` for backwards compat; the anomaly oracle still uses "counterfactual" in method names (e.g., `CounterfactualOrder`) to describe the testing methodology, which is distinct from the evidence level variant name
+- `PhaseError` replaces `Result<T, String>` in all phase functions — match on variants: `Graph(GraphError)`, `Io(io::Error)`, `Serialization(serde_json::Error)`, `Checkpoint(CheckpointError)`, `ReportFormat(String)`, `UnknownExportFormat(String)`, `FilesystemWalk(String)`
+- `parse_hypotheses_from_response()` now returns 3-tuple `(str, list[Hypothesis], str)` — third element is `parsing_method` ("xml_tags", "bracket_json", "single_object_wrapped", "failed"); emits `RuntimeWarning` on fallback
+- `ScanContextJson` (type alias for `ScanContextIpc`) has `class_confirmation_rates: HashMap<String, f64>` and `model_id: Option<String>` — populated from scan history in `build_hypothesis_context()`; injected as `<prior_performance>` XML section in LLM prompts
+- `FeedbackManager` accepts optional `historical_rates` parameter — blends 50/50 with `DEFAULT_CLASS_THRESHOLDS`; `from_history()` classmethod maps rates to adjusted thresholds
+- Endpoint similarity now uses positional TF-IDF + character trigram Jaccard — final similarity = `0.7 * positional_cosine + 0.3 * trigram_jaccard`; earlier path tokens weighted higher via `1.0 / (1.0 + position)`
 - `run_fuzz()` returns `FuzzPhaseResult` (not `PhaseResult`) — access phase data via `.phase` field
 - `run_report()` takes optional `&ScanMetrics` parameter — pass `None` when metrics not needed
 - `HypothesisGenerator` uses composition (not inheritance) — accepts `client: LlmBackend` parameter; `create_backend()` factory for backend selection
