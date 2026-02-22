@@ -204,6 +204,12 @@ fn pipeline_error_display_analysis() {
 }
 
 #[test]
+fn pipeline_error_display_dom_verify() {
+    let err = PipelineError::DomVerify("dom verify failed".to_string());
+    assert_eq!(format!("{err}"), "dom_verify: dom verify failed");
+}
+
+#[test]
 fn pipeline_error_display_report() {
     let err = PipelineError::Report("report failed".to_string());
     assert_eq!(format!("{err}"), "report: report failed");
@@ -266,7 +272,7 @@ async fn run_scan_localhost_no_source_dir_succeeds() {
     let result = run_scan(config).await;
     assert!(result.is_ok(), "run_scan failed: {:?}", result.err());
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 6);
+    assert_eq!(summary.phases_completed, 7);
     assert!(summary.sarif_path.contains("aegis-pipeline-test.sarif"));
 }
 
@@ -296,7 +302,7 @@ async fn run_scan_skip_fingerprint_reduces_phases() {
     let result = run_scan(config).await;
     assert!(result.is_ok());
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 5);
+    assert_eq!(summary.phases_completed, 6);
 }
 
 #[tokio::test]
@@ -362,7 +368,7 @@ async fn run_scan_no_source_dir_has_fingerprint_ops() {
     let config = localhost_config();
     let result = run_scan(config).await.unwrap();
     assert!(result.total_operations >= 1);
-    assert_eq!(result.phases_completed, 6);
+    assert_eq!(result.phases_completed, 7);
 }
 
 #[tokio::test]
@@ -463,7 +469,7 @@ async fn run_scan_concurrent_recon_and_fingerprint() {
         result.err()
     );
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 6);
+    assert_eq!(summary.phases_completed, 7);
     assert!(summary.total_operations >= 1);
 }
 
@@ -479,7 +485,7 @@ async fn run_scan_concurrent_with_skip_fingerprint() {
         result.err()
     );
     let summary = result.unwrap();
-    assert_eq!(summary.phases_completed, 5);
+    assert_eq!(summary.phases_completed, 6);
 }
 
 #[test]
@@ -508,7 +514,15 @@ async fn run_scan_phase_timings_non_zero() {
     let config = localhost_config();
     let summary = run_scan(config).await.unwrap();
     let timings = &summary.metrics.phase_timings.timings;
-    for phase in &["recon", "crawl", "fingerprint", "fuzz", "analyze", "report"] {
+    for phase in &[
+        "recon",
+        "crawl",
+        "fingerprint",
+        "fuzz",
+        "analyze",
+        "dom_verify",
+        "report",
+    ] {
         assert!(
             timings.contains_key(*phase),
             "missing phase timing for {phase}"

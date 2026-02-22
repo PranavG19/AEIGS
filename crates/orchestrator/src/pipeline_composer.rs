@@ -312,7 +312,7 @@ pub fn topological_order(definition: &PipelineDefinition) -> Result<Vec<String>,
     Ok(order)
 }
 
-/// Returns the standard 6-stage pipeline: recon, crawl, fingerprint, fuzz, analyze, report.
+/// Returns the standard 7-stage pipeline: recon, crawl, fingerprint, fuzz, analyze, dom_verify, report.
 pub fn default_pipeline() -> PipelineDefinition {
     let mut def = PipelineDefinition::new();
     def.add_stage(PipelineStage::new("recon", PhaseType::Source));
@@ -324,7 +324,10 @@ pub fn default_pipeline() -> PipelineDefinition {
     );
     def.add_stage(PipelineStage::new("fuzz", PhaseType::Transform).with_dependency("crawl"));
     def.add_stage(PipelineStage::new("analyze", PhaseType::Transform).with_dependency("fuzz"));
-    def.add_stage(PipelineStage::new("report", PhaseType::Sink).with_dependency("analyze"));
+    def.add_stage(
+        PipelineStage::new("dom_verify", PhaseType::Transform).with_dependency("analyze"),
+    );
+    def.add_stage(PipelineStage::new("report", PhaseType::Sink).with_dependency("dom_verify"));
     def.max_iterations = 1;
     def.convergence_threshold = 2;
     def

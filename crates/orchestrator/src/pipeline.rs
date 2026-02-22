@@ -25,6 +25,7 @@ use crate::graph_persistence::{load_or_create_graph, save_graph_if_configured};
 use crate::hypothesis_bridge::{HypothesisBridge, ScanContextJson};
 use crate::phase_analyze::{build_attack_graph_from_knowledge_graph, run_analyze};
 use crate::phase_crawl::crawl_result_to_operations;
+use crate::phase_dom_verify::run_dom_verify;
 use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::run_recon_standalone;
@@ -84,6 +85,7 @@ pub enum PipelineError {
     Fingerprint(String),
     Fuzz(String),
     Analysis(String),
+    DomVerify(String),
     Report(String),
 }
 
@@ -97,6 +99,7 @@ impl std::fmt::Display for PipelineError {
             Self::Fingerprint(e) => write!(f, "fingerprint: {e}"),
             Self::Fuzz(e) => write!(f, "fuzz: {e}"),
             Self::Analysis(e) => write!(f, "analysis: {e}"),
+            Self::DomVerify(e) => write!(f, "dom_verify: {e}"),
             Self::Report(e) => write!(f, "report: {e}"),
         }
     }
@@ -1029,6 +1032,32 @@ fn run_single_analyze(
     Ok(analysis)
 }
 
+fn run_dom_verify_phase(
+    ctx: &mut ScanContext,
+    audit_writer: &mut dyn AuditWriter,
+    progress: &mut ScanProgress,
+    scan_metrics: &mut ScanMetrics,
+) -> Result<(), PipelineError> {
+    let dom_verify_token = issue_phase_token(&mut ctx.capabilities, ModuleIdentifier::Enumeration);
+    emit_event(
+        audit_writer,
+        AuditEventType::ModuleStarted {
+            module: ModuleIdentifier::Enumeration,
+        },
+    );
+    let dom_verify_start = std::time::Instant::now();
+    let result = run_dom_verify(ctx).map_err(PipelineError::DomVerify)?;
+    progress.total_ops += result.operations_applied;
+    progress.total_findings += result.findings_count;
+    progress.phases += 1;
+    progress.completed_phases.push("dom_verify".to_string());
+    scan_metrics
+        .phase_timings
+        .record("dom_verify", dom_verify_start.elapsed());
+    validate_phase_token(&ctx.capabilities, &dom_verify_token, "dom_verify");
+    Ok(())
+}
+
 fn update_convergence(progress: &mut ScanProgress, fuzz_findings: u64, analyze_findings: u64) {
     if fuzz_findings == 0 && analyze_findings == 0 {
         progress.consecutive_zero_findings += 1;
@@ -1139,6 +1168,11 @@ async fn run_scan_phases(
         graph_db_path,
     )
     .await?;
+
+    if !should_skip_phase_from_checkpoint(checkpoint, "dom_verify") {
+        run_dom_verify_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
+        try_save_checkpoint(&progress, 0, graph_db_path);
+    }
 
     emit_event(
         audit_writer,

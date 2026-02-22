@@ -66,16 +66,18 @@ fn validate_no_sink_stage_fails() {
 fn topological_order_returns_valid_order() {
     let def = default_pipeline();
     let order = topological_order(&def).unwrap();
-    assert_eq!(order.len(), 6);
+    assert_eq!(order.len(), 7);
     let recon_pos = order.iter().position(|n| n == "recon").unwrap();
     let crawl_pos = order.iter().position(|n| n == "crawl").unwrap();
     let fuzz_pos = order.iter().position(|n| n == "fuzz").unwrap();
     let analyze_pos = order.iter().position(|n| n == "analyze").unwrap();
+    let dom_verify_pos = order.iter().position(|n| n == "dom_verify").unwrap();
     let report_pos = order.iter().position(|n| n == "report").unwrap();
     assert!(recon_pos < crawl_pos);
     assert!(crawl_pos < fuzz_pos);
     assert!(fuzz_pos < analyze_pos);
-    assert!(analyze_pos < report_pos);
+    assert!(analyze_pos < dom_verify_pos);
+    assert!(dom_verify_pos < report_pos);
 }
 
 #[test]
@@ -111,9 +113,9 @@ fn topological_order_detects_cycle() {
 }
 
 #[test]
-fn default_pipeline_has_six_stages() {
+fn default_pipeline_has_seven_stages() {
     let def = default_pipeline();
-    assert_eq!(def.stages.len(), 6);
+    assert_eq!(def.stages.len(), 7);
 }
 
 #[test]
@@ -203,12 +205,17 @@ fn execution_plan_default_pipeline_has_correct_waves() {
         .iter()
         .position(|w| w.contains(&"analyze".to_string()))
         .unwrap();
+    let dom_verify_wave = waves
+        .iter()
+        .position(|w| w.contains(&"dom_verify".to_string()))
+        .unwrap();
     let report_wave = waves
         .iter()
         .position(|w| w.contains(&"report".to_string()))
         .unwrap();
     assert!(analyze_wave > 2);
-    assert!(report_wave > analyze_wave);
+    assert!(dom_verify_wave > analyze_wave);
+    assert!(report_wave > dom_verify_wave);
 }
 
 #[test]
@@ -220,6 +227,7 @@ fn describe_pipeline_includes_stage_names() {
     assert!(desc.contains("fingerprint"));
     assert!(desc.contains("fuzz"));
     assert!(desc.contains("analyze"));
+    assert!(desc.contains("dom_verify"));
     assert!(desc.contains("report"));
 }
 

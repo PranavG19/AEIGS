@@ -5,6 +5,7 @@ use aegis_protocol::operation::ModuleIdentifier;
 use aegis_protocol::scan_event::{ScanEvent, ScanEventEnvelope};
 
 use crate::phase_analyze::run_analyze;
+use crate::phase_dom_verify::run_dom_verify;
 use crate::phase_fuzz::{FuzzPhaseResult, FuzzTransport, run_fuzz};
 use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::run_report_with_previous;
@@ -333,6 +334,31 @@ impl ScanActor for AnalyzeActor {
     }
 }
 
+/// Actor that verifies XSS findings via headless browser DOM execution.
+///
+/// Sits between analyze and report. Currently a placeholder that returns
+/// an empty phase result since browser-backed verification requires the
+/// `browser` feature on the crawler crate.
+pub struct DomVerifyActor;
+
+impl ScanActor for DomVerifyActor {
+    fn name(&self) -> &str {
+        "dom_verify"
+    }
+
+    fn process(
+        &mut self,
+        ctx: &mut ScanContext,
+        _events: &[ScanEventEnvelope],
+    ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
+        let start = std::time::Instant::now();
+        let result = run_dom_verify(ctx).map_err(ActorError::Phase)?;
+        let event =
+            phase_completed_event(ModuleIdentifier::Enumeration, "dom_verify", &result, start);
+        Ok(vec![event])
+    }
+}
+
 /// Actor that generates the final SARIF report.
 ///
 /// Consumes all accumulated events (for future summary use), then delegates to
@@ -482,6 +508,10 @@ pub async fn run_actor_pipeline<T: FuzzTransport>(
             break;
         }
     }
+
+    let mut dom_verify = DomVerifyActor;
+    let dom_verify_events = dom_verify.process(ctx, &all_events)?;
+    all_events.extend(dom_verify_events);
 
     let mut report = ReportActor::new(None, previous_findings);
     let report_events = report.process(ctx, &all_events)?;

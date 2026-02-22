@@ -502,6 +502,7 @@ async fn run_actor_pipeline_emits_all_phase_completed_events() {
     assert!(has_phase_completed(&events, "fingerprint"));
     assert!(has_phase_completed(&events, "fuzz"));
     assert!(has_phase_completed(&events, "analyze"));
+    assert!(has_phase_completed(&events, "dom_verify"));
     assert!(has_phase_completed(&events, "report"));
 }
 
