@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::finding::{Confidence, EvidenceLevel, FindingData, FindingId, VulnerabilityClass};
+    use crate::finding::{EvidenceLevel, FindingData, FindingId, VulnerabilityClass};
     use crate::operation::ModuleIdentifier;
 
     #[test]
