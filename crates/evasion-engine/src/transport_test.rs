@@ -1155,6 +1155,90 @@ async fn send_localhost_still_works_without_attestation() {
     assert_eq!(response.status_code, 200);
 }
 
+#[test]
+fn builder_default_has_operator_authorized_false() {
+    let transport = EvasionTransport::builder().build();
+    assert!(!transport.operator_authorized);
+}
+
+#[test]
+fn builder_with_operator_authorized_sets_flag() {
+    let transport = EvasionTransport::builder()
+        .with_operator_authorized(true)
+        .build();
+    assert!(transport.operator_authorized);
+}
+
+#[tokio::test]
+async fn send_allows_remote_when_operator_authorized() {
+    let server = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("GET"))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_string("ok"))
+        .mount(&server)
+        .await;
+
+    let mut transport = EvasionTransport::builder()
+        .with_operator_authorized(true)
+        .with_timing_seed(0)
+        .build();
+
+    let request = FuzzRequest {
+        request_id: 400,
+        endpoint: format!("{}/test", server.uri()),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let response = transport.send(&request).await.unwrap();
+    assert_eq!(response.status_code, 200);
+}
+
+#[tokio::test]
+async fn send_rejects_remote_when_operator_not_authorized() {
+    let mut transport = EvasionTransport::builder()
+        .with_operator_authorized(false)
+        .with_timing_seed(0)
+        .build();
+
+    let request = FuzzRequest {
+        request_id: 401,
+        endpoint: "http://example.com/api".to_string(),
+        method: "GET".to_string(),
+        parameter_name: "q".to_string(),
+        parameter_location: ParameterLocation::Query,
+        payload: "test".to_string(),
+        headers: vec![],
+    };
+
+    let result = transport.send(&request).await;
+    assert!(result.is_err());
+    assert!(matches!(
+        result.unwrap_err(),
+        TransportError::TargetNotAllowed(_)
+    ));
+}
+
+#[test]
+fn builder_operator_authorized_chains_with_other_options() {
+    let persona = Persona::custom(PersonaId::FirefoxDesktop)
+        .with_user_agent("Firefox/Test")
+        .with_accept_header("*/*")
+        .build();
+
+    let transport = EvasionTransport::builder()
+        .with_persona(&persona)
+        .with_max_requests_per_session(25)
+        .with_timing_seed(999)
+        .with_operator_authorized(true)
+        .build();
+
+    assert!(transport.operator_authorized);
+    assert_eq!(transport.session_id(), 0);
+}
+
 #[tokio::test]
 async fn send_localhost_works_with_attestation_present() {
     let server = wiremock::MockServer::start().await;

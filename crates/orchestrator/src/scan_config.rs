@@ -231,6 +231,13 @@ pub struct AuditOptions {
     /// and ensures it matches the actual CLI parameters before proceeding.
     #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub signed_config: Option<PathBuf>,
+
+    /// Assert that you are authorized to scan the target, even if it is not
+    /// localhost. For freelance pentesters with verbal/written client
+    /// authorization who do not need Ed25519 attestation key management.
+    /// The authorization is recorded in the audit trail.
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
+    pub i_am_authorized: bool,
 }
 
 /// Authentication flow options for authenticated scanning.

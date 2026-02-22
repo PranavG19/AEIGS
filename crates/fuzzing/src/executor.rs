@@ -96,9 +96,14 @@ impl RequestExecutor {
         max_rps: u32,
         timeout: Duration,
         scope_attestation: Option<SignedScopeAttestation>,
+        operator_authorized: bool,
     ) -> Result<Self, ExecutorError> {
-        target_validation::validate_target(&base_url, scope_attestation.as_ref())
-            .map_err(|e| ExecutorError::TargetNotAllowed(e.to_string()))?;
+        target_validation::validate_target_with_override(
+            &base_url,
+            scope_attestation.as_ref(),
+            operator_authorized,
+        )
+        .map_err(|e| ExecutorError::TargetNotAllowed(e.to_string()))?;
 
         Ok(Self {
             base_url,

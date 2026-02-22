@@ -132,16 +132,40 @@ pub fn validate_target(
     url: &str,
     attestation: Option<&SignedScopeAttestation>,
 ) -> Result<(), TargetValidationError> {
+    validate_target_with_override(url, attestation, false)
+}
+
+/// Validates a target URL with an optional operator authorization override.
+///
+/// Resolution order:
+/// 1. Localhost → always allowed
+/// 2. Valid scope attestation → allowed (enterprise/compliance path)
+/// 3. `operator_authorized` → allowed (pentester self-authorization via `--i-am-authorized`)
+/// 4. Otherwise → rejected
+///
+/// When `operator_authorized` is true, the caller is responsible for logging the
+/// authorization decision to the audit trail.
+pub fn validate_target_with_override(
+    url: &str,
+    attestation: Option<&SignedScopeAttestation>,
+    operator_authorized: bool,
+) -> Result<(), TargetValidationError> {
     match validate_target_is_localhost(url) {
         Ok(()) => Ok(()),
-        Err(localhost_err) => match attestation {
-            Some(att) => {
-                verify_attestation(att, url).map_err(|e| TargetValidationError::AttestationFailed {
-                    reason: e.to_string(),
-                })
+        Err(err @ TargetValidationError::NonLocalhostTarget { .. }) => {
+            if let Some(att) = attestation {
+                return verify_attestation(att, url).map_err(|e| {
+                    TargetValidationError::AttestationFailed {
+                        reason: e.to_string(),
+                    }
+                });
             }
-            None => Err(localhost_err),
-        },
+            if operator_authorized {
+                return Ok(());
+            }
+            Err(err)
+        }
+        Err(other) => Err(other),
     }
 }
 

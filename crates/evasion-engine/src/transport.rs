@@ -42,6 +42,7 @@ pub struct EvasionTransport {
     persona_rotation_interval: Option<u32>,
     sessions_since_rotation: u32,
     scope_attestation: Option<SignedScopeAttestation>,
+    operator_authorized: bool,
 }
 
 impl EvasionTransport {
@@ -54,13 +55,15 @@ impl EvasionTransport {
             persona_rotation_interval: None,
             accept_self_signed: false,
             scope_attestation: None,
+            operator_authorized: false,
         }
     }
 
     pub async fn send(&mut self, request: &FuzzRequest) -> Result<FuzzResponse, TransportError> {
-        aegis_protocol::target_validation::validate_target(
+        aegis_protocol::target_validation::validate_target_with_override(
             &request.endpoint,
             self.scope_attestation.as_ref(),
+            self.operator_authorized,
         )
         .map_err(|e| TransportError::TargetNotAllowed(e.to_string()))?;
 
@@ -301,6 +304,7 @@ pub struct EvasionTransportBuilder {
     persona_rotation_interval: Option<u32>,
     accept_self_signed: bool,
     scope_attestation: Option<SignedScopeAttestation>,
+    operator_authorized: bool,
 }
 
 impl EvasionTransportBuilder {
@@ -344,6 +348,13 @@ impl EvasionTransportBuilder {
         self
     }
 
+    /// Allow remote (non-localhost) targets via operator self-authorization.
+    /// When set, `send()` skips the localhost check if no attestation is present.
+    pub fn with_operator_authorized(mut self, authorized: bool) -> Self {
+        self.operator_authorized = authorized;
+        self
+    }
+
     pub fn build(self) -> EvasionTransport {
         let catalog = crate::persona::load_persona_catalog(self.persona_catalog_path.as_deref())
             .expect("persona catalog must be valid");
@@ -367,6 +378,7 @@ impl EvasionTransportBuilder {
             persona_rotation_interval: self.persona_rotation_interval,
             sessions_since_rotation: 0,
             scope_attestation: self.scope_attestation,
+            operator_authorized: self.operator_authorized,
         }
     }
 }

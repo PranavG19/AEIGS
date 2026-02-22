@@ -103,8 +103,8 @@ fn validate_target_invalid_url_with_attestation() {
     let att = remote_attestation("http://example.com");
     let result = validate_target("", Some(&att));
     assert!(
-        matches!(result, Err(TargetValidationError::AttestationFailed { .. })),
-        "expected AttestationFailed (target mismatch on empty URL), got: {result:?}"
+        matches!(result, Err(TargetValidationError::InvalidUrl { .. })),
+        "expected InvalidUrl for empty URL regardless of attestation, got: {result:?}"
     );
 }
 
@@ -140,4 +140,66 @@ fn validate_target_is_localhost_unchanged() {
         err,
         Err(TargetValidationError::NonLocalhostTarget { .. })
     ));
+}
+
+#[test]
+fn validate_target_with_override_localhost_no_flag() {
+    let result = validate_target_with_override("http://localhost:8080", None, false);
+    assert!(result.is_ok());
+}
+
+#[test]
+fn validate_target_with_override_remote_authorized() {
+    let result = validate_target_with_override("http://example.com:8080", None, true);
+    assert!(
+        result.is_ok(),
+        "expected Ok when operator_authorized=true, got: {result:?}"
+    );
+}
+
+#[test]
+fn validate_target_with_override_remote_not_authorized() {
+    let result = validate_target_with_override("http://example.com:8080", None, false);
+    assert!(
+        matches!(
+            result,
+            Err(TargetValidationError::NonLocalhostTarget { .. })
+        ),
+        "expected NonLocalhostTarget when operator_authorized=false, got: {result:?}"
+    );
+}
+
+#[test]
+fn validate_target_with_override_attestation_takes_precedence() {
+    let att = remote_attestation("http://example.com:8080");
+    let result = validate_target_with_override("http://example.com:8080", Some(&att), false);
+    assert!(
+        result.is_ok(),
+        "attestation should allow remote target even when operator_authorized=false"
+    );
+}
+
+#[test]
+fn validate_target_with_override_expired_attestation_not_rescued_by_flag() {
+    let att = expired_attestation("http://example.com:8080");
+    let result = validate_target_with_override("http://example.com:8080", Some(&att), true);
+    assert!(
+        matches!(result, Err(TargetValidationError::AttestationFailed { .. })),
+        "expired attestation should fail even when operator_authorized=true"
+    );
+}
+
+#[test]
+fn validate_target_with_override_invalid_url_with_flag() {
+    let result = validate_target_with_override("", None, true);
+    assert!(
+        matches!(result, Err(TargetValidationError::InvalidUrl { .. })),
+        "invalid URL should fail regardless of operator_authorized flag"
+    );
+}
+
+#[test]
+fn validate_target_with_override_localhost_with_flag_still_ok() {
+    let result = validate_target_with_override("http://127.0.0.1:3000", None, true);
+    assert!(result.is_ok());
 }

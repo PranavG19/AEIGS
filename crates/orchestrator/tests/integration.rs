@@ -165,6 +165,7 @@ fn localhost_config() -> ScanConfig {
             no_audit: true,
             scope_attestation: None,
             signed_config: None,
+            i_am_authorized: false,
         },
         scope: aegis_orchestrator::scan_config::ScopeOptions {
             include_endpoints: None,
@@ -2128,6 +2129,7 @@ fn executor_enforces_on_remote() {
         10,
         Duration::from_secs(5),
         None,
+        false,
     );
     assert!(
         result.is_err(),
@@ -2146,6 +2148,7 @@ fn executor_enforces_on_remote() {
         10,
         Duration::from_secs(5),
         Some(att),
+        false,
     );
     assert!(
         result_ok.is_ok(),

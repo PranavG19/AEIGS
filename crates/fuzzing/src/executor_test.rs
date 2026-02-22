@@ -58,6 +58,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
 
@@ -79,6 +80,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
 
@@ -102,6 +104,7 @@ mod tests {
             2,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
 
@@ -117,6 +120,7 @@ mod tests {
             100,
             Duration::from_secs(60),
             None,
+            false,
         )
         .unwrap();
         assert_eq!(executor.base_url(), "http://localhost:9090");
@@ -151,6 +155,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
 
@@ -177,6 +182,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_default_headers(custom_headers);
@@ -196,6 +202,7 @@ mod tests {
             50,
             Duration::from_secs(10),
             None,
+            false,
         )
         .unwrap();
 
@@ -216,6 +223,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
         assert!(executor.stealth_config().is_none());
@@ -228,6 +236,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_stealth_config(StealthConfig::default());
@@ -241,6 +250,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_stealth_config(StealthConfig::default());
@@ -255,6 +265,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_stealth_config(StealthConfig::aggressive());
@@ -269,6 +280,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_stealth_config(StealthConfig::paranoid());
@@ -284,6 +296,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap()
         .with_stealth_config(custom);
@@ -298,6 +311,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         let Err(err) = result else {
             panic!("expected error for non-localhost target");
@@ -313,6 +327,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         let Err(err) = result else {
             panic!("expected error for non-localhost target");
@@ -327,6 +342,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         assert!(result.is_ok());
     }
@@ -338,6 +354,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         assert!(result.is_ok());
     }
@@ -349,6 +366,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         assert!(result.is_ok());
     }
@@ -360,6 +378,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         );
         assert!(result.is_ok());
     }
@@ -372,6 +391,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             Some(attestation),
+            false,
         );
         assert!(result.is_ok());
     }
@@ -384,6 +404,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             Some(attestation),
+            false,
         );
         let Err(err) = result else {
             panic!("expected error for mismatched attestation");
@@ -399,6 +420,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             Some(attestation),
+            false,
         );
         let Err(err) = result else {
             panic!("expected error for expired attestation");
@@ -413,6 +435,7 @@ mod tests {
             100,
             Duration::from_secs(30),
             None,
+            false,
         )
         .unwrap();
         assert!(executor.scope_attestation().is_none());
@@ -426,8 +449,51 @@ mod tests {
             100,
             Duration::from_secs(30),
             Some(attestation),
+            false,
         )
         .unwrap();
         assert!(executor.scope_attestation().is_some());
+    }
+
+    #[test]
+    fn new_accepts_remote_target_when_operator_authorized() {
+        let result = RequestExecutor::new(
+            "http://example.com:8080".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+            true,
+        );
+        assert!(
+            result.is_ok(),
+            "expected Ok when operator_authorized=true for remote target"
+        );
+    }
+
+    #[test]
+    fn new_rejects_remote_target_when_not_operator_authorized() {
+        let result = RequestExecutor::new(
+            "http://example.com:8080".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+            false,
+        );
+        let Err(err) = result else {
+            panic!("expected error for remote target without authorization");
+        };
+        assert!(matches!(err, ExecutorError::TargetNotAllowed(_)));
+    }
+
+    #[test]
+    fn new_localhost_works_with_operator_authorized_true() {
+        let result = RequestExecutor::new(
+            "http://localhost:8080".to_string(),
+            100,
+            Duration::from_secs(30),
+            None,
+            true,
+        );
+        assert!(result.is_ok());
     }
 }

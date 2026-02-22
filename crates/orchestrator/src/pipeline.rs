@@ -16,7 +16,7 @@ use aegis_protocol::finding::FindingData;
 use aegis_protocol::operation::{ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_protocol::signed_config::SignableConfig;
-use aegis_protocol::target_validation::validate_target;
+use aegis_protocol::target_validation::validate_target_with_override;
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
 
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
@@ -444,7 +444,8 @@ fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTrans
 
     let mut builder = aegis_evasion_engine::EvasionTransport::builder()
         .with_persona(&persona)
-        .with_accept_self_signed(ctx.config.stealth.accept_self_signed);
+        .with_accept_self_signed(ctx.config.stealth.accept_self_signed)
+        .with_operator_authorized(ctx.config.audit.i_am_authorized);
     if let Some(path) = catalog_path {
         builder = builder.with_persona_catalog(path);
     }
@@ -1290,8 +1291,12 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         None
     };
 
-    validate_target(&config.target, scope_attestation.as_ref())
-        .map_err(|e| PipelineError::Config(ConfigError::InvalidTarget(e.to_string())))?;
+    validate_target_with_override(
+        &config.target,
+        scope_attestation.as_ref(),
+        config.audit.i_am_authorized,
+    )
+    .map_err(|e| PipelineError::Config(ConfigError::InvalidTarget(e.to_string())))?;
 
     let signed_config_hash = if let Some(signed_config_path) = &config.audit.signed_config {
         let signed = aegis_protocol::signed_config::load_signed_config(signed_config_path)
@@ -1327,6 +1332,22 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             target_description: config.target.clone(),
         },
     );
+
+    if config.audit.i_am_authorized {
+        tracing::warn!(
+            target = %config.target,
+            "remote scanning authorized by operator (--i-am-authorized flag)"
+        );
+        emit_event(
+            audit_writer.as_mut(),
+            AuditEventType::KeyEvent {
+                description: format!(
+                    "operator self-authorized remote scanning via --i-am-authorized for target: {}",
+                    config.target
+                ),
+            },
+        );
+    }
 
     if let Some(hash) = &signed_config_hash {
         emit_event(

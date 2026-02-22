@@ -99,6 +99,7 @@ fn executor_builds_request_with_headers() {
         100,
         Duration::from_secs(30),
         None,
+        false,
     )
     .unwrap();
 
@@ -177,6 +178,7 @@ fn executor_localhost_validation() {
         100,
         Duration::from_secs(30),
         None,
+        false,
     );
     let Err(err) = result else {
         panic!("expected error for non-localhost target");
