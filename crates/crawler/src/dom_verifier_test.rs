@@ -184,3 +184,67 @@ fn check_dom_mutation_js_looks_for_scripts_and_event_handlers() {
     assert!(CHECK_DOM_MUTATION_JS.contains("onclick"));
     assert!(CHECK_DOM_MUTATION_JS.contains("onerror"));
 }
+
+#[test]
+fn inject_payload_into_url_get_appends_query() {
+    let result = inject_payload_into_url(
+        "http://localhost:3000/search",
+        "<script>alert(1)</script>",
+        "GET",
+    );
+    assert!(result.starts_with("http://localhost:3000/search?q="));
+    assert!(result.contains("q="));
+}
+
+#[test]
+fn inject_payload_into_url_get_encodes_special_chars() {
+    let result = inject_payload_into_url(
+        "http://localhost:3000/search",
+        "<script>alert(1)</script>",
+        "GET",
+    );
+    assert!(!result.contains('<'));
+    assert!(!result.contains('>'));
+    assert!(result.contains("%3C"));
+}
+
+#[test]
+fn inject_payload_into_url_post_returns_endpoint() {
+    let endpoint = "http://localhost:3000/submit";
+    let result = inject_payload_into_url(endpoint, "<script>alert(1)</script>", "POST");
+    assert_eq!(result, endpoint);
+}
+
+#[test]
+fn inject_payload_into_url_with_existing_query() {
+    let result = inject_payload_into_url("http://localhost:3000/search?foo=bar", "test", "GET");
+    assert!(result.starts_with("http://localhost:3000/search?foo=bar&q="));
+}
+
+#[test]
+fn verify_xss_result_uses_confidence_boost_fn() {
+    let variants = [
+        DomEvidence::AlertFired,
+        DomEvidence::DomMutation,
+        DomEvidence::CookieAccess,
+        DomEvidence::NavigationAttempt,
+        DomEvidence::FetchToExternal,
+        DomEvidence::NoExecution,
+    ];
+
+    for evidence in &variants {
+        let dom_executed = *evidence != DomEvidence::NoExecution;
+        let result = DomVerificationResult {
+            payload: "test".to_string(),
+            endpoint: "/test".to_string(),
+            dom_executed,
+            evidence: *evidence,
+            confidence_boost: confidence_boost_for_evidence(evidence),
+        };
+        assert_eq!(
+            result.confidence_boost,
+            confidence_boost_for_evidence(evidence),
+            "confidence_boost mismatch for {evidence}"
+        );
+    }
+}

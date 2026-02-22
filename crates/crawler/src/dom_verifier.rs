@@ -1,4 +1,5 @@
 use std::fmt;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -213,6 +214,105 @@ pub fn confidence_boost_for_evidence(evidence: &DomEvidence) -> f64 {
         DomEvidence::FetchToExternal => 0.25,
         DomEvidence::NoExecution => -0.2,
     }
+}
+
+/// Builds a URL with the XSS payload injected as a query parameter.
+///
+/// For GET requests, appends `q=<url-encoded payload>` to the query string.
+/// For other methods (POST, PUT, etc.), returns the endpoint unchanged since
+/// the payload would be delivered in the request body.
+pub fn inject_payload_into_url(endpoint: &str, payload: &str, method: &str) -> String {
+    if !method.eq_ignore_ascii_case("GET") {
+        return endpoint.to_string();
+    }
+
+    let encoded: String = url::form_urlencoded::Serializer::new(String::new())
+        .append_pair("q", payload)
+        .finish();
+
+    if endpoint.contains('?') {
+        format!("{endpoint}&{encoded}")
+    } else {
+        format!("{endpoint}?{encoded}")
+    }
+}
+
+/// Verifies a suspected XSS payload by executing it in a real browser DOM.
+///
+/// Opens a new browser page, injects XSS detection instrumentation,
+/// navigates to the endpoint with the payload, and checks whether
+/// any execution markers fired. Returns `NoExecution` on timeout
+/// rather than propagating an error.
+pub async fn verify_xss_in_dom(
+    browser: &chromiumoxide::Browser,
+    endpoint: &str,
+    method: &str,
+    payload: &str,
+    auth_cookies: Option<&[(String, String)]>,
+    timeout_secs: u64,
+) -> Result<DomVerificationResult, CrawlError> {
+    let page = browser
+        .new_page("about:blank")
+        .await
+        .map_err(|e| CrawlError::Internal(format!("failed to open page: {e}")))?;
+
+    let url = inject_payload_into_url(endpoint, payload, method);
+
+    inject_auth_cookies(&page, auth_cookies).await?;
+    inject_xss_instrumentation(&page).await?;
+
+    let evidence = match navigate_and_check(&page, &url, timeout_secs).await {
+        Ok(ev) => ev,
+        Err(_) => DomEvidence::NoExecution,
+    };
+
+    let dom_executed = evidence != DomEvidence::NoExecution;
+    let confidence_boost = confidence_boost_for_evidence(&evidence);
+
+    Ok(DomVerificationResult {
+        payload: payload.to_string(),
+        endpoint: endpoint.to_string(),
+        dom_executed,
+        evidence,
+        confidence_boost,
+    })
+}
+
+async fn inject_auth_cookies(
+    page: &chromiumoxide::Page,
+    auth_cookies: Option<&[(String, String)]>,
+) -> Result<(), CrawlError> {
+    let Some(cookies) = auth_cookies else {
+        return Ok(());
+    };
+    for (name, value) in cookies {
+        let cookie = chromiumoxide::cdp::browser_protocol::network::CookieParam::new(name, value);
+        page.set_cookie(cookie)
+            .await
+            .map_err(|e| CrawlError::Internal(format!("failed to set cookie {name}: {e}")))?;
+    }
+    Ok(())
+}
+
+async fn navigate_and_check(
+    page: &chromiumoxide::Page,
+    url: &str,
+    timeout_secs: u64,
+) -> Result<DomEvidence, CrawlError> {
+    let timeout = Duration::from_secs(timeout_secs);
+    let nav_result = tokio::time::timeout(timeout, page.goto(url)).await;
+
+    match nav_result {
+        Ok(Ok(_)) => {}
+        Ok(Err(e)) => {
+            return Err(CrawlError::Navigation(format!(
+                "navigation to {url} failed: {e}"
+            )));
+        }
+        Err(_) => return Ok(DomEvidence::NoExecution),
+    }
+
+    check_xss_markers(page).await
 }
 
 #[cfg(test)]
