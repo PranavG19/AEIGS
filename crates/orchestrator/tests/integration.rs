@@ -242,7 +242,7 @@ fn make_finding_with_confidence_score(
         ModuleIdentifier::Fuzzing,
         0,
     )
-    .with_confidence_score(confidence_score)
+    .with_confidence(aegis_protocol::finding::Confidence::new(confidence_score).unwrap())
 }
 
 // ===========================================================================

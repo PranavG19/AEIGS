@@ -1,4 +1,4 @@
-use aegis_protocol::finding::{FindingData, VulnerabilityClass};
+use aegis_protocol::finding::{Confidence, FindingData, VulnerabilityClass};
 use aegis_protocol::operation::ModuleIdentifier;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -36,12 +36,11 @@ impl FindingStore {
             linked_node_ids: linked_node_ids.clone(),
             vulnerability_class,
             severity,
-            confidence,
+            confidence: Confidence::new(confidence).unwrap_or_default(),
             certificate,
             provenance_module,
             timestamp_unix_ms,
             evidence_level: aegis_protocol::finding::EvidenceLevel::Statistical,
-            confidence_score: None,
             stable_id: None,
         };
 

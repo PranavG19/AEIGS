@@ -333,13 +333,13 @@ fn dom_verify_upgrades_evidence_in_graph() {
 
     let boosted_0 = ctx.graph.get_finding(2).unwrap().unwrap();
     assert!(
-        (boosted_0.confidence - 0.8).abs() < f64::EPSILON,
+        (boosted_0.confidence.value() - 0.8).abs() < f64::EPSILON,
         "0.5 + 0.3 = 0.8"
     );
 
     let boosted_1 = ctx.graph.get_finding(3).unwrap().unwrap();
     assert!(
-        (boosted_1.confidence - 0.6).abs() < f64::EPSILON,
+        (boosted_1.confidence.value() - 0.6).abs() < f64::EPSILON,
         "0.4 + 0.2 = 0.6"
     );
 }
@@ -480,7 +480,7 @@ fn dom_verify_downgrades_false_positive_no_ops() {
     let all_findings = ctx.graph.all_findings().unwrap();
     assert_eq!(all_findings.len(), 1, "graph unchanged");
     assert!(
-        (all_findings[0].confidence - 0.5).abs() < f64::EPSILON,
+        (all_findings[0].confidence.value() - 0.5).abs() < f64::EPSILON,
         "original confidence preserved"
     );
 }
@@ -511,11 +511,11 @@ fn dom_verify_confidence_clamped_in_graph() {
 
     let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
     assert!(
-        (boosted.confidence - 1.0).abs() < f64::EPSILON,
+        (boosted.confidence.value() - 1.0).abs() < f64::EPSILON,
         "0.95 + 0.5 clamped to 1.0"
     );
     assert!(
-        boosted.confidence <= 1.0,
+        boosted.confidence.value() <= 1.0,
         "confidence must not exceed 1.0 in graph"
     );
 }

@@ -67,7 +67,6 @@ fn make_sarif_finding(rule_id: &str, vc: VulnerabilityClass) -> SarifFinding {
         evidence_level: Some("Confirmed".to_string()),
         cve_id: None,
         mitigation_rank: None,
-        confidence_score: Some(0.9),
         suppression_kind: None,
         suppression_message: None,
         endpoint: None,

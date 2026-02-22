@@ -3,6 +3,69 @@ use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::fmt;
 
+/// A validated confidence score in the range [0.0, 1.0].
+///
+/// Always present on `FindingData` — eliminates the dual code path of
+/// `Option<f64>` + `effective_confidence()` fallback.
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct Confidence(f64);
+
+impl Confidence {
+    /// Creates a new Confidence value, rejecting values outside [0.0, 1.0] and NaN/Inf.
+    pub fn new(value: f64) -> Result<Self, &'static str> {
+        if !value.is_finite() {
+            return Err("confidence must be finite");
+        }
+        if !(0.0..=1.0).contains(&value) {
+            return Err("confidence must be in [0.0, 1.0]");
+        }
+        Ok(Self(value))
+    }
+
+    /// Maps an `EvidenceLevel` to a default confidence score.
+    pub fn from_evidence(level: EvidenceLevel) -> Self {
+        Self(match level {
+            EvidenceLevel::Statistical => 0.4,
+            EvidenceLevel::Counterfactual => 0.7,
+            EvidenceLevel::Confirmed => 0.9,
+            EvidenceLevel::Chained => 0.95,
+        })
+    }
+
+    pub fn value(&self) -> f64 {
+        self.0
+    }
+}
+
+impl Default for Confidence {
+    fn default() -> Self {
+        Self(0.5)
+    }
+}
+
+impl fmt::Display for Confidence {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.2}", self.0)
+    }
+}
+
+impl Serialize for Confidence {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Confidence {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let opt: Option<f64> = Option::deserialize(deserializer)?;
+        match opt {
+            Some(v) if v.is_finite() && (0.0..=1.0).contains(&v) => Ok(Confidence(v)),
+            Some(_) => Ok(Confidence::default()),
+            None => Ok(Confidence::default()),
+        }
+    }
+}
+
 /// A content-addressed stable identity for a finding, computed from its
 /// intrinsic properties. Two findings representing the same vulnerability
 /// at the same location have equal `FindingId` values even across scans.
@@ -103,21 +166,66 @@ impl fmt::Display for VulnerabilityClass {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct FindingData {
     pub id: u64,
     pub linked_node_ids: Vec<u64>,
     pub vulnerability_class: VulnerabilityClass,
     pub severity: f64,
-    pub confidence: f64,
+    pub confidence: Confidence,
     pub certificate: Vec<u8>,
     pub provenance_module: ModuleIdentifier,
     pub timestamp_unix_ms: u64,
     pub evidence_level: EvidenceLevel,
     #[serde(default)]
-    pub confidence_score: Option<f64>,
-    #[serde(default)]
     pub stable_id: Option<FindingId>,
+}
+
+impl<'de> Deserialize<'de> for FindingData {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct Raw {
+            id: u64,
+            linked_node_ids: Vec<u64>,
+            vulnerability_class: VulnerabilityClass,
+            severity: f64,
+            confidence: Option<serde_json::Value>,
+            certificate: Vec<u8>,
+            provenance_module: ModuleIdentifier,
+            timestamp_unix_ms: u64,
+            evidence_level: EvidenceLevel,
+            confidence_score: Option<f64>,
+            #[serde(default)]
+            stable_id: Option<FindingId>,
+        }
+        let raw = Raw::deserialize(deserializer)?;
+
+        let confidence = if let Some(cs) = raw.confidence_score {
+            Confidence::new(cs).unwrap_or_default()
+        } else {
+            match raw.confidence {
+                Some(serde_json::Value::Number(n)) => {
+                    let v = n.as_f64().unwrap_or(0.5);
+                    Confidence::new(v).unwrap_or_default()
+                }
+                Some(serde_json::Value::Null) | None => Confidence::default(),
+                _ => Confidence::default(),
+            }
+        };
+
+        Ok(FindingData {
+            id: raw.id,
+            linked_node_ids: raw.linked_node_ids,
+            vulnerability_class: raw.vulnerability_class,
+            severity: raw.severity,
+            confidence,
+            certificate: raw.certificate,
+            provenance_module: raw.provenance_module,
+            timestamp_unix_ms: raw.timestamp_unix_ms,
+            evidence_level: raw.evidence_level,
+            stable_id: raw.stable_id,
+        })
+    }
 }
 
 impl FindingData {
@@ -134,12 +242,11 @@ impl FindingData {
             linked_node_ids: Vec::new(),
             vulnerability_class,
             severity,
-            confidence,
+            confidence: Confidence::new(confidence).unwrap_or_default(),
             certificate: Vec::new(),
             provenance_module,
             timestamp_unix_ms,
             evidence_level: EvidenceLevel::Statistical,
-            confidence_score: None,
             stable_id: None,
         }
     }
@@ -172,22 +279,12 @@ impl FindingData {
         self
     }
 
-    pub fn with_confidence_score(mut self, score: f64) -> Self {
-        self.confidence_score = Some(score.clamp(0.0, 1.0));
+    pub fn with_confidence(mut self, confidence: Confidence) -> Self {
+        self.confidence = confidence;
         self
-    }
-
-    pub fn effective_confidence(&self) -> f64 {
-        self.confidence_score
-            .unwrap_or_else(|| confidence_from_evidence(self.evidence_level))
     }
 }
 
-pub fn confidence_from_evidence(evidence: EvidenceLevel) -> f64 {
-    match evidence {
-        EvidenceLevel::Statistical => 0.4,
-        EvidenceLevel::Counterfactual => 0.7,
-        EvidenceLevel::Confirmed => 0.9,
-        EvidenceLevel::Chained => 0.95,
-    }
+pub fn confidence_from_evidence(evidence: EvidenceLevel) -> Confidence {
+    Confidence::from_evidence(evidence)
 }

@@ -135,7 +135,7 @@ fn graph_persist_save_load_roundtrip() {
         VulnerabilityClass::SqlInjection
     );
     assert!((findings[0].severity - 8.5).abs() < f64::EPSILON);
-    assert!((findings[0].confidence - 0.9).abs() < f64::EPSILON);
+    assert!((findings[0].confidence.value() - 0.9).abs() < f64::EPSILON);
 }
 
 // ---------------------------------------------------------------------------
