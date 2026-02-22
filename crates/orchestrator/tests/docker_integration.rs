@@ -1267,27 +1267,7 @@ fn build_e2e_scan_config(
     source_dir: Option<&str>,
     include_endpoints: &[&str],
 ) -> ScanConfig {
-    let mut args = vec![
-        "aegis".to_string(),
-        "--target".to_string(),
-        target_url.to_string(),
-        "--output".to_string(),
-        sarif_path.to_str().unwrap().to_string(),
-        "--no-llm".to_string(),
-        "--no-audit".to_string(),
-        "--skip-evasion".to_string(),
-        "--max-iterations".to_string(),
-        "1".to_string(),
-    ];
-    if let Some(dir) = source_dir {
-        args.push("--source-dir".to_string());
-        args.push(dir.to_string());
-    }
-    for ep in include_endpoints {
-        args.push("--include-endpoints".to_string());
-        args.push(ep.to_string());
-    }
-    ScanConfig::parse_from(args.iter().map(|s| s.as_str()))
+    build_e2e_scan_config_with_iterations(target_url, sarif_path, source_dir, include_endpoints, 1)
 }
 
 // 98: express_e2e_scanner_vs_ground_truth

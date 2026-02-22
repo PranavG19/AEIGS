@@ -509,3 +509,323 @@ fn worker_findings_accumulate_across_targets() {
         _ => panic!("expected FindingsBatch"),
     }
 }
+
+#[test]
+fn integration_coordinator_worker_full_lifecycle() {
+    let mut coord = make_coordinator();
+    let mut w1 = Worker::new(make_worker_id("w1"), WorkerRole::FuzzWorker);
+    let mut w2 = Worker::new(make_worker_id("w2"), WorkerRole::FuzzWorker);
+
+    coord.handle_message(&w1.register_message());
+    coord.handle_message(&w2.register_message());
+    assert_eq!(coord.state().workers.len(), 2);
+
+    let endpoints = vec!["/a".into(), "/b".into(), "/c".into(), "/d".into()];
+    let assignments = coord
+        .state
+        .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
+        .unwrap();
+    for a in &assignments {
+        if a.worker_id == make_worker_id("w1") {
+            w1.handle_message(&CoordinatorMessage::AssignWork(a.clone()));
+        } else {
+            w2.handle_message(&CoordinatorMessage::AssignWork(a.clone()));
+        }
+    }
+    assert_eq!(w1.state(), WorkerState::Working);
+    assert_eq!(w2.state(), WorkerState::Working);
+
+    if let Some(batch) = w1.complete_target(vec![make_finding()]) {
+        coord.handle_message(&batch);
+    }
+    w1.complete_target(vec![]);
+    if let Some(batch) = w2.complete_target(vec![make_finding(), make_finding()]) {
+        coord.handle_message(&batch);
+    }
+    w2.complete_target(vec![]);
+
+    coord.handle_message(&w1.finish());
+    coord.handle_message(&w2.finish());
+    assert!(coord.all_workers_complete());
+    assert_eq!(coord.collected_findings().len(), 3);
+}
+
+#[test]
+fn integration_coordinator_detects_failed_worker() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w2"),
+        role: WorkerRole::FuzzWorker,
+    });
+
+    let endpoints = vec!["/a".into(), "/b".into()];
+    coord
+        .state
+        .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
+        .unwrap();
+    coord.state.update_worker_status(
+        &make_worker_id("w1"),
+        WorkerState::Working,
+        0,
+        1,
+        0,
+    );
+    coord.state.update_worker_status(
+        &make_worker_id("w2"),
+        WorkerState::Working,
+        0,
+        1,
+        0,
+    );
+
+    coord.handle_message(&WorkerMessage::Error {
+        worker_id: make_worker_id("w1"),
+        message: "segfault".to_string(),
+    });
+
+    let failed_count = coord
+        .state()
+        .workers
+        .iter()
+        .filter(|w| w.state == WorkerState::Failed)
+        .count();
+    assert_eq!(failed_count, 1);
+    assert_eq!(coord.state().workers[0].state, WorkerState::Failed);
+}
+
+#[test]
+fn integration_coordinator_rebalances_on_failure() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w2"),
+        role: WorkerRole::FuzzWorker,
+    });
+
+    let endpoints: Vec<String> = vec!["/a".into(), "/b".into(), "/c".into(), "/d".into()];
+    coord
+        .state
+        .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
+        .unwrap();
+    coord.state.update_worker_status(
+        &make_worker_id("w1"),
+        WorkerState::Working,
+        0,
+        2,
+        0,
+    );
+    coord.state.update_worker_status(
+        &make_worker_id("w2"),
+        WorkerState::Working,
+        0,
+        2,
+        0,
+    );
+
+    let reply = coord.handle_message(&WorkerMessage::Error {
+        worker_id: make_worker_id("w2"),
+        message: "crashed".to_string(),
+    });
+    assert!(reply.is_some());
+    if let Some(CoordinatorMessage::AssignWork(assignment)) = reply {
+        assert_eq!(assignment.worker_id, make_worker_id("w1"));
+        assert_eq!(assignment.endpoints.len(), 2);
+    } else {
+        panic!("expected AssignWork after rebalance");
+    }
+}
+
+#[test]
+fn integration_worker_pause_resume_cycle() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
+    assert_eq!(w.state(), WorkerState::Working);
+
+    w.handle_message(&CoordinatorMessage::Pause);
+    assert!(w.is_paused());
+    assert_eq!(w.state(), WorkerState::Paused);
+
+    w.handle_message(&CoordinatorMessage::Resume);
+    assert!(!w.is_paused());
+    assert_eq!(w.state(), WorkerState::Working);
+
+    w.complete_target(vec![]);
+    w.complete_target(vec![]);
+    let done = w.finish();
+    match done {
+        WorkerMessage::WorkComplete { worker_id } => {
+            assert_eq!(worker_id, make_worker_id("w1"));
+        }
+        _ => panic!("expected WorkComplete"),
+    }
+    assert_eq!(w.state(), WorkerState::Completed);
+}
+
+#[test]
+fn integration_wire_protocol_coordinator_to_worker() {
+    let messages: Vec<CoordinatorMessage> = vec![
+        CoordinatorMessage::AssignWork(make_assignment()),
+        CoordinatorMessage::Pause,
+        CoordinatorMessage::Resume,
+        CoordinatorMessage::Shutdown,
+    ];
+    for msg in messages {
+        let envelope = wrap_coordinator_message(msg);
+        let mut buf: Vec<u8> = Vec::new();
+        write_transport_frame(&mut buf, &envelope).unwrap();
+        let mut cursor = std::io::Cursor::new(buf);
+        let restored = read_transport_frame(&mut cursor, 64 * 1024 * 1024).unwrap();
+        assert_eq!(restored.message_id, envelope.message_id);
+        let orig_json = serde_json::to_string(&envelope.payload).unwrap();
+        let restored_json = serde_json::to_string(&restored.payload).unwrap();
+        assert_eq!(orig_json, restored_json);
+    }
+}
+
+#[test]
+fn integration_wire_protocol_worker_to_coordinator() {
+    let messages: Vec<WorkerMessage> = vec![
+        WorkerMessage::Register {
+            worker_id: make_worker_id("w1"),
+            role: WorkerRole::FuzzWorker,
+        },
+        WorkerMessage::Heartbeat {
+            worker_id: make_worker_id("w1"),
+            targets_completed: 5,
+            targets_remaining: 3,
+            findings_count: 2,
+        },
+        WorkerMessage::FindingsBatch {
+            worker_id: make_worker_id("w1"),
+            findings: vec![make_finding()],
+        },
+        WorkerMessage::WorkComplete {
+            worker_id: make_worker_id("w1"),
+        },
+        WorkerMessage::Error {
+            worker_id: make_worker_id("w1"),
+            message: "timeout".to_string(),
+        },
+    ];
+    for msg in messages {
+        let envelope = wrap_worker_message(msg);
+        let mut buf: Vec<u8> = Vec::new();
+        write_transport_frame(&mut buf, &envelope).unwrap();
+        let mut cursor = std::io::Cursor::new(buf);
+        let restored = read_transport_frame(&mut cursor, 64 * 1024 * 1024).unwrap();
+        assert_eq!(restored.message_id, envelope.message_id);
+        let orig_json = serde_json::to_string(&envelope.payload).unwrap();
+        let restored_json = serde_json::to_string(&restored.payload).unwrap();
+        assert_eq!(orig_json, restored_json);
+    }
+}
+
+#[test]
+fn integration_shutdown_after_all_complete() {
+    let mut coord = make_coordinator();
+    for name in ["w1", "w2", "w3"] {
+        coord.handle_message(&WorkerMessage::Register {
+            worker_id: make_worker_id(name),
+            role: WorkerRole::FuzzWorker,
+        });
+    }
+    assert!(!coord.all_workers_complete());
+
+    for name in ["w1", "w2", "w3"] {
+        coord.handle_message(&WorkerMessage::WorkComplete {
+            worker_id: make_worker_id(name),
+        });
+    }
+    assert!(coord.all_workers_complete());
+    assert_eq!(coord.state().active_worker_count(), 0);
+}
+
+#[test]
+fn integration_findings_accumulate_from_multiple_workers() {
+    let mut coord = make_coordinator();
+    for name in ["w1", "w2", "w3"] {
+        coord.handle_message(&WorkerMessage::Register {
+            worker_id: make_worker_id(name),
+            role: WorkerRole::FuzzWorker,
+        });
+    }
+
+    coord.handle_message(&WorkerMessage::FindingsBatch {
+        worker_id: make_worker_id("w1"),
+        findings: vec![make_finding(), make_finding()],
+    });
+    coord.handle_message(&WorkerMessage::FindingsBatch {
+        worker_id: make_worker_id("w2"),
+        findings: vec![make_finding()],
+    });
+    coord.handle_message(&WorkerMessage::FindingsBatch {
+        worker_id: make_worker_id("w3"),
+        findings: vec![make_finding(), make_finding(), make_finding()],
+    });
+
+    assert_eq!(coord.collected_findings().len(), 6);
+    assert_eq!(coord.state().total_findings(), 6);
+}
+
+#[test]
+fn integration_heartbeat_updates_worker_state() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+    assert_eq!(coord.state().workers[0].state, WorkerState::Idle);
+
+    coord.handle_message(&WorkerMessage::Heartbeat {
+        worker_id: make_worker_id("w1"),
+        targets_completed: 7,
+        targets_remaining: 3,
+        findings_count: 4,
+    });
+
+    let ws = &coord.state().workers[0];
+    assert_eq!(ws.state, WorkerState::Working);
+    assert_eq!(ws.targets_completed, 7);
+    assert_eq!(ws.targets_remaining, 3);
+    assert_eq!(ws.findings_count, 4);
+}
+
+#[test]
+fn integration_worker_error_message_propagates() {
+    let mut coord = make_coordinator();
+    coord.handle_message(&WorkerMessage::Register {
+        worker_id: make_worker_id("w1"),
+        role: WorkerRole::FuzzWorker,
+    });
+
+    let endpoints = vec!["/api/test".into()];
+    coord
+        .state
+        .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
+        .unwrap();
+    coord.state.update_worker_status(
+        &make_worker_id("w1"),
+        WorkerState::Working,
+        0,
+        1,
+        0,
+    );
+
+    let error_text = "connection refused to target".to_string();
+    coord.handle_message(&WorkerMessage::Error {
+        worker_id: make_worker_id("w1"),
+        message: error_text,
+    });
+
+    assert_eq!(coord.state().workers[0].state, WorkerState::Failed);
+    assert!(coord.all_workers_complete());
+}
