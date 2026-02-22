@@ -221,6 +221,11 @@ pub struct ScopeOptions {
     /// Export the attack graph in the specified format (dot or d3json).
     #[arg(long, value_name = "FORMAT")]
     pub export_graph: Option<String>,
+
+    /// Path to vulnerability database file for dependency scanning.
+    /// Defaults to ~/.aegis/vuln.db if it exists.
+    #[arg(long, value_name = "PATH")]
+    pub vuln_db: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug, Clone)]

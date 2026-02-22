@@ -94,7 +94,9 @@ impl ScanActor for ReconActor {
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
         let source_dir = ctx.config.source_dir.clone();
-        let recon_ops = run_recon_standalone(&source_dir).map_err(ActorError::Phase)?;
+        let vuln_db_path = ctx.config.scope.vuln_db.clone();
+        let recon_ops = run_recon_standalone(&source_dir, vuln_db_path.as_deref())
+            .map_err(ActorError::Phase)?;
         let ops_count = recon_ops.len() as u64;
 
         if !recon_ops.is_empty() {

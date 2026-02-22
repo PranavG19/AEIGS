@@ -127,6 +127,7 @@ fn localhost_config() -> scan_config::ScanConfig {
             graph_db: None,
             history_db: None,
             export_graph: None,
+            vuln_db: None,
         },
         auth: scan_config::AuthOptions {
             auth_flow: None,

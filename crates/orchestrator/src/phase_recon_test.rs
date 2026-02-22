@@ -3,6 +3,7 @@ use super::*;
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_passive_recon::dependency_parser::{Ecosystem, ParsedDependency};
 use aegis_passive_recon::filesystem_walker::{ClassifiedFile, FileClassification};
+use aegis_passive_recon::vuln_database::{VulnDatabase, VulnerabilityRecord};
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::GraphOperation;
 use clap::Parser;
@@ -92,7 +93,7 @@ fn deps_to_operations_produces_dependency_nodes() {
 fn vuln_lookup_empty_deps_returns_empty() {
     let deps: Vec<ParsedDependency> = Vec::new();
     let mut seq = 0u64;
-    let entries = phase_recon::vuln_lookup(&deps, &mut seq);
+    let entries = phase_recon::vuln_lookup(&deps, &mut seq, None);
     assert!(entries.is_empty());
     assert_eq!(seq, 0);
 }
@@ -158,14 +159,14 @@ fn timestamp_ms_returns_nonzero() {
 
 #[test]
 fn run_recon_standalone_none_returns_empty() {
-    let result = phase_recon::run_recon_standalone(&None).unwrap();
+    let result = phase_recon::run_recon_standalone(&None, None).unwrap();
     assert!(result.is_empty());
 }
 
 #[test]
 fn run_recon_standalone_nonexistent_dir_returns_error() {
     let dir = Some(PathBuf::from("/nonexistent/aegis-standalone-test-dir"));
-    let result = phase_recon::run_recon_standalone(&dir);
+    let result = phase_recon::run_recon_standalone(&dir, None);
     assert!(result.is_err());
 }
 
@@ -193,7 +194,7 @@ fn run_recon_with_config_file_creates_config_node_operation() {
 #[test]
 fn run_recon_standalone_with_existing_empty_dir_returns_empty() {
     let tmp = tempfile::tempdir().unwrap();
-    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf())).unwrap();
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()), None).unwrap();
     assert!(result.is_empty());
 }
 
@@ -202,7 +203,7 @@ fn run_recon_standalone_with_config_file_returns_one_entry() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::write(tmp.path().join("app.toml"), b"[server]\nport = 3000\n").unwrap();
 
-    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf())).unwrap();
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()), None).unwrap();
     assert_eq!(result.len(), 1);
     match &result[0].operation {
         GraphOperation::AddNode { node_type, .. } => {
@@ -232,7 +233,7 @@ fn vuln_lookup_with_non_matching_deps_returns_empty() {
         ecosystem: Ecosystem::Cargo,
     }];
     let mut seq = 0u64;
-    let entries = phase_recon::vuln_lookup(&deps, &mut seq);
+    let entries = phase_recon::vuln_lookup(&deps, &mut seq, None);
     assert!(entries.is_empty());
     assert_eq!(seq, 0);
 }
@@ -291,4 +292,37 @@ fn run_recon_write_config_file_applies_operations_to_graph() {
         .nodes_by_type(NodeType::Config)
         .unwrap_or_default();
     assert_eq!(node_ids.len(), 1);
+}
+
+#[test]
+fn vuln_lookup_with_populated_db_finds_match() {
+    let tmp = tempfile::tempdir().unwrap();
+    let db_path = tmp.path().join("test-vuln.db");
+    let db = VulnDatabase::open(&db_path).unwrap();
+    db.insert_batch(&[VulnerabilityRecord {
+        cve_id: "CVE-2024-9999".to_string(),
+        package_name: "tokio".to_string(),
+        ecosystem: "cargo".to_string(),
+        vulnerable_version_start: "1.0.0".to_string(),
+        vulnerable_version_end: "1.99.0".to_string(),
+        severity: 8.0,
+        description: "test vuln".to_string(),
+    }])
+    .unwrap();
+
+    let deps = vec![ParsedDependency {
+        name: "tokio".to_string(),
+        version: "1.37.0".to_string(),
+        ecosystem: Ecosystem::Cargo,
+    }];
+    let mut seq = 0u64;
+    let entries = phase_recon::vuln_lookup(&deps, &mut seq, Some(&db_path));
+    assert_eq!(entries.len(), 1);
+    assert_eq!(seq, 1);
+    match &entries[0].operation {
+        GraphOperation::AddFinding { severity, .. } => {
+            assert!((severity - 8.0).abs() < 1e-9);
+        }
+        _ => panic!("expected AddFinding operation"),
+    }
 }

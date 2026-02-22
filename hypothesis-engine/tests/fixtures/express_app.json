@@ -1,0 +1,92 @@
+{
+  "app_name": "express-vuln-app",
+  "scan_context": {
+    "technology_stack": ["Express.js", "Node.js", "better-sqlite3", "ejs", "node-serialize"],
+    "high_centrality_nodes": [
+      {"label": "/api/search", "type": "Endpoint"},
+      {"label": "/api/users", "type": "Endpoint"},
+      {"label": "/render", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/search", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/users", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/render", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/redirect", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "/api/cmd", "type": "Endpoint", "protected_by": []},
+      {"id": 6, "label": "/api/file", "type": "Endpoint", "protected_by": []},
+      {"id": 7, "label": "/api/deserialize", "type": "Endpoint", "protected_by": []},
+      {"id": 8, "label": "/api/headers", "type": "Endpoint", "protected_by": []},
+      {"id": 9, "label": "/admin/config", "type": "Endpoint", "protected_by": []},
+      {"id": 10, "label": "/api/ssrf", "type": "Endpoint", "protected_by": []},
+      {"id": 11, "label": "searchHandler", "type": "Function", "protected_by": []},
+      {"id": 12, "label": "users_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 11, "label": "Calls", "weight": 1.0},
+      {"source_id": 11, "target_id": 12, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 12, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/api/users", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/render", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/render", "vulnerability_class": "Server-Side Template Injection"},
+    {"endpoint": "/api/cmd", "vulnerability_class": "Command Injection"},
+    {"endpoint": "/api/file", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/api/redirect", "vulnerability_class": "Open Redirect"},
+    {"endpoint": "/api/deserialize", "vulnerability_class": "Insecure Deserialization"},
+    {"endpoint": "/api/headers", "vulnerability_class": "Header Injection"},
+    {"endpoint": "/api/headers", "vulnerability_class": "CRLF Injection"},
+    {"endpoint": "/admin/config", "vulnerability_class": "Security Misconfiguration"},
+    {"endpoint": "/api/ssrf", "vulnerability_class": "Server-Side Request Forgery"},
+    {"endpoint": "/api/users", "vulnerability_class": "Sensitive Data Exposure"},
+    {"endpoint": "/api/users", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/api/users", "vulnerability_class": "Broken Authorization"},
+    {"endpoint": "/render", "vulnerability_class": "Insufficient Input Validation"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/search accepts query parameter q that is concatenated into SQL query in searchHandler",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/search) --[Calls]--> Function(searchHandler) --[Reads]--> DataStore(users_db) with no parameterized query and endpoint has no ProtectedBy defense",
+      "test_approach": "CAN BE TESTED BY sending tautology ' OR 1=1-- vs contradiction ' AND 1=0-- and comparing row counts",
+      "confidence": 0.85
+    },
+    {
+      "condition": "IF endpoint /render accepts user input passed to ejs template engine",
+      "vulnerability_class": "Server-Side Template Injection",
+      "reasoning": "BECAUSE technology stack includes ejs and endpoint name suggests template rendering with no validation",
+      "test_approach": "CAN BE TESTED BY sending <%- 7*7 %> and checking if response contains 49",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /api/cmd passes user input to child_process or exec",
+      "vulnerability_class": "Command Injection",
+      "reasoning": "BECAUSE endpoint name suggests command execution and Node.js commonly uses child_process module",
+      "test_approach": "CAN BE TESTED BY sending ; echo AEGIS_MARKER and checking response for marker",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /api/file reads files based on user-supplied path",
+      "vulnerability_class": "Path Traversal",
+      "reasoning": "BECAUSE endpoint name suggests file operations with no path validation indicated in graph",
+      "test_approach": "CAN BE TESTED BY sending ../../etc/passwd and checking for root: in response",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /api/redirect uses user input for redirect target",
+      "vulnerability_class": "Open Redirect",
+      "reasoning": "BECAUSE endpoint name suggests redirection functionality with no URL validation",
+      "test_approach": "CAN BE TESTED BY sending http://evil.com as redirect parameter and checking Location header",
+      "confidence": 0.65
+    }
+  ]
+}

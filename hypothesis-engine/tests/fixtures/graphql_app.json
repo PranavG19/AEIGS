@@ -1,0 +1,51 @@
+{
+  "app_name": "graphql-vuln-app",
+  "scan_context": {
+    "technology_stack": ["Apollo Server", "Express.js", "GraphQL", "better-sqlite3"],
+    "high_centrality_nodes": [
+      {"label": "/graphql", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/graphql", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "userResolver", "type": "Function", "protected_by": []},
+      {"id": 3, "label": "fileResolver", "type": "Function", "protected_by": []},
+      {"id": 4, "label": "graphql_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 2, "label": "Calls", "weight": 1.0},
+      {"source_id": 1, "target_id": 3, "label": "Calls", "weight": 1.0},
+      {"source_id": 2, "target_id": 4, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/graphql", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/graphql", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/graphql", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/graphql", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/graphql", "vulnerability_class": "Broken Authorization"},
+    {"endpoint": "/graphql", "vulnerability_class": "Sensitive Data Exposure"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF /graphql user query passes user-supplied arguments to SQL query in userResolver",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/graphql) --[Calls]--> Function(userResolver) --[Reads]--> DataStore(graphql_db) and GraphQL resolvers commonly build SQL from arguments",
+      "test_approach": "CAN BE TESTED BY sending GraphQL query with ' OR 1=1-- in argument and comparing results",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF /graphql endpoint lacks authentication requirements on sensitive queries",
+      "vulnerability_class": "Broken Authentication",
+      "reasoning": "BECAUSE no authentication edge exists in the graph between any Role/User and the /graphql endpoint",
+      "test_approach": "CAN BE TESTED BY querying sensitive fields without authentication headers",
+      "confidence": 0.7
+    }
+  ]
+}

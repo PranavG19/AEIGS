@@ -1,14 +1,14 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,377 Rust tests, 229 Python tests.
+Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,826 Rust tests, 337 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 2,377 tests across 11 crates
+cargo test --workspace                                                # 2,826 tests across 11 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --all --check                                               # formatting gate
-cd hypothesis-engine && uv run pytest src/hypothesis_engine/ -v       # 229 Python tests
+cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 337 Python tests
 AEGIS_INTEGRATION_TESTS=1 cargo test -p aegis-orchestrator \
   --test docker_integration -- --test-threads=1                       # 34 Docker Tier 2 tests (requires Docker/Colima)
 ```
@@ -52,9 +52,13 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
                                opt-in telemetry
 
 hypothesis-engine        (Python) LLM hypothesis generation via pluggable backends (Bedrock, OpenAI, ollama),
+                         XML-structured prompts with <thinking>/<hypotheses> tags,
                          chain-of-thought prompting, evasion mode, test compilation, per-class feedback loop,
                          token usage tracking, LlmBackend ABC for backend abstraction,
-                         uncertainty quantification (hedging/confidence pattern analysis)
+                         confidence calibration (sigmoid temperature scaling, ECE),
+                         self-consistency generation (N-round agreement filtering),
+                         uncertainty quantification (structural evidence vs speculative pattern analysis),
+                         golden fixture evaluation (precision/recall/F1 against ground truth)
 ```
 
 ## Code Organization
@@ -85,10 +89,15 @@ crates/
                             actor.rs  benchmark.rs  calibration.rs  checkpoint.rs  convergence.rs
                             distributed.rs  endpoint_similarity.rs  graph_persistence.rs
                             interactive.rs  pipeline_composer.rs  scan_history.rs  telemetry.rs
+                            update_db.rs
 
 hypothesis-engine/src/hypothesis_engine/
     bedrock_client.py  openai_client.py  generator.py  compiler.py  feedback.py  evasion_mode.py
-    uncertainty.py  bypass_examples.json
+    uncertainty.py  calibration.py  bypass_examples.json
+
+hypothesis-engine/tests/
+    test_integration.py  test_evaluation.py  test_prompt_regression.py  test_llm_delta.py
+    fixtures/express_app.json  fixtures/flask_app.json  fixtures/graphql_app.json
 
 .github/workflows/
     tier1-tests.yml                 PR/push: cargo fmt, clippy, workspace tests, pytest
@@ -184,6 +193,8 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **PhaseTimings / LlmMetrics / ScanMetrics** — Per-phase timing and LLM call tracking in scan pipeline.
 - **VarianceReport** — Endpoint response variance measurement: response_codes, body_similarity, is_deterministic.
 - **LlmBackend** — (Python) Abstract base class for LLM providers. Implementations: BedrockClient, OpenAiClient.
+- **CalibrationBin / CalibrationReport** — (Python) Confidence calibration in `calibration.py`: histogram binning with `mean_confidence`, `actual_positive_rate`, `calibration_error` per bin. `CalibrationReport` includes bins, ECE, overconfident/underconfident ranges, temperature parameters `(a, b)`.
+- **_consistency_key / generate_with_consistency** — (Python) Self-consistency in `generator.py`: `_consistency_key(h)` extracts `(vulnerability_class, endpoint)` tuple; `generate_with_consistency(ctx, rounds, threshold)` runs N generations and filters by agreement ratio.
 - **AuditWriter** — Trait with `append_event(&mut self, event) -> Result<(), LogWriterError>` and `sequence_number(&self) -> u64`. Implemented by `AuditLogWriter` (persists to disk) and `NoOpAuditLogWriter` (intentionally discards). Pipeline uses `Box<dyn AuditWriter>`.
 - **NoOpAuditLogWriter** — Implements `AuditWriter`; intentionally discards all events. Used when `--no-audit` is set.
 - **AuditLogWriter::append_event_full()** — Returns `Result<AuditEntry, LogWriterError>` with full hash chain/HMAC data. Use when caller needs the entry metadata (e.g. verification tests). The trait method `append_event()` delegates to this but discards the entry.
@@ -227,7 +238,12 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - **SDK:** boto3 (Bedrock), urllib.request (OpenAI/ollama — no extra dependencies)
 - **Retry:** exponential backoff, 3 retries (1s/2s/4s). **Timeout:** 120s per call.
 - **Token tracking:** `invoke()` returns `(text, TokenUsage)` tuple. `GenerationResult` includes `input_tokens` and `output_tokens`.
-- **Chain-of-thought:** System prompt instructs reasoning before JSON output. `reasoning_trace` captured in `GenerationResult`.
+- **XML-structured prompts:** All prompts (generator, compiler, evasion) use XML tags (`<role>`, `<task>`, `<instructions>`, `<constraints>`, `<output_format>`) for semantic boundaries. Responses parsed via `<hypotheses>`, `<test_specs>`, `<evasion_payloads>` tags with bracket-based fallback.
+- **Chain-of-thought:** System prompt instructs `<thinking>` tags for step-by-step reasoning before JSON output. `reasoning_trace` captured in `GenerationResult`.
+- **Confidence rubric:** 4-tier rubric in system prompt (0.9-1.0 structural evidence, 0.7-0.8 moderate, 0.4-0.6 speculative, 0.1-0.3 low). Enforced by `<constraints>` section.
+- **Few-shot examples:** 3 graded examples (high/moderate/low confidence) in hypothesis generation system prompt demonstrating the rubric.
+- **Self-consistency:** `generate_with_consistency()` runs N rounds, filters by agreement threshold, keeps highest-confidence version per (vulnerability_class, endpoint) key.
+- **Confidence calibration (Python):** `calibration.py` — histogram binning, sigmoid temperature scaling via gradient descent on log loss, ECE computation, overconfident/underconfident range detection.
 - **Feedback loop:** `ScanContext.feedback_summary` enables multi-round hypothesis generation. Per-class confirmation thresholds.
 
 ## Conventions
@@ -291,7 +307,13 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 - Pipeline composition via topological sort — Kahn's algorithm for dependency resolution; execution waves group independent stages; validates no cycles, no missing dependencies
 - Distributed scan coordination — worker partitioning strategies (RoundRobin, PriorityBased, VulnerabilityClass); heartbeat-based failure detection; automatic rebalancing on worker failure
 - Opt-in telemetry — disabled by default, explicit `TelemetryConfig { enabled: true }` required; aggregate-only (scan duration, finding counts, phase timing); never raw findings, payloads, or endpoint URLs
-- Uncertainty quantification (Python) — hedging pattern detection ("might", "possibly", "could be") and confidence pattern detection ("confirms", "clearly") in LLM reasoning traces; adjusts hypothesis confidence scores
+- Uncertainty quantification (Python) — structural evidence pattern detection ("input flows to", "no validation", "concatenated into sql", "graph shows") vs speculative pattern detection ("commonly vulnerable", "technology stack suggests", "default configuration") in LLM reasoning traces; formula: `structural / (structural + speculative)`; replaces prior hedging/confidence word-counting approach
+- XML-structured prompts — all LLM prompts use semantic XML tags (`<role>`, `<task>`, `<constraints>`, `<output_format>`, etc.) to prevent instruction bleed between sections; response extraction tries XML tags first (`<hypotheses>`, `<test_specs>`, `<evasion_payloads>`) with bracket-based JSON fallback for robustness
+- Confidence calibration (Python) — `calibration.py` provides sigmoid temperature scaling `sigmoid(a*raw + b)` fit via gradient descent on log loss; `CalibrationReport` with ECE, overconfident/underconfident range detection; complements Rust-side `CalibrationReport` in orchestrator
+- Self-consistency generation — `generate_with_consistency()` runs N independent hypothesis rounds and filters by `(vulnerability_class, endpoint)` agreement ratio; keeps highest-confidence version per key; mitigates single-generation sampling variance for high-stakes hypotheses
+- Golden fixture evaluation — `tests/fixtures/` contains ground truth scan contexts + golden hypotheses for express/flask/graphql apps; `compute_hypothesis_metrics()` computes precision/recall/F1; enables regression testing of prompt quality without live LLM calls
+- Prompt regression tests — `test_prompt_regression.py` validates XML structure, all 16 vulnerability classes present, confidence rubric, constraints, and output format in system prompts; prevents accidental prompt degradation
+- LLM delta measurement — `test_llm_delta.py` defines static baseline (vulnerability classes discoverable without LLM) per fixture app; validates golden hypotheses exceed the baseline, quantifying LLM value-add
 
 ## Graph Validation Rules
 
@@ -324,7 +346,7 @@ The knowledge graph enforces these constraints during batch validation:
 - Evasion-engine modules same pattern — `use aegis_evasion_engine::PersonaId` not `::persona::PersonaId`
 - `crates/defense-fingerprinting/` directory still exists on disk but is excluded from workspace members — dead code, safe to delete
 - `invoke()` returns `(str, TokenUsage)` tuple — all callers must unpack
-- `parse_hypotheses_from_response()` returns `(str, list[Hypothesis])` tuple — reasoning trace is the first element
+- `parse_hypotheses_from_response()` returns `(str, list[Hypothesis])` tuple — reasoning trace is the first element; tries `<thinking>` + `<hypotheses>` XML tags first, falls back to bracket-based JSON extraction
 - KnowledgeGraph methods return `Result` — `GraphError::LockPoisoned` removed (parking_lot doesn't poison); `GraphError::Io` added for persistence errors
 - `OperationLog::new()` defaults to relaxed sequencing — use `new_strict()` for gap detection
 - Adding new `NodeType` or `EdgeLabel` variants requires updating `is_valid_edge()` whitelist AND the exhaustive coverage test in `protocol_test.rs`
@@ -374,3 +396,12 @@ The knowledge graph enforces these constraints during batch validation:
 - Flask Dockerfile uses `poetry install --only main --no-root` with `POETRY_VIRTUALENVS_CREATE=false` — Poetry 2.x deprecated `--no-dev`
 - Docker Tier 2 tests use RAII `DockerCompose` struct — Drop trait tears down containers; `--test-threads=1` required to avoid port conflicts
 - Colima (`colima start --cpu 4 --memory 4`) works as Docker Desktop alternative on macOS — avoids organizational sign-in requirements
+- `uncertainty.py` uses `STRUCTURAL_EVIDENCE_PATTERNS` and `SPECULATIVE_PATTERNS` (not the old `HEDGING_PATTERNS`/`CONFIDENCE_PATTERNS`) — tests must use structural evidence language ("input flows to", "no validation") not hedging words ("might", "possibly")
+- `generate_with_consistency()` returns a standard `GenerationResult` — token counts are cumulative across all N rounds; `call_count` on backend reflects total invocations
+- `calibration.py` `apply_calibration(raw, a, b)` applies `sigmoid(a * raw + b)` — input is raw logit/score not probability; `apply_calibration(0.0, 1.0, 0.0)` gives 0.5 (sigmoid of zero)
+- `fit_temperature_scaling()` returns `(1.0, 0.0)` identity when no data in bins — gradient descent only runs with >= 1 total prediction
+- Golden fixtures in `tests/fixtures/` contain `scan_context`, `ground_truth`, and `golden_hypotheses` keys — `golden_hypotheses` are hand-crafted ideal outputs, not recorded LLM responses
+- `compute_hypothesis_metrics()` matches hypotheses to ground truth via `(endpoint_substring, vulnerability_class)` — hypothesis `condition` must contain the endpoint path as a substring
+- Python test suite runs from two directories: `src/hypothesis_engine/` (unit tests) + `tests/` (integration/evaluation) — both must be included in pytest invocation
+- `compiler.py` parses `<test_specs>` XML tags first, falls back to bracket JSON — same pattern as generator and evasion_mode
+- `evasion_mode.py` parses `<evasion_payloads>` XML tags first, falls back to bracket JSON — `_build_system_prompt()` injects `<bypass_examples>` only when corpus has relevant entries

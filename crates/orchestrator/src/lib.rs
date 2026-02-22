@@ -23,6 +23,7 @@ pub mod pipeline_composer;
 pub mod scan_config;
 pub mod scan_history;
 pub mod telemetry;
+pub mod update_db;
 mod util;
 
 pub use actor::*;
@@ -47,6 +48,7 @@ pub use pipeline_composer::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use telemetry::*;
+pub use update_db::*;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]

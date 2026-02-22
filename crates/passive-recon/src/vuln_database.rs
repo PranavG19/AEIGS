@@ -78,7 +78,14 @@ impl VulnDatabase {
             CREATE INDEX IF NOT EXISTS idx_vuln_package
                 ON vulnerabilities(package_name, ecosystem);
             CREATE INDEX IF NOT EXISTS idx_vuln_cve
-                ON vulnerabilities(cve_id);",
+                ON vulnerabilities(cve_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_vuln_unique
+                ON vulnerabilities(cve_id, package_name, ecosystem,
+                    vulnerable_version_start, vulnerable_version_end);
+            CREATE TABLE IF NOT EXISTS update_metadata (
+                ecosystem TEXT PRIMARY KEY,
+                last_updated_unix_ms INTEGER NOT NULL
+            );",
         )?;
         Ok(())
     }
@@ -170,6 +177,91 @@ impl VulnDatabase {
             all_matches.extend(dep_matches);
         }
         Ok(all_matches)
+    }
+
+    pub fn upsert_vulnerability(
+        &self,
+        record: &VulnerabilityRecord,
+    ) -> Result<bool, VulnDatabaseError> {
+        let changed = self.connection.execute(
+            "INSERT OR IGNORE INTO vulnerabilities
+                (cve_id, package_name, ecosystem, vulnerable_version_start,
+                 vulnerable_version_end, severity, description)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                record.cve_id,
+                record.package_name,
+                record.ecosystem,
+                record.vulnerable_version_start,
+                record.vulnerable_version_end,
+                record.severity,
+                record.description,
+            ],
+        )?;
+        Ok(changed > 0)
+    }
+
+    pub fn insert_batch(
+        &self,
+        records: &[VulnerabilityRecord],
+    ) -> Result<usize, VulnDatabaseError> {
+        let tx = self.connection.unchecked_transaction()?;
+        let mut inserted = 0usize;
+        for record in records {
+            let changed = tx.execute(
+                "INSERT OR IGNORE INTO vulnerabilities
+                    (cve_id, package_name, ecosystem, vulnerable_version_start,
+                     vulnerable_version_end, severity, description)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![
+                    record.cve_id,
+                    record.package_name,
+                    record.ecosystem,
+                    record.vulnerable_version_start,
+                    record.vulnerable_version_end,
+                    record.severity,
+                    record.description,
+                ],
+            )?;
+            if changed > 0 {
+                inserted += 1;
+            }
+        }
+        tx.commit()?;
+        Ok(inserted)
+    }
+
+    pub fn get_last_updated(&self, ecosystem: &str) -> Result<Option<u64>, VulnDatabaseError> {
+        let mut stmt = self
+            .connection
+            .prepare("SELECT last_updated_unix_ms FROM update_metadata WHERE ecosystem = ?1")?;
+        let mut rows = stmt.query_map(params![ecosystem], |row| row.get::<_, i64>(0))?;
+        match rows.next() {
+            Some(Ok(ts)) => Ok(Some(ts as u64)),
+            Some(Err(e)) => Err(e.into()),
+            None => Ok(None),
+        }
+    }
+
+    pub fn set_last_updated(
+        &self,
+        ecosystem: &str,
+        timestamp_ms: u64,
+    ) -> Result<(), VulnDatabaseError> {
+        self.connection.execute(
+            "INSERT OR REPLACE INTO update_metadata (ecosystem, last_updated_unix_ms)
+             VALUES (?1, ?2)",
+            params![ecosystem, timestamp_ms as i64],
+        )?;
+        Ok(())
+    }
+
+    pub fn clear_ecosystem(&self, ecosystem: &str) -> Result<u64, VulnDatabaseError> {
+        let deleted = self.connection.execute(
+            "DELETE FROM vulnerabilities WHERE ecosystem = ?1",
+            params![ecosystem],
+        )?;
+        Ok(deleted as u64)
     }
 
     pub fn vulnerability_count(&self) -> Result<u64, VulnDatabaseError> {

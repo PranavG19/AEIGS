@@ -534,6 +534,7 @@ fn scope_options_with_graph_db_some() {
         graph_db: Some(std::path::PathBuf::from("/tmp/test.json")),
         history_db: None,
         export_graph: None,
+        vuln_db: None,
     };
     assert_eq!(
         scope.graph_db.unwrap(),

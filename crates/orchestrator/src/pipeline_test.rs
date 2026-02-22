@@ -116,6 +116,7 @@ fn localhost_config() -> ScanConfig {
             graph_db: None,
             history_db: None,
             export_graph: None,
+            vuln_db: None,
         },
         auth: scan_config::AuthOptions {
             auth_flow: None,
@@ -497,7 +498,7 @@ async fn run_scan_concurrent_with_skip_fingerprint() {
 
 #[test]
 fn collect_recon_ops_no_source_dir() {
-    let result = phase_recon::run_recon_standalone(&None);
+    let result = phase_recon::run_recon_standalone(&None, None);
     assert!(result.is_ok());
     assert!(result.unwrap().is_empty());
 }
@@ -574,7 +575,7 @@ async fn run_scan_convergence_stops_early() {
 #[test]
 fn collect_recon_ops_with_empty_real_dir_returns_empty() {
     let tmp = tempfile::tempdir().unwrap();
-    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()));
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()), None);
     assert!(result.is_ok());
     assert!(result.unwrap().is_empty());
 }
@@ -583,16 +584,17 @@ fn collect_recon_ops_with_empty_real_dir_returns_empty() {
 fn collect_recon_ops_with_config_file_returns_one_entry() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::write(tmp.path().join("settings.toml"), b"[db]\nhost = localhost").unwrap();
-    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()));
+    let result = phase_recon::run_recon_standalone(&Some(tmp.path().to_path_buf()), None);
     assert!(result.is_ok());
     assert_eq!(result.unwrap().len(), 1);
 }
 
 #[test]
 fn collect_recon_ops_nonexistent_dir_returns_error() {
-    let result = phase_recon::run_recon_standalone(&Some(std::path::PathBuf::from(
-        "/nonexistent/aegis-ops",
-    )));
+    let result = phase_recon::run_recon_standalone(
+        &Some(std::path::PathBuf::from("/nonexistent/aegis-ops")),
+        None,
+    );
     assert!(result.is_err());
 }
 

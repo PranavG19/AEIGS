@@ -10,7 +10,7 @@ pub struct ParsedDependency {
     pub ecosystem: Ecosystem,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Ecosystem {
     Npm,
     Cargo,
@@ -29,6 +29,29 @@ impl std::fmt::Display for Ecosystem {
             Self::RubyGems => "rubygems",
         };
         write!(f, "{name}")
+    }
+}
+
+impl Ecosystem {
+    pub fn osv_name(&self) -> &'static str {
+        match self {
+            Self::Cargo => "crates.io",
+            Self::Npm => "npm",
+            Self::PyPi => "PyPI",
+            Self::Go => "Go",
+            Self::RubyGems => "RubyGems",
+        }
+    }
+
+    pub fn from_osv_name(name: &str) -> Option<Self> {
+        match name {
+            "crates.io" => Some(Self::Cargo),
+            "npm" => Some(Self::Npm),
+            "PyPI" => Some(Self::PyPi),
+            "Go" => Some(Self::Go),
+            "RubyGems" => Some(Self::RubyGems),
+            _ => None,
+        }
     }
 }
 

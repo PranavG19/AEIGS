@@ -39,44 +39,76 @@ class CompilationResult(BaseModel):
 
 
 COMPILER_SYSTEM_PROMPT = (
-    "You are a security test specification compiler. "
-    "Convert vulnerability hypotheses into concrete test specifications. "
-    "Each specification must be a JSON object with these fields:\n"
-    '{"target_endpoint": "/path", "http_method": "GET|POST|PUT|DELETE", '
-    '"parameters": [{"name": "param", "value": "payload", "location": "body|query|header"}], '
-    '"payload_patterns": ["pattern1", "pattern2"], '
-    '"expected_anomalies": [{"anomaly_type": "status-code|timing|content|reflection", '
-    '"description": "what to look for"}], '
-    '"priority": 0.0-1.0}\n'
-    "Return a JSON array. Be concrete and specific with real payloads."
+    "<role>\n"
+    "You are a security test specification compiler.\n"
+    "</role>\n\n"
+    "<task>\n"
+    "Convert vulnerability hypotheses into concrete, executable test specifications.\n"
+    "Each specification must contain real payloads and precise detection criteria.\n"
+    "</task>\n\n"
+    "<output_format>\n"
+    "Return a JSON array inside <test_specs> tags. Each object must have these fields:\n"
+    '{"target_endpoint": "/path",\n'
+    ' "http_method": "GET|POST|PUT|DELETE",\n'
+    ' "parameters": [{"name": "param", "value": "payload", "location": "body|query|header"}],\n'
+    ' "payload_patterns": ["pattern1", "pattern2"],\n'
+    ' "expected_anomalies": [{"anomaly_type": "status-code|timing|content|reflection",\n'
+    '  "description": "what to look for"}],\n'
+    ' "priority": 0.0-1.0}\n'
+    "</output_format>\n\n"
+    "<example>\n"
+    "Hypothesis: IF /api/search accepts query parameter q that reaches SQL query\n"
+    "Test specification:\n"
+    '[{"target_endpoint": "/api/search",\n'
+    '  "http_method": "GET",\n'
+    '  "parameters": [{"name": "q", "value": "\\\' OR 1=1--", "location": "query"}],\n'
+    '  "payload_patterns": ["\\\' OR 1=1--", "\\\' AND 1=0--", "\\\'; DROP TABLE--"],\n'
+    '  "expected_anomalies": [{"anomaly_type": "content", "description": "Tautology returns more rows than contradiction"},\n'
+    '   {"anomaly_type": "status-code", "description": "500 Internal Server Error on malformed SQL"}],\n'
+    '  "priority": 0.85}]\n'
+    "</example>\n\n"
+    "<constraints>\n"
+    "- Use real, specific payloads — not placeholders like 'malicious input'.\n"
+    "- The target_endpoint must be a concrete path, not a description.\n"
+    "- Each specification must have at least one parameter and one expected anomaly.\n"
+    "- Priority should match the hypothesis confidence score.\n"
+    "</constraints>"
 )
 
 
 def build_compilation_prompt(hypothesis: Hypothesis) -> str:
     return (
-        f"Convert this vulnerability hypothesis into a test specification:\n\n"
-        f"Condition: {hypothesis.condition}\n"
-        f"Vulnerability class: {hypothesis.vulnerability_class}\n"
-        f"Reasoning: {hypothesis.reasoning}\n"
-        f"Test approach: {hypothesis.test_approach}\n"
-        f"Confidence: {hypothesis.confidence}\n\n"
-        f"Generate exactly one test specification as a JSON array with one element."
+        "<hypothesis>\n"
+        f"  <condition>{hypothesis.condition}</condition>\n"
+        f"  <vulnerability_class>{hypothesis.vulnerability_class}</vulnerability_class>\n"
+        f"  <reasoning>{hypothesis.reasoning}</reasoning>\n"
+        f"  <test_approach>{hypothesis.test_approach}</test_approach>\n"
+        f"  <confidence>{hypothesis.confidence}</confidence>\n"
+        "</hypothesis>\n\n"
+        "Generate exactly one test specification as a JSON array with one element inside <test_specs> tags."
     )
 
 
 def parse_test_specifications(response_text: str, hypothesis: Hypothesis) -> list[TestSpecification]:
     cleaned = response_text.strip()
 
-    start = cleaned.find("[")
-    end = cleaned.rfind("]")
-    if start == -1 or end == -1:
-        start_obj = cleaned.find("{")
-        end_obj = cleaned.rfind("}")
-        if start_obj == -1 or end_obj == -1:
-            return []
-        json_str = "[" + cleaned[start_obj : end_obj + 1] + "]"
+    # Try XML tag-based extraction first
+    tag_start = cleaned.find("<test_specs>")
+    tag_end = cleaned.find("</test_specs>")
+    if tag_start != -1 and tag_end != -1:
+        json_str = cleaned[tag_start + len("<test_specs>"):tag_end].strip()
     else:
-        json_str = cleaned[start : end + 1]
+        # Fallback to bracket-based extraction
+        start = cleaned.find("[")
+        end = cleaned.rfind("]")
+        if start == -1 or end == -1:
+            start_obj = cleaned.find("{")
+            end_obj = cleaned.rfind("}")
+            if start_obj == -1 or end_obj == -1:
+                return []
+            json_str = "[" + cleaned[start_obj : end_obj + 1] + "]"
+        else:
+            json_str = cleaned[start : end + 1]
 
     try:
         raw_list = json.loads(json_str)

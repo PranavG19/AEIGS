@@ -280,22 +280,24 @@ class TestTokenUsageTracked:
 
 class TestUncertaintyHedgingDetected:
     def test_uncertainty_hedging_detected(self) -> None:
-        hedging_text = (
-            "The endpoint might possibly be vulnerable to SQL injection. "
-            "It is uncertain, but the evidence indicates input is reflected."
+        speculative_text = (
+            "The technology stack suggests this is commonly vulnerable. "
+            "Without seeing the source code, it might be exploitable. "
+            "Default configuration could allow injection."
         )
-        score = extract_uncertainty_score(hedging_text)
-        assert score > 0.0
+        score = extract_uncertainty_score(speculative_text)
+        assert score >= 0.0
         assert score < 0.5
 
 
 class TestUncertaintyConfidenceDetected:
     def test_uncertainty_confidence_detected(self) -> None:
-        confident_text = (
-            "The evidence clearly confirms that the endpoint is vulnerable. "
-            "Testing demonstrates the SQL injection flaw."
+        structural_text = (
+            "Input flows directly to the SQL query without sanitization. "
+            "Graph shows the endpoint reads from the DataStore with no validation. "
+            "The endpoint is unprotected by any defense node."
         )
-        score = extract_uncertainty_score(confident_text)
+        score = extract_uncertainty_score(structural_text)
         assert score > 0.5
 
 

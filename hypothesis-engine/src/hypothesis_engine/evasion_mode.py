@@ -35,18 +35,34 @@ class EvasionResult(BaseModel):
 
 
 SYSTEM_PROMPT = (
-    "You are a WAF bypass researcher specializing in web application firewall evasion. "
-    "Your task is to generate payloads that bypass a specific defense mechanism. "
-    "Given a blocked payload, the defense type, and previously failed attempts, "
-    "generate alternative payloads using encoding tricks, structural transformations, "
-    "and protocol-level bypasses.\n\n"
-    "Vulnerability class: {vulnerability_class}\n"
-    "Defense type: {defense_type} ({defense_vendor})\n\n"
+    "<role>\n"
+    "You are a WAF bypass researcher specializing in web application firewall evasion.\n"
+    "</role>\n\n"
+    "<task>\n"
+    "Generate payloads that bypass a specific defense mechanism.\n"
+    "Given a blocked payload, the defense type, and previously failed attempts,\n"
+    "generate alternative payloads using encoding tricks, structural transformations,\n"
+    "and protocol-level bypasses.\n"
+    "</task>\n\n"
+    "<evasion_context>\n"
+    "  <vulnerability_class>{vulnerability_class}</vulnerability_class>\n"
+    "  <defense_type>{defense_type}</defense_type>\n"
+    "  <defense_vendor>{defense_vendor}</defense_vendor>\n"
+    "</evasion_context>\n\n"
     "{bypass_examples_section}"
-    "Previously failed evasion attempts (DO NOT repeat these):\n{failed_attempts}\n\n"
-    "Return a JSON array of objects with these exact fields:\n"
+    "<failed_attempts>\n"
+    "{failed_attempts}\n"
+    "</failed_attempts>\n\n"
+    "<output_format>\n"
+    "Return a JSON array of objects inside <evasion_payloads> tags with these fields:\n"
     '[{{"payload": "...", "strategy": "human-readable description", "confidence": 0.0-1.0}}]\n'
-    "Generate diverse evasion strategies. Do not repeat the blocked payload or failed attempts."
+    "</output_format>\n\n"
+    "<constraints>\n"
+    "- Generate diverse evasion strategies — do not repeat the blocked payload or failed attempts.\n"
+    "- Each payload must be syntactically valid for the vulnerability class.\n"
+    "- Confidence should reflect the likelihood of bypassing this specific defense vendor.\n"
+    "- Prefer encoding-based bypasses over structural changes when the defense is signature-based.\n"
+    "</constraints>"
 )
 
 
@@ -87,9 +103,9 @@ class EvasionHypothesisGenerator:
                 f"  - {e['payload']} ({e['technique']})" for e in examples[:10]
             ]
             bypass_examples_section = (
-                "Known bypass examples for reference:\n"
+                "<bypass_examples>\n"
                 + "\n".join(example_lines)
-                + "\n\n"
+                + "\n</bypass_examples>\n\n"
             )
         else:
             bypass_examples_section = ""
@@ -115,10 +131,12 @@ class EvasionHypothesisGenerator:
         # A malicious server could embed prompt injection in responses.
         # Mitigated by: [:500] truncation, evasion mode being opt-in.
         user_message = (
-            f"Blocked payload: {context.blocked_payload}\n"
-            f"HTTP response code: {context.response_code}\n"
-            f"Response snippet: {context.response_snippet[:500]}\n\n"
-            f"Generate up to {max_evasions} evasion payloads."
+            "<blocked_request>\n"
+            f"  <payload>{context.blocked_payload}</payload>\n"
+            f"  <response_code>{context.response_code}</response_code>\n"
+            f"  <response_snippet>{context.response_snippet[:500]}</response_snippet>\n"
+            "</blocked_request>\n\n"
+            f"Generate up to {max_evasions} evasion payloads inside <evasion_payloads> tags."
         )
 
         start_time = time.monotonic()
@@ -144,12 +162,18 @@ class EvasionHypothesisGenerator:
     ) -> list[EvasionPayload]:
         cleaned = response.strip()
 
-        start = cleaned.find("[")
-        end = cleaned.rfind("]")
-        if start == -1 or end == -1:
-            return []
-
-        json_str = cleaned[start : end + 1]
+        # Try XML tag-based extraction first
+        tag_start = cleaned.find("<evasion_payloads>")
+        tag_end = cleaned.find("</evasion_payloads>")
+        if tag_start != -1 and tag_end != -1:
+            json_str = cleaned[tag_start + len("<evasion_payloads>"):tag_end].strip()
+        else:
+            # Fallback to bracket-based extraction
+            start = cleaned.find("[")
+            end = cleaned.rfind("]")
+            if start == -1 or end == -1:
+                return []
+            json_str = cleaned[start : end + 1]
 
         try:
             raw_list = json.loads(json_str)

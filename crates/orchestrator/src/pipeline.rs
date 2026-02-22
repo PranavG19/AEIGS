@@ -521,7 +521,9 @@ fn run_recon_phase(
     );
     let source_dir = ctx.config.source_dir.clone();
     let recon_start = std::time::Instant::now();
-    let recon_ops = run_recon_standalone(&source_dir).map_err(PipelineError::Recon)?;
+    let vuln_db_path = ctx.config.scope.vuln_db.clone();
+    let recon_ops =
+        run_recon_standalone(&source_dir, vuln_db_path.as_deref()).map_err(PipelineError::Recon)?;
     let recon_ops_count = recon_ops.len() as u64;
     if !recon_ops.is_empty() {
         ctx.graph

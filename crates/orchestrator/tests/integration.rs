@@ -172,6 +172,7 @@ fn localhost_config() -> ScanConfig {
             graph_db: None,
             history_db: None,
             export_graph: None,
+            vuln_db: None,
         },
         auth: aegis_orchestrator::scan_config::AuthOptions {
             auth_flow: None,
@@ -253,7 +254,8 @@ fn make_finding_with_confidence_score(
 fn phase_recon_standalone() {
     let tmp = tempfile::tempdir().unwrap();
     std::fs::write(tmp.path().join("app.toml"), b"[server]\nport = 8080\n").unwrap();
-    let result = aegis_orchestrator::run_recon_standalone(&Some(tmp.path().to_path_buf())).unwrap();
+    let result =
+        aegis_orchestrator::run_recon_standalone(&Some(tmp.path().to_path_buf()), None).unwrap();
     assert!(
         !result.is_empty(),
         "run_recon_standalone should return OperationLogEntry list for a dir with config files"
@@ -274,7 +276,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "#;
     std::fs::write(tmp.path().join("Cargo.lock"), cargo_lock_contents).unwrap();
 
-    let ops = run_recon_standalone(&Some(tmp.path().to_path_buf())).unwrap();
+    let ops = run_recon_standalone(&Some(tmp.path().to_path_buf()), None).unwrap();
     assert!(
         !ops.is_empty(),
         "recon should produce ops for dependencies and config files"

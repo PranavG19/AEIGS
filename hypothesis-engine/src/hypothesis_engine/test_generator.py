@@ -78,7 +78,7 @@ class TestGraphTopologyPrompt:
             ]
         )
         prompt = build_user_prompt(ctx)
-        assert "Graph nodes:" in prompt
+        assert "<nodes>" in prompt
         assert "/api/login" in prompt
         assert "type=Endpoint" in prompt
         assert "protected_by=CloudFlare WAF" in prompt
@@ -92,7 +92,7 @@ class TestGraphTopologyPrompt:
             ]
         )
         prompt = build_user_prompt(ctx)
-        assert "Graph edges:" in prompt
+        assert "<edges>" in prompt
         assert "1 --[Calls]--> 2" in prompt
         assert "weight=0.5" in prompt
 
@@ -106,7 +106,7 @@ class TestGraphTopologyPrompt:
             }
         )
         prompt = build_user_prompt(ctx)
-        assert "Defense posture:" in prompt
+        assert "<defense_posture>" in prompt
         assert "WAF present: True" in prompt
         assert "WAF vendor: CloudFlare" in prompt
         assert "Bot detection: False" in prompt
@@ -119,7 +119,7 @@ class TestGraphTopologyPrompt:
             ]
         )
         prompt = build_user_prompt(ctx)
-        assert "Known attack paths:" in prompt
+        assert "<attack_paths>" in prompt
         assert "/public -> gateway -> db" in prompt
         assert "weight=2.5" in prompt
         assert "unprotected_hops=1" in prompt
@@ -150,10 +150,10 @@ class TestGraphTopologyPrompt:
             attack_paths=[],
         )
         prompt = build_user_prompt(ctx)
-        assert "Graph nodes:" not in prompt
-        assert "Graph edges:" not in prompt
-        assert "Defense posture:" not in prompt
-        assert "Known attack paths:" not in prompt
+        assert "<nodes>" not in prompt
+        assert "<edges>" not in prompt
+        assert "<defense_posture>" not in prompt
+        assert "<attack_paths>" not in prompt
         assert "Express" in prompt
 
 
@@ -166,7 +166,7 @@ class TestFeedbackSummary:
     def test_empty_feedback_summary_excluded_from_prompt(self) -> None:
         ctx = ScanContext(technology_stack=["Flask"])
         prompt = build_user_prompt(ctx)
-        assert "Prior Round Feedback" not in prompt
+        assert "<prior_feedback>" not in prompt
 
     def test_build_feedback_summary_excludes_anomaly_details(self) -> None:
         """Raw response content in anomaly_details must not appear in the summary."""
@@ -227,7 +227,7 @@ class TestFeedbackSummary:
     def test_build_user_prompt_includes_feedback_summary_string(self) -> None:
         ctx = ScanContext(feedback_summary="  - SqlInjection [confirmed] score=0.90\n")
         prompt = build_user_prompt(ctx)
-        assert "Prior Round Feedback" in prompt
+        assert "<prior_feedback>" in prompt
         assert "SqlInjection [confirmed] score=0.90" in prompt
 
 

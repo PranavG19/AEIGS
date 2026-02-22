@@ -324,4 +324,35 @@ dependencies = ["proc-macro2", "quote"]
         assert_eq!(deps.len(), 1);
         assert_eq!(deps[0].name, "rack");
     }
+
+    #[test]
+    fn ecosystem_osv_name_mapping() {
+        assert_eq!(Ecosystem::Cargo.osv_name(), "crates.io");
+        assert_eq!(Ecosystem::Npm.osv_name(), "npm");
+        assert_eq!(Ecosystem::PyPi.osv_name(), "PyPI");
+        assert_eq!(Ecosystem::Go.osv_name(), "Go");
+        assert_eq!(Ecosystem::RubyGems.osv_name(), "RubyGems");
+    }
+
+    #[test]
+    fn ecosystem_from_osv_name_roundtrip() {
+        let ecosystems = [
+            Ecosystem::Cargo,
+            Ecosystem::Npm,
+            Ecosystem::PyPi,
+            Ecosystem::Go,
+            Ecosystem::RubyGems,
+        ];
+        for eco in &ecosystems {
+            let osv = eco.osv_name();
+            let back = Ecosystem::from_osv_name(osv).unwrap();
+            assert_eq!(*eco, back);
+        }
+    }
+
+    #[test]
+    fn ecosystem_from_osv_name_unknown_returns_none() {
+        assert!(Ecosystem::from_osv_name("Hackage").is_none());
+        assert!(Ecosystem::from_osv_name("").is_none());
+    }
 }

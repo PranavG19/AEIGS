@@ -1,0 +1,63 @@
+{
+  "app_name": "flask-vuln-app",
+  "scan_context": {
+    "technology_stack": ["Flask", "Python", "Jinja2", "PyYAML 5.3.1"],
+    "high_centrality_nodes": [
+      {"label": "/search", "type": "Endpoint"},
+      {"label": "/comment", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": ["pyyaml 5.3.1 (CVE-2020-14343)"],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/search", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/comment", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/exec", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/file", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "/template", "type": "Endpoint", "protected_by": []},
+      {"id": 6, "label": "/config", "type": "Endpoint", "protected_by": []},
+      {"id": 7, "label": "/redirect", "type": "Endpoint", "protected_by": []},
+      {"id": 8, "label": "app_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 8, "label": "Reads", "weight": 1.0},
+      {"source_id": 2, "target_id": 8, "label": "Writes", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/search", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/comment", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/exec", "vulnerability_class": "Command Injection"},
+    {"endpoint": "/file", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/template", "vulnerability_class": "Server-Side Template Injection"},
+    {"endpoint": "/config", "vulnerability_class": "Security Misconfiguration"},
+    {"endpoint": "/redirect", "vulnerability_class": "Open Redirect"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /search accepts user input passed to SQL query via app_db",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/search) --[Reads]--> DataStore(app_db) and Flask commonly uses string formatting for SQL",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- and comparing response size against ' AND 1=0--",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /template passes user input to Jinja2 render_template_string",
+      "vulnerability_class": "Server-Side Template Injection",
+      "reasoning": "BECAUSE technology stack includes Jinja2 and endpoint name suggests template rendering",
+      "test_approach": "CAN BE TESTED BY sending {{7*7}} and checking if response contains 49",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF PyYAML 5.3.1 is used with yaml.load without SafeLoader",
+      "vulnerability_class": "Known Vulnerable Dependency",
+      "reasoning": "BECAUSE pyyaml 5.3.1 has CVE-2020-14343 allowing arbitrary code execution via yaml.load",
+      "test_approach": "CAN BE TESTED BY checking dependency version against known CVE database",
+      "confidence": 0.95
+    }
+  ]
+}

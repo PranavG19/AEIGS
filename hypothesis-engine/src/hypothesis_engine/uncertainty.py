@@ -4,48 +4,52 @@ import re
 
 from hypothesis_engine.generator import Hypothesis
 
-HEDGING_PATTERNS: list[re.Pattern[str]] = [
+STRUCTURAL_EVIDENCE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(pattern, re.IGNORECASE)
     for pattern in [
-        r"\bmight\b",
-        r"\bpossibly\b",
-        r"\bperhaps\b",
-        r"\bcould be\b",
-        r"\buncertain\b",
-        r"\bnot sure\b",
-        r"\bunclear\b",
-        r"\bpotentially\b",
-        r"\bmay have\b",
-        r"\bseems like\b",
-        r"\bappears to\b",
+        r"input\s+flows?\s+(?:directly\s+)?to",
+        r"(?:no|without|lacks?|missing)\s+(?:validation|sanitization|escaping|parameteriz)",
+        r"concatenat(?:ed?|es|ing)\s+(?:into|with|to)\s+(?:sql|query|command|template)",
+        r"(?:reads?|writes?|calls?)\s+.*(?:datastore|database|sink)",
+        r"unprotected\s+(?:endpoint|path|node|entry)",
+        r"(?:graph|topology)\s+shows?",
+        r"(?:no|without|lacks?)\s+(?:defense|waf|protection|authentication)",
+        r"(?:direct|unfiltered)\s+(?:access|path|route)",
     ]
 ]
 
-CONFIDENCE_PATTERNS: list[re.Pattern[str]] = [
+SPECULATIVE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(pattern, re.IGNORECASE)
     for pattern in [
-        r"\bconfirms\b",
-        r"\bclearly\b",
-        r"\bdefinitely\b",
-        r"\bstrong evidence\b",
-        r"\bindicates\b",
-        r"\bdemonstrates\b",
+        r"(?:commonly|typically|often|usually)\s+(?:vulnerable|susceptible|affected)",
+        r"technology\s+stack\s+(?:suggests?|indicates?|implies?)",
+        r"(?:default|common)\s+(?:configuration|settings?|setup)",
+        r"(?:no\s+evidence|insufficient\s+data|unclear|unknown)",
+        r"(?:might|could|may)\s+(?:be|have|allow|enable)\s+(?:vulnerable|exploitable)",
+        r"(?:without\s+(?:seeing|observing|confirming|verifying))",
     ]
 ]
 
 
 def extract_uncertainty_score(reasoning_trace: str) -> float:
-    hedging_count = sum(
-        1 for pattern in HEDGING_PATTERNS if pattern.search(reasoning_trace)
+    """Analyze reasoning trace for structural evidence vs speculation.
+
+    Returns a score in [0.0, 1.0] where:
+    - Higher values indicate structural evidence (concrete data flow, graph analysis)
+    - Lower values indicate speculation (technology assumptions, common patterns)
+    - 0.5 is the neutral baseline when no patterns are detected
+    """
+    structural_count = sum(
+        1 for pattern in STRUCTURAL_EVIDENCE_PATTERNS if pattern.search(reasoning_trace)
     )
-    confidence_count = sum(
-        1 for pattern in CONFIDENCE_PATTERNS if pattern.search(reasoning_trace)
+    speculative_count = sum(
+        1 for pattern in SPECULATIVE_PATTERNS if pattern.search(reasoning_trace)
     )
 
-    if hedging_count == 0 and confidence_count == 0:
+    if structural_count == 0 and speculative_count == 0:
         return 0.5
 
-    score = 1.0 - (hedging_count / (hedging_count + confidence_count))
+    score = structural_count / (structural_count + speculative_count)
     return max(0.0, min(1.0, score))
 
 

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use aegis_passive_recon::dependency_parser::{ParsedDependency, parse_lock_file};
 use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
@@ -29,7 +29,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
         }
 
         entries.extend(deps_to_operations(&all_deps, &mut sequence));
-        entries.extend(vuln_lookup(&all_deps, &mut sequence));
+        entries.extend(vuln_lookup(
+            &all_deps,
+            &mut sequence,
+            ctx.config.scope.vuln_db.as_deref(),
+        ));
         entries.extend(walk_to_operations(&walk.files, &mut sequence));
     }
 
@@ -70,8 +74,23 @@ pub(crate) fn deps_to_operations(
         .collect()
 }
 
-pub(crate) fn vuln_lookup(deps: &[ParsedDependency], seq: &mut u64) -> Vec<OperationLogEntry> {
-    let Ok(db) = VulnDatabase::open_in_memory() else {
+pub(crate) fn vuln_lookup(
+    deps: &[ParsedDependency],
+    seq: &mut u64,
+    vuln_db_path: Option<&Path>,
+) -> Vec<OperationLogEntry> {
+    let db = match vuln_db_path {
+        Some(path) if path.exists() => VulnDatabase::open(path).ok(),
+        _ => {
+            let default = crate::update_db::default_db_path();
+            if default.exists() {
+                VulnDatabase::open(&default).ok()
+            } else {
+                None
+            }
+        }
+    };
+    let Some(db) = db else {
         return Vec::new();
     };
     let Ok(matches) = db.check_all_dependencies(deps) else {
@@ -122,6 +141,7 @@ pub(crate) fn walk_to_operations(
 
 pub fn run_recon_standalone(
     source_dir: &Option<PathBuf>,
+    vuln_db_path: Option<&Path>,
 ) -> Result<Vec<OperationLogEntry>, String> {
     let Some(source_dir) = source_dir else {
         return Ok(Vec::new());
@@ -144,7 +164,7 @@ pub fn run_recon_standalone(
     let mut sequence = 0u64;
     let mut entries = Vec::new();
     entries.extend(deps_to_operations(&all_deps, &mut sequence));
-    entries.extend(vuln_lookup(&all_deps, &mut sequence));
+    entries.extend(vuln_lookup(&all_deps, &mut sequence, vuln_db_path));
     entries.extend(walk_to_operations(&walk.files, &mut sequence));
     Ok(entries)
 }

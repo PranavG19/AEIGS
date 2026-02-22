@@ -22,23 +22,29 @@ def _make_hypothesis(
 
 
 class TestExtractUncertaintyScore:
-    def test_extract_uncertainty_score_no_hedging(self) -> None:
+    def test_extract_uncertainty_score_no_patterns(self) -> None:
         score = extract_uncertainty_score("The application processes user input normally.")
         assert score == 0.5
 
-    def test_extract_uncertainty_score_all_hedging(self) -> None:
-        score = extract_uncertainty_score("This might possibly perhaps be vulnerable.")
+    def test_extract_uncertainty_score_all_speculative(self) -> None:
+        score = extract_uncertainty_score(
+            "The technology stack suggests it is commonly vulnerable. "
+            "Without seeing the source, it might be exploitable."
+        )
         assert score < 0.2
 
-    def test_extract_uncertainty_score_all_confident(self) -> None:
+    def test_extract_uncertainty_score_all_structural(self) -> None:
         score = extract_uncertainty_score(
-            "The evidence clearly confirms and demonstrates the vulnerability."
+            "Input flows directly to the query. "
+            "No validation or sanitization is present. "
+            "Graph shows an unprotected endpoint."
         )
         assert score > 0.8
 
     def test_extract_uncertainty_score_mixed(self) -> None:
         score = extract_uncertainty_score(
-            "This might be vulnerable, but the evidence clearly confirms the pattern."
+            "Input flows to the query without sanitization. "
+            "The technology stack suggests default configuration."
         )
         assert 0.2 < score < 0.8
 

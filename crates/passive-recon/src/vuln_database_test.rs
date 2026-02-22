@@ -298,4 +298,94 @@ mod tests {
         assert!(matches!(err, VulnDatabaseError::SqliteError(_)));
         assert!(err.to_string().contains("sqlite error"));
     }
+
+    fn sample_vuln_eco(
+        cve: &str,
+        package: &str,
+        ecosystem: &str,
+        start: &str,
+        end: &str,
+    ) -> VulnerabilityRecord {
+        VulnerabilityRecord {
+            cve_id: cve.to_string(),
+            package_name: package.to_string(),
+            ecosystem: ecosystem.to_string(),
+            vulnerable_version_start: start.to_string(),
+            vulnerable_version_end: end.to_string(),
+            severity: 7.5,
+            description: format!("Vulnerability in {package}"),
+        }
+    }
+
+    #[test]
+    fn upsert_inserts_new() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        let record = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        assert!(db.upsert_vulnerability(&record).unwrap());
+        assert_eq!(db.vulnerability_count().unwrap(), 1);
+    }
+
+    #[test]
+    fn upsert_skips_duplicate() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        let record = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        assert!(db.upsert_vulnerability(&record).unwrap());
+        assert!(!db.upsert_vulnerability(&record).unwrap());
+        assert_eq!(db.vulnerability_count().unwrap(), 1);
+    }
+
+    #[test]
+    fn insert_batch_deduplicates() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        let r1 = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        let r2 = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        let r3 = sample_vuln("CVE-2024-0002", "serde", "0.9.0", "1.0.0");
+        let inserted = db.insert_batch(&[r1, r2, r3]).unwrap();
+        assert_eq!(inserted, 2);
+        assert_eq!(db.vulnerability_count().unwrap(), 2);
+    }
+
+    #[test]
+    fn insert_batch_returns_new_count() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        let r1 = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        db.upsert_vulnerability(&r1).unwrap();
+
+        let r2 = sample_vuln("CVE-2024-0001", "tokio", "1.0.0", "1.5.0");
+        let r3 = sample_vuln("CVE-2024-0002", "serde", "0.9.0", "1.0.0");
+        let inserted = db.insert_batch(&[r2, r3]).unwrap();
+        assert_eq!(inserted, 1);
+        assert_eq!(db.vulnerability_count().unwrap(), 2);
+    }
+
+    #[test]
+    fn metadata_get_set_roundtrip() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        db.set_last_updated("cargo", 1700000000000).unwrap();
+        assert_eq!(db.get_last_updated("cargo").unwrap(), Some(1700000000000));
+    }
+
+    #[test]
+    fn metadata_returns_none_when_unset() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        assert_eq!(db.get_last_updated("cargo").unwrap(), None);
+    }
+
+    #[test]
+    fn clear_ecosystem_removes_only_target() {
+        let db = VulnDatabase::open_in_memory().unwrap();
+        let r1 = sample_vuln_eco("CVE-2024-0001", "tokio", "cargo", "1.0.0", "1.5.0");
+        let r2 = sample_vuln_eco("CVE-2024-0002", "express", "npm", "4.0.0", "4.17.0");
+        db.insert_batch(&[r1, r2]).unwrap();
+        assert_eq!(db.vulnerability_count().unwrap(), 2);
+
+        let deleted = db.clear_ecosystem("cargo").unwrap();
+        assert_eq!(deleted, 1);
+        assert_eq!(db.vulnerability_count().unwrap(), 1);
+
+        let remaining = db
+            .find_vulnerabilities_for_package("express", "npm")
+            .unwrap();
+        assert_eq!(remaining.len(), 1);
+    }
 }

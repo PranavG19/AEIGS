@@ -308,7 +308,7 @@ fn express_source_recon() {
         "express fixture should have package-lock.json or package.json"
     );
 
-    let ops = run_recon_standalone(&Some(source_dir)).unwrap();
+    let ops = run_recon_standalone(&Some(source_dir), None).unwrap();
     let has_dependency_node = ops.iter().any(|op| {
         matches!(
             &op.operation,
@@ -592,7 +592,7 @@ fn flask_source_recon() {
         "flask fixture should have poetry.lock or requirements.txt"
     );
 
-    let ops = run_recon_standalone(&Some(source_dir)).unwrap();
+    let ops = run_recon_standalone(&Some(source_dir), None).unwrap();
     let has_pyyaml = ops.iter().any(|op| {
         matches!(
             &op.operation,

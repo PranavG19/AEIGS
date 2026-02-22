@@ -2,6 +2,7 @@ use aegis_orchestrator::attest::{parse_attest_args, run_attest};
 use aegis_orchestrator::pipeline::run_scan;
 use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::ScanConfig;
+use aegis_orchestrator::update_db::{parse_update_db_args, run_update_db};
 use clap::Parser;
 
 #[tokio::main]
@@ -15,6 +16,11 @@ async fn main() {
 
     if args.len() > 1 && args[1] == "attest" {
         run_attest_command(&args[2..]);
+        return;
+    }
+
+    if args.len() > 1 && args[1] == "update-db" {
+        run_update_db_command(&args[2..]);
         return;
     }
 
@@ -54,7 +60,7 @@ fn run_recon_command(args: &[String]) {
         .find(|w| w[0] == "--source-dir")
         .map(|w| std::path::PathBuf::from(&w[1]));
 
-    match run_recon_standalone(&source_dir) {
+    match run_recon_standalone(&source_dir, None) {
         Ok(ops) => {
             println!("Recon complete: {} operations discovered", ops.len());
         }
@@ -76,6 +82,29 @@ fn run_attest_command(args: &[String]) {
         },
         Err(e) => {
             eprintln!("Attestation failed: {e}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn run_update_db_command(args: &[String]) {
+    match parse_update_db_args(args) {
+        Ok(update_args) => match run_update_db(&update_args) {
+            Ok(summary) => {
+                println!(
+                    "Vulnerability database updated: {} new records ({} total)",
+                    summary.new_records, summary.total_records
+                );
+                println!("Queried {} packages", summary.packages_queried);
+                println!("Database: {}", summary.db_path.display());
+            }
+            Err(e) => {
+                eprintln!("Update failed: {e}");
+                std::process::exit(1);
+            }
+        },
+        Err(e) => {
+            eprintln!("Update failed: {e}");
             std::process::exit(1);
         }
     }
