@@ -6,15 +6,17 @@ use aegis_passive_recon::vuln_database::VulnDatabase;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::util::timestamp_ms;
 
-pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
+pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let mut entries = Vec::new();
     let mut sequence = 0u64;
 
     if let Some(source_dir) = &ctx.config.source_dir {
-        let walk = walk_directory(source_dir).map_err(|e| e.to_string())?;
+        let walk =
+            walk_directory(source_dir).map_err(|e| PhaseError::FilesystemWalk(e.to_string()))?;
         let lock_files: Vec<_> = walk
             .files
             .iter()
@@ -39,9 +41,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, String> {
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
-        ctx.graph
-            .apply_operations(&entries)
-            .map_err(|e| format!("{e:?}"))?;
+        ctx.graph.apply_operations(&entries)?;
     }
 
     Ok(PhaseResult {
@@ -142,12 +142,12 @@ pub(crate) fn walk_to_operations(
 pub fn run_recon_standalone(
     source_dir: &Option<PathBuf>,
     vuln_db_path: Option<&Path>,
-) -> Result<Vec<OperationLogEntry>, String> {
+) -> Result<Vec<OperationLogEntry>, PhaseError> {
     let Some(source_dir) = source_dir else {
         return Ok(Vec::new());
     };
 
-    let walk = walk_directory(source_dir).map_err(|e| e.to_string())?;
+    let walk = walk_directory(source_dir).map_err(|e| PhaseError::FilesystemWalk(e.to_string()))?;
     let lock_files: Vec<_> = walk
         .files
         .iter()

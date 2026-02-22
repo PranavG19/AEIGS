@@ -14,6 +14,7 @@ pub mod interactive;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
+pub mod phase_error;
 mod phase_fingerprint;
 mod phase_fuzz;
 mod phase_recon;
@@ -39,6 +40,7 @@ pub use interactive::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
+pub use phase_error::*;
 pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
 pub use phase_recon::*;
@@ -93,6 +95,10 @@ mod phase_report_test;
 #[cfg(test)]
 #[path = "graph_persistence_test.rs"]
 mod graph_persistence_test;
+
+#[cfg(test)]
+#[path = "phase_error_test.rs"]
+mod phase_error_test;
 
 #[cfg(test)]
 #[path = "checkpoint_test.rs"]

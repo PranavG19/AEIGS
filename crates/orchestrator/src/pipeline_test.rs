@@ -190,50 +190,62 @@ fn pipeline_error_display_config() {
 
 #[test]
 fn pipeline_error_display_recon() {
-    let err = PipelineError::Recon("recon failed".to_string());
-    assert_eq!(format!("{err}"), "recon: recon failed");
+    let err = PipelineError::Recon(PhaseError::FilesystemWalk("recon failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("recon:"));
+    assert!(msg.contains("recon failed"));
 }
 
 #[test]
 fn pipeline_error_display_fingerprint() {
-    let err = PipelineError::Fingerprint("fp failed".to_string());
-    assert_eq!(format!("{err}"), "fingerprint: fp failed");
+    let err = PipelineError::Fingerprint(PhaseError::FilesystemWalk("fp failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("fingerprint:"));
+    assert!(msg.contains("fp failed"));
 }
 
 #[test]
 fn pipeline_error_display_fuzz() {
-    let err = PipelineError::Fuzz("fuzz failed".to_string());
-    assert_eq!(format!("{err}"), "fuzz: fuzz failed");
+    let err = PipelineError::Fuzz(PhaseError::FilesystemWalk("fuzz failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("fuzz:"));
+    assert!(msg.contains("fuzz failed"));
 }
 
 #[test]
 fn pipeline_error_display_analysis() {
-    let err = PipelineError::Analysis("analysis failed".to_string());
-    assert_eq!(format!("{err}"), "analysis: analysis failed");
+    let err = PipelineError::Analysis(PhaseError::FilesystemWalk("analysis failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("analysis:"));
+    assert!(msg.contains("analysis failed"));
 }
 
 #[test]
 fn pipeline_error_display_dom_verify() {
-    let err = PipelineError::DomVerify("dom verify failed".to_string());
-    assert_eq!(format!("{err}"), "dom_verify: dom verify failed");
+    let err = PipelineError::DomVerify(PhaseError::FilesystemWalk("dom verify failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("dom_verify:"));
+    assert!(msg.contains("dom verify failed"));
 }
 
 #[test]
 fn pipeline_error_display_report() {
-    let err = PipelineError::Report("report failed".to_string());
-    assert_eq!(format!("{err}"), "report: report failed");
+    let err = PipelineError::Report(PhaseError::ReportFormat("report failed".to_string()));
+    let msg = format!("{err}");
+    assert!(msg.starts_with("report:"));
+    assert!(msg.contains("report failed"));
 }
 
 #[test]
 fn pipeline_error_debug() {
-    let err = PipelineError::Recon("test".to_string());
+    let err = PipelineError::Recon(PhaseError::FilesystemWalk("test".to_string()));
     let dbg = format!("{err:?}");
     assert!(dbg.contains("Recon"));
 }
 
 #[test]
 fn pipeline_error_is_std_error() {
-    let err = PipelineError::Fuzz("boom".to_string());
+    let err = PipelineError::Fuzz(PhaseError::FilesystemWalk("boom".to_string()));
     let _: &dyn std::error::Error = &err;
 }
 
