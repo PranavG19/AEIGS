@@ -398,7 +398,9 @@ fn worker_handles_assign_work() {
 #[test]
 fn worker_handles_pause_resume() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
     assert_eq!(w.state(), WorkerState::Working);
 
     w.handle_message(&CoordinatorMessage::Pause);
@@ -421,7 +423,9 @@ fn worker_handles_shutdown() {
 #[test]
 fn worker_complete_target_with_findings() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
     let msg = w.complete_target(vec![make_finding()]);
     assert!(msg.is_some());
     match msg.unwrap() {
@@ -439,7 +443,9 @@ fn worker_complete_target_with_findings() {
 #[test]
 fn worker_complete_target_no_findings() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
     let msg = w.complete_target(vec![]);
     assert!(msg.is_none());
 }
@@ -447,7 +453,9 @@ fn worker_complete_target_no_findings() {
 #[test]
 fn worker_finish_returns_work_complete() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
     let msg = w.finish();
     match msg {
         WorkerMessage::WorkComplete { worker_id } => {
@@ -461,7 +469,9 @@ fn worker_finish_returns_work_complete() {
 #[test]
 fn worker_heartbeat_reflects_progress() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
     w.complete_target(vec![]);
     let msg = w.heartbeat_message();
     match msg {
@@ -483,7 +493,9 @@ fn worker_heartbeat_reflects_progress() {
 #[test]
 fn worker_findings_accumulate_across_targets() {
     let mut w = make_worker();
-    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.handle_message(&CoordinatorMessage::AssignWork(
+        make_two_endpoint_assignment(),
+    ));
 
     let batch1 = w.complete_target(vec![make_finding()]);
     assert!(batch1.is_some());

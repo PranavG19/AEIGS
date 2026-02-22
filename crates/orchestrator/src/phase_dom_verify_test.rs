@@ -1,14 +1,16 @@
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier};
+use aegis_protocol::node::NodeType;
+use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::scan_event::ScanEvent;
 use aegis_supervisor::capability_manager::CapabilityManager;
 
 use crate::actor::{DomVerifyActor, ScanActor};
 use crate::convergence::RefutedTracker;
-use crate::phase_dom_verify::{DomVerifyOutcome, dom_verify_to_operations};
+use crate::phase_dom_verify::{DomVerifyOutcome, dom_verify_to_operations, run_dom_verify};
 use crate::pipeline;
 use crate::scan_config;
+use crate::util::timestamp_ms;
 
 fn make_xss_finding(id: u64, confidence: f64) -> FindingData {
     FindingData::new(
@@ -19,6 +21,42 @@ fn make_xss_finding(id: u64, confidence: f64) -> FindingData {
         ModuleIdentifier::Fuzzing,
         1000,
     )
+}
+
+fn make_add_node_op(seq: u64, path: &str, method: &str) -> OperationLogEntry {
+    OperationLogEntry {
+        sequence_number: seq,
+        module: ModuleIdentifier::Enumeration,
+        operation: GraphOperation::AddNode {
+            node_type: NodeType::Endpoint,
+            properties: vec![
+                ("path".to_string(), path.to_string()),
+                ("method".to_string(), method.to_string()),
+            ],
+        },
+        timestamp_unix_ms: timestamp_ms(),
+    }
+}
+
+fn make_add_finding_op(
+    seq: u64,
+    linked_node_ids: Vec<u64>,
+    vuln_class: VulnerabilityClass,
+    severity: f64,
+    confidence: f64,
+) -> OperationLogEntry {
+    OperationLogEntry {
+        sequence_number: seq,
+        module: ModuleIdentifier::Fuzzing,
+        operation: GraphOperation::AddFinding {
+            linked_node_ids,
+            vulnerability_class: vuln_class,
+            severity,
+            confidence,
+            certificate: Vec::new(),
+        },
+        timestamp_unix_ms: timestamp_ms(),
+    }
 }
 
 fn test_capability_manager() -> CapabilityManager {
@@ -71,6 +109,13 @@ fn localhost_config() -> scan_config::ScanConfig {
         auth: scan_config::AuthOptions {
             auth_flow: None,
             auth_input: Vec::new(),
+        },
+        distributed: scan_config::DistributedOptions {
+            distributed: false,
+            coordinator_addr: "127.0.0.1:9100".to_string(),
+            workers: 1,
+            worker_connect: None,
+            worker_id: "worker-0".to_string(),
         },
     }
 }
@@ -246,4 +291,272 @@ fn dom_verify_to_operations_skips_out_of_bounds_index() {
 
     assert!(ops.is_empty());
     assert_eq!(seq, 0);
+}
+
+// --- Integration tests: graph round-trip ---
+
+#[test]
+fn dom_verify_upgrades_evidence_in_graph() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![
+        make_add_finding_op(1, vec![], VulnerabilityClass::CrossSiteScripting, 7.0, 0.5),
+        make_add_finding_op(2, vec![], VulnerabilityClass::CrossSiteScripting, 6.0, 0.4),
+    ];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let original_findings = ctx.graph.all_findings().unwrap();
+    assert_eq!(original_findings.len(), 2);
+
+    let outcomes = vec![
+        DomVerifyOutcome {
+            finding_index: 0,
+            dom_executed: true,
+            confidence_adjustment: 0.3,
+        },
+        DomVerifyOutcome {
+            finding_index: 1,
+            dom_executed: true,
+            confidence_adjustment: 0.2,
+        },
+    ];
+
+    let mut seq = 2u64;
+    let verify_ops = dom_verify_to_operations(&outcomes, &original_findings, &mut seq);
+    assert_eq!(verify_ops.len(), 2);
+
+    ctx.graph.apply_operations(&verify_ops).unwrap();
+
+    let all_findings = ctx.graph.all_findings().unwrap();
+    assert_eq!(all_findings.len(), 4, "2 originals + 2 boosted");
+
+    let boosted_0 = ctx.graph.get_finding(2).unwrap().unwrap();
+    assert!(
+        (boosted_0.confidence - 0.8).abs() < f64::EPSILON,
+        "0.5 + 0.3 = 0.8"
+    );
+
+    let boosted_1 = ctx.graph.get_finding(3).unwrap().unwrap();
+    assert!(
+        (boosted_1.confidence - 0.6).abs() < f64::EPSILON,
+        "0.4 + 0.2 = 0.6"
+    );
+}
+
+#[test]
+fn dom_verify_run_returns_empty_for_no_xss_findings() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![make_add_finding_op(
+        1,
+        vec![],
+        VulnerabilityClass::SqlInjection,
+        9.0,
+        0.8,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let result = run_dom_verify(&mut ctx).unwrap();
+    assert_eq!(result.operations_applied, 0);
+    assert_eq!(result.findings_count, 0);
+}
+
+#[test]
+fn dom_verify_run_returns_empty_for_empty_graph() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let result = run_dom_verify(&mut ctx).unwrap();
+    assert_eq!(result.operations_applied, 0);
+    assert_eq!(result.findings_count, 0);
+}
+
+#[test]
+fn dom_verify_preserves_linked_node_ids() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let node_ops = vec![
+        make_add_node_op(1, "/api/a", "GET"),
+        make_add_node_op(2, "/api/b", "POST"),
+        make_add_node_op(3, "/api/c", "PUT"),
+    ];
+    ctx.graph.apply_operations(&node_ops).unwrap();
+
+    let seed_ops = vec![make_add_finding_op(
+        4,
+        vec![0, 1, 2],
+        VulnerabilityClass::CrossSiteScripting,
+        7.0,
+        0.5,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let findings = ctx.graph.all_findings().unwrap();
+    assert_eq!(findings[0].linked_node_ids, vec![0, 1, 2]);
+
+    let outcomes = vec![DomVerifyOutcome {
+        finding_index: 0,
+        dom_executed: true,
+        confidence_adjustment: 0.2,
+    }];
+
+    let mut seq = 4u64;
+    let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
+    assert_eq!(verify_ops.len(), 1);
+
+    match &verify_ops[0].operation {
+        GraphOperation::AddFinding {
+            linked_node_ids, ..
+        } => {
+            assert_eq!(*linked_node_ids, vec![0, 1, 2]);
+        }
+        _ => panic!("expected AddFinding operation"),
+    }
+
+    ctx.graph.apply_operations(&verify_ops).unwrap();
+    let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
+    assert_eq!(boosted.linked_node_ids, vec![0, 1, 2]);
+}
+
+#[test]
+fn dom_verify_preserves_vulnerability_class() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![make_add_finding_op(
+        1,
+        vec![],
+        VulnerabilityClass::CrossSiteScripting,
+        8.5,
+        0.6,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let findings = ctx.graph.all_findings().unwrap();
+    let outcomes = vec![DomVerifyOutcome {
+        finding_index: 0,
+        dom_executed: true,
+        confidence_adjustment: 0.15,
+    }];
+
+    let mut seq = 1u64;
+    let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
+    ctx.graph.apply_operations(&verify_ops).unwrap();
+
+    let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
+    assert_eq!(
+        boosted.vulnerability_class,
+        VulnerabilityClass::CrossSiteScripting
+    );
+    assert!((boosted.severity - 8.5).abs() < f64::EPSILON);
+}
+
+#[test]
+fn dom_verify_downgrades_false_positive_no_ops() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![make_add_finding_op(
+        1,
+        vec![],
+        VulnerabilityClass::CrossSiteScripting,
+        7.0,
+        0.5,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let findings = ctx.graph.all_findings().unwrap();
+    let outcomes = vec![DomVerifyOutcome {
+        finding_index: 0,
+        dom_executed: false,
+        confidence_adjustment: -0.3,
+    }];
+
+    let mut seq = 1u64;
+    let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
+    assert!(
+        verify_ops.is_empty(),
+        "non-executed outcomes should not produce ops"
+    );
+
+    let all_findings = ctx.graph.all_findings().unwrap();
+    assert_eq!(all_findings.len(), 1, "graph unchanged");
+    assert!(
+        (all_findings[0].confidence - 0.5).abs() < f64::EPSILON,
+        "original confidence preserved"
+    );
+}
+
+#[test]
+fn dom_verify_confidence_clamped_in_graph() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![make_add_finding_op(
+        1,
+        vec![],
+        VulnerabilityClass::CrossSiteScripting,
+        7.0,
+        0.95,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let findings = ctx.graph.all_findings().unwrap();
+    let outcomes = vec![DomVerifyOutcome {
+        finding_index: 0,
+        dom_executed: true,
+        confidence_adjustment: 0.5,
+    }];
+
+    let mut seq = 1u64;
+    let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
+    ctx.graph.apply_operations(&verify_ops).unwrap();
+
+    let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
+    assert!(
+        (boosted.confidence - 1.0).abs() < f64::EPSILON,
+        "0.95 + 0.5 clamped to 1.0"
+    );
+    assert!(
+        boosted.confidence <= 1.0,
+        "confidence must not exceed 1.0 in graph"
+    );
+}
+
+#[test]
+fn dom_verify_actor_with_seeded_xss_findings() {
+    let mut ctx = make_ctx_with_real_graph();
+
+    let seed_ops = vec![
+        make_add_finding_op(1, vec![], VulnerabilityClass::CrossSiteScripting, 7.0, 0.5),
+        make_add_finding_op(2, vec![], VulnerabilityClass::SqlInjection, 9.0, 0.8),
+    ];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+
+    let xss_ids = ctx
+        .graph
+        .findings_by_class(VulnerabilityClass::CrossSiteScripting)
+        .unwrap();
+    assert_eq!(xss_ids.len(), 1);
+
+    let sqli_ids = ctx
+        .graph
+        .findings_by_class(VulnerabilityClass::SqlInjection)
+        .unwrap();
+    assert_eq!(sqli_ids.len(), 1);
+
+    let mut actor = DomVerifyActor;
+    let events = actor.process(&mut ctx, &[]).unwrap();
+
+    assert_eq!(events.len(), 1);
+    match &events[0].event {
+        ScanEvent::PhaseCompleted {
+            phase_name,
+            operations_applied,
+            ..
+        } => {
+            assert_eq!(phase_name, "dom_verify");
+            assert_eq!(
+                *operations_applied, 0,
+                "placeholder phase applies no ops yet"
+            );
+        }
+        _ => panic!("expected PhaseCompleted event"),
+    }
 }

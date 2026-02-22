@@ -49,6 +49,7 @@ pub enum ConfigError {
     AuthFlowFileRead(String),
     AuthFlowFileParse(String),
     AuthInputParse(String),
+    InvalidDistributed(String),
 }
 
 impl std::fmt::Display for ConfigError {
@@ -64,6 +65,9 @@ impl std::fmt::Display for ConfigError {
             Self::AuthFlowFileRead(msg) => write!(f, "cannot read auth flow file: {msg}"),
             Self::AuthFlowFileParse(msg) => write!(f, "cannot parse auth flow file: {msg}"),
             Self::AuthInputParse(msg) => write!(f, "invalid auth input: {msg}"),
+            Self::InvalidDistributed(msg) => {
+                write!(f, "invalid distributed config: {msg}")
+            }
         }
     }
 }
@@ -166,6 +170,30 @@ pub struct AuthOptions {
     pub auth_input: Vec<String>,
 }
 
+/// Distributed scanning options.
+#[derive(Args, Debug, Clone)]
+pub struct DistributedOptions {
+    /// Enable distributed scanning mode (coordinator).
+    #[arg(long, default_value_t = false)]
+    pub distributed: bool,
+
+    /// Bind address for coordinator listener (coordinator mode).
+    #[arg(long, default_value = "127.0.0.1:9100")]
+    pub coordinator_addr: String,
+
+    /// Number of workers to wait for before starting scan (coordinator mode).
+    #[arg(long, default_value_t = 1)]
+    pub workers: usize,
+
+    /// Worker mode: connect to this coordinator address.
+    #[arg(long)]
+    pub worker_connect: Option<String>,
+
+    /// Worker ID (worker mode).
+    #[arg(long, default_value = "worker-0")]
+    pub worker_id: String,
+}
+
 /// Scope filtering options.
 #[derive(Args, Debug, Clone)]
 pub struct ScopeOptions {
@@ -230,6 +258,9 @@ pub struct ScanConfig {
 
     #[command(flatten)]
     pub auth: AuthOptions,
+
+    #[command(flatten)]
+    pub distributed: DistributedOptions,
 }
 
 pub fn validate_localhost(target: &str) -> Result<(), ConfigError> {
@@ -342,4 +373,27 @@ pub fn parse_auth_inputs(inputs: &[String]) -> Result<HashMap<String, String>, C
         map.insert(key.to_string(), value.to_string());
     }
     Ok(map)
+}
+
+/// Parses coordinator address into (host, port).
+pub fn parse_coordinator_addr(addr: &str) -> Result<(String, u16), ConfigError> {
+    let colon_pos = addr.rfind(':').ok_or_else(|| {
+        ConfigError::InvalidDistributed(format!("missing port in address: {addr}"))
+    })?;
+    let host = &addr[..colon_pos];
+    let port_str = &addr[colon_pos + 1..];
+    let port: u16 = port_str.parse().map_err(|_| {
+        ConfigError::InvalidDistributed(format!("invalid port '{port_str}' in address: {addr}"))
+    })?;
+    Ok((host.to_string(), port))
+}
+
+/// Returns true if the config is in worker mode (--worker-connect is set).
+pub fn is_worker_mode(config: &ScanConfig) -> bool {
+    config.distributed.worker_connect.is_some()
+}
+
+/// Returns true if the config is in coordinator mode (--distributed is set).
+pub fn is_coordinator_mode(config: &ScanConfig) -> bool {
+    config.distributed.distributed
 }

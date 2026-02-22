@@ -71,6 +71,13 @@ fn localhost_config() -> scan_config::ScanConfig {
             auth_flow: None,
             auth_input: Vec::new(),
         },
+        distributed: scan_config::DistributedOptions {
+            distributed: false,
+            coordinator_addr: "127.0.0.1:9100".to_string(),
+            workers: 1,
+            worker_connect: None,
+            worker_id: "worker-0".to_string(),
+        },
     }
 }
 

@@ -804,3 +804,162 @@ fn parse_auth_inputs_duplicate_key_last_wins() {
     let result = parse_auth_inputs(&inputs).unwrap();
     assert_eq!(result["username"], "second");
 }
+
+#[test]
+fn distributed_options_defaults() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!config.distributed.distributed);
+    assert_eq!(config.distributed.coordinator_addr, "127.0.0.1:9100");
+    assert_eq!(config.distributed.workers, 1);
+    assert!(config.distributed.worker_connect.is_none());
+    assert_eq!(config.distributed.worker_id, "worker-0");
+}
+
+#[test]
+fn distributed_flag_sets_true() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--distributed",
+    ])
+    .unwrap();
+    assert!(config.distributed.distributed);
+}
+
+#[test]
+fn distributed_coordinator_addr_overridable() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--coordinator-addr",
+        "127.0.0.1:9200",
+    ])
+    .unwrap();
+    assert_eq!(config.distributed.coordinator_addr, "127.0.0.1:9200");
+}
+
+#[test]
+fn distributed_workers_overridable() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--workers",
+        "4",
+    ])
+    .unwrap();
+    assert_eq!(config.distributed.workers, 4);
+}
+
+#[test]
+fn distributed_worker_connect_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--worker-connect",
+        "127.0.0.1:9100",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.distributed.worker_connect.as_deref(),
+        Some("127.0.0.1:9100")
+    );
+}
+
+#[test]
+fn distributed_worker_id_overridable() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--worker-id",
+        "worker-7",
+    ])
+    .unwrap();
+    assert_eq!(config.distributed.worker_id, "worker-7");
+}
+
+#[test]
+fn parse_coordinator_addr_valid() {
+    let (host, port) = parse_coordinator_addr("127.0.0.1:9100").unwrap();
+    assert_eq!(host, "127.0.0.1");
+    assert_eq!(port, 9100);
+}
+
+#[test]
+fn parse_coordinator_addr_missing_port() {
+    assert!(parse_coordinator_addr("127.0.0.1").is_err());
+}
+
+#[test]
+fn parse_coordinator_addr_invalid_port() {
+    assert!(parse_coordinator_addr("127.0.0.1:abc").is_err());
+}
+
+#[test]
+fn parse_coordinator_addr_port_zero() {
+    let (host, port) = parse_coordinator_addr("localhost:0").unwrap();
+    assert_eq!(host, "localhost");
+    assert_eq!(port, 0);
+}
+
+#[test]
+fn parse_coordinator_addr_high_port() {
+    let (host, port) = parse_coordinator_addr("127.0.0.1:65535").unwrap();
+    assert_eq!(host, "127.0.0.1");
+    assert_eq!(port, 65535);
+}
+
+#[test]
+fn parse_coordinator_addr_port_out_of_range() {
+    assert!(parse_coordinator_addr("127.0.0.1:70000").is_err());
+}
+
+#[test]
+fn is_worker_mode_false_by_default() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!is_worker_mode(&config));
+}
+
+#[test]
+fn is_worker_mode_true_when_worker_connect_set() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--worker-connect",
+        "127.0.0.1:9100",
+    ])
+    .unwrap();
+    assert!(is_worker_mode(&config));
+}
+
+#[test]
+fn is_coordinator_mode_false_by_default() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!is_coordinator_mode(&config));
+}
+
+#[test]
+fn is_coordinator_mode_true_when_distributed_set() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--distributed",
+    ])
+    .unwrap();
+    assert!(is_coordinator_mode(&config));
+}
+
+#[test]
+fn config_error_display_invalid_distributed() {
+    let err = ConfigError::InvalidDistributed("missing port".to_string());
+    assert_eq!(err.to_string(), "invalid distributed config: missing port");
+}
