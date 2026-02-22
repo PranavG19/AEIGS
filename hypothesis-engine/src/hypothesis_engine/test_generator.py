@@ -244,7 +244,7 @@ class TestParseHypotheses:
     "confidence": 0.8
   }
 ]"""
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
         assert results[0].vulnerability_class == "SQL Injection"
         assert results[0].confidence == 0.8
@@ -254,36 +254,36 @@ class TestParseHypotheses:
   {"condition": "IF a", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.7},
   {"condition": "IF b", "vulnerability_class": "SQLi", "reasoning": "r", "test_approach": "t", "confidence": 0.6}
 ]"""
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 2
 
     def test_parse_empty_response(self) -> None:
-        _trace, results = parse_hypotheses_from_response("")
+        _trace, results, _method = parse_hypotheses_from_response("")
         assert results == []
 
     def test_parse_invalid_json(self) -> None:
-        _trace, results = parse_hypotheses_from_response("not json at all")
+        _trace, results, _method = parse_hypotheses_from_response("not json at all")
         assert results == []
 
     def test_parse_skips_invalid_items(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.5}, "not_an_object"]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
 
     def test_parse_skips_empty_condition(self) -> None:
         response = '[{"condition": "", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.5}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 0
 
     def test_parse_default_confidence(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t"}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
         assert results[0].confidence == 0.5
 
     def test_parse_with_surrounding_text(self) -> None:
         response = 'Here are my findings:\n[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.9}]\nEnd of analysis.'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert len(results) == 1
 
 
@@ -327,12 +327,12 @@ class TestHypothesisModel:
 class TestParseHypothesesEdgeCases:
     def test_parse_valid_brackets_invalid_json(self) -> None:
         response = "[{this is not valid json}]"
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert results == []
 
     def test_parse_value_error_in_hypothesis(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": "not_a_number"}]'
-        _trace, results = parse_hypotheses_from_response(response)
+        _trace, results, _method = parse_hypotheses_from_response(response)
         assert results == []
 
 
@@ -352,14 +352,14 @@ class TestReasoningTrace:
             '[{"condition": "IF login uses string concat", "vulnerability_class": "SQLi", '
             '"reasoning": "r", "test_approach": "t", "confidence": 0.9}]'
         )
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert "Express" in trace
         assert "SQL injection" in trace
         assert len(hypotheses) == 1
 
     def test_pure_json_response_has_empty_reasoning_trace(self) -> None:
         response = '[{"condition": "IF x", "vulnerability_class": "XSS", "reasoning": "r", "test_approach": "t", "confidence": 0.7}]'
-        trace, hypotheses = parse_hypotheses_from_response(response)
+        trace, hypotheses, _method = parse_hypotheses_from_response(response)
         assert trace == ""
         assert len(hypotheses) == 1
 
@@ -741,3 +741,130 @@ class TestClassConfirmationRates:
         perf_pos = prompt.find("</prior_performance>")
         close_pos = prompt.find("</application_context>")
         assert perf_pos < close_pos
+
+
+class TestParsingMethod:
+    def test_xml_tags_parsing_method(self) -> None:
+        response = (
+            '<thinking>\nAnalyzing...\n</thinking>\n'
+            '<hypotheses>\n'
+            '[{"condition": "IF /api/search", "vulnerability_class": "SQL Injection", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.8}]\n'
+            '</hypotheses>'
+        )
+        _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "xml_tags"
+        assert len(results) == 1
+
+    def test_bracket_json_parsing_method(self) -> None:
+        response = (
+            'Here is my analysis:\n'
+            '[{"condition": "IF /test", "vulnerability_class": "XSS", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.5}]'
+        )
+        with pytest.warns(RuntimeWarning, match="bracket_json"):
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "bracket_json"
+        assert len(results) == 1
+
+    def test_single_object_wrapped_parsing_method(self) -> None:
+        response = (
+            '{"condition": "IF /login", "vulnerability_class": "SQLi", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.7}'
+        )
+        with pytest.warns(RuntimeWarning, match="single_object_wrapped"):
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "single_object_wrapped"
+        assert len(results) == 1
+
+    def test_failed_parsing_method_on_empty(self) -> None:
+        _trace, results, method = parse_hypotheses_from_response("")
+        assert method == "failed"
+        assert results == []
+
+    def test_failed_parsing_method_on_invalid_json(self) -> None:
+        response = '<hypotheses>\n{not valid json}\n</hypotheses>'
+        _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "failed"
+        assert results == []
+
+    def test_no_warning_for_xml_tags(self) -> None:
+        response = (
+            '<hypotheses>\n'
+            '[{"condition": "IF /api", "vulnerability_class": "XSS", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.6}]\n'
+            '</hypotheses>'
+        )
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert method == "xml_tags"
+        assert len(results) == 1
+
+    def test_no_warning_when_fallback_produces_no_hypotheses(self) -> None:
+        response = "just some text with no json at all and no brackets"
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            _trace, results, method = parse_hypotheses_from_response(response)
+        assert results == []
+
+    def test_generation_result_has_parsing_method_field(self) -> None:
+        result = GenerationResult(
+            hypotheses=[],
+            model_id="test",
+            generation_time_ms=0.0,
+        )
+        assert result.parsing_method == "unknown"
+
+    def test_generation_result_has_latency_ms_field(self) -> None:
+        result = GenerationResult(
+            hypotheses=[],
+            model_id="test",
+            generation_time_ms=0.0,
+        )
+        assert result.latency_ms == 0.0
+
+    def test_generate_sets_parsing_method_structured(self) -> None:
+        import json as json_mod
+
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = HypothesisGenerator(client=mock_client)
+        hypotheses_data = [
+            {
+                "condition": "IF /api/test",
+                "vulnerability_class": "XSS",
+                "reasoning": "r",
+                "test_approach": "t",
+                "confidence": 0.6,
+            }
+        ]
+        mock_usage = TokenUsage(input_tokens=10, output_tokens=20, latency_ms=150.0)
+        mock_client.invoke_structured.return_value = (
+            json_mod.dumps(hypotheses_data),
+            mock_usage,
+        )
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = generator.generate(ctx)
+        assert result.parsing_method == "structured"
+        assert result.latency_ms == 150.0
+
+    def test_generate_sets_parsing_method_from_fallback(self) -> None:
+        mock_client = MagicMock(spec=LlmBackend)
+        generator = HypothesisGenerator(client=mock_client)
+        mock_client.invoke_structured.side_effect = RuntimeError("fail")
+        mock_response = (
+            '<hypotheses>\n'
+            '[{"condition": "IF /login", "vulnerability_class": "SQLi", '
+            '"reasoning": "r", "test_approach": "t", "confidence": 0.9}]\n'
+            '</hypotheses>'
+        )
+        mock_usage = TokenUsage(input_tokens=10, output_tokens=20, latency_ms=200.0)
+        mock_client.invoke.return_value = (mock_response, mock_usage)
+
+        ctx = ScanContext(technology_stack=["Express"])
+        result = generator.generate(ctx)
+        assert result.parsing_method == "xml_tags"
+        assert result.latency_ms == 200.0

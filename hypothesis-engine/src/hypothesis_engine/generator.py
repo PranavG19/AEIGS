@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+import warnings
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -41,6 +42,8 @@ class GenerationResult(BaseModel):
     reasoning_trace: str = ""
     input_tokens: int = 0
     output_tokens: int = 0
+    parsing_method: str = "unknown"
+    latency_ms: float = 0.0
 
 
 SYSTEM_PROMPT = (
@@ -206,35 +209,43 @@ def build_user_prompt(context: ScanContext) -> str:
 
 def parse_hypotheses_from_response(
     response_text: str,
-) -> tuple[str, list[Hypothesis]]:
+) -> tuple[str, list[Hypothesis], str]:
     cleaned = response_text.strip()
+    parsing_method = "failed"
 
-    # Try XML tag-based extraction first
     reasoning_trace = ""
     think_start = cleaned.find("<thinking>")
     think_end = cleaned.find("</thinking>")
     if think_start != -1 and think_end != -1:
         reasoning_trace = cleaned[think_start + len("<thinking>"):think_end].strip()
 
-    # Try extracting JSON from <hypotheses> tags
     hyp_start = cleaned.find("<hypotheses>")
     hyp_end = cleaned.find("</hypotheses>")
     if hyp_start != -1 and hyp_end != -1:
         json_str = cleaned[hyp_start + len("<hypotheses>"):hyp_end].strip()
+        parsing_method = "xml_tags"
     else:
-        # Fallback to bracket-based extraction
         start = cleaned.find("[")
         end = cleaned.rfind("]")
         if start == -1 or end == -1:
-            return (reasoning_trace, [])
-        if not reasoning_trace:
-            reasoning_trace = cleaned[:start].strip()
-        json_str = cleaned[start : end + 1]
+            single_start = cleaned.find("{")
+            single_end = cleaned.rfind("}")
+            if single_start != -1 and single_end != -1:
+                json_str = "[" + cleaned[single_start : single_end + 1] + "]"
+                parsing_method = "single_object_wrapped"
+            else:
+                return (reasoning_trace, [], parsing_method)
+        else:
+            if not reasoning_trace:
+                reasoning_trace = cleaned[:start].strip()
+            json_str = cleaned[start : end + 1]
+            parsing_method = "bracket_json"
 
     try:
         raw_list = json.loads(json_str)
     except json.JSONDecodeError:
-        return (reasoning_trace, [])
+        parsing_method = "failed"
+        return (reasoning_trace, [], parsing_method)
 
     hypotheses: list[Hypothesis] = []
     for item in raw_list:
@@ -254,7 +265,14 @@ def parse_hypotheses_from_response(
         except (ValueError, TypeError):
             continue
 
-    return (reasoning_trace, hypotheses)
+    if parsing_method != "xml_tags" and hypotheses:
+        warnings.warn(
+            f"LLM response required {parsing_method} parsing fallback",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    return (reasoning_trace, hypotheses, parsing_method)
 
 
 def _consistency_key(h: Hypothesis) -> tuple[str, str]:
@@ -335,6 +353,7 @@ class HypothesisGenerator:
         reasoning_trace = ""
         hypotheses: list[Hypothesis] = []
         usage = None
+        parsing_method = "structured"
 
         try:
             json_text, usage = self._client.invoke_structured(
@@ -351,7 +370,7 @@ class HypothesisGenerator:
                 system=SYSTEM_PROMPT,
                 max_tokens=8192,
             )
-            reasoning_trace, hypotheses = parse_hypotheses_from_response(raw_text)
+            reasoning_trace, hypotheses, parsing_method = parse_hypotheses_from_response(raw_text)
 
         elapsed_ms = (time.monotonic() - start_time) * 1000
         hypotheses = hypotheses[:max_hypotheses]
@@ -363,6 +382,8 @@ class HypothesisGenerator:
             reasoning_trace=reasoning_trace,
             input_tokens=usage.input_tokens if usage is not None else 0,
             output_tokens=usage.output_tokens if usage is not None else 0,
+            parsing_method=parsing_method,
+            latency_ms=usage.latency_ms if usage is not None else 0.0,
         )
 
     def generate_with_consistency(
