@@ -356,16 +356,16 @@ fn cve_2019_0708_bluekeep() {
         AttackComplexity::Low,
         PrivilegesRequired::None,
         UserInteraction::None,
-        Scope::Changed,
+        Scope::Unchanged,
         Impact::High,
         Impact::High,
         Impact::High,
     );
     let result = compute_cvss(&m);
-    assert_eq!(result.score, 10.0);
+    assert_eq!(result.score, 9.8);
     assert_eq!(
         result.vector_string,
-        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"
+        "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     );
 }
 
