@@ -6,6 +6,7 @@ pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
 pub mod distributed;
+pub mod distributed_transport;
 pub mod endpoint_similarity;
 mod graph_persistence;
 pub mod hypothesis_bridge;
@@ -29,6 +30,7 @@ pub use auth_session::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use distributed::*;
+pub use distributed_transport::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use hypothesis_bridge::*;
@@ -117,6 +119,10 @@ mod pipeline_composer_test;
 #[cfg(test)]
 #[path = "distributed_test.rs"]
 mod distributed_test;
+
+#[cfg(test)]
+#[path = "distributed_transport_test.rs"]
+mod distributed_transport_test;
 
 #[cfg(test)]
 #[path = "hypothesis_bridge_test.rs"]
