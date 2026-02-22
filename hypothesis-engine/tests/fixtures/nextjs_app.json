@@ -1,0 +1,57 @@
+{
+  "app_name": "nextjs-app",
+  "scan_context": {
+    "technology_stack": ["Next.js", "React", "Node.js", "TypeScript"],
+    "high_centrality_nodes": [
+      {"label": "/api/preview", "type": "Endpoint"},
+      {"label": "/api/redirect", "type": "Endpoint"},
+      {"label": "/api/proxy", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/preview", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/redirect", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/proxy", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/search", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "renderHandler", "type": "Function", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/preview", "vulnerability_class": "Cross-Site Scripting"},
+    {"endpoint": "/api/redirect", "vulnerability_class": "Open Redirect"},
+    {"endpoint": "/api/proxy", "vulnerability_class": "Server-Side Request Forgery"},
+    {"endpoint": "/api/search", "vulnerability_class": "Insufficient Input Validation"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/preview renders user-supplied HTML content in server-side React without sanitization",
+      "vulnerability_class": "Cross-Site Scripting",
+      "reasoning": "BECAUSE Next.js SSR can inject unsanitized content via dangerouslySetInnerHTML and endpoint name suggests preview rendering",
+      "test_approach": "CAN BE TESTED BY sending <img src=x onerror=alert(1)> as preview content and checking if it appears unescaped in response HTML",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF endpoint /api/redirect uses user-supplied URL parameter for HTTP redirect without origin validation",
+      "vulnerability_class": "Open Redirect",
+      "reasoning": "BECAUSE endpoint name suggests redirection functionality and no URL validation node exists in graph",
+      "test_approach": "CAN BE TESTED BY sending https://evil.com as redirect target and checking Location header in 302 response",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/proxy forwards requests to user-supplied URL for server-side fetching",
+      "vulnerability_class": "Server-Side Request Forgery",
+      "reasoning": "BECAUSE endpoint name suggests server-side proxying and Next.js API routes execute on the server with full network access",
+      "test_approach": "CAN BE TESTED BY requesting internal metadata endpoint http://169.254.169.254/ via proxy and checking response",
+      "confidence": 0.7
+    }
+  ]
+}

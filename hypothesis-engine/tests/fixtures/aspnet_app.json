@@ -1,0 +1,63 @@
+{
+  "app_name": "aspnet-app",
+  "scan_context": {
+    "technology_stack": ["ASP.NET", "C#", ".NET 6", "Entity Framework", "Newtonsoft.Json"],
+    "high_centrality_nodes": [
+      {"label": "/api/import", "type": "Endpoint"},
+      {"label": "/api/query", "type": "Endpoint"},
+      {"label": "/api/documents", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": ["Newtonsoft.Json 11.0.2 (CVE-2024-21907)"],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/import", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/api/query", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/api/documents", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/upload", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "ImportController", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "QueryService", "type": "Function", "protected_by": []},
+      {"id": 7, "label": "sql_server_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 2, "target_id": 6, "label": "Calls", "weight": 1.0},
+      {"source_id": 6, "target_id": 7, "label": "Reads", "weight": 1.0},
+      {"source_id": 3, "target_id": 7, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/import", "vulnerability_class": "Insecure Deserialization"},
+    {"endpoint": "/api/query", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/api/documents", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/api/documents", "vulnerability_class": "Sensitive Data Exposure"},
+    {"endpoint": "Newtonsoft.Json 11.0.2", "vulnerability_class": "Known Vulnerable Dependency"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/import deserializes user-supplied JSON with TypeNameHandling enabled in Newtonsoft.Json",
+      "vulnerability_class": "Insecure Deserialization",
+      "reasoning": "BECAUSE technology stack includes Newtonsoft.Json and ASP.NET endpoints with TypeNameHandling.Auto allow arbitrary type instantiation from JSON $type fields",
+      "test_approach": "CAN BE TESTED BY sending JSON payload with $type pointing to System.Diagnostics.Process and observing server behavior",
+      "confidence": 0.75
+    },
+    {
+      "condition": "IF endpoint /api/query passes user-supplied parameter to raw SQL via QueryService bypassing Entity Framework parameterization",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/query) --[Calls]--> Function(QueryService) --[Reads]--> DataStore(sql_server_db) and Entity Framework FromSqlRaw with string interpolation is injectable",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- in query parameter and comparing result counts",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF Newtonsoft.Json 11.0.2 is used with TypeNameHandling allowing arbitrary type deserialization",
+      "vulnerability_class": "Known Vulnerable Dependency",
+      "reasoning": "BECAUSE Newtonsoft.Json 11.0.2 has CVE-2024-21907 listed in known_vulnerable_dependencies",
+      "test_approach": "CAN BE TESTED BY checking dependency version against known CVE database",
+      "confidence": 0.9
+    }
+  ]
+}

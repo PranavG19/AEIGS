@@ -9,6 +9,8 @@ from hypothesis_engine.generator import Hypothesis, ScanContext
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
+fixture_files = sorted(p.name for p in FIXTURES_DIR.glob("*.json"))
+
 
 def load_fixture(name: str) -> dict:
     return json.loads((FIXTURES_DIR / name).read_text())
@@ -112,7 +114,7 @@ class TestEvaluationMetrics:
 
 
 class TestGoldenHypothesesAgainstGroundTruth:
-    @pytest.mark.parametrize("fixture_name", ["express_app.json", "flask_app.json", "graphql_app.json"])
+    @pytest.mark.parametrize("fixture_name", fixture_files)
     def test_golden_hypotheses_have_nonzero_recall(self, fixture_name: str) -> None:
         fixture = load_fixture(fixture_name)
         golden = [
@@ -126,7 +128,7 @@ class TestGoldenHypothesesAgainstGroundTruth:
             f"{fixture['app_name']}: golden hypotheses should not be all false positives"
         )
 
-    @pytest.mark.parametrize("fixture_name", ["express_app.json", "flask_app.json", "graphql_app.json"])
+    @pytest.mark.parametrize("fixture_name", fixture_files)
     def test_golden_hypotheses_have_valid_classes(self, fixture_name: str) -> None:
         valid_classes = {
             "SQL Injection", "Cross-Site Scripting", "Command Injection",
@@ -142,9 +144,43 @@ class TestGoldenHypothesesAgainstGroundTruth:
                 f"Invalid class: {h['vulnerability_class']}"
             )
 
-    @pytest.mark.parametrize("fixture_name", ["express_app.json", "flask_app.json", "graphql_app.json"])
+    @pytest.mark.parametrize("fixture_name", fixture_files)
     def test_scan_context_loads_as_model(self, fixture_name: str) -> None:
         fixture = load_fixture(fixture_name)
         ctx = ScanContext(**fixture["scan_context"])
         assert len(ctx.technology_stack) > 0
         assert len(ctx.graph_nodes) > 0
+
+    @pytest.mark.parametrize("fixture_name", fixture_files)
+    def test_fixture_has_minimum_ground_truth(self, fixture_name: str) -> None:
+        fixture = load_fixture(fixture_name)
+        assert len(fixture["ground_truth"]) >= 3, (
+            f"{fixture['app_name']}: fixture must have at least 3 ground truth entries"
+        )
+        assert len(fixture["golden_hypotheses"]) >= 2, (
+            f"{fixture['app_name']}: fixture must have at least 2 golden hypotheses"
+        )
+
+
+class TestFixtureSetCoverage:
+    def test_all_16_vulnerability_classes_covered(self) -> None:
+        all_classes = {
+            "SQL Injection", "Cross-Site Scripting", "Command Injection",
+            "Path Traversal", "Server-Side Request Forgery", "Insecure Deserialization",
+            "Broken Authentication", "Broken Authorization", "Security Misconfiguration",
+            "Sensitive Data Exposure", "Server-Side Template Injection", "Header Injection",
+            "Open Redirect", "CRLF Injection", "Known Vulnerable Dependency",
+            "Insufficient Input Validation",
+        }
+        covered: set[str] = set()
+        for name in fixture_files:
+            fixture = load_fixture(name)
+            for entry in fixture["ground_truth"]:
+                covered.add(entry["vulnerability_class"])
+        missing = all_classes - covered
+        assert not missing, f"Vulnerability classes not covered by any fixture ground truth: {missing}"
+
+    def test_at_least_15_fixtures(self) -> None:
+        assert len(fixture_files) >= 15, (
+            f"Expected at least 15 fixture files, found {len(fixture_files)}"
+        )

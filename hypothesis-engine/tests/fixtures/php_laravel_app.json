@@ -1,0 +1,59 @@
+{
+  "app_name": "php-laravel-app",
+  "scan_context": {
+    "technology_stack": ["Laravel", "PHP", "Blade", "Eloquent ORM", "MySQL"],
+    "high_centrality_nodes": [
+      {"label": "/api/products", "type": "Endpoint"},
+      {"label": "/files/download", "type": "Endpoint"},
+      {"label": "/render/page", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/api/products", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "/files/download", "type": "Endpoint", "protected_by": []},
+      {"id": 3, "label": "/render/page", "type": "Endpoint", "protected_by": []},
+      {"id": 4, "label": "/api/admin/env", "type": "Endpoint", "protected_by": []},
+      {"id": 5, "label": "ProductController", "type": "Function", "protected_by": []},
+      {"id": 6, "label": "products_db", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 5, "label": "Calls", "weight": 1.0},
+      {"source_id": 5, "target_id": 6, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/api/products", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/files/download", "vulnerability_class": "Path Traversal"},
+    {"endpoint": "/render/page", "vulnerability_class": "Server-Side Template Injection"},
+    {"endpoint": "/api/admin/env", "vulnerability_class": "Security Misconfiguration"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF endpoint /api/products passes user-supplied filter to raw DB::select query bypassing Eloquent parameterization",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/api/products) --[Calls]--> Function(ProductController) --[Reads]--> DataStore(products_db) and Laravel raw queries via DB::select are injectable",
+      "test_approach": "CAN BE TESTED BY sending ' OR 1=1-- in filter parameter and comparing result counts",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /files/download reads file from user-supplied path without realpath validation",
+      "vulnerability_class": "Path Traversal",
+      "reasoning": "BECAUSE endpoint name suggests file download and no path validation function appears in the graph",
+      "test_approach": "CAN BE TESTED BY sending ../../.env as filename and checking for APP_KEY in response",
+      "confidence": 0.8
+    },
+    {
+      "condition": "IF endpoint /render/page evaluates user input through Blade template compilation via Blade::compileString",
+      "vulnerability_class": "Server-Side Template Injection",
+      "reasoning": "BECAUSE technology stack includes Blade and endpoint name suggests dynamic page rendering",
+      "test_approach": "CAN BE TESTED BY sending {{ system('id') }} and checking if command output appears in response",
+      "confidence": 0.65
+    }
+  ]
+}

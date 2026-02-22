@@ -1,0 +1,58 @@
+{
+  "app_name": "graphql-auth-app",
+  "scan_context": {
+    "technology_stack": ["Apollo Server", "Express.js", "GraphQL", "PostgreSQL", "JWT"],
+    "high_centrality_nodes": [
+      {"label": "/graphql", "type": "Endpoint"}
+    ],
+    "findings_summary": [],
+    "high_risk_functions": [],
+    "authorization_matrix_summary": "admin queries require Authorization header; user queries unrestricted",
+    "known_vulnerable_dependencies": [],
+    "feedback_summary": "",
+    "graph_nodes": [
+      {"id": 1, "label": "/graphql", "type": "Endpoint", "protected_by": []},
+      {"id": 2, "label": "adminResolver", "type": "Function", "protected_by": []},
+      {"id": 3, "label": "userResolver", "type": "Function", "protected_by": []},
+      {"id": 4, "label": "authMiddleware", "type": "Function", "protected_by": []},
+      {"id": 5, "label": "pg_database", "type": "DataStore", "protected_by": []}
+    ],
+    "graph_edges": [
+      {"source_id": 1, "target_id": 2, "label": "Calls", "weight": 1.0},
+      {"source_id": 1, "target_id": 3, "label": "Calls", "weight": 1.0},
+      {"source_id": 2, "target_id": 5, "label": "Reads", "weight": 1.0},
+      {"source_id": 3, "target_id": 5, "label": "Reads", "weight": 1.0}
+    ],
+    "defense_posture": {"has_waf": false, "waf_vendor": "", "bot_detection_present": false, "rate_limit_rps": 0},
+    "attack_paths": []
+  },
+  "ground_truth": [
+    {"endpoint": "/graphql", "vulnerability_class": "Broken Authentication"},
+    {"endpoint": "/graphql", "vulnerability_class": "Broken Authorization"},
+    {"endpoint": "/graphql", "vulnerability_class": "SQL Injection"},
+    {"endpoint": "/graphql", "vulnerability_class": "Sensitive Data Exposure"}
+  ],
+  "golden_hypotheses": [
+    {
+      "condition": "IF /graphql admin queries can be accessed by bypassing JWT validation via algorithm confusion or missing signature verification",
+      "vulnerability_class": "Broken Authentication",
+      "reasoning": "BECAUSE authorization matrix shows admin queries require Authorization header but graph shows no ProtectedBy edge between endpoint and any defense node, suggesting auth may be bypassable",
+      "test_approach": "CAN BE TESTED BY sending admin query with JWT using alg:none and checking if admin data is returned",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF /graphql allows authenticated non-admin users to access admin resolver data via direct query",
+      "vulnerability_class": "Broken Authorization",
+      "reasoning": "BECAUSE graph shows both adminResolver and userResolver called from same endpoint with no role-check function in between",
+      "test_approach": "CAN BE TESTED BY authenticating as regular user and querying admin-only fields to check if data is returned",
+      "confidence": 0.7
+    },
+    {
+      "condition": "IF /graphql userResolver passes user-supplied arguments directly into SQL query against pg_database",
+      "vulnerability_class": "SQL Injection",
+      "reasoning": "BECAUSE graph shows Endpoint(/graphql) --[Calls]--> Function(userResolver) --[Reads]--> DataStore(pg_database) with no parameterization indicated",
+      "test_approach": "CAN BE TESTED BY sending GraphQL query with ' OR 1=1-- in argument and comparing result counts",
+      "confidence": 0.75
+    }
+  ]
+}

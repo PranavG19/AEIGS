@@ -9,6 +9,8 @@ from hypothesis_engine.generator import Hypothesis, ScanContext
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
+fixture_files = sorted(p.name for p in FIXTURES_DIR.glob("*.json"))
+
 
 def load_fixture(name: str) -> dict:
     return json.loads((FIXTURES_DIR / name).read_text())
@@ -25,7 +27,38 @@ STATIC_BASELINE: dict[str, set[str]] = {
         "Security Misconfiguration",  # from exposed /config endpoint
     },
     "graphql-vuln-app": set(),  # no known vulnerable deps, single /graphql endpoint
+    "spring-boot-app": set(),  # no known vulnerable deps or obvious misconfigs
+    "django-app": {
+        "Security Misconfiguration",  # from exposed /admin/settings/ endpoint
+    },
+    "rails-app": set(),  # no known vulnerable deps
+    "fastapi-app": set(),  # no known vulnerable deps
+    "nextjs-app": set(),  # no known vulnerable deps, no obvious misconfigs
+    "php-laravel-app": {
+        "Security Misconfiguration",  # from exposed /api/admin/env endpoint
+    },
+    "go-gin-app": set(),  # no known vulnerable deps
+    "express-waf-app": set(),  # WAF obscures static signals
+    "flask-ratelimit-app": set(),  # rate limiter does not reveal vuln classes statically
+    "graphql-auth-app": set(),  # no known vulnerable deps, auth issues require dynamic testing
+    "microservices-app": set(),  # SSRF and authz require dynamic testing
+    "aspnet-app": {
+        "Known Vulnerable Dependency",  # Newtonsoft.Json 11.0.2 (CVE-2024-21907)
+    },
 }
+
+
+def _fixture_params() -> list[tuple[str, str]]:
+    result = []
+    for name in fixture_files:
+        fixture = load_fixture(name)
+        app_name = fixture["app_name"]
+        if app_name in STATIC_BASELINE:
+            result.append((name, app_name))
+    return result
+
+
+fixture_params = _fixture_params()
 
 
 def compute_recall(
@@ -39,11 +72,7 @@ def compute_recall(
 
 
 class TestStaticOnlyBaseline:
-    @pytest.mark.parametrize("fixture_name,app_name", [
-        ("express_app.json", "express-vuln-app"),
-        ("flask_app.json", "flask-vuln-app"),
-        ("graphql_app.json", "graphql-vuln-app"),
-    ])
+    @pytest.mark.parametrize("fixture_name,app_name", fixture_params)
     def test_static_baseline_is_subset_of_ground_truth(
         self, fixture_name: str, app_name: str
     ) -> None:
@@ -56,11 +85,7 @@ class TestStaticOnlyBaseline:
 
 
 class TestLlmDelta:
-    @pytest.mark.parametrize("fixture_name,app_name", [
-        ("express_app.json", "express-vuln-app"),
-        ("flask_app.json", "flask-vuln-app"),
-        ("graphql_app.json", "graphql-vuln-app"),
-    ])
+    @pytest.mark.parametrize("fixture_name,app_name", fixture_params)
     def test_golden_hypotheses_exceed_static_baseline(
         self, fixture_name: str, app_name: str
     ) -> None:
@@ -79,11 +104,7 @@ class TestLlmDelta:
             f"Golden classes: {golden_classes}, Baseline: {baseline_classes}"
         )
 
-    @pytest.mark.parametrize("fixture_name,app_name", [
-        ("express_app.json", "express-vuln-app"),
-        ("flask_app.json", "flask-vuln-app"),
-        ("graphql_app.json", "graphql-vuln-app"),
-    ])
+    @pytest.mark.parametrize("fixture_name,app_name", fixture_params)
     def test_golden_recall_exceeds_static_recall(
         self, fixture_name: str, app_name: str
     ) -> None:
@@ -110,7 +131,7 @@ class TestLlmDelta:
 
 class TestDeltaDocumentation:
     def test_all_fixture_apps_have_static_baseline(self) -> None:
-        for fixture_name in ["express_app.json", "flask_app.json", "graphql_app.json"]:
+        for fixture_name in fixture_files:
             fixture = load_fixture(fixture_name)
             assert fixture["app_name"] in STATIC_BASELINE, (
                 f"Missing static baseline for {fixture['app_name']}"
