@@ -263,6 +263,15 @@ def _consistency_key(h: Hypothesis) -> tuple[str, str]:
     return (h.vulnerability_class, endpoint)
 
 
+def _median(values: list[float]) -> float:
+    """Return the median of a non-empty list of floats."""
+    s = sorted(values)
+    n = len(s)
+    if n % 2 == 1:
+        return s[n // 2]
+    return (s[n // 2 - 1] + s[n // 2]) / 2
+
+
 def create_backend(backend_type: str, **kwargs: Any) -> LlmBackend:
     if backend_type == "bedrock":
         return BedrockClient(**kwargs)
@@ -376,9 +385,9 @@ class HypothesisGenerator:
             total_output_tokens += result.output_tokens
             total_time_ms += result.generation_time_ms
 
-        # Count occurrences by (vulnerability_class, endpoint_key)
         occurrence_counts: dict[tuple[str, str], int] = {}
         hypothesis_map: dict[tuple[str, str], Hypothesis] = {}
+        confidence_scores: dict[tuple[str, str], list[float]] = {}
 
         for result in all_results:
             seen_this_round: set[tuple[str, str]] = set()
@@ -387,16 +396,15 @@ class HypothesisGenerator:
                 if key not in seen_this_round:
                     seen_this_round.add(key)
                     occurrence_counts[key] = occurrence_counts.get(key, 0) + 1
-                    # Keep the highest-confidence version
-                    if key not in hypothesis_map or h.confidence > hypothesis_map[key].confidence:
-                        hypothesis_map[key] = h
+                    confidence_scores.setdefault(key, []).append(h.confidence)
+                    hypothesis_map[key] = h
 
-        # Filter to hypotheses meeting agreement threshold
-        consistent = [
-            hypothesis_map[key]
-            for key, count in occurrence_counts.items()
-            if count >= agreement_threshold
-        ]
+        consistent = []
+        for key, count in occurrence_counts.items():
+            if count >= agreement_threshold:
+                h = hypothesis_map[key].model_copy()
+                h.confidence = _median(confidence_scores[key])
+                consistent.append(h)
         consistent.sort(key=lambda h: h.confidence, reverse=True)
 
         # Combine reasoning traces

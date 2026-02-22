@@ -8,6 +8,7 @@ from hypothesis_engine.generator import (
     Hypothesis,
     HypothesisGenerator,
     ScanContext,
+    _median,
     build_user_prompt,
     create_backend,
     parse_hypotheses_from_response,
@@ -562,3 +563,127 @@ class TestCreateBackend:
     def test_unknown_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="Unknown backend type: bogus"):
             create_backend("bogus")
+
+
+class TestMedianHelper:
+    def test_odd_count(self) -> None:
+        assert _median([0.3, 0.5, 0.7, 0.8, 0.9]) == 0.7
+
+    def test_even_count(self) -> None:
+        assert _median([0.3, 0.7]) == 0.5
+
+    def test_single_value(self) -> None:
+        assert _median([0.6]) == 0.6
+
+    def test_unsorted_input(self) -> None:
+        assert _median([0.9, 0.3, 0.7]) == 0.7
+
+
+class TestConsistencyMedianConfidence:
+    """Validate that generate_with_consistency uses median confidence, not max."""
+
+    def _make_generator_with_round_confidences(
+        self,
+        round_confidences: list[list[float]],
+        endpoint: str = "/api/users",
+        vuln_class: str = "SQL Injection",
+    ) -> HypothesisGenerator:
+        call_count = 0
+
+        class RoundMockBackend(LlmBackend):
+            def invoke(self, messages, system="", max_tokens=4096):
+                nonlocal call_count
+                idx = call_count
+                call_count += 1
+                confs = round_confidences[idx % len(round_confidences)]
+                hyps = [
+                    {
+                        "condition": f"IF endpoint {endpoint} accepts unvalidated input",
+                        "vulnerability_class": vuln_class,
+                        "reasoning": f"round {idx}",
+                        "test_approach": "test",
+                        "confidence": c,
+                    }
+                    for c in confs
+                ]
+                import json
+                return (json.dumps(hyps), TokenUsage(input_tokens=10, output_tokens=20))
+
+            def invoke_structured(self, messages, output_schema, system="", max_tokens=4096):
+                return self.invoke(messages, system, max_tokens)
+
+        return HypothesisGenerator(client=RoundMockBackend())
+
+    def test_five_rounds_uses_median_not_max(self) -> None:
+        gen = self._make_generator_with_round_confidences(
+            [[0.3], [0.5], [0.7], [0.8], [0.9]]
+        )
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=5, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == 0.7
+
+    def test_single_round_confidence_unchanged(self) -> None:
+        gen = self._make_generator_with_round_confidences([[0.6]])
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=1, agreement_threshold=1
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == 0.6
+
+    def test_two_rounds_even_count_median(self) -> None:
+        gen = self._make_generator_with_round_confidences([[0.4], [0.8]])
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=2, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == pytest.approx(0.6)
+
+    def test_partial_agreement_uses_median_of_agreeing_scores(self) -> None:
+        call_count = 0
+        confs_per_round = [[0.4], [0.8], []]
+
+        class PartialBackend(LlmBackend):
+            def invoke(self, messages, system="", max_tokens=4096):
+                nonlocal call_count
+                idx = call_count
+                call_count += 1
+                confs = confs_per_round[idx % len(confs_per_round)]
+                hyps = [
+                    {
+                        "condition": "IF endpoint /api/users accepts unvalidated input",
+                        "vulnerability_class": "SQL Injection",
+                        "reasoning": f"round {idx}",
+                        "test_approach": "test",
+                        "confidence": c,
+                    }
+                    for c in confs
+                ]
+                import json
+                return (json.dumps(hyps), TokenUsage(input_tokens=5, output_tokens=10))
+
+            def invoke_structured(self, messages, output_schema, system="", max_tokens=4096):
+                return self.invoke(messages, system, max_tokens)
+
+        gen = HypothesisGenerator(client=PartialBackend())
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=3, agreement_threshold=2
+        )
+        assert len(result.hypotheses) == 1
+        assert result.hypotheses[0].confidence == pytest.approx(0.6)
+
+    def test_cumulative_token_counts_across_rounds(self) -> None:
+        gen = self._make_generator_with_round_confidences(
+            [[0.5], [0.6], [0.7], [0.8], [0.9]]
+        )
+        ctx = ScanContext()
+        result = gen.generate_with_consistency(
+            ctx, num_rounds=5, agreement_threshold=2
+        )
+        assert result.input_tokens == 50
+        assert result.output_tokens == 100
