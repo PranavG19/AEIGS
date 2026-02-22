@@ -167,3 +167,88 @@ fn save_to_nonexistent_parent_returns_io_error() {
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), CheckpointError::IoError(_)));
 }
+
+#[test]
+fn checkpoint_resume_skips_completed_and_runs_remaining() {
+    let cp = sample_checkpoint();
+
+    assert!(should_skip_phase(&cp, "recon"));
+    assert!(should_skip_phase(&cp, "fingerprint"));
+    assert!(should_skip_phase(&cp, "fuzz:0"));
+    assert!(should_skip_phase(&cp, "analyze:0"));
+
+    assert!(!should_skip_phase(&cp, "fuzz:1"));
+    assert!(!should_skip_phase(&cp, "analyze:1"));
+    assert!(!should_skip_phase(&cp, "dom_verify"));
+    assert!(!should_skip_phase(&cp, "report"));
+
+    assert_eq!(cp.current_iteration, 1);
+}
+
+#[test]
+fn checkpoint_deleted_on_completion_e2e() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db = dir.path().join("graph.json");
+    let cp = sample_checkpoint();
+
+    save_checkpoint(&cp, &graph_db).unwrap();
+    assert!(checkpoint_path(&graph_db).exists());
+
+    let loaded = load_checkpoint(&graph_db).unwrap();
+    assert!(loaded.is_some());
+
+    delete_checkpoint(&graph_db).unwrap();
+    assert!(!checkpoint_path(&graph_db).exists());
+
+    let after_delete = load_checkpoint(&graph_db).unwrap();
+    assert!(after_delete.is_none());
+}
+
+#[test]
+fn checkpoint_preserves_graph_state_across_save_load() {
+    let dir = tempfile::tempdir().unwrap();
+    let graph_db = dir.path().join("graph.json");
+    let cp = ScanCheckpoint {
+        completed_phases: vec![
+            "recon".to_string(),
+            "crawl".to_string(),
+            "fingerprint".to_string(),
+            "fuzz:0".to_string(),
+            "analyze:0".to_string(),
+            "fuzz:1".to_string(),
+            "analyze:1".to_string(),
+        ],
+        current_iteration: 2,
+        total_operations: 150,
+        total_findings: 12,
+        consecutive_zero_findings: 1,
+        timestamp_unix_ms: 1700000099999,
+    };
+
+    save_checkpoint(&cp, &graph_db).unwrap();
+    let loaded = load_checkpoint(&graph_db).unwrap().unwrap();
+
+    assert_eq!(loaded.completed_phases.len(), 7);
+    assert_eq!(loaded.current_iteration, 2);
+    assert_eq!(loaded.total_operations, 150);
+    assert_eq!(loaded.total_findings, 12);
+    assert_eq!(loaded.consecutive_zero_findings, 1);
+    assert_eq!(loaded.timestamp_unix_ms, 1700000099999);
+
+    for phase in &[
+        "recon",
+        "crawl",
+        "fingerprint",
+        "fuzz:0",
+        "analyze:0",
+        "fuzz:1",
+        "analyze:1",
+    ] {
+        assert!(
+            should_skip_phase(&loaded, phase),
+            "phase {phase} should be skippable after load"
+        );
+    }
+    assert!(!should_skip_phase(&loaded, "fuzz:2"));
+    assert!(!should_skip_phase(&loaded, "report"));
+}

@@ -433,6 +433,36 @@ fn catalog_error_implements_std_error() {
 }
 
 #[test]
+fn persona_rotation_produces_different_headers() {
+    let catalog = persona_catalog();
+    let user_agents: HashSet<&str> = catalog.iter().map(|p| p.user_agent.as_str()).collect();
+    assert!(
+        user_agents.len() > 1,
+        "persona catalog should contain distinct user agents for rotation"
+    );
+    assert_eq!(
+        user_agents.len(),
+        catalog.len(),
+        "every persona should have a unique user agent"
+    );
+
+    let chrome = catalog
+        .iter()
+        .find(|p| p.id == PersonaId::ChromeDesktop)
+        .unwrap();
+    let curl = catalog
+        .iter()
+        .find(|p| p.id == PersonaId::CurlClient)
+        .unwrap();
+    assert_ne!(chrome.user_agent, curl.user_agent);
+    assert_ne!(chrome.sec_fetch_headers, curl.sec_fetch_headers);
+    assert_ne!(
+        chrome.accept_header, curl.accept_header,
+        "browser vs tool personas should differ in accept headers"
+    );
+}
+
+#[test]
 fn default_catalog_json_matches_persona_catalog() {
     let from_json = load_persona_catalog(None).unwrap();
     let from_fn = persona_catalog();

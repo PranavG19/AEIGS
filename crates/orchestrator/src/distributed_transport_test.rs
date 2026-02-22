@@ -567,20 +567,12 @@ fn integration_coordinator_detects_failed_worker() {
         .state
         .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
         .unwrap();
-    coord.state.update_worker_status(
-        &make_worker_id("w1"),
-        WorkerState::Working,
-        0,
-        1,
-        0,
-    );
-    coord.state.update_worker_status(
-        &make_worker_id("w2"),
-        WorkerState::Working,
-        0,
-        1,
-        0,
-    );
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w1"), WorkerState::Working, 0, 1, 0);
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w2"), WorkerState::Working, 0, 1, 0);
 
     coord.handle_message(&WorkerMessage::Error {
         worker_id: make_worker_id("w1"),
@@ -614,20 +606,12 @@ fn integration_coordinator_rebalances_on_failure() {
         .state
         .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
         .unwrap();
-    coord.state.update_worker_status(
-        &make_worker_id("w1"),
-        WorkerState::Working,
-        0,
-        2,
-        0,
-    );
-    coord.state.update_worker_status(
-        &make_worker_id("w2"),
-        WorkerState::Working,
-        0,
-        2,
-        0,
-    );
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w1"), WorkerState::Working, 0, 2, 0);
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w2"), WorkerState::Working, 0, 2, 0);
 
     let reply = coord.handle_message(&WorkerMessage::Error {
         worker_id: make_worker_id("w2"),
@@ -812,13 +796,9 @@ fn integration_worker_error_message_propagates() {
         .state
         .assign_work(&endpoints, AssignmentStrategy::RoundRobin)
         .unwrap();
-    coord.state.update_worker_status(
-        &make_worker_id("w1"),
-        WorkerState::Working,
-        0,
-        1,
-        0,
-    );
+    coord
+        .state
+        .update_worker_status(&make_worker_id("w1"), WorkerState::Working, 0, 1, 0);
 
     let error_text = "connection refused to target".to_string();
     coord.handle_message(&WorkerMessage::Error {

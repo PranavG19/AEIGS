@@ -786,6 +786,61 @@ mod tests {
     }
 
     #[test]
+    fn counterfactual_eliminates_flaky_endpoint_false_positives() {
+        let mut oracle = FuzzOracle::new(0.3);
+        oracle.add_baseline(baseline());
+
+        let treatment = response(500, "server overloaded", 800, 5000);
+        let control = response(500, "server overloaded", 750, 4800);
+
+        let anomalies = oracle.analyze_response_with_control(
+            &treatment,
+            &control,
+            "' OR 1=1",
+            "/api/users",
+            "GET",
+        );
+
+        assert!(
+            !anomalies
+                .iter()
+                .any(|a| a.anomaly_type == AnomalyType::StatusCodeAnomaly),
+            "shared status anomaly from flaky endpoint should be filtered"
+        );
+        assert!(
+            !anomalies
+                .iter()
+                .any(|a| a.anomaly_type == AnomalyType::TimingAnomaly),
+            "shared timing anomaly from flaky endpoint should be filtered"
+        );
+    }
+
+    #[test]
+    fn counterfactual_preserves_reflection_regardless_of_control() {
+        let mut oracle = FuzzOracle::new(0.5);
+        oracle.add_baseline(baseline());
+
+        let payload = "<script>alert(1)</script>";
+        let treatment = response(200, &format!("Search: {payload}"), 50, 500);
+        let control = response(200, &format!("Search: {payload}"), 50, 500);
+
+        let anomalies = oracle.analyze_response_with_control(
+            &treatment,
+            &control,
+            payload,
+            "/api/users",
+            "GET",
+        );
+
+        assert!(
+            anomalies
+                .iter()
+                .any(|a| a.anomaly_type == AnomalyType::ReflectionDetected),
+            "reflection should be preserved even when control also reflects payload"
+        );
+    }
+
+    #[test]
     fn confirmation_xss_reflection_tagged_with_class() {
         let oracle = FuzzOracle::new(0.5);
 

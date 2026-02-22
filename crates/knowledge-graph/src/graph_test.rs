@@ -879,4 +879,95 @@ mod tests {
         let meta = meta.unwrap();
         assert_eq!(meta.scan_count, 0);
     }
+
+    #[test]
+    fn concurrent_apply_operations_no_data_loss() {
+        let graph = Arc::new(KnowledgeGraph::new());
+        let threads_count = 10;
+        let ops_per_thread = 100;
+
+        let handles: Vec<_> = (0..threads_count)
+            .map(|t| {
+                let g = Arc::clone(&graph);
+                thread::spawn(move || {
+                    let mut applied = 0u64;
+                    for i in 0..ops_per_thread {
+                        let seq = (t * ops_per_thread + i) as u64;
+                        let entries = vec![make_entry(
+                            seq,
+                            ModuleIdentifier::Enumeration,
+                            GraphOperation::AddNode {
+                                node_type: NodeType::Endpoint,
+                                properties: vec![("path".into(), format!("/t{t}/e{i}"))],
+                            },
+                        )];
+                        if g.apply_operations(&entries).is_ok() {
+                            applied += 1;
+                        }
+                    }
+                    applied
+                })
+            })
+            .collect();
+
+        let total_applied: u64 = handles.into_iter().map(|h| h.join().unwrap()).sum();
+        let node_count = graph.nodes_by_type(NodeType::Endpoint).unwrap().len() as u64;
+        assert_eq!(
+            node_count, total_applied,
+            "every successfully applied operation should produce a node"
+        );
+        assert!(total_applied > 0, "at least some operations should succeed");
+    }
+
+    #[test]
+    fn concurrent_read_during_write() {
+        let graph = Arc::new(KnowledgeGraph::new());
+
+        let entries = vec![make_entry(
+            0,
+            ModuleIdentifier::Enumeration,
+            GraphOperation::AddNode {
+                node_type: NodeType::Endpoint,
+                properties: vec![("path".into(), "/seed".into())],
+            },
+        )];
+        graph.apply_operations(&entries).unwrap();
+
+        let writer = {
+            let g = Arc::clone(&graph);
+            thread::spawn(move || {
+                for i in 1..=500 {
+                    let entries = vec![make_entry(
+                        i,
+                        ModuleIdentifier::Enumeration,
+                        GraphOperation::AddNode {
+                            node_type: NodeType::Endpoint,
+                            properties: vec![("path".into(), format!("/w{i}"))],
+                        },
+                    )];
+                    let _ = g.apply_operations(&entries);
+                }
+            })
+        };
+
+        let reader = {
+            let g = Arc::clone(&graph);
+            thread::spawn(move || {
+                let mut read_count = 0u64;
+                for _ in 0..500 {
+                    let nodes = g.nodes_by_type(NodeType::Endpoint).unwrap();
+                    assert!(
+                        !nodes.is_empty(),
+                        "reader should always see at least the seed node"
+                    );
+                    read_count += 1;
+                }
+                read_count
+            })
+        };
+
+        writer.join().unwrap();
+        let reads = reader.join().unwrap();
+        assert_eq!(reads, 500, "all 500 reads should complete without deadlock");
+    }
 }

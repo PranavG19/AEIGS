@@ -619,3 +619,103 @@ fn sarif_extraction_matches_ground_truth_format() {
 
     let _ = std::fs::remove_file(&output);
 }
+
+#[test]
+fn sarif_extraction_handles_missing_vulnerability_class() {
+    let output = std::env::temp_dir().join("test_extraction_missing_class.sarif");
+    let mut ctx = test_context(&output);
+
+    let entries = vec![add_finding_entry(0, VulnerabilityClass::SqlInjection, 0.8)];
+    ctx.graph.apply_operations(&entries).unwrap();
+    phase_report::run_report(&mut ctx, None).unwrap();
+
+    let sarif_content = std::fs::read_to_string(&output).unwrap();
+    let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
+    let results = sarif_json["runs"][0]["results"].as_array().unwrap();
+    assert_eq!(results.len(), 1);
+
+    let result = &results[0];
+    let vuln_class = result["vulnerabilityClass"].as_str();
+    assert!(
+        vuln_class.is_some(),
+        "vulnerabilityClass should be present (flattened from properties)"
+    );
+
+    let mut modified = sarif_json.clone();
+    let mod_results = modified["runs"][0]["results"].as_array_mut().unwrap();
+    mod_results[0]
+        .as_object_mut()
+        .unwrap()
+        .remove("vulnerabilityClass");
+
+    let extracted = mod_results[0]["vulnerabilityClass"].as_str();
+    assert!(
+        extracted.is_none(),
+        "after removal, vulnerabilityClass should be absent"
+    );
+
+    let _ = std::fs::remove_file(&output);
+}
+
+#[test]
+fn sarif_extraction_handles_debug_vs_display_format() {
+    let output = std::env::temp_dir().join("test_extraction_debug_format.sarif");
+    let mut ctx = test_context(&output);
+
+    let entries = vec![
+        add_node_entry(0, "/api/test"),
+        add_linked_finding_entry(1, VulnerabilityClass::CrossSiteScripting, 7.0, 0),
+    ];
+    ctx.graph.apply_operations(&entries).unwrap();
+    phase_report::run_report(&mut ctx, None).unwrap();
+
+    let sarif_content = std::fs::read_to_string(&output).unwrap();
+    let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
+    let results = sarif_json["runs"][0]["results"].as_array().unwrap();
+    let result = &results[0];
+
+    let vuln_class = result["vulnerabilityClass"].as_str().unwrap();
+    assert_eq!(
+        vuln_class, "CrossSiteScripting",
+        "SARIF should use Debug format (no spaces), not Display format"
+    );
+
+    let message = result["message"]["text"].as_str().unwrap_or("");
+    assert!(
+        message.contains("CrossSiteScripting"),
+        "message should contain Debug-formatted class name, got: {message}"
+    );
+
+    let _ = std::fs::remove_file(&output);
+}
+
+#[test]
+fn sarif_extraction_with_empty_results_array() {
+    let output = std::env::temp_dir().join("test_extraction_empty_results.sarif");
+    let mut ctx = test_context(&output);
+
+    phase_report::run_report(&mut ctx, None).unwrap();
+
+    let sarif_content = std::fs::read_to_string(&output).unwrap();
+    let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
+    let results = sarif_json["runs"][0]["results"].as_array().unwrap();
+    assert!(
+        results.is_empty(),
+        "empty graph should produce empty results array"
+    );
+
+    let mut extracted: Vec<(String, String)> = Vec::new();
+    for result in results {
+        let endpoint = result["endpoint"].as_str().unwrap_or("");
+        let vuln_class = result["vulnerabilityClass"].as_str().unwrap_or("");
+        if !vuln_class.is_empty() {
+            extracted.push((endpoint.to_string(), vuln_class.to_string()));
+        }
+    }
+    assert!(
+        extracted.is_empty(),
+        "extraction from empty results should yield nothing"
+    );
+
+    let _ = std::fs::remove_file(&output);
+}

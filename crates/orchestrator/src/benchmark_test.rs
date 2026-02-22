@@ -353,3 +353,142 @@ fn f1_score_calculation_correctness() {
     assert!((r - 0.75).abs() < 1e-9);
     assert!((f1 - 0.75).abs() < 1e-9);
 }
+
+#[test]
+fn benchmark_f1_is_zero_when_all_findings_miss() {
+    let gt = dvwa_ground_truth();
+    let findings = vec![
+        make_finding(0, VulnerabilityClass::CommandInjection),
+        make_finding(1, VulnerabilityClass::HeaderInjection),
+    ];
+
+    let result = evaluate_findings("all-miss", &findings, &gt);
+
+    assert_eq!(result.true_positives, 0);
+    assert_eq!(result.false_positives, 2);
+    assert_eq!(result.false_negatives, 3);
+    assert!((result.precision - 0.0).abs() < 1e-9);
+    assert!((result.recall - 0.0).abs() < 1e-9);
+    assert!((result.f1_score - 0.0).abs() < 1e-9);
+}
+
+#[test]
+fn benchmark_perfect_score_all_classes_have_full_tp() {
+    let gt = dvwa_ground_truth();
+    let findings = vec![
+        make_finding(0, VulnerabilityClass::SqlInjection),
+        make_finding(1, VulnerabilityClass::CrossSiteScripting),
+        make_finding(2, VulnerabilityClass::PathTraversal),
+    ];
+
+    let result = evaluate_findings("perfect", &findings, &gt);
+
+    assert!((result.f1_score - 1.0).abs() < 1e-9);
+    for class in &[
+        VulnerabilityClass::SqlInjection,
+        VulnerabilityClass::CrossSiteScripting,
+        VulnerabilityClass::PathTraversal,
+    ] {
+        let m = result.findings_by_class.get(class).unwrap();
+        assert_eq!(m.true_positives, 1, "{class:?} should have 1 TP");
+        assert_eq!(m.false_positives, 0, "{class:?} should have 0 FP");
+        assert_eq!(m.false_negatives, 0, "{class:?} should have 0 FN");
+    }
+}
+
+#[test]
+fn benchmark_per_class_metrics_covers_all_present_classes() {
+    let gt = dvwa_ground_truth();
+    let findings = vec![
+        make_finding(0, VulnerabilityClass::SqlInjection),
+        make_finding(1, VulnerabilityClass::SqlInjection),
+        make_finding(2, VulnerabilityClass::PathTraversal),
+    ];
+
+    let result = evaluate_findings("multi-sql", &findings, &gt);
+
+    let sql = result
+        .findings_by_class
+        .get(&VulnerabilityClass::SqlInjection)
+        .unwrap();
+    assert_eq!(sql.true_positives, 1);
+    assert_eq!(sql.false_positives, 1);
+
+    let pt = result
+        .findings_by_class
+        .get(&VulnerabilityClass::PathTraversal)
+        .unwrap();
+    assert_eq!(pt.true_positives, 1);
+    assert_eq!(pt.false_positives, 0);
+
+    let xss = result
+        .findings_by_class
+        .get(&VulnerabilityClass::CrossSiteScripting)
+        .unwrap();
+    assert_eq!(xss.true_positives, 0);
+    assert_eq!(xss.false_negatives, 1);
+
+    assert_eq!(result.true_positives, 2);
+    assert_eq!(result.false_positives, 1);
+    assert_eq!(result.false_negatives, 1);
+}
+
+#[test]
+fn ground_truth_comparison_case_insensitive_endpoint() {
+    let gt = GroundTruth {
+        entries: vec![GroundTruthEntry {
+            endpoint: "/API/Users".to_string(),
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+        }],
+    };
+    let findings = vec![make_finding(0, VulnerabilityClass::SqlInjection)];
+
+    let result = evaluate_findings("case-test", &findings, &gt);
+
+    assert_eq!(result.true_positives, 1);
+    assert_eq!(result.false_positives, 0);
+    assert_eq!(result.false_negatives, 0);
+}
+
+#[test]
+fn ground_truth_comparison_trailing_slash() {
+    let gt = GroundTruth {
+        entries: vec![
+            GroundTruthEntry {
+                endpoint: "/api/users/".to_string(),
+                vulnerability_class: VulnerabilityClass::SqlInjection,
+            },
+            GroundTruthEntry {
+                endpoint: "/api/search".to_string(),
+                vulnerability_class: VulnerabilityClass::CrossSiteScripting,
+            },
+        ],
+    };
+    let findings = vec![
+        make_finding(0, VulnerabilityClass::SqlInjection),
+        make_finding(1, VulnerabilityClass::CrossSiteScripting),
+    ];
+
+    let result = evaluate_findings("trailing-slash", &findings, &gt);
+
+    assert_eq!(result.true_positives, 2);
+    assert_eq!(result.false_positives, 0);
+    assert_eq!(result.false_negatives, 0);
+}
+
+#[test]
+fn ground_truth_comparison_with_query_params() {
+    let gt = GroundTruth {
+        entries: vec![GroundTruthEntry {
+            endpoint: "/api/search?q=test&page=1".to_string(),
+            vulnerability_class: VulnerabilityClass::SqlInjection,
+        }],
+    };
+    let findings = vec![make_finding(0, VulnerabilityClass::SqlInjection)];
+
+    let result = evaluate_findings("query-params", &findings, &gt);
+
+    assert_eq!(result.true_positives, 1);
+    assert_eq!(result.false_positives, 0);
+    assert_eq!(result.false_negatives, 0);
+}
