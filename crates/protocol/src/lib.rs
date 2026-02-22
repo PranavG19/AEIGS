@@ -3,6 +3,7 @@ pub mod capability;
 pub mod defense_context;
 pub mod edge;
 pub mod finding;
+pub mod hypothesis_ipc;
 pub mod ipc;
 pub mod node;
 pub mod operation;
@@ -23,3 +24,7 @@ mod finding_test;
 #[cfg(test)]
 #[path = "scan_event_test.rs"]
 mod scan_event_test;
+
+#[cfg(test)]
+#[path = "hypothesis_ipc_test.rs"]
+mod hypothesis_ipc_test;

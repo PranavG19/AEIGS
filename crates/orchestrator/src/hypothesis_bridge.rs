@@ -162,93 +162,11 @@ pub fn invoke_hypothesis_engine(
 // IPC message types for persistent Unix domain socket bridge (Task 8.x)
 // ---------------------------------------------------------------------------
 
-/// Scan context serialized for IPC transport to the Python bridge.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ScanContextJson {
-    pub technology_stack: Vec<String>,
-    pub findings_summary: Vec<String>,
-    pub high_centrality_nodes: Vec<String>,
-    pub defense_posture: serde_json::Value,
-    #[serde(default)]
-    pub class_confirmation_rates: std::collections::HashMap<String, f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model_id: Option<String>,
-}
-
-/// Hypothesis serialized for IPC transport.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HypothesisJson {
-    pub vulnerability_class: String,
-    pub description: String,
-    pub confidence: f64,
-    pub test_specification: Option<String>,
-}
-
-/// Defense context serialized for IPC transport.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DefenseContextJson {
-    pub has_waf: bool,
-    pub waf_vendor: Option<String>,
-    pub rate_limit_rps: Option<f64>,
-    pub bot_detection_present: bool,
-}
-
-/// Request sent from the Rust orchestrator to the Python bridge process
-/// over a persistent Unix domain socket connection.
-///
-/// Uses serde's internally-tagged representation with `"type"` as the tag field.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum BridgeRequest {
-    GenerateHypotheses {
-        request_id: u64,
-        scan_context: ScanContextJson,
-        vulnerability_class: String,
-        feedback_summary: Option<String>,
-    },
-    CompilePayloads {
-        request_id: u64,
-        hypotheses: Vec<HypothesisJson>,
-    },
-    EvasionGenerate {
-        request_id: u64,
-        defense_context: DefenseContextJson,
-    },
-    Shutdown,
-}
-
-/// Response received from the Python bridge process over the persistent
-/// Unix domain socket connection.
-///
-/// Uses serde's internally-tagged representation with `"type"` as the tag field.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum BridgeResponse {
-    Ready,
-    Hypotheses {
-        request_id: u64,
-        hypotheses: Vec<HypothesisJson>,
-        reasoning_trace: String,
-        input_tokens: u64,
-        output_tokens: u64,
-    },
-    CompiledPayloads {
-        request_id: u64,
-        payloads: Vec<String>,
-        input_tokens: u64,
-        output_tokens: u64,
-    },
-    EvasionPayloads {
-        request_id: u64,
-        payloads: Vec<String>,
-        input_tokens: u64,
-        output_tokens: u64,
-    },
-    Error {
-        request_id: u64,
-        message: String,
-    },
-}
+pub type ScanContextJson = aegis_protocol::hypothesis_ipc::ScanContextIpc;
+pub type HypothesisJson = aegis_protocol::hypothesis_ipc::HypothesisIpc;
+pub type DefenseContextJson = aegis_protocol::hypothesis_ipc::DefenseContextIpc;
+pub type BridgeRequest = aegis_protocol::hypothesis_ipc::BridgeRequest;
+pub type BridgeResponse = aegis_protocol::hypothesis_ipc::BridgeResponse;
 
 // ---------------------------------------------------------------------------
 // Result types for HypothesisBridge methods
