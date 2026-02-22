@@ -369,3 +369,127 @@ impl Coordinator {
         None
     }
 }
+
+/// Worker runtime state machine that processes coordinator messages and
+/// tracks local fuzz execution progress.
+///
+/// This is a pure state machine — no networking. The actual TCP connection
+/// loop is wired externally; this struct handles message processing only.
+pub struct Worker {
+    worker_id: WorkerId,
+    role: WorkerRole,
+    state: WorkerState,
+    assigned_endpoints: Vec<String>,
+    findings: Vec<FindingData>,
+    targets_completed: u64,
+    paused: bool,
+}
+
+impl Worker {
+    /// Creates a new worker with the given ID and role, starting in `Idle` state.
+    pub fn new(worker_id: WorkerId, role: WorkerRole) -> Self {
+        Self {
+            worker_id,
+            role,
+            state: WorkerState::Idle,
+            assigned_endpoints: Vec::new(),
+            findings: Vec::new(),
+            targets_completed: 0,
+            paused: false,
+        }
+    }
+
+    /// Creates the `Register` message for this worker.
+    pub fn register_message(&self) -> WorkerMessage {
+        WorkerMessage::Register {
+            worker_id: self.worker_id.clone(),
+            role: self.role,
+        }
+    }
+
+    /// Creates a `Heartbeat` message reflecting current progress.
+    pub fn heartbeat_message(&self) -> WorkerMessage {
+        let total = self.assigned_endpoints.len() as u64;
+        WorkerMessage::Heartbeat {
+            worker_id: self.worker_id.clone(),
+            targets_completed: self.targets_completed,
+            targets_remaining: total.saturating_sub(self.targets_completed),
+            findings_count: self.findings.len() as u64,
+        }
+    }
+
+    /// Processes a coordinator message and returns an optional response.
+    ///
+    /// - `AssignWork`: stores endpoints, transitions to `Working`.
+    /// - `Pause`: sets paused flag, transitions to `Paused`.
+    /// - `Resume`: clears paused flag, transitions to `Working`.
+    /// - `Shutdown`: transitions to `Completed`.
+    pub fn handle_message(&mut self, msg: &CoordinatorMessage) -> Option<WorkerMessage> {
+        match msg {
+            CoordinatorMessage::AssignWork(assignment) => {
+                self.assigned_endpoints = assignment.endpoints.clone();
+                self.state = WorkerState::Working;
+                None
+            }
+            CoordinatorMessage::Pause => {
+                self.paused = true;
+                self.state = WorkerState::Paused;
+                None
+            }
+            CoordinatorMessage::Resume => {
+                self.paused = false;
+                self.state = WorkerState::Working;
+                None
+            }
+            CoordinatorMessage::Shutdown => {
+                self.state = WorkerState::Completed;
+                None
+            }
+        }
+    }
+
+    /// Records a completed target and returns a `FindingsBatch` if findings are pending.
+    ///
+    /// Increments `targets_completed`. If `new_findings` is non-empty, accumulates
+    /// them and returns a `FindingsBatch` containing all pending findings.
+    pub fn complete_target(&mut self, new_findings: Vec<FindingData>) -> Option<WorkerMessage> {
+        self.targets_completed += 1;
+        if new_findings.is_empty() {
+            return None;
+        }
+        self.findings.extend(new_findings);
+        let batch = self.findings.drain(..).collect();
+        Some(WorkerMessage::FindingsBatch {
+            worker_id: self.worker_id.clone(),
+            findings: batch,
+        })
+    }
+
+    /// Marks all assigned work as complete and returns a `WorkComplete` message.
+    pub fn finish(&mut self) -> WorkerMessage {
+        self.state = WorkerState::Completed;
+        WorkerMessage::WorkComplete {
+            worker_id: self.worker_id.clone(),
+        }
+    }
+
+    /// Returns whether the worker is currently paused.
+    pub fn is_paused(&self) -> bool {
+        self.paused
+    }
+
+    /// Returns whether the worker has been shut down.
+    pub fn is_shutdown(&self) -> bool {
+        self.state == WorkerState::Completed
+    }
+
+    /// Returns the worker's current state.
+    pub fn state(&self) -> WorkerState {
+        self.state
+    }
+
+    /// Returns assigned endpoints.
+    pub fn assigned_endpoints(&self) -> &[String] {
+        &self.assigned_endpoints
+    }
+}

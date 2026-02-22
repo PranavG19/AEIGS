@@ -347,3 +347,153 @@ fn coordinator_error_triggers_rebalance() {
         panic!("expected AssignWork response after rebalance");
     }
 }
+
+fn make_worker() -> Worker {
+    Worker::new(make_worker_id("w1"), WorkerRole::FuzzWorker)
+}
+
+fn make_two_endpoint_assignment() -> WorkAssignment {
+    WorkAssignment {
+        worker_id: make_worker_id("w1"),
+        endpoints: vec!["/api/users".to_string(), "/api/admin".to_string()],
+        vulnerability_classes: Vec::new(),
+        priority_range: (0.0, 1.0),
+    }
+}
+
+#[test]
+fn worker_new_starts_idle() {
+    let w = make_worker();
+    assert_eq!(w.state(), WorkerState::Idle);
+    assert!(!w.is_paused());
+    assert!(!w.is_shutdown());
+    assert!(w.assigned_endpoints().is_empty());
+}
+
+#[test]
+fn worker_register_message() {
+    let w = make_worker();
+    let msg = w.register_message();
+    match msg {
+        WorkerMessage::Register { worker_id, role } => {
+            assert_eq!(worker_id, make_worker_id("w1"));
+            assert_eq!(role, WorkerRole::FuzzWorker);
+        }
+        _ => panic!("expected Register message"),
+    }
+}
+
+#[test]
+fn worker_handles_assign_work() {
+    let mut w = make_worker();
+    let assignment = make_two_endpoint_assignment();
+    let reply = w.handle_message(&CoordinatorMessage::AssignWork(assignment));
+    assert!(reply.is_none());
+    assert_eq!(w.assigned_endpoints().len(), 2);
+    assert_eq!(w.assigned_endpoints()[0], "/api/users");
+    assert_eq!(w.assigned_endpoints()[1], "/api/admin");
+    assert_eq!(w.state(), WorkerState::Working);
+}
+
+#[test]
+fn worker_handles_pause_resume() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    assert_eq!(w.state(), WorkerState::Working);
+
+    w.handle_message(&CoordinatorMessage::Pause);
+    assert!(w.is_paused());
+    assert_eq!(w.state(), WorkerState::Paused);
+
+    w.handle_message(&CoordinatorMessage::Resume);
+    assert!(!w.is_paused());
+    assert_eq!(w.state(), WorkerState::Working);
+}
+
+#[test]
+fn worker_handles_shutdown() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::Shutdown);
+    assert!(w.is_shutdown());
+    assert_eq!(w.state(), WorkerState::Completed);
+}
+
+#[test]
+fn worker_complete_target_with_findings() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    let msg = w.complete_target(vec![make_finding()]);
+    assert!(msg.is_some());
+    match msg.unwrap() {
+        WorkerMessage::FindingsBatch {
+            worker_id,
+            findings,
+        } => {
+            assert_eq!(worker_id, make_worker_id("w1"));
+            assert_eq!(findings.len(), 1);
+        }
+        _ => panic!("expected FindingsBatch message"),
+    }
+}
+
+#[test]
+fn worker_complete_target_no_findings() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    let msg = w.complete_target(vec![]);
+    assert!(msg.is_none());
+}
+
+#[test]
+fn worker_finish_returns_work_complete() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    let msg = w.finish();
+    match msg {
+        WorkerMessage::WorkComplete { worker_id } => {
+            assert_eq!(worker_id, make_worker_id("w1"));
+        }
+        _ => panic!("expected WorkComplete message"),
+    }
+    assert_eq!(w.state(), WorkerState::Completed);
+}
+
+#[test]
+fn worker_heartbeat_reflects_progress() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+    w.complete_target(vec![]);
+    let msg = w.heartbeat_message();
+    match msg {
+        WorkerMessage::Heartbeat {
+            worker_id,
+            targets_completed,
+            targets_remaining,
+            findings_count,
+        } => {
+            assert_eq!(worker_id, make_worker_id("w1"));
+            assert_eq!(targets_completed, 1);
+            assert_eq!(targets_remaining, 1);
+            assert_eq!(findings_count, 0);
+        }
+        _ => panic!("expected Heartbeat message"),
+    }
+}
+
+#[test]
+fn worker_findings_accumulate_across_targets() {
+    let mut w = make_worker();
+    w.handle_message(&CoordinatorMessage::AssignWork(make_two_endpoint_assignment()));
+
+    let batch1 = w.complete_target(vec![make_finding()]);
+    assert!(batch1.is_some());
+
+    let batch2 = w.complete_target(vec![make_finding(), make_finding()]);
+    assert!(batch2.is_some());
+    match batch2.unwrap() {
+        WorkerMessage::FindingsBatch { findings, .. } => {
+            assert_eq!(findings.len(), 2);
+        }
+        _ => panic!("expected FindingsBatch"),
+    }
+}
