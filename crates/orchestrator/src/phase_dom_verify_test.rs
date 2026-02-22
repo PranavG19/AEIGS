@@ -67,6 +67,7 @@ fn test_capability_manager() -> CapabilityManager {
 
 fn localhost_config() -> scan_config::ScanConfig {
     scan_config::ScanConfig {
+        preset: None,
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-dom-verify-test.sarif"),
         report_format: "developer".to_string(),

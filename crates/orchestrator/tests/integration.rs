@@ -134,6 +134,7 @@ fn test_capability_manager() -> CapabilityManager {
 
 fn localhost_config() -> ScanConfig {
     ScanConfig {
+        preset: None,
         target: "http://localhost:8080".to_string(),
         output: std::env::temp_dir().join("aegis-integration-test.sarif"),
         report_format: "developer".to_string(),

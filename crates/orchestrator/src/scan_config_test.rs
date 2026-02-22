@@ -2,7 +2,7 @@ use super::*;
 use aegis_evasion_engine::PersonaId;
 use clap::Parser;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 #[test]
@@ -963,4 +963,230 @@ fn is_coordinator_mode_true_when_distributed_set() {
 fn config_error_display_invalid_distributed() {
     let err = ConfigError::InvalidDistributed("missing port".to_string());
     assert_eq!(err.to_string(), "invalid distributed config: missing port");
+}
+
+#[test]
+fn scan_preset_quick_sets_no_llm_and_single_iteration() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    ScanPreset::Quick.apply(&mut config);
+    assert_eq!(config.pipeline.max_iterations, 1);
+    assert!(config.llm.no_llm);
+    assert_eq!(config.stealth.stealth_level, "default");
+}
+
+#[test]
+fn scan_preset_thorough_sets_three_iterations_and_convergence() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    ScanPreset::Thorough.apply(&mut config);
+    assert_eq!(config.pipeline.max_iterations, 3);
+    assert_eq!(config.pipeline.convergence_threshold, 2);
+    assert!(!config.llm.no_llm);
+    assert_eq!(config.stealth.stealth_level, "default");
+}
+
+#[test]
+fn scan_preset_paranoid_sets_five_iterations_and_paranoid_stealth() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    ScanPreset::Paranoid.apply(&mut config);
+    assert_eq!(config.pipeline.max_iterations, 5);
+    assert_eq!(config.pipeline.convergence_threshold, 3);
+    assert_eq!(config.stealth.stealth_level, "paranoid");
+}
+
+#[test]
+fn scan_preset_benchmark_sets_single_iteration() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    ScanPreset::Benchmark.apply(&mut config);
+    assert_eq!(config.pipeline.max_iterations, 1);
+    assert!(!config.llm.no_llm);
+    assert_eq!(config.stealth.stealth_level, "default");
+}
+
+#[test]
+fn scan_preset_explicit_max_iterations_overrides_preset() {
+    let mut config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--max-iterations",
+        "7",
+    ])
+    .unwrap();
+    ScanPreset::Thorough.apply(&mut config);
+    assert_eq!(config.pipeline.max_iterations, 7);
+}
+
+#[test]
+fn scan_preset_explicit_stealth_level_overrides_preset() {
+    let mut config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--stealth-level",
+        "aggressive",
+    ])
+    .unwrap();
+    ScanPreset::Paranoid.apply(&mut config);
+    assert_eq!(config.stealth.stealth_level, "aggressive");
+}
+
+#[test]
+fn scan_preset_explicit_convergence_threshold_overrides_preset() {
+    let mut config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--convergence-threshold",
+        "10",
+    ])
+    .unwrap();
+    ScanPreset::Paranoid.apply(&mut config);
+    assert_eq!(config.pipeline.convergence_threshold, 10);
+}
+
+#[test]
+fn scan_preset_explicit_no_llm_overrides_quick_preset() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080", "--no-llm"])
+            .unwrap();
+    ScanPreset::Thorough.apply(&mut config);
+    assert!(config.llm.no_llm);
+}
+
+#[test]
+fn scan_preset_flag_parses_quick() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--preset",
+        "quick",
+    ])
+    .unwrap();
+    assert_eq!(config.preset, Some(ScanPreset::Quick));
+}
+
+#[test]
+fn scan_preset_flag_parses_thorough() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--preset",
+        "thorough",
+    ])
+    .unwrap();
+    assert_eq!(config.preset, Some(ScanPreset::Thorough));
+}
+
+#[test]
+fn scan_preset_flag_parses_paranoid() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--preset",
+        "paranoid",
+    ])
+    .unwrap();
+    assert_eq!(config.preset, Some(ScanPreset::Paranoid));
+}
+
+#[test]
+fn scan_preset_flag_parses_benchmark() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--preset",
+        "benchmark",
+    ])
+    .unwrap();
+    assert_eq!(config.preset, Some(ScanPreset::Benchmark));
+}
+
+#[test]
+fn scan_preset_short_flag_parses() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080", "-p", "quick"])
+            .unwrap();
+    assert_eq!(config.preset, Some(ScanPreset::Quick));
+}
+
+#[test]
+fn scan_preset_default_is_none() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.preset.is_none());
+}
+
+#[test]
+fn scan_preset_invalid_value_rejected() {
+    let result = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--preset",
+        "turbo",
+    ]);
+    assert!(result.is_err());
+}
+
+#[test]
+fn scan_config_short_output_flag() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "-o",
+        "out.sarif",
+    ])
+    .unwrap();
+    assert_eq!(config.output, PathBuf::from("out.sarif"));
+}
+
+#[test]
+fn scan_config_short_format_flag() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "-f",
+        "security",
+    ])
+    .unwrap();
+    assert_eq!(config.report_format, "security");
+}
+
+#[test]
+fn scan_preset_does_not_touch_unrelated_fields() {
+    let mut config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    ScanPreset::Paranoid.apply(&mut config);
+    assert_eq!(config.output, PathBuf::from("aegis-report.sarif"));
+    assert_eq!(config.report_format, "developer");
+    assert!(!config.audit.no_audit);
+    assert!(!config.pipeline.resume);
+}
+
+#[test]
+fn scan_preset_clone_and_eq() {
+    let preset = ScanPreset::Quick;
+    let cloned = preset;
+    assert_eq!(preset, cloned);
+    assert_ne!(ScanPreset::Quick, ScanPreset::Thorough);
+    assert_ne!(ScanPreset::Thorough, ScanPreset::Paranoid);
+    assert_ne!(ScanPreset::Paranoid, ScanPreset::Benchmark);
+}
+
+#[test]
+fn scan_preset_debug_format() {
+    assert_eq!(format!("{:?}", ScanPreset::Quick), "Quick");
+    assert_eq!(format!("{:?}", ScanPreset::Thorough), "Thorough");
+    assert_eq!(format!("{:?}", ScanPreset::Paranoid), "Paranoid");
+    assert_eq!(format!("{:?}", ScanPreset::Benchmark), "Benchmark");
 }
