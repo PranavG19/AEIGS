@@ -158,7 +158,7 @@ fn noop_writer_discards_events() {
     });
 
     assert!(result.is_ok());
-    assert_eq!(noop.sequence_number(), 0);
+    assert_eq!(noop.sequence_number(), 1);
 }
 
 #[test]

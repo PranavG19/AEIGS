@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::log_verifier::{VerifierError, verify_log, verify_log_bytes};
-    use crate::log_writer::AuditLogWriter;
+    use crate::log_writer::{AuditLogWriter, AuditWriter};
     use aegis_protocol::audit::AuditEventType;
     use std::fs;
 
