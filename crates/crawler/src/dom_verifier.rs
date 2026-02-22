@@ -37,7 +37,7 @@ impl fmt::Display for DomEvidence {
 ///
 /// Produced by injecting a payload into a page and checking whether it executed.
 /// `confidence_boost` is added to the existing finding's confidence score.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct DomVerificationResult {
     pub payload: String,
     pub endpoint: String,
@@ -206,17 +206,11 @@ pub async fn check_xss_markers(page: &chromiumoxide::Page) -> Result<DomEvidence
 /// NoExecution (payload reflected but inert) yields -0.2.
 pub fn confidence_boost_for_evidence(evidence: &DomEvidence) -> f64 {
     match evidence {
-        // 0.3: confirmed JS execution via intercepted API
         DomEvidence::AlertFired => 0.3,
-        // 0.3: confirmed document.cookie read/write
         DomEvidence::CookieAccess => 0.3,
-        // 0.3: confirmed navigation hijack attempt
         DomEvidence::NavigationAttempt => 0.3,
-        // 0.25: DOM tree modified with executable content
         DomEvidence::DomMutation => 0.25,
-        // 0.25: fetch to non-origin domain detected
         DomEvidence::FetchToExternal => 0.25,
-        // -0.2: payload in DOM but no execution observed
         DomEvidence::NoExecution => -0.2,
     }
 }
