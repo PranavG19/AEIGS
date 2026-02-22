@@ -44,7 +44,7 @@ pub fn collect_calibration_pairs(
         .map(|finding| {
             let is_tp = find_greedy_match(finding, ground_truth, &mut matched_gt);
             CalibrationPair {
-                confidence: finding.confidence.value(),
+                confidence: finding.confidence.composite.value(),
                 is_true_positive: is_tp,
             }
         })

@@ -26,7 +26,7 @@ impl Confidence {
     pub fn from_evidence(level: EvidenceLevel) -> Self {
         Self(match level {
             EvidenceLevel::Statistical => 0.4,
-            EvidenceLevel::Counterfactual => 0.7,
+            EvidenceLevel::Controlled => 0.7,
             EvidenceLevel::Confirmed => 0.9,
             EvidenceLevel::Chained => 0.95,
         })
@@ -66,6 +66,55 @@ impl<'de> Deserialize<'de> for Confidence {
     }
 }
 
+/// Provenance-tracked confidence decomposition for a finding.
+///
+/// Separates the scalar confidence into three independently inspectable
+/// components: base rate (`prior`), evidence strength (`likelihood_ratio`),
+/// and test method trustworthiness (`methodology_reliability`). The
+/// `composite` field is the combined score reported to consumers.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct FindingConfidence {
+    pub prior: f64,
+    pub likelihood_ratio: f64,
+    pub methodology_reliability: f64,
+    pub composite: Confidence,
+}
+
+impl FindingConfidence {
+    /// Computes a provenance-tracked confidence from its three components.
+    ///
+    /// `composite = clamp(prior * likelihood_ratio * methodology_reliability, 0.0, 1.0)`
+    pub fn compute(prior: f64, likelihood_ratio: f64, methodology_reliability: f64) -> Self {
+        let raw = (prior * likelihood_ratio * methodology_reliability).clamp(0.0, 1.0);
+        Self {
+            prior,
+            likelihood_ratio,
+            methodology_reliability,
+            composite: Confidence::new(raw).unwrap_or_default(),
+        }
+    }
+
+    /// Wraps an existing `Confidence` as a `FindingConfidence` with default provenance.
+    ///
+    /// Uses prior=0.5, likelihood_ratio=confidence*2, reliability=1.0 so that
+    /// the composite equals the original confidence value.
+    pub fn from_simple(confidence: Confidence) -> Self {
+        let v = confidence.value();
+        Self {
+            prior: 0.5,
+            likelihood_ratio: v * 2.0,
+            methodology_reliability: 1.0,
+            composite: confidence,
+        }
+    }
+}
+
+impl fmt::Display for FindingConfidence {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.composite)
+    }
+}
+
 /// A content-addressed stable identity for a finding, computed from its
 /// intrinsic properties. Two findings representing the same vulnerability
 /// at the same location have equal `FindingId` values even across scans.
@@ -99,7 +148,8 @@ impl FindingId {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EvidenceLevel {
     Statistical,
-    Counterfactual,
+    #[serde(alias = "Counterfactual")]
+    Controlled,
     Confirmed,
     Chained,
 }
@@ -108,7 +158,7 @@ impl fmt::Display for EvidenceLevel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             EvidenceLevel::Statistical => write!(f, "Statistical"),
-            EvidenceLevel::Counterfactual => write!(f, "Counterfactual"),
+            EvidenceLevel::Controlled => write!(f, "Controlled"),
             EvidenceLevel::Confirmed => write!(f, "Confirmed"),
             EvidenceLevel::Chained => write!(f, "Chained"),
         }
@@ -172,7 +222,7 @@ pub struct FindingData {
     pub linked_node_ids: Vec<u64>,
     pub vulnerability_class: VulnerabilityClass,
     pub severity: f64,
-    pub confidence: Confidence,
+    pub confidence: FindingConfidence,
     pub certificate: Vec<u8>,
     pub provenance_module: ModuleIdentifier,
     pub timestamp_unix_ms: u64,
@@ -200,16 +250,32 @@ impl<'de> Deserialize<'de> for FindingData {
         }
         let raw = Raw::deserialize(deserializer)?;
 
-        let confidence = if let Some(cs) = raw.confidence_score {
-            Confidence::new(cs).unwrap_or_default()
-        } else {
-            match raw.confidence {
-                Some(serde_json::Value::Number(n)) => {
-                    let v = n.as_f64().unwrap_or(0.5);
-                    Confidence::new(v).unwrap_or_default()
-                }
-                Some(serde_json::Value::Null) | None => Confidence::default(),
-                _ => Confidence::default(),
+        let confidence = match &raw.confidence {
+            Some(serde_json::Value::Object(map)) if map.contains_key("prior") => {
+                let prior = map.get("prior").and_then(|v| v.as_f64()).unwrap_or(0.5);
+                let lr = map
+                    .get("likelihood_ratio")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(1.0);
+                let rel = map
+                    .get("methodology_reliability")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(1.0);
+                FindingConfidence::compute(prior, lr, rel)
+            }
+            _ => {
+                let simple = if let Some(cs) = raw.confidence_score {
+                    Confidence::new(cs).unwrap_or_default()
+                } else {
+                    match &raw.confidence {
+                        Some(serde_json::Value::Number(n)) => {
+                            let v = n.as_f64().unwrap_or(0.5);
+                            Confidence::new(v).unwrap_or_default()
+                        }
+                        _ => Confidence::default(),
+                    }
+                };
+                FindingConfidence::from_simple(simple)
             }
         };
 
@@ -242,7 +308,9 @@ impl FindingData {
             linked_node_ids: Vec::new(),
             vulnerability_class,
             severity,
-            confidence: Confidence::new(confidence).unwrap_or_default(),
+            confidence: FindingConfidence::from_simple(
+                Confidence::new(confidence).unwrap_or_default(),
+            ),
             certificate: Vec::new(),
             provenance_module,
             timestamp_unix_ms,
@@ -280,6 +348,11 @@ impl FindingData {
     }
 
     pub fn with_confidence(mut self, confidence: Confidence) -> Self {
+        self.confidence = FindingConfidence::from_simple(confidence);
+        self
+    }
+
+    pub fn with_finding_confidence(mut self, confidence: FindingConfidence) -> Self {
         self.confidence = confidence;
         self
     }

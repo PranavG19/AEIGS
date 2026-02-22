@@ -598,7 +598,7 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
     } = &acc.entries[0].operation
     {
         assert!((severity - 0.8).abs() < 1e-9);
-        assert!((confidence - 0.64).abs() < 1e-9);
+        assert!((confidence - 0.2).abs() < 1e-9);
         assert_eq!(*vulnerability_class, VulnerabilityClass::CommandInjection);
         assert_eq!(linked_node_ids, &[7]);
     } else {

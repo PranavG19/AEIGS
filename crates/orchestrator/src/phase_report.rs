@@ -94,7 +94,7 @@ pub fn run_report_with_previous(
             attack_path_count: 1,
             reachable_critical_assets: 1,
             asset_pii_weight: 0.5,
-            confidence: finding.confidence.value(),
+            confidence: finding.confidence.composite.value(),
         };
 
         let base_score = compute_risk_score(&risk_input);
@@ -135,7 +135,7 @@ pub fn run_report_with_previous(
             logical_location_name: None,
             logical_location_kind: None,
             severity: finding.severity,
-            confidence: finding.confidence.value(),
+            confidence: finding.confidence.composite.value(),
             composite_score: composite,
             vulnerability_class: Some(finding.vulnerability_class),
             related_locations: vec![],

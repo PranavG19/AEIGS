@@ -166,3 +166,80 @@ fn test_transfer_findings_empty_for_no_findings() {
     let transferred = transfer_findings(0, &targets, &sigs);
     assert!(transferred.is_empty());
 }
+
+#[test]
+fn test_trigram_jaccard_identical_paths() {
+    let a = extract_trigrams("/api/users");
+    let b = extract_trigrams("/api/users");
+    let sim = trigram_jaccard(&a, &b);
+    assert!((sim - 1.0).abs() < 1e-9);
+}
+
+#[test]
+fn test_trigram_jaccard_disjoint_paths() {
+    let a = extract_trigrams("/xyz");
+    let b = extract_trigrams("/abc");
+    let sim = trigram_jaccard(&a, &b);
+    assert!(
+        sim < 0.5,
+        "expected low Jaccard for disjoint paths, got {sim}"
+    );
+}
+
+#[test]
+fn test_trigram_jaccard_empty_paths() {
+    let a = extract_trigrams("");
+    let b = extract_trigrams("");
+    let sim = trigram_jaccard(&a, &b);
+    assert!((sim - 1.0).abs() < 1e-9);
+}
+
+#[test]
+fn test_extract_trigrams_short_path_returns_empty() {
+    let trigrams = extract_trigrams("/a");
+    assert!(trigrams.is_empty());
+}
+
+#[test]
+fn test_blended_similarity_identical_is_one() {
+    let sigs = vec![
+        sig("/api/users/search", "GET", &["q"], &[]),
+        sig("/api/users/search", "GET", &["q"], &[]),
+    ];
+    let index = TfIdfIndex::build(&sigs);
+    let sim = index.cosine_similarity(0, 1);
+    assert!(
+        (sim - 1.0).abs() < 1e-9,
+        "expected 1.0 for identical, got {sim}"
+    );
+}
+
+#[test]
+fn test_blended_similarity_combines_cosine_and_trigram() {
+    let sigs = vec![
+        sig("/api/users", "GET", &[], &[]),
+        sig("/api/usrs", "GET", &[], &[]),
+    ];
+    let index = TfIdfIndex::build(&sigs);
+    let sim = index.cosine_similarity(0, 1);
+    assert!(
+        sim > 0.3,
+        "expected moderate similarity due to trigram overlap, got {sim}"
+    );
+}
+
+#[test]
+fn test_positional_weighting_favors_early_tokens() {
+    let sigs = vec![
+        sig("/api/users/orders", "GET", &[], &[]),
+        sig("/api/users/reviews", "GET", &[], &[]),
+        sig("/xyz/abc/users", "GET", &[], &[]),
+    ];
+    let index = TfIdfIndex::build(&sigs);
+    let sim_01 = index.cosine_similarity(0, 1);
+    let sim_02 = index.cosine_similarity(0, 2);
+    assert!(
+        sim_01 > sim_02,
+        "endpoints sharing early tokens should be more similar: {sim_01} vs {sim_02}"
+    );
+}

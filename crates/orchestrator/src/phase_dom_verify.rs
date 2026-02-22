@@ -34,8 +34,8 @@ pub fn dom_verify_to_operations(
         .filter(|o| o.dom_executed && o.finding_index < findings.len())
         .map(|outcome| {
             let finding = &findings[outcome.finding_index];
-            let boosted =
-                (finding.confidence.value() + outcome.confidence_adjustment).clamp(0.0, 1.0);
+            let boosted = (finding.confidence.composite.value() + outcome.confidence_adjustment)
+                .clamp(0.0, 1.0);
             *seq += 1;
             OperationLogEntry {
                 sequence_number: *seq,

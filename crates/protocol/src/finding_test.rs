@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::finding::{EvidenceLevel, FindingData, FindingId, VulnerabilityClass};
+    use crate::finding::{
+        Confidence, EvidenceLevel, FindingConfidence, FindingData, FindingId, VulnerabilityClass,
+    };
     use crate::operation::ModuleIdentifier;
 
     #[test]
@@ -139,5 +141,119 @@ mod tests {
         let deserialized: FindingData = serde_json::from_str(old_json).unwrap();
         assert!(deserialized.stable_id.is_none());
         assert_eq!(deserialized.evidence_level, EvidenceLevel::Statistical);
+    }
+
+    #[test]
+    fn finding_confidence_compute_clamps_to_unit_range() {
+        let fc = FindingConfidence::compute(0.5, 3.0, 1.0);
+        assert!((fc.composite.value() - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn finding_confidence_compute_normal_values() {
+        let fc = FindingConfidence::compute(0.5, 1.0, 0.8);
+        assert!((fc.composite.value() - 0.4).abs() < f64::EPSILON);
+        assert!((fc.prior - 0.5).abs() < f64::EPSILON);
+        assert!((fc.likelihood_ratio - 1.0).abs() < f64::EPSILON);
+        assert!((fc.methodology_reliability - 0.8).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn finding_confidence_from_simple_preserves_composite() {
+        let c = Confidence::new(0.7).unwrap();
+        let fc = FindingConfidence::from_simple(c);
+        assert!((fc.composite.value() - 0.7).abs() < f64::EPSILON);
+        assert!((fc.prior - 0.5).abs() < f64::EPSILON);
+        assert!((fc.likelihood_ratio - 1.4).abs() < f64::EPSILON);
+        assert!((fc.methodology_reliability - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn finding_confidence_display_shows_composite() {
+        let fc = FindingConfidence::compute(0.5, 1.0, 0.8);
+        let display = format!("{fc}");
+        assert_eq!(display, "0.40");
+    }
+
+    #[test]
+    fn finding_confidence_roundtrips_serde() {
+        let fc = FindingConfidence::compute(0.3, 2.0, 0.7);
+        let json = serde_json::to_string(&fc).unwrap();
+        let deserialized: FindingConfidence = serde_json::from_str(&json).unwrap();
+        assert!((deserialized.prior - 0.3).abs() < f64::EPSILON);
+        assert!((deserialized.likelihood_ratio - 2.0).abs() < f64::EPSILON);
+        assert!((deserialized.methodology_reliability - 0.7).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn finding_data_with_finding_confidence_uses_provenance() {
+        let fc = FindingConfidence::compute(0.3, 2.0, 0.9);
+        let finding = FindingData::new(
+            1,
+            VulnerabilityClass::SqlInjection,
+            9.0,
+            0.5,
+            ModuleIdentifier::Fuzzing,
+            1700000000000,
+        )
+        .with_finding_confidence(fc);
+        assert!((finding.confidence.prior - 0.3).abs() < f64::EPSILON);
+        assert!((finding.confidence.composite.value() - 0.54).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn legacy_scalar_confidence_deserializes_into_finding_confidence() {
+        let old_json = r#"{
+            "id": 1,
+            "linked_node_ids": [],
+            "vulnerability_class": "SqlInjection",
+            "severity": 9.0,
+            "confidence": 0.85,
+            "certificate": [],
+            "provenance_module": "Fuzzing",
+            "timestamp_unix_ms": 1700000000000,
+            "evidence_level": "Statistical"
+        }"#;
+        let deserialized: FindingData = serde_json::from_str(old_json).unwrap();
+        assert!((deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.prior - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn provenance_json_deserializes_into_finding_confidence() {
+        let json = r#"{
+            "id": 1,
+            "linked_node_ids": [],
+            "vulnerability_class": "SqlInjection",
+            "severity": 9.0,
+            "confidence": {"prior": 0.3, "likelihood_ratio": 2.0, "methodology_reliability": 0.8, "composite": 0.48},
+            "certificate": [],
+            "provenance_module": "Fuzzing",
+            "timestamp_unix_ms": 1700000000000,
+            "evidence_level": "Statistical"
+        }"#;
+        let deserialized: FindingData = serde_json::from_str(json).unwrap();
+        assert!((deserialized.confidence.prior - 0.3).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.likelihood_ratio - 2.0).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.methodology_reliability - 0.8).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.composite.value() - 0.48).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn counterfactual_alias_deserializes_as_controlled() {
+        let json = r#""Counterfactual""#;
+        let level: EvidenceLevel = serde_json::from_str(json).unwrap();
+        assert_eq!(level, EvidenceLevel::Controlled);
+    }
+
+    #[test]
+    fn controlled_evidence_level_display() {
+        assert_eq!(format!("{}", EvidenceLevel::Controlled), "Controlled");
+    }
+
+    #[test]
+    fn confidence_from_evidence_controlled() {
+        let c = Confidence::from_evidence(EvidenceLevel::Controlled);
+        assert!((c.value() - 0.7).abs() < f64::EPSILON);
     }
 }

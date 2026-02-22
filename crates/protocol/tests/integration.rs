@@ -475,7 +475,7 @@ fn finding_data_confidence_roundtrip() {
     let json = serde_json::to_string(&finding).unwrap();
     let deserialized: FindingData = serde_json::from_str(&json).unwrap();
     assert!(
-        (deserialized.confidence.value() - 0.85).abs() < f64::EPSILON,
+        (deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON,
         "confidence should survive serialization roundtrip"
     );
 }
@@ -499,7 +499,7 @@ fn finding_data_missing_confidence_score_uses_confidence() {
 
     let deserialized: FindingData = serde_json::from_str(json).unwrap();
     assert!(
-        (deserialized.confidence.value() - 0.9).abs() < f64::EPSILON,
+        (deserialized.confidence.composite.value() - 0.9).abs() < f64::EPSILON,
         "confidence should be read from the confidence field"
     );
     assert!(

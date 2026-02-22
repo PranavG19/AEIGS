@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use aegis_protocol::finding::VulnerabilityClass;
 
@@ -66,18 +66,20 @@ fn looks_like_uuid(s: &str) -> bool {
         })
 }
 
-/// TF-IDF index over a collection of endpoint signatures.
+/// Positionally-weighted TF-IDF index with trigram secondary signal.
 ///
-/// Each endpoint is represented as a sparse TF-IDF vector. Cosine similarity
-/// between any pair of endpoints can be computed in O(min(|a|, |b|)) time
-/// where |a| and |b| are the number of distinct terms in each document.
+/// Each endpoint is represented as a sparse TF-IDF vector where tokens
+/// at earlier positions receive higher weight (`1.0 / (1.0 + i)`).
+/// Final similarity blends weighted cosine (0.7) with character trigram
+/// Jaccard similarity (0.3).
 pub struct TfIdfIndex {
     vectors: Vec<HashMap<String, f64>>,
     norms: Vec<f64>,
+    trigram_sets: Vec<HashSet<[u8; 3]>>,
 }
 
 impl TfIdfIndex {
-    /// Builds a TF-IDF index from the given endpoint signatures.
+    /// Builds a positionally-weighted TF-IDF index from the given endpoint signatures.
     pub fn build(signatures: &[EndpointSignature]) -> Self {
         let n = signatures.len();
         let token_sets: Vec<Vec<String>> = signatures.iter().map(tokenize_endpoint).collect();
@@ -85,24 +87,34 @@ impl TfIdfIndex {
         let df = compute_document_frequencies(&token_sets);
         let vectors: Vec<HashMap<String, f64>> = token_sets
             .iter()
-            .map(|tokens| compute_tfidf_vector(tokens, &df, n))
+            .map(|tokens| compute_positional_tfidf_vector(tokens, &df, n))
             .collect();
         let norms: Vec<f64> = vectors.iter().map(vector_norm).collect();
+        let trigram_sets: Vec<HashSet<[u8; 3]>> = signatures
+            .iter()
+            .map(|s| extract_trigrams(&s.endpoint))
+            .collect();
 
-        Self { vectors, norms }
+        Self {
+            vectors,
+            norms,
+            trigram_sets,
+        }
     }
 
-    /// Returns the cosine similarity between two indexed endpoints.
+    /// Returns the blended similarity between two indexed endpoints.
     ///
-    /// Returns 0.0 if either endpoint has a zero-norm vector (no terms).
+    /// Combines positionally-weighted cosine similarity (70%) with
+    /// character trigram Jaccard similarity (30%).
     pub fn cosine_similarity(&self, a: usize, b: usize) -> f64 {
-        let norm_a = self.norms[a];
-        let norm_b = self.norms[b];
-        if norm_a == 0.0 || norm_b == 0.0 {
-            return 0.0;
-        }
-        let dot = dot_product(&self.vectors[a], &self.vectors[b]);
-        dot / (norm_a * norm_b)
+        let positional = positional_cosine(
+            &self.vectors[a],
+            &self.vectors[b],
+            self.norms[a],
+            self.norms[b],
+        );
+        let trigram = trigram_jaccard(&self.trigram_sets[a], &self.trigram_sets[b]);
+        0.7 * positional + 0.3 * trigram
     }
 
     /// Finds all endpoints with similarity to `index` above the given threshold.
@@ -168,30 +180,64 @@ fn compute_document_frequencies(token_sets: &[Vec<String>]) -> HashMap<String, u
     df
 }
 
-fn compute_tfidf_vector(
+fn compute_positional_tfidf_vector(
     tokens: &[String],
     df: &HashMap<String, usize>,
     total_docs: usize,
 ) -> HashMap<String, f64> {
-    let total_terms = tokens.len() as f64;
-    if total_terms == 0.0 {
+    if tokens.is_empty() {
         return HashMap::new();
     }
 
-    let mut term_counts: HashMap<&str, usize> = HashMap::new();
-    for token in tokens {
-        *term_counts.entry(token.as_str()).or_insert(0) += 1;
+    let mut weighted_counts: HashMap<&str, f64> = HashMap::new();
+    let mut total_weight = 0.0_f64;
+    for (i, token) in tokens.iter().enumerate() {
+        let position_weight = 1.0 / (1.0 + i as f64);
+        *weighted_counts.entry(token.as_str()).or_insert(0.0) += position_weight;
+        total_weight += position_weight;
     }
 
     let mut vector = HashMap::new();
-    for (term, count) in term_counts {
-        let tf = count as f64 / total_terms;
+    for (term, weighted_count) in weighted_counts {
+        let tf = weighted_count / total_weight;
         let doc_freq = df.get(term).copied().unwrap_or(0);
-        // smoothed IDF: ln(1 + N / (1 + df)) — always positive
         let idf = (1.0 + total_docs as f64 / (1.0 + doc_freq as f64)).ln();
         vector.insert(term.to_string(), tf * idf);
     }
     vector
+}
+
+pub(crate) fn extract_trigrams(path: &str) -> HashSet<[u8; 3]> {
+    let bytes = path.as_bytes();
+    if bytes.len() < 3 {
+        return HashSet::new();
+    }
+    bytes.windows(3).map(|w| [w[0], w[1], w[2]]).collect()
+}
+
+pub(crate) fn trigram_jaccard(a: &HashSet<[u8; 3]>, b: &HashSet<[u8; 3]>) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 1.0;
+    }
+    let intersection = a.intersection(b).count() as f64;
+    let union = a.union(b).count() as f64;
+    if union == 0.0 {
+        return 0.0;
+    }
+    intersection / union
+}
+
+fn positional_cosine(
+    a: &HashMap<String, f64>,
+    b: &HashMap<String, f64>,
+    norm_a: f64,
+    norm_b: f64,
+) -> f64 {
+    if norm_a == 0.0 || norm_b == 0.0 {
+        return 0.0;
+    }
+    let dot = dot_product(a, b);
+    dot / (norm_a * norm_b)
 }
 
 fn vector_norm(v: &HashMap<String, f64>) -> f64 {

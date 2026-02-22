@@ -707,7 +707,7 @@ mod tests {
     fn all_evidence_levels_serialize() {
         let levels = [
             EvidenceLevel::Statistical,
-            EvidenceLevel::Counterfactual,
+            EvidenceLevel::Controlled,
             EvidenceLevel::Confirmed,
             EvidenceLevel::Chained,
         ];
@@ -1071,7 +1071,7 @@ mod tests {
     fn evidence_level_display_produces_human_readable_output() {
         let levels = [
             (EvidenceLevel::Statistical, "Statistical"),
-            (EvidenceLevel::Counterfactual, "Counterfactual"),
+            (EvidenceLevel::Controlled, "Controlled"),
             (EvidenceLevel::Confirmed, "Confirmed"),
             (EvidenceLevel::Chained, "Chained"),
         ];
@@ -1126,7 +1126,7 @@ mod tests {
         )
         .with_confidence(Confidence::new(0.75).unwrap());
 
-        assert!((finding.confidence.value() - 0.75).abs() < f64::EPSILON);
+        assert!((finding.confidence.composite.value() - 0.75).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -1144,7 +1144,7 @@ mod tests {
     #[test]
     fn confidence_from_evidence_all_levels() {
         assert!(
-            (confidence_from_evidence(EvidenceLevel::Counterfactual).value() - 0.7).abs()
+            (confidence_from_evidence(EvidenceLevel::Controlled).value() - 0.7).abs()
                 < f64::EPSILON
         );
         assert!(
@@ -1166,7 +1166,7 @@ mod tests {
 
         let json = serde_json::to_string(&finding).unwrap();
         let deserialized: FindingData = serde_json::from_str(&json).unwrap();
-        assert!((deserialized.confidence.value() - 0.85).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -1185,7 +1185,7 @@ mod tests {
         }"#;
         let deserialized: FindingData = serde_json::from_str(json).unwrap();
         assert!(
-            (deserialized.confidence.value() - 0.7).abs() < f64::EPSILON,
+            (deserialized.confidence.composite.value() - 0.7).abs() < f64::EPSILON,
             "confidence_score should take precedence over confidence field"
         );
     }
@@ -1206,7 +1206,7 @@ mod tests {
         }"#;
         let deserialized: FindingData = serde_json::from_str(json).unwrap();
         assert!(
-            (deserialized.confidence.value() - 0.85).abs() < f64::EPSILON,
+            (deserialized.confidence.composite.value() - 0.85).abs() < f64::EPSILON,
             "null confidence_score should fall back to confidence field"
         );
     }
@@ -1225,7 +1225,7 @@ mod tests {
             "evidence_level": "Statistical"
         }"#;
         let deserialized: FindingData = serde_json::from_str(json).unwrap();
-        assert!((deserialized.confidence.value() - 0.9).abs() < f64::EPSILON);
+        assert!((deserialized.confidence.composite.value() - 0.9).abs() < f64::EPSILON);
     }
 
     #[test]

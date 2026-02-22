@@ -25,7 +25,7 @@ mod tests {
             VulnerabilityClass::SqlInjection
         );
         assert!((finding.severity - 9.0).abs() < f64::EPSILON);
-        assert!((finding.confidence.value() - 0.95).abs() < f64::EPSILON);
+        assert!((finding.confidence.composite.value() - 0.95).abs() < f64::EPSILON);
         assert_eq!(finding.certificate, b"proof");
     }
 
