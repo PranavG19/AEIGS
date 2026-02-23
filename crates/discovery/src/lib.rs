@@ -3,6 +3,7 @@ mod brute_forcer;
 mod graph_ops;
 mod js_extractor;
 mod sitemap_parser;
+mod tech_fingerprinter;
 mod wordlist;
 
 pub use backup_scanner::*;
@@ -10,6 +11,7 @@ pub use brute_forcer::*;
 pub use graph_ops::*;
 pub use js_extractor::*;
 pub use sitemap_parser::*;
+pub use tech_fingerprinter::*;
 pub use wordlist::*;
 
 #[cfg(test)]
@@ -31,6 +33,10 @@ mod js_extractor_test;
 #[cfg(test)]
 #[path = "sitemap_parser_test.rs"]
 mod sitemap_parser_test;
+
+#[cfg(test)]
+#[path = "tech_fingerprinter_test.rs"]
+mod tech_fingerprinter_test;
 
 #[cfg(test)]
 #[path = "wordlist_test.rs"]
