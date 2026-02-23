@@ -23,6 +23,7 @@ pub mod pipeline;
 pub mod pipeline_composer;
 pub mod scan_config;
 pub mod scan_history;
+pub mod scan_strategy;
 pub mod telemetry;
 pub mod update_db;
 mod util;
@@ -49,6 +50,7 @@ pub use pipeline::*;
 pub use pipeline_composer::*;
 pub use scan_config::*;
 pub use scan_history::*;
+pub use scan_strategy::*;
 pub use telemetry::*;
 pub use update_db::*;
 
@@ -139,3 +141,7 @@ mod hypothesis_bridge_test;
 #[cfg(test)]
 #[path = "auth_session_test.rs"]
 mod auth_session_test;
+
+#[cfg(test)]
+#[path = "scan_strategy_test.rs"]
+mod scan_strategy_test;
