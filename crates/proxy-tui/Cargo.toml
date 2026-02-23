@@ -9,6 +9,7 @@ name = "aegis-proxy-tui"
 path = "src/main.rs"
 
 [dependencies]
+aegis-knowledge-graph = { path = "../knowledge-graph" }
 aegis-proxy = { path = "../proxy" }
 aegis-protocol = { path = "../protocol" }
 ratatui = "0.29"
