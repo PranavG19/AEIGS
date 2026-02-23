@@ -1,4 +1,5 @@
 pub mod bot_detection_probe;
+pub mod cloud_detector;
 pub mod confirmation;
 pub mod cors_detector;
 pub mod defense_profile;
@@ -13,11 +14,14 @@ pub mod race_tester;
 pub mod rate_limit_detector;
 pub mod request_patterns;
 pub mod scheduler;
+pub mod smuggling_detector;
 pub mod stealth_config;
 pub mod streaming_fuzzer;
+pub mod subdomain_takeover;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
+pub use cloud_detector::*;
 pub use confirmation::*;
 pub use cors_detector::*;
 pub use defense_profile::*;
@@ -26,6 +30,8 @@ pub use idor_tester::*;
 pub use mass_assignment_tester::*;
 pub use race_tester::*;
 pub use rate_limit_detector::*;
+pub use smuggling_detector::*;
+pub use subdomain_takeover::*;
 pub use waf_fingerprinter::*;
 
 #[cfg(test)]
