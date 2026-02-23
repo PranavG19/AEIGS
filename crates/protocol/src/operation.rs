@@ -33,6 +33,7 @@ pub enum ModuleIdentifier {
     HypothesisEngine,
     ChainSynthesis,
     Discovery,
+    Proxy,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
