@@ -23,3 +23,5 @@ tempfile = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
+axum = { workspace = true }
+reqwest = { workspace = true }
