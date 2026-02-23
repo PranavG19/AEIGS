@@ -4,8 +4,8 @@ use crate::wordlist::{default_wordlist, parse_wordlist};
 fn default_wordlist_is_non_empty() {
     let words = default_wordlist();
     assert!(
-        words.len() > 100,
-        "expected >100 words, got {}",
+        words.len() > 1500,
+        "expected >1500 words, got {}",
         words.len()
     );
 }

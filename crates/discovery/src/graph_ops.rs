@@ -4,6 +4,7 @@ use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
 use crate::brute_forcer::DiscoveredPath;
+use crate::js_extractor::ExtractedEndpoint;
 
 pub fn discovered_paths_to_operations(
     paths: &[DiscoveredPath],
@@ -45,7 +46,40 @@ pub fn discovered_paths_to_operations(
         .collect()
 }
 
-fn timestamp_ms() -> u64 {
+pub fn extracted_endpoints_to_operations(
+    endpoints: &[ExtractedEndpoint],
+    start_sequence: u64,
+) -> Vec<OperationLogEntry> {
+    endpoints
+        .iter()
+        .enumerate()
+        .map(|(i, ep)| {
+            let mut properties = vec![
+                ("path".to_string(), ep.url.clone()),
+                (
+                    "discovery_source".to_string(),
+                    "javascript_analysis".to_string(),
+                ),
+            ];
+
+            if let Some(method) = &ep.method {
+                properties.push(("method".to_string(), method.clone()));
+            }
+
+            OperationLogEntry {
+                sequence_number: start_sequence + i as u64 + 1,
+                module: ModuleIdentifier::Discovery,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties,
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
+}
+
+pub(crate) fn timestamp_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)

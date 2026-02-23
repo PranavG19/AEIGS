@@ -1,3 +1,10 @@
+# =============================================================================
+# AEGIS Default Wordlist — Path Discovery for Localhost Security Testing
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Admin Panels & Dashboards
+# -----------------------------------------------------------------------------
 admin
 administrator
 admin.php
@@ -13,28 +20,118 @@ dashboard
 controlpanel
 portal
 console
+admin/dashboard
+admin/login
+admin/index
+admin/home
+admin/settings
+admin/config
+admin/logs
+admin/debug
+admin/users
+admin/reports
+admin/api
+admin/monitor
+admin/backup
+admin/system
+admin/db
+admin/database
+admin/tools
+admin/queue
+admin/jobs
+admin/tasks
+admin/cache
+admin/sessions
+admin/plugins
+admin/modules
+admin/themes
+admin/templates
+admin/media
+admin/uploads
+admin/files
+admin/export
+admin/import
+
+# -----------------------------------------------------------------------------
+# Environment & Configuration Files
+# -----------------------------------------------------------------------------
 .env
 .env.bak
 .env.local
 .env.production
 .env.development
 .env.old
+.env.staging
+.env.test
+.env.example
+.env.sample
+.env.dist
+.env.backup
+.env.save
+.env.orig
+.env.swp
 config.php
 config.yml
 config.json
 config.xml
+config.bak
+config.old
+config.orig
+config.inc
+config.inc.php
+config.php.bak
 configuration.php
+configuration.php.bak
 web.config
+web.config.bak
 application.yml
+application.yaml
 application.properties
+application.properties.bak
+application-dev.yml
+application-prod.yml
+application-test.yml
 settings.py
 settings.json
 settings.xml
+settings.py.bak
 appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+local.settings.json
+database.yml
+database.yml.bak
+secrets.yml
+secrets.json
+credentials.yml
+credentials.json
+.flaskenv
+.djangoenv
+wp-config.php.bak
+wp-config.php.old
+wp-config.php.save
+wp-config.php.orig
+wp-config.php.tmp
+wp-config.txt
+wp-config.php.swp
+
+# -----------------------------------------------------------------------------
+# Source Control & Repository Files
+# -----------------------------------------------------------------------------
 .git/config
 .git/HEAD
 .git/index
+.git/logs/HEAD
+.git/packed-refs
+.git/refs/heads/main
+.git/refs/heads/master
+.git/COMMIT_EDITMSG
+.git/description
+.git/info/exclude
 .gitignore
+.gitattributes
+.gitmodules
 .svn/entries
 .svn/wc.db
 .hg/
@@ -42,27 +139,100 @@ appsettings.json
 .bzr/
 .DS_Store
 Thumbs.db
+.svn/all-wcprops
+.svn/props
+.svn/text-base/
+
+# -----------------------------------------------------------------------------
+# Backups & Archives
+# -----------------------------------------------------------------------------
 backup
 backup.zip
 backup.tar.gz
 backup.sql
 backup.sql.gz
+backup.rar
+backup.7z
+backup.tar
+backup.tar.bz2
 dump.sql
 dump.sql.gz
+dump.tar.gz
+dump.zip
 db.sql
 db.dump
+db.sqlite
+db.sqlite3
 database.sql
+database.sql.gz
+database.dump
+database.bak
 site.zip
 site.tar.gz
 archive.zip
+archive.tar.gz
 old
 old.zip
 www.zip
 wwwroot.zip
+html.zip
+public_html.zip
+htdocs.zip
+web.zip
+src.zip
+source.zip
+code.zip
+app.zip
+app.tar.gz
+index.php.bak
+index.php.old
+index.html.bak
+index.html.old
+index.bak
+index.old
+index.orig
+index.save
+backup1
+backup2
+bkp
+bkup
+db_backup
+db_backup.sql
+full_backup.zip
+daily_backup.zip
+site_backup.zip
+data.sql
+data.json.bak
+export.sql
+export.csv
+
+# -----------------------------------------------------------------------------
+# Debug & Diagnostic Endpoints
+# -----------------------------------------------------------------------------
 debug
 debug.php
+debug.html
+debug/default
+debug/pprof
+debug/vars
 trace.axd
 elmah.axd
+elmah
+trace
+profiler
+_profiler
+_debugbar
+__debug__
+__debugger__
+_debug
+debugger
+debug/log
+debug/info
+debug/config
+
+# -----------------------------------------------------------------------------
+# Spring Boot / Java Actuator
+# -----------------------------------------------------------------------------
 actuator
 actuator/health
 actuator/env
@@ -72,28 +242,119 @@ actuator/configprops
 actuator/mappings
 actuator/metrics
 actuator/threaddump
+actuator/heapdump
+actuator/loggers
+actuator/auditevents
+actuator/caches
+actuator/conditions
+actuator/flyway
+actuator/httptrace
+actuator/integrationgraph
+actuator/jolokia
+actuator/liquibase
+actuator/logfile
+actuator/prometheus
+actuator/scheduledtasks
+actuator/sessions
+actuator/shutdown
+actuator/startup
+actuator/refresh
+jolokia
+jolokia/list
+h2-console
+h2-console/
+console.html
+
+# -----------------------------------------------------------------------------
+# Health / Status / Monitoring
+# -----------------------------------------------------------------------------
 health
 healthcheck
 health.json
+healthz
+ready
+readyz
+readiness
+live
+livez
+liveness
 metrics
 status
 info
+ping
+pong
+version
+version.json
+version.txt
+build-info
+build-info.json
 server-status
 server-info
+nginx-status
+nginx_status
+stub_status
+apm
+heartbeat
+alive
+up
+ok
+
+# -----------------------------------------------------------------------------
+# API Documentation & Specs
+# -----------------------------------------------------------------------------
 openapi.json
 openapi.yaml
+openapi.yml
+openapi/v3
 swagger.json
 swagger.yaml
+swagger.yml
 swagger-ui
 swagger-ui.html
+swagger-ui/
+swagger-ui/index.html
+swagger-resources
+swagger-resources/configuration
 api-docs
+api-docs/
 api/docs
 api/v1
 api/v2
 api/v3
+api/v4
+api/swagger
+api/openapi
+api/schema
+api/spec
+api/documentation
+api/redoc
+redoc
+redoc/
+docs
+docs/api
+apidocs
+apidoc
+api-explorer
+api-reference
+
+# -----------------------------------------------------------------------------
+# GraphQL Endpoints
+# -----------------------------------------------------------------------------
 graphql
 graphiql
 playground
+altair
+graphql/playground
+graphql/console
+graphql/schema
+graphql/explorer
+graphql-playground
+voyager
+graphql-voyager
+
+# -----------------------------------------------------------------------------
+# Common Directories
+# -----------------------------------------------------------------------------
 uploads
 files
 images
@@ -116,34 +377,358 @@ download
 downloads
 export
 reports
-cgi-bin
+shared
+common
+lib
+libs
+includes
+inc
+include
+fonts
+icons
+img
+css
+js
 scripts
+styles
+templates
+themes
+layouts
+views
+pages
+partials
+
+# -----------------------------------------------------------------------------
+# WordPress
+# -----------------------------------------------------------------------------
 wp-content
 wp-includes
 wp-login.php
 wp-config.php
 wp-json
 xmlrpc.php
+wp-content/uploads
+wp-content/themes
+wp-content/plugins
+wp-content/debug.log
+wp-content/uploads/
+wp-content/themes/
+wp-content/plugins/
+wp-content/cache/
+wp-content/backup-db/
+wp-content/backups/
+wp-content/upgrade/
+wp-includes/
+wp-json/wp/v2/users
+wp-json/wp/v2/posts
+wp-json/wp/v2/pages
+wp-json/oembed/1.0
+wp-cron.php
+wp-mail.php
+wp-trackback.php
+wp-links-opml.php
+wp-signup.php
+wp-activate.php
+wp-blog-header.php
+wp-load.php
+wp-settings.php
+wp-comments-post.php
+wp-admin/install.php
+wp-admin/setup-config.php
+wp-admin/upgrade.php
+wp-admin/admin-ajax.php
+
+# -----------------------------------------------------------------------------
+# Drupal
+# -----------------------------------------------------------------------------
+user/login
+user/register
+user/password
+admin/content
+admin/structure
+admin/people
+admin/reports/status
+sites/default/files
+sites/default/settings.php
+sites/all/modules
+sites/all/themes
+core/install.php
+update.php
+cron.php
+CHANGELOG.txt
+INSTALL.txt
+UPGRADE.txt
+core/CHANGELOG.txt
+profiles/
+modules/
+themes/
+
+# -----------------------------------------------------------------------------
+# Joomla
+# -----------------------------------------------------------------------------
+administrator/
+administrator/index.php
+administrator/manifests/
+components/
+plugins/
+templates/
+language/
+htaccess.txt
+joomla.xml
+administrator/components/
+administrator/modules/
+administrator/templates/
+
+# -----------------------------------------------------------------------------
+# Magento
+# -----------------------------------------------------------------------------
+downloader
+downloader/
+app/etc/local.xml
+app/etc/env.php
+app/etc/config.php
+magento_version
+skin/
+var/log/
+var/report/
+errors/
+connect/
+admin_custom/
+index.php/admin
+setup/
+
+# -----------------------------------------------------------------------------
+# Ghost CMS
+# -----------------------------------------------------------------------------
+ghost/
+ghost/api/
+ghost/api/v2/
+ghost/api/v3/
+ghost/api/admin/
+ghost/api/content/
+
+# -----------------------------------------------------------------------------
+# Django
+# -----------------------------------------------------------------------------
+admin/
+django-admin/
+__debug__/
+static/admin/
+static/admin/css/
+static/admin/js/
+static/rest_framework/
+api-auth/
+api-auth/login/
+accounts/login/
+accounts/logout/
+accounts/signup/
+accounts/password/reset/
+rest-auth/
+silk/
+djdt/
+
+# -----------------------------------------------------------------------------
+# Rails
+# -----------------------------------------------------------------------------
+rails/info
+rails/info/properties
+rails/info/routes
+rails/mailers
+rails/mailers/
+sidekiq
+sidekiq/
+sidekiq/busy
+sidekiq/queues
+sidekiq/retries
+sidekiq/scheduled
+sidekiq/dead
+delayed_job
+delayed_job/
+resque
+resque/
+letter_opener
+letter_opener/
+cable
+pghero
+flipper
+flipper/
+
+# -----------------------------------------------------------------------------
+# Laravel
+# -----------------------------------------------------------------------------
+telescope
+telescope/
+telescope/requests
+telescope/commands
+telescope/schedule
+telescope/jobs
+telescope/exceptions
+telescope/logs
+telescope/queries
+telescope/models
+telescope/events
+telescope/mail
+telescope/notifications
+telescope/cache
+horizon
+horizon/
+horizon/dashboard
+_debugbar/
+storage/logs
+storage/logs/
+storage/framework/
+nova
+nova/
+nova/login
+vapor/
+artisan
+
+# -----------------------------------------------------------------------------
+# .NET / ASP.NET
+# -----------------------------------------------------------------------------
+__browserLink
+_framework/
+_blazor
+_content/
+hangfire
+hangfire/
+hangfire/dashboard
+signalr
+signalr/
+api/help
+error/404
+error/500
+
+# -----------------------------------------------------------------------------
+# Express / Node.js
+# -----------------------------------------------------------------------------
+__coverage__
+__coverage__/
+graphql/voyager
+node_modules/
+npm-debug.log
+yarn-error.log
+.node-inspect
+_ah/health
+_ah/start
+_ah/stop
+bull-board
+bull-board/
+arena
+arena/
+
+# -----------------------------------------------------------------------------
+# Flask / Python
+# -----------------------------------------------------------------------------
+_debug_toolbar/
+__pycache__/
+static/
+instance/
+instance/config.py
+
+# -----------------------------------------------------------------------------
+# PHP General
+# -----------------------------------------------------------------------------
+phpMyAdmin
+phpMyAdmin/
+phpmyadmin/
+phpmyadmin/index.php
+pma
+pma/
+adminer.php
+adminer.css.php
+info.php
+phpinfo
+phpinfo.php
+test.php
+php.ini
+.user.ini
+.php-cs-fixer.php
+
+# -----------------------------------------------------------------------------
+# CMS Detection & Common Files
+# -----------------------------------------------------------------------------
 readme.html
 license.txt
 changelog.txt
 CHANGELOG.md
 README.md
 INSTALL.md
+LICENSE
+LICENSE.md
+CONTRIBUTING.md
+AUTHORS
+CREDITS
+VERSION
+VERSION.txt
+
+# -----------------------------------------------------------------------------
+# Robots / Sitemaps / Well-Known
+# -----------------------------------------------------------------------------
 robots.txt
 sitemap.xml
+sitemap
+sitemap_index.xml
+sitemaps.xml
+sitemap.xml.gz
 crossdomain.xml
+clientaccesspolicy.xml
 security.txt
 .well-known/security.txt
+.well-known/openid-configuration
+.well-known/jwks.json
+.well-known/change-password
+.well-known/assetlinks.json
+.well-known/apple-app-site-association
+.well-known/acme-challenge
+.well-known/pki-validation
+.well-known/webfinger
+.well-known/nodeinfo
 humans.txt
+ads.txt
+app-ads.txt
+favicon.ico
+
+# -----------------------------------------------------------------------------
+# Server Configuration Files
+# -----------------------------------------------------------------------------
 .htaccess
 .htpasswd
+.htpasswd.bak
 nginx.conf
 httpd.conf
 Dockerfile
 docker-compose.yml
+docker-compose.yaml
+docker-compose.override.yml
 Makefile
 Vagrantfile
+Procfile
+.dockerignore
+.editorconfig
+.babelrc
+.eslintrc
+.eslintrc.json
+.prettierrc
+.stylelintrc
+tsconfig.json
+jest.config.js
+karma.conf.js
+webpack.config.js
+rollup.config.js
+vite.config.js
+nuxt.config.js
+next.config.js
+angular.json
+vue.config.js
+gulpfile.js
+gruntfile.js
+Rakefile
+Cakefile
+
+# -----------------------------------------------------------------------------
+# Package Manager Files
+# -----------------------------------------------------------------------------
 Gemfile
 Gemfile.lock
 package.json
@@ -154,123 +739,40 @@ yarn.lock
 Pipfile
 Pipfile.lock
 requirements.txt
-test
-tests
-testing
-dev
-develop
-development
-staging
-stage
-qa
-uat
-trace
-profiler
-phpinfo
-phpinfo.php
-info.php
-test.php
-phpMyAdmin
-pma
-mysql
-myadmin
-sql
-login
-signin
-signup
-register
-auth
-authenticate
-oauth
-oauth2
-token
-api-key
-forgot
-password
-reset
-user
-users
-account
-accounts
-profile
-member
-members
-install
-setup
-update
-upgrade
-wp-setup
-maintenance
-cron
-api
-api/login
-api/users
-api/admin
-api/config
-api/status
-api/health
-api/debug
-api/token
-api/upload
-api/export
-v1
-v2
-v3
-rest
-query
-search
-internal
-hidden
-secret
-confidential
-bak
-original
-copy
-save
-sample
-example
-demo
-poc
-error
-errors
-error_log
-access_log
-debug.log
-app.log
-application.log
-system.log
-web.log
-trace.log
-.ssh
-.bash_history
-.bashrc
-.profile
-.aws
-.aws/credentials
-id_rsa
-id_rsa.pub
-known_hosts
-authorized_keys
-etc/passwd
-etc/shadow
-proc/self/environ
-.vscode
-.idea
-.project
-.settings
-nbproject
-feed
-rss
-atom
-sitemap
-backup1
-backup2
-bkp
-wp-content/uploads
-wp-content/themes
-wp-content/plugins
-wp-content/debug.log
+requirements-dev.txt
+requirements-prod.txt
+go.mod
+go.sum
+Cargo.toml
+Cargo.lock
+pom.xml
+build.gradle
+build.gradle.kts
+build.sbt
+mix.exs
+mix.lock
+poetry.lock
+pyproject.toml
+setup.py
+setup.cfg
+tox.ini
+.npmrc
+.yarnrc
+.yarnrc.yml
+.python-version
+.ruby-version
+.node-version
+.nvmrc
+.tool-versions
+Brewfile
+shrinkwrap.json
+pnpm-lock.yaml
+
+# -----------------------------------------------------------------------------
+# Build & Dependency Directories
+# -----------------------------------------------------------------------------
 vendor
+vendor/
 node_modules
 bower_components
 dist
@@ -283,6 +785,657 @@ WEB-INF
 WEB-INF/web.xml
 META-INF
 META-INF/context.xml
+META-INF/MANIFEST.MF
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+
+# -----------------------------------------------------------------------------
+# Testing & Development
+# -----------------------------------------------------------------------------
+test
+tests
+testing
+dev
+develop
+development
+staging
+stage
+qa
+uat
+sandbox
+mock
+mocks
+fixtures
+stubs
+spec
+specs
+e2e
+cypress
+playwright
+__tests__
+__mocks__
+coverage
+coverage/
+lcov-report/
+test-results/
+test-reports/
+
+# -----------------------------------------------------------------------------
+# Authentication & Authorization
+# -----------------------------------------------------------------------------
+login
+signin
+signup
+register
+auth
+authenticate
+oauth
+oauth2
+oauth/authorize
+oauth/token
+oauth/callback
+oauth2/authorize
+oauth2/token
+token
+api-key
+forgot
+forgot-password
+password
+reset
+reset-password
+password/reset
+password/change
+password/forgot
+logout
+signout
+session
+sessions
+sso
+saml
+saml/login
+saml/metadata
+saml/acs
+cas/login
+openid
+openid/connect
+oidc
+oidc/callback
+two-factor
+2fa
+mfa
+verify
+confirm
+
+# -----------------------------------------------------------------------------
+# User & Account Management
+# -----------------------------------------------------------------------------
+user
+users
+account
+accounts
+profile
+profiles
+member
+members
+settings
+preferences
+me
+self
+whoami
+userinfo
+
+# -----------------------------------------------------------------------------
+# Installation & Maintenance
+# -----------------------------------------------------------------------------
+install
+setup
+update
+upgrade
+wp-setup
+maintenance
+cron
+install.php
+setup.php
+install/
+migration
+migrate
+seed
+init
+initialize
+
+# -----------------------------------------------------------------------------
+# API Endpoints (Generic)
+# -----------------------------------------------------------------------------
+api
+api/login
+api/users
+api/admin
+api/config
+api/status
+api/health
+api/debug
+api/token
+api/upload
+api/export
+api/info
+api/version
+api/me
+api/profile
+api/sessions
+api/keys
+api/webhooks
+api/events
+api/logs
+api/metrics
+api/search
+api/graphql
+api/internal
+api/private
+v1
+v2
+v3
+rest
+query
+search
+
+# -----------------------------------------------------------------------------
+# Hidden / Internal / Sensitive Endpoints
+# -----------------------------------------------------------------------------
+internal
+internal/
+internal/api
+internal/debug
+internal/health
+internal/metrics
+internal/config
+internal/admin
+hidden
+hidden/
+secret
+secret/
+confidential
+_internal
+_private
+_admin
+_api
+_status
+_health
+_metrics
+_config
+
+# -----------------------------------------------------------------------------
+# File Upload / Download / Management
+# -----------------------------------------------------------------------------
+upload
+upload/
+uploads/
+file
+file/
+files/
+download/
+downloads/
+export/
+import
+import/
+backups
+backups/
+attachment
+attachments
+attachments/
+document
+document/
+gallery
+gallery/
+
+# -----------------------------------------------------------------------------
+# Backup File Extensions (common file + extension combos)
+# -----------------------------------------------------------------------------
+bak
+original
+copy
+save
+sample
+example
+demo
+poc
+index.php.orig
+index.php.save
+index.php.swp
+index.php.tmp
+config.php.old
+config.php.orig
+config.php.save
+config.php.swp
+config.php.tmp
+database.php.bak
+database.php.old
+app.php.bak
+app.php.old
+default.php.bak
+login.php.bak
+main.php.bak
+global.php.bak
+global.asa.bak
+global.asax.bak
+
+# -----------------------------------------------------------------------------
+# Source Maps
+# -----------------------------------------------------------------------------
+main.js.map
+app.js.map
+bundle.js.map
+vendor.js.map
+runtime.js.map
+polyfills.js.map
+chunk.js.map
+main.css.map
+app.css.map
+style.css.map
+styles.css.map
+
+# -----------------------------------------------------------------------------
+# IDE / Editor Files
+# -----------------------------------------------------------------------------
+.vscode
+.vscode/settings.json
+.vscode/launch.json
+.idea
+.idea/workspace.xml
+.idea/modules.xml
+.project
+.classpath
+.settings
+.settings/
+nbproject
+nbproject/
+.sublime-project
+.sublime-workspace
+*.swp
+*.swo
+
+# -----------------------------------------------------------------------------
+# Log Files
+# -----------------------------------------------------------------------------
+error
+errors
+error_log
+access_log
+debug.log
+app.log
+application.log
+system.log
+web.log
+trace.log
+error.log
+access.log
+server.log
+output.log
+catalina.out
+stdout.log
+stderr.log
+mail.log
+cron.log
+auth.log
+syslog
+messages
+var/log/apache2/
+var/log/nginx/
+var/log/syslog
+
+# -----------------------------------------------------------------------------
+# Sensitive System Files
+# -----------------------------------------------------------------------------
+.ssh
+.ssh/
+.ssh/id_rsa
+.ssh/id_rsa.pub
+.ssh/authorized_keys
+.ssh/known_hosts
+.ssh/config
+.bash_history
+.bashrc
+.bash_profile
+.zsh_history
+.zshrc
+.profile
+.aws
+.aws/credentials
+.aws/config
+id_rsa
+id_rsa.pub
+known_hosts
+authorized_keys
+etc/passwd
+etc/shadow
+etc/hosts
+etc/hostname
+proc/self/environ
+proc/self/cmdline
+proc/self/cwd
+proc/version
+
+# -----------------------------------------------------------------------------
+# Cloud: AWS
+# -----------------------------------------------------------------------------
+latest/meta-data/
+latest/meta-data/iam/security-credentials/
+latest/user-data/
+latest/dynamic/instance-identity/document
+_aws/
+.elasticbeanstalk/
+.ebextensions/
+
+# -----------------------------------------------------------------------------
+# Cloud: Azure
+# -----------------------------------------------------------------------------
+.azure/
+.azure/config
+_framework/blazor.boot.json
+
+# -----------------------------------------------------------------------------
+# Cloud: GCP
+# -----------------------------------------------------------------------------
+metadata/computeMetadata/
+metadata/computeMetadata/v1/
+computeMetadata/v1/project/
+computeMetadata/v1/instance/
+
+# -----------------------------------------------------------------------------
+# Kubernetes
+# -----------------------------------------------------------------------------
+api/v1/
+api/v1/namespaces
+api/v1/pods
+api/v1/services
+api/v1/nodes
+api/v1/secrets
+api/v1/configmaps
+apis/
+dashboard/
+kubernetes-dashboard
+kube-system
+api/v1/proxy
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+v2/_catalog
+v2/
+containers/json
+images/json
+volumes
+networks
+_ping
+events
+
+# -----------------------------------------------------------------------------
+# CI/CD: Jenkins
+# -----------------------------------------------------------------------------
+jenkins/
+jenkins/login
+jenkins/api/
+jenkins/script
+jenkins/manage
+jenkins/configureSecurity
+jenkins/systemInfo
+jenkins/log
+job/
+jobs/
+queue/
+computer/
+pluginManager/
+credentials/
+view/
+
+# -----------------------------------------------------------------------------
+# CI/CD: GitLab
+# -----------------------------------------------------------------------------
+-/ide
+explore
+explore/projects
+explore/groups
+explore/snippets
+api/v4/
+api/v4/projects
+api/v4/users
+api/v4/groups
+users/sign_in
+users/sign_up
+-/health
+-/readiness
+-/liveness
+
+# -----------------------------------------------------------------------------
+# Monitoring: Grafana
+# -----------------------------------------------------------------------------
+grafana/
+grafana/login
+grafana/api/
+grafana/api/dashboards
+grafana/api/datasources
+grafana/api/org
+grafana/api/users
+grafana/api/search
+grafana/d/
+grafana/dashboard/
+grafana/explore
+
+# -----------------------------------------------------------------------------
+# Monitoring: Prometheus
+# -----------------------------------------------------------------------------
+prometheus/
+prometheus/api/v1/query
+prometheus/api/v1/targets
+prometheus/api/v1/alerts
+prometheus/api/v1/status/config
+prometheus/graph
+prometheus/targets
+prometheus/alerts
+prometheus/config
+prometheus/flags
+prometheus/rules
+prometheus/service-discovery
+
+# -----------------------------------------------------------------------------
+# Monitoring: Kibana / Elastic
+# -----------------------------------------------------------------------------
+kibana/
+kibana/app/
+kibana/api/
+kibana/api/status
+app/kibana
+elastic
+elasticsearch
+elasticsearch/
+_cluster/health
+_cluster/stats
+_cat/indices
+_cat/nodes
+_cat/health
+_nodes
+_all
+_search
+_aliases
+_mapping
+_stats
+
+# -----------------------------------------------------------------------------
+# Database Admin Panels
+# -----------------------------------------------------------------------------
+pgadmin
+pgadmin/
+pgadmin4
+pgadmin4/
+mongoexpress
+mongoexpress/
+mongo-express
+mongo-express/
+redis
+redis/
+redis-commander
+redis-commander/
+memcached
+memcached/
+_all_dbs
+_utils
+_utils/
+couchdb
+couchdb/
+neo4j
+neo4j/
+neo4j/browser/
+cassandra
+rethinkdb
+
+# -----------------------------------------------------------------------------
+# Message Queues & Background Jobs
+# -----------------------------------------------------------------------------
+rabbitmq
+rabbitmq/
+kafka
+kafka/
+celery
+celery/
+flower
+flower/
+flower/dashboard
+bull/
+resque/overview
+kue
+kue/
+agenda
+agenda/
+
+# -----------------------------------------------------------------------------
+# Notebooks & Data Tools
+# -----------------------------------------------------------------------------
+jupyter
+jupyter/
+notebook
+notebook/
+lab
+lab/
+jupyterhub
+jupyterhub/
+nbconvert
+voila
+voila/
+rstudio
+rstudio/
+zeppelin
+zeppelin/
+
+# -----------------------------------------------------------------------------
+# Shell / Command Execution (high-risk)
+# -----------------------------------------------------------------------------
+shell
+terminal
+cmd
+command
+exec
+execute
+run
+eval
+shell.php
+cmd.php
+command.php
+eval.php
+backdoor.php
+c99.php
+r57.php
+webshell
+webshell.php
+
+# -----------------------------------------------------------------------------
+# Common File Extensions (as paths)
+# -----------------------------------------------------------------------------
+php
+asp
+aspx
+jsp
+cgi
+pl
+py
+rb
+cfm
+shtml
+
+# -----------------------------------------------------------------------------
+# RSS / Feeds / Syndication
+# -----------------------------------------------------------------------------
+feed
+feed/
+rss
+rss/
+atom
+atom/
+feed.xml
+rss.xml
+atom.xml
+feed/rss
+feed/atom
+
+# -----------------------------------------------------------------------------
+# Communication / Real-time
+# -----------------------------------------------------------------------------
+email
+mail
+message
+chat
+socket
+ws
+websocket
+sse
+stream
+socket.io
+socket.io/
+sockjs
+sockjs-node
+
+# -----------------------------------------------------------------------------
+# Monitoring / Analytics / Observability
+# -----------------------------------------------------------------------------
+monitor
+monitoring
+stats
+statistics
+analytics
+telemetry
+prometheus
+grafana
+kibana
+solr
+solr/
+solr/admin
+apm/
+newrelic
+newrelic/
+datadog
+datadog/
+sentry
+sentry/
+sentry/api/
+
+# -----------------------------------------------------------------------------
+# Webhooks / Callbacks / Integrations
+# -----------------------------------------------------------------------------
+callback
+webhook
+webhooks
+hook
+hooks
+notify
+notification
+notifications
+integrations
+integrations/
+connect
+
+# -----------------------------------------------------------------------------
+# Application Routes
+# -----------------------------------------------------------------------------
 app
 application
 home
@@ -298,61 +1451,988 @@ services
 gateway
 proxy
 redirect
-callback
-webhook
-webhooks
-hook
-hooks
-notify
-notification
-notifications
-email
-mail
-message
-messages
-chat
-socket
-ws
-websocket
-sse
-events
-stream
-monitor
-monitoring
-stats
-statistics
-analytics
-telemetry
-prometheus
-grafana
-kibana
-elastic
-elasticsearch
-solr
-redis
-memcached
-rabbitmq
-kafka
-celery
-flower
-jupyter
-notebook
-lab
-shell
-terminal
-cmd
-command
-exec
-execute
-run
-eval
-php
-asp
-aspx
-jsp
-cgi
-pl
-py
-rb
-cfm
-shtml
+
+# -----------------------------------------------------------------------------
+# Security-Relevant Files & Endpoints
+# -----------------------------------------------------------------------------
+cgi-bin
+cgi-bin/
+cgi-sys/
+cgi-sys
+httpd-status
+httpd-info
+manifest.json
+manifest.webmanifest
+browserconfig.xml
+opensearch.xml
+service-worker.js
+sw.js
+workbox-config.js
+
+# -----------------------------------------------------------------------------
+# Common API Versioning Patterns
+# -----------------------------------------------------------------------------
+api/v2/
+api/v3/
+api/v1/health
+api/v1/status
+api/v1/users
+api/v1/auth
+api/v1/login
+api/v1/admin
+api/v2/health
+api/v2/status
+api/v2/users
+api/v2/auth
+api/v3/health
+api/v3/status
+
+# -----------------------------------------------------------------------------
+# OAuth / SSO / Token Endpoints
+# -----------------------------------------------------------------------------
+oauth/revoke
+oauth/introspect
+oauth2/callback
+token/refresh
+token/revoke
+authorize
+
+# -----------------------------------------------------------------------------
+# Miscellaneous Sensitive Paths
+# -----------------------------------------------------------------------------
+debug/pprof/
+debug/pprof/heap
+debug/pprof/goroutine
+debug/pprof/threadcreate
+debug/pprof/cmdline
+debug/pprof/profile
+debug/pprof/symbol
+debug/pprof/trace
+expvar
+environ
+environment
+server-config
+config/database
+config/app
+config/mail
+config/cache
+config/session
+config/auth
+config/services
+config/queue
+config/logging
+app/config
+phpunit.xml
+phpunit.xml.dist
+codeception.yml
+behat.yml
+.travis.yml
+.circleci/config.yml
+.github/workflows/
+Jenkinsfile
+sonar-project.properties
+.sonarqube/
+.gitlab-ci.yml
+
+# -----------------------------------------------------------------------------
+# Common SPA / Frontend Build Paths
+# -----------------------------------------------------------------------------
+static/js/
+static/css/
+static/media/
+static/fonts/
+build/static/
+assets/js/
+assets/css/
+dist/
+bundle.js
+chunk-vendors.js
+runtime.js
+precache-manifest
+asset-manifest.json
+static/js/main.js.map
+static/css/main.css.map
+
+# -----------------------------------------------------------------------------
+# Error Pages (information disclosure)
+# -----------------------------------------------------------------------------
+errors/404
+errors/500
+404.html
+500.html
+403.html
+401.html
+400.html
+error.html
+error.php
+error.asp
+error.aspx
+404
+500
+503
+oops
+not-found
+server-error
+
+# -----------------------------------------------------------------------------
+# Registration / Password Flows
+# -----------------------------------------------------------------------------
+sign-up
+sign-in
+sign-out
+change-password
+activate
+deactivate
+verify-email
+confirm-email
+unsubscribe
+opt-out
+
+# -----------------------------------------------------------------------------
+# User-Generated Content / Social
+# -----------------------------------------------------------------------------
+api/account
+api/settings
+avatar
+avatars
+photo
+photos
+video
+videos
+comment
+comments
+review
+reviews
+rating
+ratings
+like
+likes
+follow
+followers
+following
+friend
+friends
+post
+posts
+blog
+blogs
+article
+articles
+news
+timeline
+
+# -----------------------------------------------------------------------------
+# Search / Query Endpoints
+# -----------------------------------------------------------------------------
+search/
+query/
+find
+find/
+lookup
+suggest
+autocomplete
+typeahead
+elasticsearch/_search
+solr/select
+api/query
+
+# -----------------------------------------------------------------------------
+# Import / Export / Batch Operations
+# -----------------------------------------------------------------------------
+export/csv
+export/pdf
+export/json
+export/xml
+bulk
+batch
+batch/
+sync
+async
+job
+jobs
+queue
+queues
+task
+tasks
+worker
+workers
+process
+processes
+schedule
+scheduler
+crontab
+
+# -----------------------------------------------------------------------------
+# Payment / E-commerce (information disclosure)
+# -----------------------------------------------------------------------------
+checkout
+cart
+orders
+order
+payment
+payments
+billing
+invoice
+invoices
+subscription
+subscriptions
+pricing
+plans
+coupon
+coupons
+discount
+refund
+receipt
+receipts
+transaction
+transactions
+stripe
+stripe/webhook
+paypal
+braintree
+
+# -----------------------------------------------------------------------------
+# Documentation / Help
+# -----------------------------------------------------------------------------
+docs/
+documentation
+documentation/
+help
+help/
+faq
+faq/
+support
+support/
+wiki
+wiki/
+knowledge-base
+kb
+guide
+guides
+tutorial
+tutorials
+api/reference
+
+# -----------------------------------------------------------------------------
+# Admin Sub-panels & Management
+# -----------------------------------------------------------------------------
+admin/roles
+admin/permissions
+admin/audit
+admin/audit-log
+admin/email
+admin/notifications
+admin/integrations
+admin/webhooks
+admin/api-keys
+admin/tokens
+admin/certificates
+admin/security
+admin/firewall
+admin/network
+admin/storage
+admin/queues
+
+# -----------------------------------------------------------------------------
+# Miscellaneous Discovery Targets
+# -----------------------------------------------------------------------------
+readme
+license
+contributing
+authors
+credits
+todo
+todo.txt
+TODO.md
+notes
+notes.txt
+temp/
+temporary
+staging/
+stage/
+dev/
+development/
+testing/
+qa/
+uat/
+canary
+canary/
+beta
+beta/
+alpha
+alpha/
+preview
+preview/
+demo/
+poc/
+sandbox/
+experiment
+experiments
+prototype
+prototypes
+
+# -----------------------------------------------------------------------------
+# Additional Framework Paths
+# -----------------------------------------------------------------------------
+rails/db
+rails/console
+rails/routes
+assets/application.js
+assets/application.css
+active_admin
+active_admin/
+administrate
+administrate/
+bullet
+bullet/
+coverband
+coverband/
+
+# Additional Django
+static/debug_toolbar/
+debug_toolbar/
+api-token-auth/
+api-token-refresh/
+api-token-verify/
+ckeditor/
+tinymce/
+summernote/
+
+# Additional Spring/Java
+h2-console/login.do
+h2-console/test.do
+jolokia/exec
+jolokia/read
+jolokia/write
+jolokia/version
+v2/api-docs
+v3/api-docs
+webjars/
+flyway
+liquibase
+spring-security-rest/api/validate
+heapdump
+threaddump
+logfile
+loggers
+management/
+management/health
+management/info
+management/env
+management/metrics
+
+# Additional Laravel/PHP
+_ignition
+_ignition/health-check
+_ignition/execute-solution
+clockwork
+clockwork/
+clockwork/app
+log-viewer
+log-viewer/
+pulse
+pulse/
+livewire/
+livewire/message
+nova/api/
+vapor/api/
+octane/
+
+# Additional .NET
+Elmah
+Elmah/
+glimpse
+glimpse/
+glimpse/config
+miniprofiler
+miniprofiler/
+miniprofiler/results
+api/swagger/v1/swagger.json
+swagger/v1/swagger.json
+swagger/index.html
+_health/ready
+_health/live
+
+# Additional Node/Express
+__health
+__status
+__version
+__heartbeat__
+__lbheartbeat__
+_next/
+_next/data/
+_next/static/
+_nuxt/
+webpack-dev-server
+hot-update.json
+sockjs-node/
+.well-known/apollo/server-health
+
+# Additional Flask/Python
+_debugtoolbar/
+_debug/
+ipython
+werkzeug
+flask-admin/
+flask-admin/admin/
+celerybeat-schedule
+celerybeat-schedule.db
+
+# Additional Go
+debug/pprof/allocs
+debug/pprof/block
+debug/pprof/mutex
+debug/freeOSMemory
+debug/requests
+debug/events
+
+# Additional Rust/Actix/Axum/Rocket
+api/ping
+api/ready
+api/alive
+
+# -----------------------------------------------------------------------------
+# Additional Cloud / Infrastructure
+# -----------------------------------------------------------------------------
+# AWS additional
+.aws/sso/cache/
+.aws/cli/cache/
+_lambda/
+lambda/
+.serverless/
+serverless.yml
+sam.yaml
+template.yaml
+samconfig.toml
+cloudformation/
+.chalice/
+.chalice/config.json
+
+# Azure additional
+.azure/clouds.config
+.azure/versionCheck.json
+.azure/azureProfile.json
+api/azureservicebus/
+_vti_bin/
+_vti_inf.html
+
+# GCP additional
+computeMetadata/v1/
+computeMetadata/v1/instance/service-accounts/
+computeMetadata/v1/instance/hostname
+computeMetadata/v1/instance/zone
+
+# Terraform / IaC
+terraform.tfstate
+terraform.tfstate.backup
+.terraform/
+terraform.tfvars
+variables.tf
+main.tf
+outputs.tf
+backend.tf
+providers.tf
+pulumi.yaml
+.pulumi/
+
+# Kubernetes additional
+api/v1/endpoints
+apis/apps/v1/deployments
+apis/apps/v1/statefulsets
+apis/batch/v1/jobs
+api/v1/events
+api/v1/namespaces/default/pods
+api/v1/namespaces/kube-system/pods
+metrics/cadvisor
+
+# Docker additional
+containers/
+images/
+v2/tags/list
+docker-compose.prod.yml
+docker-compose.dev.yml
+docker-compose.test.yml
+docker-compose.staging.yml
+
+# Consul / Vault / Service Mesh
+consul/
+consul/v1/agent/services
+consul/v1/catalog/services
+consul/v1/health/service
+vault/
+vault/v1/sys/health
+vault/v1/sys/seal-status
+vault/ui/
+nomad/
+nomad/v1/jobs
+
+# Envoy / Istio
+envoy/
+admin/clusters
+admin/config_dump
+admin/stats
+admin/ready
+admin/listeners
+
+# -----------------------------------------------------------------------------
+# Additional CI/CD
+# -----------------------------------------------------------------------------
+# Jenkins additional
+jenkins/crumbIssuer/
+jenkins/credentials/
+jenkins/pipeline-model-converter/
+jenkins/blue/rest/
+jenkins/env-vars.html
+
+# GitLab additional
+api/v4/version
+api/v4/metadata
+api/v4/runners
+api/v4/namespaces
+-/metrics
+
+# GitHub
+.github/
+.github/workflows
+api/rate_limit
+api/repos
+api/orgs
+
+# CircleCI / Travis
+.circleci/
+
+# ArgoCD
+argocd/
+argocd/api/v1/applications
+argocd/api/v1/clusters
+argocd/settings
+
+# Drone CI
+drone/
+drone/api/
+drone/api/repos
+
+# SonarQube
+sonarqube/
+sonarqube/api/
+sonar/
+sonar/api/
+sonar/api/system/status
+sonar/api/system/health
+
+# Nexus / Artifactory
+nexus/
+nexus/service/local/
+artifactory/
+artifactory/api/
+artifactory/api/system/ping
+artifactory/api/system/version
+
+# Harbor
+harbor/
+harbor/api/
+harbor/api/v2.0/projects
+harbor/api/v2.0/registries
+
+# -----------------------------------------------------------------------------
+# Additional Database / Data Store Paths
+# -----------------------------------------------------------------------------
+pgadmin/browser/
+pgadmin/misc/ping
+mongoexpress/db/
+_utils/index.html
+_utils/session
+neo4j/browser
+arangodb/
+arangodb/_admin/
+cockroachdb/
+cockroachdb/_admin/v1/health
+influxdb/
+influxdb/query
+influxdb/write
+cassandra/
+rethinkdb/
+clickhouse/
+clickhouse/play
+
+# Redis additional
+redis/info
+
+# Elasticsearch additional
+_bulk
+_analyze
+_count
+_explain
+_field_stats
+_flush
+_forcemerge
+_msearch
+_mget
+_refresh
+_reindex
+_settings
+_template
+_validate/query
+_cluster/settings
+_cluster/state
+_nodes/stats
+_cat/shards
+_cat/allocation
+_cat/segments
+_cat/tasks
+_cat/templates
+_cat/thread_pool
+
+# Solr additional
+solr/admin/info/system
+solr/admin/cores
+solr/admin/logging
+
+# -----------------------------------------------------------------------------
+# Additional Security / Pentesting Paths
+# -----------------------------------------------------------------------------
+.well-known/dnt-policy.txt
+.well-known/host-meta
+.well-known/host-meta.json
+.well-known/matrix/client
+.well-known/matrix/server
+.well-known/caldav
+.well-known/carddav
+.well-known/core
+.well-known/est
+.well-known/mta-sts.txt
+.well-known/openpgpkey
+.well-known/time
+.well-known/traffic-advice
+.well-known/browserid
+.well-known/ni
+
+# Certificate / Key leakage
+server.key
+server.crt
+server.pem
+certificate.pem
+privkey.pem
+fullchain.pem
+ca-bundle.crt
+ssl/
+ssl/certs/
+ssl/private/
+tls/
+.pem
+.key
+.crt
+.cer
+.p12
+.pfx
+.jks
+keystore.jks
+truststore.jks
+
+# Sensitive config
+secrets.env
+.secrets
+.credentials
+.password
+.passwd
+shadow
+passwd
+master.key
+credentials.xml
+token.json
+service-account.json
+firebase.json
+firebase-adminsdk.json
+google-credentials.json
+gcp-credentials.json
+aws-credentials
+ssh-key
+
+# Common vulnerable CGI
+cgi-bin/test-cgi
+cgi-bin/printenv
+cgi-bin/php
+cgi-bin/php5
+cgi-bin/php-cgi
+cgi-bin/luci
+cgi-bin/bash
+
+# Apache / Nginx status
+balancer-manager
+jkmanager
+jkstatus
+status?full
+status?auto
+server-status?auto
+server-info?auto
+
+# WAF / Security tools
+modsecurity
+modsecurity/
+fail2ban
+fail2ban/
+
+# Rate limiting / Bot detection
+rate-limit
+rate-limit-status
+bot-detection
+captcha
+recaptcha
+
+# CORS / Headers
+cors-test
+options
+preflight
+
+# SSRF common targets
+redirect?url=
+redirect?to=
+redirect?next=
+redirect?return=
+redirect?dest=
+redirect?destination=
+redirect?redir=
+redirect?redirect_url=
+redirect?redirect_uri=
+redirect?return_url=
+redirect?return_to=
+redirect?go=
+redirect?checkout_url=
+
+# Path traversal probes
+..
+../
+../../
+../../../
+..%2F
+..%252F
+....//
+..;/
+
+# Common misconfigs
+_wpeprivate/
+_wpeprivate/config.json
+.dockerenv
+.env.docker
+.env.compose
+.env.swarm
+.ebignore
+
+# -----------------------------------------------------------------------------
+# Additional Backup / Temp File Patterns
+# -----------------------------------------------------------------------------
+index.php~
+config.php~
+database.php~
+settings.php~
+web.config.old
+web.config.txt
+httpd.conf.bak
+httpd.conf.old
+nginx.conf.bak
+nginx.conf.old
+.htaccess.bak
+.htaccess.old
+.htaccess.orig
+.htaccess.save
+.htaccess.txt
+.htpasswd.old
+global.asax
+local.xml
+local.xml.bak
+
+# Database file leakage
+database.sqlite
+database.sqlite3
+sqlite.db
+sqlite3.db
+data.db
+app.db
+dev.db
+test.db
+production.db
+.dbshell
+.mysql_history
+.psql_history
+.sqlite_history
+.rediscli_history
+.mongo_history
+
+# Swap / Editor temp files
+.swp
+.swo
+~
+.bak
+.tmp
+.orig
+.save
+
+# Core dumps
+core.dump
+hs_err_pid.log
+
+# -----------------------------------------------------------------------------
+# Additional Package / Dependency Files
+# -----------------------------------------------------------------------------
+bower.json
+.bower.json
+lerna.json
+rush.json
+turbo.json
+nx.json
+deno.json
+deno.lock
+bun.lockb
+bunfig.toml
+.csproj
+.sln
+.fsproj
+gradlew
+gradlew.bat
+mvnw
+mvnw.cmd
+.mvn/
+.gradle/
+build.xml
+ivy.xml
+project.clj
+deps.edn
+shadow-cljs.edn
+rebar.config
+rebar.lock
+stack.yaml
+stack.yaml.lock
+cabal.project
+cabal.project.local
+.cabal/
+cpanfile
+cpanfile.snapshot
+Makefile.PL
+Build.PL
+META.json
+META.yml
+dist.ini
+.gemspec
+Berksfile
+Berksfile.lock
+Puppetfile
+metadata.json
+metadata.rb
+
+# -----------------------------------------------------------------------------
+# Webmail / Admin Interfaces
+# -----------------------------------------------------------------------------
+webmail
+webmail/
+roundcube
+roundcube/
+squirrelmail
+squirrelmail/
+horde
+horde/
+rainloop
+rainloop/
+zimbra
+zimbra/
+owa
+owa/
+exchange
+exchange/
+autodiscover
+autodiscover/
+autodiscover.xml
+EWS
+EWS/Exchange.asmx
+Microsoft-Server-ActiveSync
+
+# -----------------------------------------------------------------------------
+# Proxy / Load Balancer / CDN
+# -----------------------------------------------------------------------------
+haproxy
+haproxy/
+haproxy/stats
+haproxy-status
+nginx/
+nginx/status
+traefik
+traefik/
+traefik/api
+traefik/dashboard
+traefik/health
+varnish
+varnish/
+squid
+squid/
+cdn-cgi/
+cdn-cgi/trace
+cf-workers/
+
+# -----------------------------------------------------------------------------
+# Additional Monitoring / APM / Tracing
+# -----------------------------------------------------------------------------
+jaeger
+jaeger/
+jaeger/api/
+zipkin
+zipkin/
+zipkin/api/v2/
+traces
+traces/
+opentelemetry
+opentelemetry/
+lightstep
+lightstep/
+honeycomb
+honeycomb/
+skywalking
+skywalking/
+signoz
+signoz/
+
+# Logging dashboards
+graylog
+graylog/
+graylog/api/
+loggly
+loggly/
+papertrail
+papertrail/
+logstash
+logstash/
+fluentd
+fluentd/
+vector
+vector/
+
+# Alerting
+pagerduty
+opsgenie
+victorops
+alertmanager
+alertmanager/
+alertmanager/api/v2/alerts
+
+# Uptime / Status pages
+statuspage
+statuspage/
+status-page
+cachet
+cachet/
+cachet/api/
+upptime
+
+# -----------------------------------------------------------------------------
+# Feature Flags / Config Management
+# -----------------------------------------------------------------------------
+flipper/features
+flipper/api/
+unleash
+unleash/
+unleash/api/
+launchdarkly
+split
+flagsmith
+flagsmith/
+configcat
+growthbook
+growthbook/

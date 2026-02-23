@@ -4,7 +4,7 @@ pub fn default_wordlist() -> Vec<String> {
     DEFAULT_WORDLIST_RAW
         .lines()
         .map(str::trim)
-        .filter(|line| !line.is_empty())
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .map(String::from)
         .collect()
 }
