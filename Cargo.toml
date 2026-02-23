@@ -35,6 +35,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ciborium = "0.2"
 sha3 = "0.10"
 hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.22"
 petgraph = "0.7"
 reqwest = { version = "0.12", features = ["json"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
