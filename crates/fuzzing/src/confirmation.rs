@@ -34,6 +34,7 @@ pub enum EvidenceType {
     PathContents,
     RedirectToExternal,
     DeserializationMarker,
+    NoSqlErrorMessage,
 }
 
 impl fmt::Display for EvidenceType {
@@ -50,6 +51,7 @@ impl fmt::Display for EvidenceType {
             Self::PathContents => "path-contents",
             Self::RedirectToExternal => "redirect-to-external",
             Self::DeserializationMarker => "deserialization-marker",
+            Self::NoSqlErrorMessage => "nosql-error-message",
         };
         write!(f, "{label}")
     }
@@ -114,6 +116,11 @@ pub fn build_confirmation_registry() -> HashMap<VulnerabilityClass, Vec<ConfirmF
     registry.insert(
         VulnerabilityClass::ServerSideRequestForgery,
         vec![confirm_ssrf_internal_content],
+    );
+
+    registry.insert(
+        VulnerabilityClass::NoSqlInjection,
+        vec![confirm_nosql_error_pattern, confirm_nosql_time_delay],
     );
 
     registry
@@ -600,4 +607,79 @@ pub fn confirm_ssrf_internal_content(
     }
 
     None
+}
+
+static NOSQL_ERROR_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [
+        r"(?i)MongoError",
+        r"(?i)MongoServerError",
+        r"(?i)MongoNetworkError",
+        r"(?i)CastError",
+        r"(?i)BSONTypeError",
+        r"(?i)ValidationError",
+        r"E11000 duplicate key",
+        r"\$where",
+        r"\$ne",
+        r"\$gt",
+        r"(?i)CQL syntax error",
+        r"(?i)SyntaxException",
+    ]
+    .iter()
+    .map(|p| Regex::new(p).unwrap())
+    .collect()
+});
+
+/// MongoDB sleep() takes milliseconds; extract the delay from payloads like
+/// `sleep(5000)` and convert to seconds for response time comparison.
+static NOSQL_SLEEP_KEYWORD: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"(?i)sleep\s*\(\s*(\d+)\s*\)").unwrap());
+
+pub fn confirm_nosql_error_pattern(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = NOSQL_ERROR_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body))?;
+
+    if matched_pattern.is_match(&control.body) {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::NoSqlErrorMessage,
+        confidence: 0.92,
+        description: format!(
+            "NoSQL error pattern '{}' found in treatment but not in control",
+            matched_pattern.as_str()
+        ),
+    })
+}
+
+pub fn confirm_nosql_time_delay(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let captures = NOSQL_SLEEP_KEYWORD.captures(payload)?;
+    let delay_ms: f64 = captures.get(1)?.as_str().parse().ok()?;
+    let expected_delay_secs = delay_ms / 1000.0;
+    let threshold_secs = expected_delay_secs * 0.8;
+
+    let delta = treatment.response_time.as_secs_f64() - control.response_time.as_secs_f64();
+
+    if delta < threshold_secs {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::TimeBasedDelay,
+        confidence: 0.88,
+        description: format!(
+            "NoSQL time-based: treatment took {delta:.2}s longer than control (expected delay: {expected_delay_secs}s)"
+        ),
+    })
 }

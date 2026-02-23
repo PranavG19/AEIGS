@@ -4,11 +4,12 @@ use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::confirmation::{
     EvidenceType, build_confirmation_registry, confirm_cmd_output_patterns, confirm_cmd_time_delay,
-    confirm_deserialization_error_pattern, confirm_path_traversal_file_contents,
-    confirm_redirect_to_payload_domain, confirm_sql_boolean_diff, confirm_sql_error_message,
-    confirm_sql_time_delay, confirm_sql_union_column_count, confirm_ssrf_internal_content,
-    confirm_ssti_evaluation, confirm_xss_reflection_in_attribute,
-    confirm_xss_reflection_in_html_context, confirm_xss_reflection_in_js_context,
+    confirm_deserialization_error_pattern, confirm_nosql_error_pattern, confirm_nosql_time_delay,
+    confirm_path_traversal_file_contents, confirm_redirect_to_payload_domain,
+    confirm_sql_boolean_diff, confirm_sql_error_message, confirm_sql_time_delay,
+    confirm_sql_union_column_count, confirm_ssrf_internal_content, confirm_ssti_evaluation,
+    confirm_xss_reflection_in_attribute, confirm_xss_reflection_in_html_context,
+    confirm_xss_reflection_in_js_context,
 };
 use crate::executor::FuzzResponse;
 use crate::oracle::BaselineProfile;
@@ -48,6 +49,10 @@ fn make_baseline() -> BaselineProfile {
         p99_response_time_ms: 100.0,
         mean_body_size: 500.0,
         body_size_std_dev: 50.0,
+        status_code_counts: std::collections::HashMap::from([(200, 10)]),
+        total_baseline_responses: 10,
+        response_times_ms: vec![40.0, 45.0, 48.0, 50.0, 50.0, 52.0, 55.0, 58.0, 60.0, 100.0],
+        body_sizes: vec![450, 470, 480, 490, 500, 500, 510, 520, 530, 550],
     }
 }
 
@@ -1319,5 +1324,247 @@ fn ssrf_does_not_match_172_32_as_internal() {
     let baseline = make_baseline();
 
     let evidence = confirm_ssrf_internal_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn registry_contains_nosql_injection_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::NoSqlInjection));
+    assert_eq!(registry[&VulnerabilityClass::NoSqlInjection].len(), 2);
+}
+
+#[test]
+fn nosql_error_detects_mongo_error() {
+    let treatment = make_response(
+        "MongoError: bad query selector",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "{\"$ne\": \"\"}", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::NoSqlErrorMessage);
+    assert!((ev.confidence - 0.92).abs() < f64::EPSILON);
+}
+
+#[test]
+fn nosql_error_detects_mongo_server_error() {
+    let treatment = make_response(
+        "MongoServerError: unknown operator $gte",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_mongo_network_error() {
+    let treatment = make_response(
+        "MongoNetworkError: connection refused",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_cast_error() {
+    let treatment = make_response(
+        "CastError: Cast to ObjectId failed",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_bson_type_error() {
+    let treatment = make_response(
+        "BSONTypeError: invalid BSON type",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_validation_error() {
+    let treatment = make_response(
+        "ValidationError: user validation failed",
+        400,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_duplicate_key() {
+    let treatment = make_response(
+        "E11000 duplicate key error collection: test.users",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_operator_reflected_where() {
+    let treatment = make_response(
+        "Error: unknown $where clause provided",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_operator_reflected_ne() {
+    let treatment = make_response(
+        "Error: $ne operator not allowed",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_operator_reflected_gt() {
+    let treatment = make_response(
+        "Bad request: $gt is not a valid field",
+        400,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_cql_syntax_error() {
+    let treatment = make_response(
+        "CQL syntax error at line 1:23",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_detects_syntax_exception() {
+    let treatment = make_response(
+        "SyntaxException: line 1:0 no viable alternative",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn nosql_error_ignores_pattern_present_in_control() {
+    let body = "MongoError: something went wrong";
+    let treatment = make_response(body, 500, Duration::from_millis(50));
+    let control = make_response(body, 500, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn nosql_error_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("normal page content", 200, Duration::from_millis(50));
+    let control = make_response("normal page content", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_error_pattern(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn nosql_time_delay_detects_sleep_5000() {
+    let treatment = make_response("OK", 200, Duration::from_secs(5));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_time_delay(
+        &treatment,
+        &control,
+        "{\"$where\": \"sleep(5000)\"}",
+        &baseline,
+    );
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::TimeBasedDelay);
+    assert!((ev.confidence - 0.88).abs() < f64::EPSILON);
+}
+
+#[test]
+fn nosql_time_delay_returns_none_when_no_sleep_keyword() {
+    let treatment = make_response("OK", 200, Duration::from_secs(5));
+    let control = make_response("OK", 200, Duration::from_millis(100));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_time_delay(&treatment, &control, "{\"$ne\": \"\"}", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn nosql_time_delay_returns_none_when_delta_insufficient() {
+    let treatment = make_response("OK", 200, Duration::from_millis(500));
+    let control = make_response("OK", 200, Duration::from_millis(200));
+    let baseline = make_baseline();
+
+    let evidence = confirm_nosql_time_delay(
+        &treatment,
+        &control,
+        "{\"$where\": \"sleep(5000)\"}",
+        &baseline,
+    );
     assert!(evidence.is_none());
 }

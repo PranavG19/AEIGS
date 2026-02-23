@@ -64,6 +64,7 @@ mod tests {
         assert!(mutator.template_count(VulnerabilityClass::PathTraversal) > 0);
         assert!(mutator.template_count(VulnerabilityClass::ServerSideRequestForgery) > 0);
         assert!(mutator.template_count(VulnerabilityClass::ServerSideTemplateInjection) > 0);
+        assert!(mutator.template_count(VulnerabilityClass::NoSqlInjection) > 0);
     }
 
     #[test]
@@ -94,6 +95,7 @@ mod tests {
             VulnerabilityClass::HeaderInjection,
             VulnerabilityClass::OpenRedirect,
             VulnerabilityClass::CrlfInjection,
+            VulnerabilityClass::NoSqlInjection,
         ];
 
         for class in all_classes {
@@ -721,5 +723,50 @@ mod tests {
             let deserialized: MutationOrigin = serde_json::from_str(&json).unwrap();
             assert_eq!(*variant, deserialized);
         }
+    }
+
+    #[test]
+    fn generate_nosql_payloads() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::NoSqlInjection, 5);
+        assert_eq!(payloads.len(), 5);
+        for p in &payloads {
+            assert_eq!(p.vulnerability_class, VulnerabilityClass::NoSqlInjection);
+            assert!(!p.raw.is_empty());
+        }
+    }
+
+    #[test]
+    fn nosql_payloads_contain_mongo_operators() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::NoSqlInjection, 12);
+        assert!(payloads.iter().any(|p| p.raw.contains("$ne")));
+        assert!(payloads.iter().any(|p| p.raw.contains("$gt")));
+        assert!(payloads.iter().any(|p| p.raw.contains("$regex")));
+        assert!(payloads.iter().any(|p| p.raw.contains("$where")));
+    }
+
+    #[test]
+    fn nosql_payloads_contain_url_parameter_form() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::NoSqlInjection, 12);
+        assert!(payloads.iter().any(|p| p.raw.contains("[$ne]=")));
+        assert!(payloads.iter().any(|p| p.raw.contains("[$gt]=")));
+    }
+
+    #[test]
+    fn nosql_payloads_contain_cql_injection() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::NoSqlInjection, 12);
+        assert!(payloads.iter().any(|p| p.raw.contains("ALLOW FILTERING")));
+    }
+
+    #[test]
+    fn nosql_template_count() {
+        let mutator = PayloadMutator::new();
+        assert_eq!(
+            mutator.template_count(VulnerabilityClass::NoSqlInjection),
+            12
+        );
     }
 }

