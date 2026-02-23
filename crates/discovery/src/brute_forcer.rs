@@ -10,8 +10,8 @@ use aegis_protocol::target_validation::validate_target_is_localhost;
 use crate::wordlist::default_wordlist;
 
 const DEFAULT_CONCURRENCY: usize = 20;
-const BASELINE_404_PROBE: &str = "aegis-nonexistent-path-4f7a8b2c-d1e3";
-const BODY_SIZE_TOLERANCE: usize = 64;
+pub(crate) const BASELINE_404_PROBE: &str = "aegis-nonexistent-path-4f7a8b2c-d1e3";
+pub(crate) const BODY_SIZE_TOLERANCE: usize = 64;
 
 #[derive(Debug, Clone)]
 pub struct DiscoveredPath {

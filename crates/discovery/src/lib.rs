@@ -1,14 +1,20 @@
+mod backup_scanner;
 mod brute_forcer;
 mod graph_ops;
 mod js_extractor;
 mod sitemap_parser;
 mod wordlist;
 
+pub use backup_scanner::*;
 pub use brute_forcer::*;
 pub use graph_ops::*;
 pub use js_extractor::*;
 pub use sitemap_parser::*;
 pub use wordlist::*;
+
+#[cfg(test)]
+#[path = "backup_scanner_test.rs"]
+mod backup_scanner_test;
 
 #[cfg(test)]
 #[path = "brute_forcer_test.rs"]
