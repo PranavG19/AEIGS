@@ -10,6 +10,7 @@ pub mod distributed_transport;
 pub mod endpoint_similarity;
 mod graph_persistence;
 pub mod hypothesis_bridge;
+pub mod idor_analyzer;
 pub mod interactive;
 mod phase_analyze;
 mod phase_crawl;
@@ -37,6 +38,7 @@ pub use distributed_transport::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use hypothesis_bridge::*;
+pub use idor_analyzer::*;
 pub use interactive::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
@@ -137,6 +139,10 @@ mod distributed_transport_test;
 #[cfg(test)]
 #[path = "hypothesis_bridge_test.rs"]
 mod hypothesis_bridge_test;
+
+#[cfg(test)]
+#[path = "idor_analyzer_test.rs"]
+mod idor_analyzer_test;
 
 #[cfg(test)]
 #[path = "auth_session_test.rs"]
