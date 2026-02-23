@@ -7,7 +7,11 @@ use aegis_supervisor::capability_manager::CapabilityManager;
 
 use crate::actor::{DomVerifyActor, ScanActor};
 use crate::convergence::RefutedTracker;
-use crate::phase_dom_verify::{DomVerifyOutcome, dom_verify_to_operations, run_dom_verify};
+use crate::phase_dom_verify::{
+    DomVerifyOutcome, dom_verify_to_operations, is_payload_in_dangerous_context,
+    payload_in_event_handler, payload_in_javascript_href, payload_in_script_context,
+    run_dom_verify,
+};
 use crate::pipeline;
 use crate::scan_config;
 use crate::util::timestamp_ms;
@@ -155,13 +159,10 @@ fn dom_verify_to_operations_creates_findings_for_executed() {
             confidence_adjustment: -0.2,
         },
     ];
-
     let mut seq = 0u64;
     let ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
-
     assert_eq!(ops.len(), 1, "only dom_executed=true outcomes produce ops");
     assert_eq!(seq, 1);
-
     match &ops[0].operation {
         GraphOperation::AddFinding {
             vulnerability_class,
@@ -182,7 +183,6 @@ fn dom_verify_to_operations_empty_outcomes() {
     let findings = vec![make_xss_finding(0, 0.5)];
     let mut seq = 5u64;
     let ops = dom_verify_to_operations(&[], &findings, &mut seq);
-
     assert!(ops.is_empty());
     assert_eq!(seq, 5);
 }
@@ -211,10 +211,8 @@ fn dom_verify_to_operations_preserves_sequence_numbers() {
             confidence_adjustment: 0.1,
         },
     ];
-
     let mut seq = 10u64;
     let ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
-
     assert_eq!(ops.len(), 3);
     assert_eq!(seq, 13);
     assert_eq!(ops[0].sequence_number, 11);
@@ -236,8 +234,7 @@ fn dom_verify_outcome_construction() {
 
 #[test]
 fn dom_verify_actor_name() {
-    let actor = DomVerifyActor;
-    assert_eq!(actor.name(), "dom_verify");
+    assert_eq!(DomVerifyActor.name(), "dom_verify");
 }
 
 #[test]
@@ -245,7 +242,6 @@ fn dom_verify_actor_produces_phase_completed_event() {
     let mut ctx = make_ctx_with_real_graph();
     let mut actor = DomVerifyActor;
     let events = actor.process(&mut ctx, &[]).unwrap();
-
     assert_eq!(events.len(), 1);
     match &events[0].event {
         ScanEvent::PhaseCompleted {
@@ -270,10 +266,8 @@ fn dom_verify_to_operations_clamps_confidence_to_one() {
         dom_executed: true,
         confidence_adjustment: 0.5,
     }];
-
     let mut seq = 0u64;
     let ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
-
     assert_eq!(ops.len(), 1);
     match &ops[0].operation {
         GraphOperation::AddFinding { confidence, .. } => {
@@ -291,29 +285,22 @@ fn dom_verify_to_operations_skips_out_of_bounds_index() {
         dom_executed: true,
         confidence_adjustment: 0.3,
     }];
-
     let mut seq = 0u64;
     let ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
-
     assert!(ops.is_empty());
     assert_eq!(seq, 0);
 }
 
-// --- Integration tests: graph round-trip ---
-
 #[test]
 fn dom_verify_upgrades_evidence_in_graph() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![
         make_add_finding_op(1, vec![], VulnerabilityClass::CrossSiteScripting, 7.0, 0.5),
         make_add_finding_op(2, vec![], VulnerabilityClass::CrossSiteScripting, 6.0, 0.4),
     ];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let original_findings = ctx.graph.all_findings().unwrap();
     assert_eq!(original_findings.len(), 2);
-
     let outcomes = vec![
         DomVerifyOutcome {
             finding_index: 0,
@@ -326,22 +313,17 @@ fn dom_verify_upgrades_evidence_in_graph() {
             confidence_adjustment: 0.2,
         },
     ];
-
     let mut seq = 2u64;
     let verify_ops = dom_verify_to_operations(&outcomes, &original_findings, &mut seq);
     assert_eq!(verify_ops.len(), 2);
-
     ctx.graph.apply_operations(&verify_ops).unwrap();
-
     let all_findings = ctx.graph.all_findings().unwrap();
     assert_eq!(all_findings.len(), 4, "2 originals + 2 boosted");
-
     let boosted_0 = ctx.graph.get_finding(2).unwrap().unwrap();
     assert!(
         (boosted_0.confidence.composite.value() - 0.8).abs() < f64::EPSILON,
         "0.5 + 0.3 = 0.8"
     );
-
     let boosted_1 = ctx.graph.get_finding(3).unwrap().unwrap();
     assert!(
         (boosted_1.confidence.composite.value() - 0.6).abs() < f64::EPSILON,
@@ -352,7 +334,6 @@ fn dom_verify_upgrades_evidence_in_graph() {
 #[test]
 fn dom_verify_run_returns_empty_for_no_xss_findings() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![make_add_finding_op(
         1,
         vec![],
@@ -361,7 +342,6 @@ fn dom_verify_run_returns_empty_for_no_xss_findings() {
         0.8,
     )];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let result = run_dom_verify(&mut ctx).unwrap();
     assert_eq!(result.operations_applied, 0);
     assert_eq!(result.findings_count, 0);
@@ -370,7 +350,6 @@ fn dom_verify_run_returns_empty_for_no_xss_findings() {
 #[test]
 fn dom_verify_run_returns_empty_for_empty_graph() {
     let mut ctx = make_ctx_with_real_graph();
-
     let result = run_dom_verify(&mut ctx).unwrap();
     assert_eq!(result.operations_applied, 0);
     assert_eq!(result.findings_count, 0);
@@ -379,14 +358,12 @@ fn dom_verify_run_returns_empty_for_empty_graph() {
 #[test]
 fn dom_verify_preserves_linked_node_ids() {
     let mut ctx = make_ctx_with_real_graph();
-
     let node_ops = vec![
         make_add_node_op(1, "/api/a", "GET"),
         make_add_node_op(2, "/api/b", "POST"),
         make_add_node_op(3, "/api/c", "PUT"),
     ];
     ctx.graph.apply_operations(&node_ops).unwrap();
-
     let seed_ops = vec![make_add_finding_op(
         4,
         vec![0, 1, 2],
@@ -395,20 +372,16 @@ fn dom_verify_preserves_linked_node_ids() {
         0.5,
     )];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let findings = ctx.graph.all_findings().unwrap();
     assert_eq!(findings[0].linked_node_ids, vec![0, 1, 2]);
-
     let outcomes = vec![DomVerifyOutcome {
         finding_index: 0,
         dom_executed: true,
         confidence_adjustment: 0.2,
     }];
-
     let mut seq = 4u64;
     let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
     assert_eq!(verify_ops.len(), 1);
-
     match &verify_ops[0].operation {
         GraphOperation::AddFinding {
             linked_node_ids, ..
@@ -417,7 +390,6 @@ fn dom_verify_preserves_linked_node_ids() {
         }
         _ => panic!("expected AddFinding operation"),
     }
-
     ctx.graph.apply_operations(&verify_ops).unwrap();
     let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
     assert_eq!(boosted.linked_node_ids, vec![0, 1, 2]);
@@ -426,7 +398,6 @@ fn dom_verify_preserves_linked_node_ids() {
 #[test]
 fn dom_verify_preserves_vulnerability_class() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![make_add_finding_op(
         1,
         vec![],
@@ -435,18 +406,15 @@ fn dom_verify_preserves_vulnerability_class() {
         0.6,
     )];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let findings = ctx.graph.all_findings().unwrap();
     let outcomes = vec![DomVerifyOutcome {
         finding_index: 0,
         dom_executed: true,
         confidence_adjustment: 0.15,
     }];
-
     let mut seq = 1u64;
     let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
     ctx.graph.apply_operations(&verify_ops).unwrap();
-
     let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
     assert_eq!(
         boosted.vulnerability_class,
@@ -458,7 +426,6 @@ fn dom_verify_preserves_vulnerability_class() {
 #[test]
 fn dom_verify_downgrades_false_positive_no_ops() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![make_add_finding_op(
         1,
         vec![],
@@ -467,21 +434,18 @@ fn dom_verify_downgrades_false_positive_no_ops() {
         0.5,
     )];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let findings = ctx.graph.all_findings().unwrap();
     let outcomes = vec![DomVerifyOutcome {
         finding_index: 0,
         dom_executed: false,
         confidence_adjustment: -0.3,
     }];
-
     let mut seq = 1u64;
     let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
     assert!(
         verify_ops.is_empty(),
         "non-executed outcomes should not produce ops"
     );
-
     let all_findings = ctx.graph.all_findings().unwrap();
     assert_eq!(all_findings.len(), 1, "graph unchanged");
     assert!(
@@ -493,7 +457,6 @@ fn dom_verify_downgrades_false_positive_no_ops() {
 #[test]
 fn dom_verify_confidence_clamped_in_graph() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![make_add_finding_op(
         1,
         vec![],
@@ -502,18 +465,15 @@ fn dom_verify_confidence_clamped_in_graph() {
         0.95,
     )];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
     let findings = ctx.graph.all_findings().unwrap();
     let outcomes = vec![DomVerifyOutcome {
         finding_index: 0,
         dom_executed: true,
         confidence_adjustment: 0.5,
     }];
-
     let mut seq = 1u64;
     let verify_ops = dom_verify_to_operations(&outcomes, &findings, &mut seq);
     ctx.graph.apply_operations(&verify_ops).unwrap();
-
     let boosted = ctx.graph.get_finding(1).unwrap().unwrap();
     assert!(
         (boosted.confidence.composite.value() - 1.0).abs() < f64::EPSILON,
@@ -528,28 +488,27 @@ fn dom_verify_confidence_clamped_in_graph() {
 #[test]
 fn dom_verify_actor_with_seeded_xss_findings() {
     let mut ctx = make_ctx_with_real_graph();
-
     let seed_ops = vec![
         make_add_finding_op(1, vec![], VulnerabilityClass::CrossSiteScripting, 7.0, 0.5),
         make_add_finding_op(2, vec![], VulnerabilityClass::SqlInjection, 9.0, 0.8),
     ];
     ctx.graph.apply_operations(&seed_ops).unwrap();
-
-    let xss_ids = ctx
-        .graph
-        .findings_by_class(VulnerabilityClass::CrossSiteScripting)
-        .unwrap();
-    assert_eq!(xss_ids.len(), 1);
-
-    let sqli_ids = ctx
-        .graph
-        .findings_by_class(VulnerabilityClass::SqlInjection)
-        .unwrap();
-    assert_eq!(sqli_ids.len(), 1);
-
+    assert_eq!(
+        ctx.graph
+            .findings_by_class(VulnerabilityClass::CrossSiteScripting)
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        ctx.graph
+            .findings_by_class(VulnerabilityClass::SqlInjection)
+            .unwrap()
+            .len(),
+        1
+    );
     let mut actor = DomVerifyActor;
     let events = actor.process(&mut ctx, &[]).unwrap();
-
     assert_eq!(events.len(), 1);
     match &events[0].event {
         ScanEvent::PhaseCompleted {
@@ -560,9 +519,200 @@ fn dom_verify_actor_with_seeded_xss_findings() {
             assert_eq!(phase_name, "dom_verify");
             assert_eq!(
                 *operations_applied, 0,
-                "placeholder phase applies no ops yet"
+                "no linked endpoint nodes means no verification requests"
             );
         }
         _ => panic!("expected PhaseCompleted event"),
     }
+}
+
+// --- HTML context analysis unit tests ---
+
+#[test]
+fn script_context_detects_marker_inside_script_tag() {
+    let html = r#"<html><script>var x = "AEGIS_XSS_PROBE";</script></html>"#;
+    assert!(payload_in_script_context(html, "AEGIS_XSS_PROBE"));
+}
+
+#[test]
+fn script_context_no_match_outside_script() {
+    assert!(!payload_in_script_context(
+        r#"<html><p>AEGIS_XSS_PROBE</p></html>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn script_context_case_insensitive_tag() {
+    assert!(payload_in_script_context(
+        r#"<html><SCRIPT>alert('AEGIS_XSS_PROBE')</SCRIPT></html>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn script_context_multiple_script_blocks() {
+    let html = r#"<script>safe();</script><script>MARKER</script>"#;
+    assert!(payload_in_script_context(html, "MARKER"));
+    assert!(!payload_in_script_context(html, "NOTHERE"));
+}
+
+#[test]
+fn event_handler_detects_marker_in_onclick() {
+    assert!(payload_in_event_handler(
+        r#"<button onclick="alert('AEGIS_XSS_PROBE')">Click</button>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn event_handler_detects_marker_in_onerror() {
+    assert!(payload_in_event_handler(
+        r#"<img src=x onerror="alert('MARKER')">"#,
+        "MARKER"
+    ));
+}
+
+#[test]
+fn event_handler_no_match_when_absent() {
+    assert!(!payload_in_event_handler(
+        r#"<button onclick="safe()">Click</button>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn event_handler_single_quoted_attribute() {
+    assert!(payload_in_event_handler(
+        "<div onmouseover='MARKER'>hover</div>",
+        "MARKER"
+    ));
+}
+
+#[test]
+fn event_handler_unquoted_attribute() {
+    assert!(payload_in_event_handler(
+        "<div onfocus=MARKER>focus</div>",
+        "MARKER"
+    ));
+}
+
+#[test]
+fn javascript_href_detects_marker() {
+    assert!(payload_in_javascript_href(
+        r#"<a href="javascript:alert('AEGIS_XSS_PROBE')">link</a>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn javascript_href_no_match_normal_url() {
+    assert!(!payload_in_javascript_href(
+        r#"<a href="https://example.com?q=AEGIS_XSS_PROBE">link</a>"#,
+        "AEGIS_XSS_PROBE"
+    ));
+}
+
+#[test]
+fn javascript_href_case_insensitive() {
+    assert!(payload_in_javascript_href(
+        r#"<a HREF="JavaScript:void(MARKER)">link</a>"#,
+        "MARKER"
+    ));
+}
+
+#[test]
+fn javascript_href_single_quoted() {
+    assert!(payload_in_javascript_href(
+        "<a href='javascript:MARKER'>link</a>",
+        "MARKER"
+    ));
+}
+
+#[test]
+fn dangerous_context_combines_all_checks() {
+    assert!(is_payload_in_dangerous_context(
+        r#"<script>MARKER</script>"#,
+        "MARKER"
+    ));
+    assert!(is_payload_in_dangerous_context(
+        r#"<img onerror="MARKER">"#,
+        "MARKER"
+    ));
+    assert!(is_payload_in_dangerous_context(
+        r#"<a href="javascript:MARKER">x</a>"#,
+        "MARKER"
+    ));
+    assert!(!is_payload_in_dangerous_context(
+        r#"<p>MARKER</p>"#,
+        "MARKER"
+    ));
+}
+
+#[test]
+fn dangerous_context_empty_html() {
+    assert!(!is_payload_in_dangerous_context("", "MARKER"));
+}
+
+#[test]
+fn dangerous_context_marker_not_present() {
+    assert!(!is_payload_in_dangerous_context(
+        r#"<script>var x = 1;</script>"#,
+        "NOTPRESENT"
+    ));
+}
+
+#[test]
+fn script_context_unclosed_script_tag() {
+    assert!(payload_in_script_context(r#"<script>MARKER"#, "MARKER"));
+}
+
+#[test]
+fn event_handler_multiple_handlers_same_element() {
+    assert!(payload_in_event_handler(
+        r#"<div onclick="safe()" onerror="MARKER">test</div>"#,
+        "MARKER"
+    ));
+}
+
+// --- run_dom_verify integration: findings without linked endpoints ---
+
+#[test]
+fn dom_verify_run_no_ops_when_findings_lack_endpoint_nodes() {
+    let mut ctx = make_ctx_with_real_graph();
+    let seed_ops = vec![make_add_finding_op(
+        1,
+        vec![],
+        VulnerabilityClass::CrossSiteScripting,
+        7.0,
+        0.5,
+    )];
+    ctx.graph.apply_operations(&seed_ops).unwrap();
+    let result = run_dom_verify(&mut ctx).unwrap();
+    assert_eq!(
+        result.operations_applied, 0,
+        "no linked endpoints means no verification possible"
+    );
+    assert_eq!(result.findings_count, 0);
+}
+
+#[test]
+fn dom_verify_run_no_ops_when_endpoint_unreachable() {
+    let mut ctx = make_ctx_with_real_graph();
+    ctx.config.target = "http://127.0.0.1:19999".to_string();
+    let node_ops = vec![make_add_node_op(1, "/xss", "GET")];
+    ctx.graph.apply_operations(&node_ops).unwrap();
+    let finding_ops = vec![make_add_finding_op(
+        2,
+        vec![0],
+        VulnerabilityClass::CrossSiteScripting,
+        7.0,
+        0.5,
+    )];
+    ctx.graph.apply_operations(&finding_ops).unwrap();
+    let result = run_dom_verify(&mut ctx).unwrap();
+    assert_eq!(
+        result.operations_applied, 0,
+        "unreachable endpoint produces no confirmations"
+    );
 }
