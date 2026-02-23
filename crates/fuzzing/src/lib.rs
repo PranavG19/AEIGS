@@ -1,7 +1,9 @@
 pub mod bot_detection_probe;
 pub mod confirmation;
+pub mod cors_detector;
 pub mod defense_profile;
 pub mod executor;
+pub mod header_analyzer;
 pub mod mutator;
 pub mod oracle;
 pub mod payload_selector;
@@ -14,7 +16,9 @@ pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
 pub use confirmation::*;
+pub use cors_detector::*;
 pub use defense_profile::*;
+pub use header_analyzer::*;
 pub use rate_limit_detector::*;
 pub use waf_fingerprinter::*;
 
