@@ -148,15 +148,15 @@ impl SecurityHeaderAnalyzer {
                 description: "Strict-Transport-Security header is missing; site may be accessed over plain HTTP".to_string(),
             }),
             Some(v) => {
-                if let Some(max_age) = Self::parse_max_age(v) {
-                    if max_age < ONE_YEAR_SECONDS {
-                        findings.push(HeaderFinding {
-                            header_name: "Strict-Transport-Security".to_string(),
-                            issue: HeaderIssue::Weak(format!("max-age={max_age} is less than {ONE_YEAR_SECONDS}")),
-                            severity: 3.0,
-                            description: format!("HSTS max-age of {max_age}s is below the recommended minimum of {ONE_YEAR_SECONDS}s (1 year)"),
-                        });
-                    }
+                if let Some(max_age) = Self::parse_max_age(v)
+                    && max_age < ONE_YEAR_SECONDS
+                {
+                    findings.push(HeaderFinding {
+                        header_name: "Strict-Transport-Security".to_string(),
+                        issue: HeaderIssue::Weak(format!("max-age={max_age} is less than {ONE_YEAR_SECONDS}")),
+                        severity: 3.0,
+                        description: format!("HSTS max-age of {max_age}s is below the recommended minimum of {ONE_YEAR_SECONDS}s (1 year)"),
+                    });
                 }
             }
         }
