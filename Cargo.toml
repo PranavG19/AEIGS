@@ -55,3 +55,11 @@ axum = "0.8"
 tower = "0.5"
 hyper = "1"
 tempfile = "3"
+parking_lot = "0.12"
+
+[workspace.lints.rust]
+unused_must_use = "warn"
+
+[workspace.lints.clippy]
+must_use_candidate = "warn"
+unwrap_used = "warn"
