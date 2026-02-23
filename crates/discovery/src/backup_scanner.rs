@@ -8,7 +8,7 @@ const BACKUP_EXTENSIONS: &[&str] = &[
     ".bak", ".old", ".orig", "~", ".save", ".swp", ".tmp", ".copy",
 ];
 
-pub(crate) const SENSITIVE_PATHS: &[&str] = &[
+pub const SENSITIVE_PATHS: &[&str] = &[
     "/.env",
     "/.env.bak",
     "/.env.local",

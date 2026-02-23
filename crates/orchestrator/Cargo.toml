@@ -35,3 +35,6 @@ ed25519-dalek = { workspace = true }
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
 tempfile = "3"
+aegis-compliance = { path = "../compliance" }
+aegis-discovery = { path = "../discovery" }
+aegis-exploiter = { path = "../exploiter" }

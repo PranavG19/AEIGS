@@ -1,11 +1,11 @@
 # AEGIS — Adversarial Vulnerability Discovery Framework
 
-Localhost-only security testing framework. 11 Rust crates + 1 Python package. 2,917 Rust tests, 511 Python tests.
+Security testing framework for web applications. 15 Rust crates + 1 Python package. 4,073 Rust tests, 511 Python tests.
 
 ## Commands
 
 ```
-cargo test --workspace                                                # 2,917 tests across 11 crates
+cargo test --workspace                                                # 4,073 tests across 15 crates
 cargo clippy --workspace -- -D warnings                               # zero warnings policy
 cargo fmt --all --check                                               # formatting gate
 cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 511 Python tests
@@ -45,12 +45,30 @@ knowledge-graph          In-memory graph engine (arena storage, parking_lot::RwL
     │                          timing jitter, session rotation, localhost enforcement,
     │                          TLS fingerprint abstraction (JA3 mapping, dual-backend Reqwest/Rquest)
     └── orchestrator           CLI binary (clap), concurrent recon+fingerprint, audit logging,
-                               iterative scan pipeline: recon → fingerprint → (fuzz → analyze)* → report
+                               iterative scan pipeline: recon → crawl → fingerprint → (fuzz → analyze)* → dom_verify → report
                                Per-phase timing, LLM attribution, endpoint filtering, convergence detection,
                                scan checkpoints/resume, benchmark evaluation, confidence calibration,
                                endpoint similarity (TF-IDF), scan history (SQLite), interactive mode,
                                pipeline composition (topological ordering), distributed coordination,
-                               opt-in telemetry, vulnerability database updater (OSV API)
+                               opt-in telemetry, vulnerability database updater (OSV API),
+                               adaptive scan strategy, IDOR heuristic analyzer
+
+discovery                Directory brute-forcing (2,013 paths), JS endpoint extraction (7 regex patterns),
+                         sitemap/robots.txt parsing, backup file scanner (40 sensitive paths),
+                         technology fingerprinting (headers/HTML/cookies/paths), parameter discovery (67 params),
+                         virtual host discovery (31 prefixes)
+
+exploiter                Tool wrapper framework (ToolWrapper trait, subprocess management, timeout),
+                         SQLMap wrapper, Nuclei CVE template scanner, Nmap port scanner,
+                         Subfinder subdomain enumerator, Interactsh/OAST blind vulnerability detection,
+                         native JWT vulnerability tester (alg:none, weak secret, expired, missing sig)
+
+compliance               CVSS v3.1 scoring (FIRST spec formula, all 34 classes mapped),
+                         OWASP Top 10 2021 + API Security 2023 + PCI-DSS + CWE compliance mapping,
+                         pentest report generator (executive summary, finding narratives, remediation roadmap)
+
+proxy                    HTTP recording proxy (hyper-based), request repeater, 4-mode intruder
+                         (Sniper/BatteringRam/Pitchfork/ClusterBomb), proxy-to-knowledge-graph sync
 
 hypothesis-engine        (Python) LLM hypothesis generation via pluggable backends (Bedrock, OpenAI, ollama),
                          XML-structured prompts with <thinking>/<hypotheses> tags,
@@ -179,7 +197,7 @@ Rust edition 2024. Python >= 3.12 via `uv`.
 
 ## Key Types
 
-- **VulnerabilityClass** — 16-variant enum. Derives Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize. Implements Display with human-readable names (e.g., "SQL Injection", "Cross-Site Scripting").
+- **VulnerabilityClass** — 34-variant enum (16 original + 18 added: NoSqlInjection, XmlExternalEntity, CrossOriginMisconfiguration, MissingSecurityHeader, JwtVulnerability, HttpRequestSmuggling, RaceCondition, SubdomainTakeover, PrototypePollution, GraphQlAbuse, CloudMisconfiguration, Clickjacking, CachePoisoning, HostHeaderInjection, InsecureDirectObjectReference, InformationDisclosure, WeakCryptography, MassAssignment). Derives Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize. Implements Display with human-readable names (e.g., "SQL Injection", "Cross-Site Scripting").
 - **NodeType** — 9 variants including `Defense`. Implements Display. **EdgeLabel** — 8 variants including `ProtectedBy`. Implements Display.
 - **is_valid_edge(source, label, target)** — Semantic validation whitelist for (NodeType, EdgeLabel, NodeType) triples. 28 valid combinations.
 - **EvidenceLevel** — 4-variant enum: Statistical, Controlled (renamed from Counterfactual, `#[serde(alias = "Counterfactual")]` for backwards compat), Confirmed, Chained. Tracks how strongly a finding is supported.
@@ -344,7 +362,8 @@ The knowledge graph enforces these constraints during batch validation:
 
 ## Safety & Dual-Use Hardening
 
-- **Target validation at 3 layers**: protocol crate (shared validator), evasion-engine transport, fuzzing executor — all enforce localhost/127.0.0.1/::1 only
+- **Target validation at 3 layers**: protocol crate (shared validator), evasion-engine transport, fuzzing executor — all enforce localhost/127.0.0.1/::1 by default
+- **`--i-am-authorized` flag**: Simplified remote scanning authorization for freelance pentesters. Logs to audit trail. Alternative to Ed25519 attestation for non-enterprise use.
 - **Audit logging**: SHA3-256 hash-chained, HMAC-signed audit events written to CBOR sidecar file; mandatory by default (`--no-audit` for explicit opt-out); HMAC key stored separately via `save_key_to_file()` or derived from passphrase
 - **`--no-llm` flag**: Skip hypothesis engine entirely for environments without AWS credentials
 - **`--no-audit` flag**: Explicitly opt out of audit logging (default is mandatory)

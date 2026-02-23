@@ -2,9 +2,9 @@
 
 An automated security scanner for web applications. AEGIS systematically discovers vulnerabilities by sending crafted malicious inputs to your app's endpoints, using controlled experiment testing to eliminate false positives, and generating detailed reports with provenance-tracked confidence scores.
 
-**11 Rust crates + 1 Python package. 2,917 Rust tests, 511 Python tests.**
+**15 Rust crates + 1 Python package. 4,073 Rust tests, 511 Python tests. 34 vulnerability classes.**
 
-> **Safety:** AEGIS only targets `localhost` by default. Remote targets require a cryptographically signed scope attestation (see [Remote Scanning](#remote-scanning-scope-attestation)).
+> **Safety:** AEGIS only targets `localhost` by default. Remote targets require either `--i-am-authorized` (for authorized pentesting) or a cryptographically signed scope attestation (see [Remote Scanning](#remote-scanning-scope-attestation)).
 
 ---
 

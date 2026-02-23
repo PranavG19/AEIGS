@@ -151,3 +151,7 @@ mod auth_session_test;
 #[cfg(test)]
 #[path = "scan_strategy_test.rs"]
 mod scan_strategy_test;
+
+#[cfg(test)]
+#[path = "integration_validation_test.rs"]
+mod integration_validation_test;
