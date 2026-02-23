@@ -6,6 +6,8 @@ use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEn
 use crate::backup_scanner::BackupFinding;
 use crate::brute_forcer::DiscoveredPath;
 use crate::js_extractor::ExtractedEndpoint;
+use crate::param_discoverer::{DiscoveredParam, ParamEvidence};
+use crate::vhost_discoverer::DiscoveredVhost;
 
 pub fn discovered_paths_to_operations(
     paths: &[DiscoveredPath],
@@ -103,6 +105,82 @@ pub fn backup_findings_to_operations(
                 ),
                 ("severity".to_string(), finding.severity.to_string()),
                 ("interesting".to_string(), "true".to_string()),
+            ];
+
+            OperationLogEntry {
+                sequence_number: start_sequence + i as u64 + 1,
+                module: ModuleIdentifier::Discovery,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties,
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
+}
+
+pub fn discovered_params_to_operations(
+    params: &[DiscoveredParam],
+    start_sequence: u64,
+) -> Vec<OperationLogEntry> {
+    params
+        .iter()
+        .enumerate()
+        .map(|(i, param)| {
+            let evidence_description = match &param.evidence {
+                ParamEvidence::StatusCodeChange(baseline, probe) => {
+                    format!("status_code_change:{baseline}->{probe}")
+                }
+                ParamEvidence::BodySizeChange(baseline, probe) => {
+                    format!("body_size_change:{baseline}->{probe}")
+                }
+                ParamEvidence::ContentChange => "content_change".to_string(),
+            };
+
+            let properties = vec![
+                ("endpoint".to_string(), param.endpoint.clone()),
+                ("param_name".to_string(), param.param_name.clone()),
+                (
+                    "discovery_source".to_string(),
+                    "param_discovery".to_string(),
+                ),
+                ("evidence".to_string(), evidence_description),
+            ];
+
+            OperationLogEntry {
+                sequence_number: start_sequence + i as u64 + 1,
+                module: ModuleIdentifier::Discovery,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Config,
+                    properties,
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
+}
+
+pub fn vhost_findings_to_operations(
+    findings: &[DiscoveredVhost],
+    start_sequence: u64,
+) -> Vec<OperationLogEntry> {
+    findings
+        .iter()
+        .enumerate()
+        .map(|(i, vhost)| {
+            let properties = vec![
+                ("hostname".to_string(), vhost.hostname.clone()),
+                (
+                    "discovery_source".to_string(),
+                    "vhost_discovery".to_string(),
+                ),
+                ("status_code".to_string(), vhost.status_code.to_string()),
+                (
+                    "content_length".to_string(),
+                    vhost.content_length.to_string(),
+                ),
+                ("evidence".to_string(), vhost.evidence.clone()),
             ];
 
             OperationLogEntry {
