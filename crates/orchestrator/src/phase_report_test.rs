@@ -52,7 +52,7 @@ fn add_finding_entry(seq: u64, class: VulnerabilityClass, severity: f64) -> Oper
             linked_node_ids: vec![],
             vulnerability_class: class,
             severity,
-            confidence: 0.9,
+            confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
             certificate: vec![],
         },
         timestamp_unix_ms: 1000 + seq,
@@ -63,12 +63,12 @@ fn sarif_output(output_path: &std::path::Path) -> String {
     std::fs::read_to_string(output_path).unwrap()
 }
 
-#[test]
-fn run_report_empty_graph_writes_empty_sarif() {
+#[tokio::test]
+async fn run_report_empty_graph_writes_empty_sarif() {
     let output = std::env::temp_dir().join("test_report_empty.sarif");
     let mut ctx = test_context(&output);
 
-    let result = phase_report::run_report(&mut ctx, None).unwrap();
+    let result = phase_report::run_report(&mut ctx, None).await.unwrap();
 
     assert_eq!(result.findings_count, 0);
     assert_eq!(result.operations_applied, 0);
@@ -78,8 +78,8 @@ fn run_report_empty_graph_writes_empty_sarif() {
     let _ = std::fs::remove_file(&output);
 }
 
-#[test]
-fn run_report_with_findings_produces_sarif_results() {
+#[tokio::test]
+async fn run_report_with_findings_produces_sarif_results() {
     let output = std::env::temp_dir().join("test_report_findings.sarif");
     let mut ctx = test_context(&output);
 
@@ -89,7 +89,7 @@ fn run_report_with_findings_produces_sarif_results() {
     ];
     ctx.graph.apply_operations(&entries).unwrap();
 
-    let result = phase_report::run_report(&mut ctx, None).unwrap();
+    let result = phase_report::run_report(&mut ctx, None).await.unwrap();
 
     assert_eq!(result.findings_count, 2);
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
@@ -149,8 +149,8 @@ fn severity_to_level_note_below_40() {
     assert_eq!(phase_report::severity_to_level(0.0), SarifLevel::Note);
 }
 
-#[test]
-fn run_report_with_metrics_includes_phase_timings_in_sarif() {
+#[tokio::test]
+async fn run_report_with_metrics_includes_phase_timings_in_sarif() {
     let output = std::env::temp_dir().join("test_report_timings.sarif");
     let mut ctx = test_context(&output);
     let mut metrics = scan_config::ScanMetrics::default();
@@ -161,7 +161,7 @@ fn run_report_with_metrics_includes_phase_timings_in_sarif() {
         .phase_timings
         .record("fuzz", std::time::Duration::from_millis(420));
 
-    let result = phase_report::run_report(&mut ctx, Some(&metrics)).unwrap();
+    let result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
 
     assert_eq!(result.findings_count, 0);
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
@@ -182,8 +182,8 @@ fn run_report_with_metrics_includes_phase_timings_in_sarif() {
     let _ = std::fs::remove_file(&output);
 }
 
-#[test]
-fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
+#[tokio::test]
+async fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
     let output = std::env::temp_dir().join("test_report_llm_metrics.sarif");
     let mut ctx = test_context(&output);
     let mut metrics = scan_config::ScanMetrics::default();
@@ -194,7 +194,7 @@ fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
         .llm_metrics
         .record_call(std::time::Duration::from_secs(3), 300);
 
-    let _result = phase_report::run_report(&mut ctx, Some(&metrics)).unwrap();
+    let _result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
 
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
     let llm = &json["runs"][0]["properties"]["llmMetrics"];
@@ -308,15 +308,15 @@ fn add_linked_finding_entry(
             linked_node_ids: vec![node_id],
             vulnerability_class: class,
             severity,
-            confidence: 0.9,
+            confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
             certificate: vec![],
         },
         timestamp_unix_ms: 1000 + seq,
     }
 }
 
-#[test]
-fn run_report_known_issue_finding_has_sarif_suppression() {
+#[tokio::test]
+async fn run_report_known_issue_finding_has_sarif_suppression() {
     let output = std::env::temp_dir().join("test_report_known_issue.sarif");
     let mut ctx = test_context(&output);
 
@@ -339,7 +339,7 @@ fn run_report_known_issue_finding_has_sarif_suppression() {
     std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
     ctx.config.scope.context_file = Some(ctx_path.clone());
 
-    phase_report::run_report(&mut ctx, None).unwrap();
+    phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
     let results = json["runs"][0]["results"].as_array().unwrap();
@@ -356,8 +356,8 @@ fn run_report_known_issue_finding_has_sarif_suppression() {
     let _ = std::fs::remove_file(&ctx_path);
 }
 
-#[test]
-fn run_report_non_known_issue_finding_has_no_suppression() {
+#[tokio::test]
+async fn run_report_non_known_issue_finding_has_no_suppression() {
     let output = std::env::temp_dir().join("test_report_not_known_issue.sarif");
     let mut ctx = test_context(&output);
 
@@ -373,7 +373,7 @@ fn run_report_non_known_issue_finding_has_no_suppression() {
     std::fs::write(&ctx_path, serde_json::to_string(&biz_json).unwrap()).unwrap();
     ctx.config.scope.context_file = Some(ctx_path.clone());
 
-    phase_report::run_report(&mut ctx, None).unwrap();
+    phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
     let results = json["runs"][0]["results"].as_array().unwrap();
@@ -414,8 +414,8 @@ fn endpoint_for_finding_returns_empty_string_for_nonexistent_node_id() {
     assert!(result.is_empty());
 }
 
-#[test]
-fn run_report_with_linked_finding_uses_endpoint_path() {
+#[tokio::test]
+async fn run_report_with_linked_finding_uses_endpoint_path() {
     let output = std::env::temp_dir().join("test_report_linked_endpoint.sarif");
     let mut ctx = test_context(&output);
 
@@ -425,7 +425,7 @@ fn run_report_with_linked_finding_uses_endpoint_path() {
     ];
     ctx.graph.apply_operations(&entries).unwrap();
 
-    let result = phase_report::run_report(&mut ctx, None).unwrap();
+    let result = phase_report::run_report(&mut ctx, None).await.unwrap();
     assert_eq!(result.findings_count, 1);
 
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
@@ -537,8 +537,8 @@ fn compute_new_findings_all_known_returns_empty() {
     assert!(result.is_empty());
 }
 
-#[test]
-fn run_report_with_previous_filters_known_findings() {
+#[tokio::test]
+async fn run_report_with_previous_filters_known_findings() {
     let output = std::env::temp_dir().join("test_report_diff_mode.sarif");
     let mut ctx = test_context(&output);
 
@@ -551,7 +551,7 @@ fn run_report_with_previous_filters_known_findings() {
     let all_findings = ctx.graph.all_findings().unwrap();
     let previous: Vec<aegis_protocol::finding::FindingData> = vec![all_findings[0].clone()];
 
-    let result = phase_report::run_report_with_previous(&mut ctx, None, Some(&previous)).unwrap();
+    let result = phase_report::run_report_with_previous(&mut ctx, None, Some(&previous)).await.unwrap();
     // findings without stable_id: both are "new" because stable_id is None → always new
     assert_eq!(result.findings_count, 2);
     let _ = std::fs::remove_file(&output);
@@ -564,8 +564,8 @@ fn inject_diff_stats_into_sarif_no_runs_returns_early() {
     assert!(json_value.get("properties").is_none());
 }
 
-#[test]
-fn sarif_extraction_matches_ground_truth_format() {
+#[tokio::test]
+async fn sarif_extraction_matches_ground_truth_format() {
     let output = std::env::temp_dir().join("test_extraction_e2e.sarif");
     let mut ctx = test_context(&output);
     let mut metrics = scan_config::ScanMetrics::default();
@@ -581,7 +581,7 @@ fn sarif_extraction_matches_ground_truth_format() {
     ];
     ctx.graph.apply_operations(&entries).unwrap();
 
-    let result = phase_report::run_report(&mut ctx, Some(&metrics)).unwrap();
+    let result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
     assert_eq!(result.findings_count, 2);
 
     let sarif_content = std::fs::read_to_string(&output).unwrap();
@@ -620,14 +620,14 @@ fn sarif_extraction_matches_ground_truth_format() {
     let _ = std::fs::remove_file(&output);
 }
 
-#[test]
-fn sarif_extraction_handles_missing_vulnerability_class() {
+#[tokio::test]
+async fn sarif_extraction_handles_missing_vulnerability_class() {
     let output = std::env::temp_dir().join("test_extraction_missing_class.sarif");
     let mut ctx = test_context(&output);
 
     let entries = vec![add_finding_entry(0, VulnerabilityClass::SqlInjection, 0.8)];
     ctx.graph.apply_operations(&entries).unwrap();
-    phase_report::run_report(&mut ctx, None).unwrap();
+    phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let sarif_content = std::fs::read_to_string(&output).unwrap();
     let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
@@ -657,8 +657,8 @@ fn sarif_extraction_handles_missing_vulnerability_class() {
     let _ = std::fs::remove_file(&output);
 }
 
-#[test]
-fn sarif_extraction_handles_debug_vs_display_format() {
+#[tokio::test]
+async fn sarif_extraction_handles_debug_vs_display_format() {
     let output = std::env::temp_dir().join("test_extraction_debug_format.sarif");
     let mut ctx = test_context(&output);
 
@@ -667,7 +667,7 @@ fn sarif_extraction_handles_debug_vs_display_format() {
         add_linked_finding_entry(1, VulnerabilityClass::CrossSiteScripting, 7.0, 0),
     ];
     ctx.graph.apply_operations(&entries).unwrap();
-    phase_report::run_report(&mut ctx, None).unwrap();
+    phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let sarif_content = std::fs::read_to_string(&output).unwrap();
     let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
@@ -689,12 +689,12 @@ fn sarif_extraction_handles_debug_vs_display_format() {
     let _ = std::fs::remove_file(&output);
 }
 
-#[test]
-fn sarif_extraction_with_empty_results_array() {
+#[tokio::test]
+async fn sarif_extraction_with_empty_results_array() {
     let output = std::env::temp_dir().join("test_extraction_empty_results.sarif");
     let mut ctx = test_context(&output);
 
-    phase_report::run_report(&mut ctx, None).unwrap();
+    phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let sarif_content = std::fs::read_to_string(&output).unwrap();
     let sarif_json: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();

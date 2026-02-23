@@ -45,7 +45,7 @@ pub fn checkpoint_path(graph_db_path: &Path) -> PathBuf {
 /// Writes to a `.tmp` sibling first, then renames to the final path. This ensures
 /// a concurrent reader never sees a partially-written checkpoint file. On rename
 /// failure the temp file is cleaned up on a best-effort basis.
-pub fn save_checkpoint(
+pub async fn save_checkpoint(
     checkpoint: &ScanCheckpoint,
     graph_db_path: &Path,
 ) -> Result<(), CheckpointError> {
@@ -53,21 +53,29 @@ pub fn save_checkpoint(
     let tmp_path = path.with_extension("json.tmp");
     let json = serde_json::to_string_pretty(checkpoint)
         .map_err(|e| CheckpointError::SerializationError(e.to_string()))?;
-    std::fs::write(&tmp_path, &json).map_err(|e| CheckpointError::IoError(e.to_string()))?;
-    std::fs::rename(&tmp_path, &path).map_err(|e| {
-        let _ = std::fs::remove_file(&tmp_path);
+    tokio::fs::write(&tmp_path, &json)
+        .await
+        .map_err(|e| CheckpointError::IoError(e.to_string()))?;
+    tokio::fs::rename(&tmp_path, &path).await.map_err(|e| {
+        let tmp = tmp_path.clone();
+        tokio::spawn(async move {
+            let _ = tokio::fs::remove_file(&tmp).await;
+        });
         CheckpointError::IoError(e.to_string())
     })
 }
 
 /// Loads a checkpoint from disk, returning `None` if the file does not exist.
-pub fn load_checkpoint(graph_db_path: &Path) -> Result<Option<ScanCheckpoint>, CheckpointError> {
+pub async fn load_checkpoint(
+    graph_db_path: &Path,
+) -> Result<Option<ScanCheckpoint>, CheckpointError> {
     let path = checkpoint_path(graph_db_path);
     if !path.exists() {
         return Ok(None);
     }
-    let contents =
-        std::fs::read_to_string(&path).map_err(|e| CheckpointError::IoError(e.to_string()))?;
+    let contents = tokio::fs::read_to_string(&path)
+        .await
+        .map_err(|e| CheckpointError::IoError(e.to_string()))?;
     let checkpoint: ScanCheckpoint = serde_json::from_str(&contents).map_err(|e| {
         CheckpointError::Corrupted(format!("failed to parse {}: {e}", path.display()))
     })?;
@@ -75,10 +83,12 @@ pub fn load_checkpoint(graph_db_path: &Path) -> Result<Option<ScanCheckpoint>, C
 }
 
 /// Removes the checkpoint file after a successful scan.
-pub fn delete_checkpoint(graph_db_path: &Path) -> Result<(), CheckpointError> {
+pub async fn delete_checkpoint(graph_db_path: &Path) -> Result<(), CheckpointError> {
     let path = checkpoint_path(graph_db_path);
     if path.exists() {
-        std::fs::remove_file(&path).map_err(|e| CheckpointError::IoError(e.to_string()))?;
+        tokio::fs::remove_file(&path)
+            .await
+            .map_err(|e| CheckpointError::IoError(e.to_string()))?;
     }
     Ok(())
 }

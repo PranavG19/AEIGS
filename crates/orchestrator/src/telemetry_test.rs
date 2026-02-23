@@ -201,13 +201,13 @@ fn export_json_with_no_events_returns_empty_array() {
     assert!(parsed.is_empty());
 }
 
-#[test]
-fn export_to_file_writes_valid_json() {
+#[tokio::test]
+async fn export_to_file_writes_valid_json() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("telemetry.json");
     let mut collector = TelemetryCollector::new(enabled_config());
     collector.record_scan_start(5, false, "aggressive");
-    collector.export_to_file(&path).unwrap();
+    collector.export_to_file(&path).await.unwrap();
 
     let contents = std::fs::read_to_string(&path).unwrap();
     let parsed: Vec<serde_json::Value> = serde_json::from_str(&contents).unwrap();
@@ -375,22 +375,22 @@ fn is_enabled_reflects_config() {
     assert!(!disabled.is_enabled());
 }
 
-#[test]
-fn export_to_file_returns_not_enabled_when_disabled() {
+#[tokio::test]
+async fn export_to_file_returns_not_enabled_when_disabled() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("telemetry.json");
     let collector = TelemetryCollector::new(disabled_config());
-    let result = collector.export_to_file(&path);
+    let result = collector.export_to_file(&path).await;
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), TelemetryError::NotEnabled));
 }
 
-#[test]
-fn export_to_file_returns_export_failed_for_bad_path() {
+#[tokio::test]
+async fn export_to_file_returns_export_failed_for_bad_path() {
     let mut collector = TelemetryCollector::new(enabled_config());
     collector.record_scan_start(1, false, "default");
     let bad_path = std::path::Path::new("/nonexistent/deep/dir/telemetry.json");
-    let result = collector.export_to_file(bad_path);
+    let result = collector.export_to_file(bad_path).await;
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),

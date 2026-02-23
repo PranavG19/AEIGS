@@ -32,18 +32,18 @@ pub fn compute_new_findings<'a>(
         .collect()
 }
 
-pub fn run_report(
+pub async fn run_report(
     ctx: &mut ScanContext,
     metrics: Option<&ScanMetrics>,
 ) -> Result<PhaseResult, PhaseError> {
-    run_report_with_previous(ctx, metrics, None)
+    run_report_with_previous(ctx, metrics, None).await
 }
 
 /// Runs the report phase, optionally filtering to only new findings vs a previous scan.
 ///
 /// When `previous_findings` is `Some`, only findings not found in the previous set
 /// (by stable_id) are emitted to the SARIF output. When `None`, all findings are emitted.
-pub fn run_report_with_previous(
+pub async fn run_report_with_previous(
     ctx: &mut ScanContext,
     metrics: Option<&ScanMetrics>,
     previous_findings: Option<&[FindingData]>,
@@ -160,7 +160,7 @@ pub fn run_report_with_previous(
         previously_known_count,
         ctx,
     )?;
-    std::fs::write(&ctx.config.output, json)?;
+    tokio::fs::write(&ctx.config.output, json).await?;
 
     Ok(PhaseResult {
         operations_applied: 0,
@@ -400,7 +400,7 @@ pub(crate) fn inject_diff_stats_into_sarif(
 ///
 /// Supported formats: `"dot"` (Graphviz DOT) and `"d3json"` (D3.js-compatible JSON).
 /// Returns `Err` if the format is unrecognized or the file cannot be written.
-pub(crate) fn export_attack_graph(
+pub(crate) async fn export_attack_graph(
     ctx: &ScanContext,
     attack_graph: &AttackGraph,
 ) -> Result<(), PhaseError> {
@@ -414,12 +414,12 @@ pub(crate) fn export_attack_graph(
         "dot" => {
             let dot = graph_export::export_dot(attack_graph);
             let path = output_base.with_extension("dot");
-            std::fs::write(&path, dot)?;
+            tokio::fs::write(&path, dot).await?;
         }
         "d3json" => {
             let json = graph_export::export_d3_json(attack_graph);
             let path = output_base.with_extension("d3.json");
-            std::fs::write(&path, json)?;
+            tokio::fs::write(&path, json).await?;
         }
         other => return Err(PhaseError::UnknownExportFormat(other.to_string())),
     }

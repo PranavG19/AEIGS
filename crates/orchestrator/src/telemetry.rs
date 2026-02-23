@@ -205,9 +205,11 @@ impl TelemetryCollector {
     }
 
     /// Writes all collected events as JSON to the given file path.
-    pub fn export_to_file(&self, path: &std::path::Path) -> Result<(), TelemetryError> {
+    pub async fn export_to_file(&self, path: &std::path::Path) -> Result<(), TelemetryError> {
         let json = self.export_json()?;
-        std::fs::write(path, json).map_err(|e| TelemetryError::ExportFailed(e.to_string()))
+        tokio::fs::write(path, json)
+            .await
+            .map_err(|e| TelemetryError::ExportFailed(e.to_string()))
     }
 
     fn push_event(&mut self, event_type: TelemetryEventType, payload: TelemetryPayload) {
