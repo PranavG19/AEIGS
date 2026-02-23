@@ -108,7 +108,7 @@ pub(crate) fn vuln_lookup(
                     vulnerability_class:
                         aegis_protocol::finding::VulnerabilityClass::KnownVulnerableDependency,
                     severity: m.severity,
-                    confidence: 0.9,
+                    confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
                     certificate: Vec::new(),
                 },
                 timestamp_unix_ms: timestamp_ms(),

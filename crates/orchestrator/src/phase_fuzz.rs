@@ -437,7 +437,7 @@ pub(crate) fn append_anomaly_entries(
                 linked_node_ids: linked_node_ids.to_vec(),
                 vulnerability_class,
                 severity: anomaly.score,
-                confidence: provenance.composite.value(),
+                confidence: provenance.composite,
                 certificate: Vec::new(),
             },
             timestamp_unix_ms: timestamp_ms(),

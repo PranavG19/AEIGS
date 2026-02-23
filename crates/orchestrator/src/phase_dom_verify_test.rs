@@ -56,7 +56,7 @@ fn make_add_finding_op(
             linked_node_ids,
             vulnerability_class: vuln_class,
             severity,
-            confidence,
+            confidence: aegis_protocol::finding::Confidence::new(confidence).unwrap(),
             certificate: Vec::new(),
         },
         timestamp_unix_ms: timestamp_ms(),
@@ -171,7 +171,7 @@ fn dom_verify_to_operations_creates_findings_for_executed() {
             ..
         } => {
             assert_eq!(*vulnerability_class, VulnerabilityClass::CrossSiteScripting);
-            assert!((confidence - 0.8).abs() < f64::EPSILON);
+            assert!((confidence.value() - 0.8).abs() < f64::EPSILON);
             assert!((severity - 7.0).abs() < f64::EPSILON);
         }
         _ => panic!("expected AddFinding operation"),
@@ -271,7 +271,7 @@ fn dom_verify_to_operations_clamps_confidence_to_one() {
     assert_eq!(ops.len(), 1);
     match &ops[0].operation {
         GraphOperation::AddFinding { confidence, .. } => {
-            assert!((confidence - 1.0).abs() < f64::EPSILON);
+            assert!((confidence.value() - 1.0).abs() < f64::EPSILON);
         }
         _ => panic!("expected AddFinding operation"),
     }

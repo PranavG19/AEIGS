@@ -20,7 +20,7 @@ pub enum GraphOperation {
         linked_node_ids: Vec<u64>,
         vulnerability_class: crate::finding::VulnerabilityClass,
         severity: f64,
-        confidence: f64,
+        confidence: crate::finding::Confidence,
         certificate: Vec<u8>,
     },
 }

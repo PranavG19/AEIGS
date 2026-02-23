@@ -35,7 +35,7 @@ pub fn run_analyze(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
                         linked_node_ids: path.nodes.clone(),
                         vulnerability_class: VulnerabilityClass::BrokenAuthorization,
                         severity: 1.0 / path.total_difficulty.max(0.01),
-                        confidence: 0.7,
+                        confidence: aegis_protocol::finding::Confidence::new(0.7).unwrap(),
                         certificate: Vec::new(),
                     },
                     timestamp_unix_ms: timestamp_ms(),

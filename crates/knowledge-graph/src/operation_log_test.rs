@@ -115,7 +115,7 @@ mod tests {
                     linked_node_ids: vec![0],
                     vulnerability_class: VulnerabilityClass::SqlInjection,
                     severity: 9.0,
-                    confidence: 0.95,
+                    confidence: aegis_protocol::finding::Confidence::new(0.95).unwrap(),
                     certificate: b"proof".to_vec(),
                 },
             ),
@@ -580,7 +580,7 @@ mod tests {
             linked_node_ids: vec![7],
             vulnerability_class: VulnerabilityClass::SqlInjection,
             severity: 8.0,
-            confidence: 0.9,
+            confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
             certificate: vec![],
         }];
 
@@ -602,7 +602,7 @@ mod tests {
                 linked_node_ids: vec![0],
                 vulnerability_class: VulnerabilityClass::CrossSiteScripting,
                 severity: 7.0,
-                confidence: 0.8,
+                confidence: aegis_protocol::finding::Confidence::new(0.8).unwrap(),
                 certificate: vec![],
             },
         ];
@@ -783,7 +783,7 @@ mod tests {
                 linked_node_ids: vec![0, 99],
                 vulnerability_class: VulnerabilityClass::SqlInjection,
                 severity: 8.0,
-                confidence: 0.9,
+                confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
                 certificate: vec![],
             },
         ];

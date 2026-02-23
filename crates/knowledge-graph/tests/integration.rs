@@ -63,7 +63,7 @@ fn add_finding(
             linked_node_ids: node_ids,
             vulnerability_class: class,
             severity,
-            confidence,
+            confidence: aegis_protocol::finding::Confidence::new(confidence).unwrap(),
             certificate: b"cert".to_vec(),
         },
     )
@@ -302,16 +302,12 @@ fn graph_apply_operations_score_bounds() {
         "severity -1.0 should be rejected"
     );
 
-    let bad_confidence = vec![add_finding(
-        0,
-        vec![0],
-        VulnerabilityClass::SqlInjection,
-        5.0,
-        1.5,
-    )];
+    // Confidence 1.5 is now rejected at the type level (Confidence::new(1.5) returns Err),
+    // so we cannot construct an AddFinding with invalid confidence. This is the desired behavior:
+    // the type system prevents invalid states. Verify the type rejects it:
     assert!(
-        graph.apply_operations(&bad_confidence).is_err(),
-        "confidence 1.5 should be rejected"
+        aegis_protocol::finding::Confidence::new(1.5).is_err(),
+        "confidence 1.5 should be rejected by Confidence::new()"
     );
 
     let valid = vec![add_finding(

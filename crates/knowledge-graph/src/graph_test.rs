@@ -89,7 +89,7 @@ mod tests {
                     linked_node_ids: vec![0, 1],
                     vulnerability_class: VulnerabilityClass::SqlInjection,
                     severity: 9.5,
-                    confidence: 0.95,
+                    confidence: aegis_protocol::finding::Confidence::new(0.95).unwrap(),
                     certificate: b"SELECT * FROM users WHERE id = '1' OR '1'='1'".to_vec(),
                 },
             ),
@@ -605,7 +605,7 @@ mod tests {
                     linked_node_ids: vec![0],
                     vulnerability_class: VulnerabilityClass::SqlInjection,
                     severity: 10.1,
-                    confidence: 0.9,
+                    confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
                     certificate: vec![],
                 },
             ),
@@ -619,7 +619,7 @@ mod tests {
     }
 
     #[test]
-    fn finding_with_confidence_above_one_is_rejected() {
+    fn finding_with_invalid_severity_is_rejected() {
         use crate::graph::GraphError;
         use crate::operation_log::ValidationError;
 
@@ -639,8 +639,8 @@ mod tests {
                 GraphOperation::AddFinding {
                     linked_node_ids: vec![0],
                     vulnerability_class: VulnerabilityClass::CrossSiteScripting,
-                    severity: 7.0,
-                    confidence: 1.5,
+                    severity: 12.0,
+                    confidence: aegis_protocol::finding::Confidence::new(0.9).unwrap(),
                     certificate: vec![],
                 },
             ),
@@ -649,7 +649,7 @@ mod tests {
         let err = graph.apply_operations(&entries).unwrap_err();
         assert!(matches!(
             err,
-            GraphError::Validation(ValidationError::InvalidConfidence(_))
+            GraphError::Validation(ValidationError::InvalidSeverity(_))
         ));
     }
 
@@ -708,7 +708,7 @@ mod tests {
                     linked_node_ids: vec![0],
                     vulnerability_class: VulnerabilityClass::SqlInjection,
                     severity: 9.0,
-                    confidence: 0.95,
+                    confidence: aegis_protocol::finding::Confidence::new(0.95).unwrap(),
                     certificate: b"proof".to_vec(),
                 },
             ),

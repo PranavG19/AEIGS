@@ -238,9 +238,6 @@ impl OperationLog {
                     if !severity.is_finite() || !(0.0..=10.0).contains(severity) {
                         return Err(ValidationError::InvalidSeverity(*severity));
                     }
-                    if aegis_protocol::finding::Confidence::new(*confidence).is_err() {
-                        return Err(ValidationError::InvalidConfidence(*confidence));
-                    }
                 }
             }
         }
@@ -397,7 +394,7 @@ impl OperationLog {
                     linked_node_ids.clone(),
                     *vulnerability_class,
                     *severity,
-                    *confidence,
+                    confidence.value(),
                     certificate.clone(),
                     provenance_module,
                     timestamp,

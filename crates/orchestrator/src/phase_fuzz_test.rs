@@ -598,7 +598,7 @@ fn append_anomaly_entries_severity_and_confidence_derived_from_score() {
     } = &acc.entries[0].operation
     {
         assert!((severity - 0.8).abs() < 1e-9);
-        assert!((confidence - 0.2).abs() < 1e-9);
+        assert!((confidence.value() - 0.2).abs() < 1e-9);
         assert_eq!(*vulnerability_class, VulnerabilityClass::CommandInjection);
         assert_eq!(linked_node_ids, &[7]);
     } else {
@@ -1270,7 +1270,7 @@ async fn findings_linked_to_endpoint_nodes_populate_sarif_endpoint() {
         );
     }
 
-    crate::phase_report::run_report(&mut ctx, None).unwrap();
+    crate::phase_report::run_report(&mut ctx, None).await.unwrap();
 
     let sarif_content = std::fs::read_to_string(&sarif_path).unwrap();
     let sarif: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
