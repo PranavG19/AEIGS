@@ -7,6 +7,7 @@ pub mod header_analyzer;
 pub mod mutator;
 pub mod oracle;
 pub mod payload_selector;
+pub mod race_tester;
 pub mod rate_limit_detector;
 pub mod request_patterns;
 pub mod scheduler;
@@ -19,6 +20,7 @@ pub use confirmation::*;
 pub use cors_detector::*;
 pub use defense_profile::*;
 pub use header_analyzer::*;
+pub use race_tester::*;
 pub use rate_limit_detector::*;
 pub use waf_fingerprinter::*;
 
@@ -57,3 +59,7 @@ mod request_patterns_test;
 #[cfg(test)]
 #[path = "confirmation_test.rs"]
 mod confirmation_test;
+
+#[cfg(test)]
+#[path = "race_tester_test.rs"]
+mod race_tester_test;
