@@ -38,6 +38,9 @@ use crate::phase_fingerprint::{defense_properties, endpoints_to_operations};
 use crate::phase_fuzz::run_fuzz;
 use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::{export_attack_graph, run_report_with_previous};
+use crate::pipeline_composer::{
+    ComposerError, PhaseType, PipelineDefinition, PipelineStage, validate_pipeline,
+};
 use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, load_auth_flow, parse_auth_inputs, parse_stealth_level,
     resolve_report_format,
@@ -93,6 +96,7 @@ pub struct ScanSummary {
 pub enum PipelineError {
     Config(ConfigError),
     AuditLog(String),
+    PipelineComposer(ComposerError),
     Recon(PhaseError),
     Crawl(PhaseError),
     Fingerprint(PhaseError),
@@ -108,6 +112,7 @@ impl std::fmt::Display for PipelineError {
         match self {
             Self::Config(e) => write!(f, "config: {e}"),
             Self::AuditLog(e) => write!(f, "audit log: {e}"),
+            Self::PipelineComposer(e) => write!(f, "pipeline definition: {e}"),
             Self::Recon(e) => write!(f, "recon: {e}"),
             Self::Crawl(e) => write!(f, "crawl: {e}"),
             Self::Fingerprint(e) => write!(f, "fingerprint: {e}"),
@@ -130,6 +135,7 @@ impl std::error::Error for PipelineError {
             | Self::Analysis(e)
             | Self::DomVerify(e)
             | Self::Report(e) => Some(e),
+            Self::PipelineComposer(e) => Some(e),
             Self::Config(_) | Self::AuditLog(_) | Self::InteractiveQuit => None,
         }
     }
@@ -138,6 +144,12 @@ impl std::error::Error for PipelineError {
 impl From<ConfigError> for PipelineError {
     fn from(e: ConfigError) -> Self {
         Self::Config(e)
+    }
+}
+
+impl From<ComposerError> for PipelineError {
+    fn from(e: ComposerError) -> Self {
+        Self::PipelineComposer(e)
     }
 }
 
@@ -1444,6 +1456,43 @@ fn compute_diff_counts(
     }
 }
 
+/// Builds the declarative pipeline DAG for a standard scan.
+///
+/// Phases and their dependencies:
+/// - `recon`, `crawl`: no dependencies (can run in parallel)
+/// - `fingerprint`: depends on `recon` and `crawl`
+/// - `fuzz`: depends on `fingerprint`
+/// - `analyze`, `dom_verify`: depend on `fuzz` (can run in parallel)
+/// - `report`: depends on `analyze` and `dom_verify`
+///
+/// The returned definition is validated via `validate_pipeline()` at scan start
+/// but does NOT change execution order -- phases still run sequentially.
+pub(crate) fn build_scan_pipeline(
+    max_iterations: u32,
+    convergence_threshold: u32,
+) -> PipelineDefinition {
+    let mut def = PipelineDefinition::new();
+    def.add_stage(PipelineStage::new("recon", PhaseType::Source));
+    def.add_stage(PipelineStage::new("crawl", PhaseType::Source));
+    def.add_stage(
+        PipelineStage::new("fingerprint", PhaseType::Source)
+            .with_dependency("recon")
+            .with_dependency("crawl")
+            .with_optional(true),
+    );
+    def.add_stage(PipelineStage::new("fuzz", PhaseType::Transform).with_dependency("fingerprint"));
+    def.add_stage(PipelineStage::new("analyze", PhaseType::Transform).with_dependency("fuzz"));
+    def.add_stage(PipelineStage::new("dom_verify", PhaseType::Transform).with_dependency("fuzz"));
+    def.add_stage(
+        PipelineStage::new("report", PhaseType::Sink)
+            .with_dependency("analyze")
+            .with_dependency("dom_verify"),
+    );
+    def.with_max_iterations(max_iterations);
+    def.with_convergence_threshold(convergence_threshold);
+    def
+}
+
 async fn run_scan_phases(
     ctx: &mut ScanContext,
     audit_writer: &mut dyn AuditWriter,
@@ -1452,6 +1501,12 @@ async fn run_scan_phases(
     graph_db_path: Option<&Path>,
     session: &SharedSession,
 ) -> Result<PhasesResult, PipelineError> {
+    let pipeline_def = build_scan_pipeline(
+        ctx.config.pipeline.max_iterations,
+        ctx.config.pipeline.convergence_threshold,
+    );
+    validate_pipeline(&pipeline_def)?;
+
     let scan_start = std::time::Instant::now();
     let mut scan_metrics = ScanMetrics::default();
     let mut progress = ScanProgress {

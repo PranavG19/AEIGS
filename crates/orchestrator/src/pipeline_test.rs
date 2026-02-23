@@ -2020,3 +2020,128 @@ fn derive_telemetry_path_adjacent_to_output() {
         std::path::PathBuf::from("/tmp/scans/aegis-telemetry.json")
     );
 }
+
+// --- Pipeline composer wiring tests ---
+
+#[test]
+fn build_scan_pipeline_has_seven_stages() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    assert_eq!(def.stages.len(), 7);
+}
+
+#[test]
+fn build_scan_pipeline_validates_successfully() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    assert!(
+        crate::pipeline_composer::validate_pipeline(&def).is_ok(),
+        "scan pipeline DAG should be valid"
+    );
+}
+
+#[test]
+fn build_scan_pipeline_recon_and_crawl_have_no_dependencies() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let recon = def.stages.iter().find(|s| s.name == "recon").unwrap();
+    let crawl = def.stages.iter().find(|s| s.name == "crawl").unwrap();
+    assert!(recon.depends_on.is_empty());
+    assert!(crawl.depends_on.is_empty());
+}
+
+#[test]
+fn build_scan_pipeline_fingerprint_depends_on_recon_and_crawl() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let fp = def.stages.iter().find(|s| s.name == "fingerprint").unwrap();
+    assert!(fp.depends_on.contains(&"recon".to_string()));
+    assert!(fp.depends_on.contains(&"crawl".to_string()));
+    assert!(fp.optional);
+}
+
+#[test]
+fn build_scan_pipeline_fuzz_depends_on_fingerprint() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let fuzz = def.stages.iter().find(|s| s.name == "fuzz").unwrap();
+    assert_eq!(fuzz.depends_on, vec!["fingerprint"]);
+}
+
+#[test]
+fn build_scan_pipeline_analyze_and_dom_verify_depend_on_fuzz() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let analyze = def.stages.iter().find(|s| s.name == "analyze").unwrap();
+    let dom_verify = def.stages.iter().find(|s| s.name == "dom_verify").unwrap();
+    assert_eq!(analyze.depends_on, vec!["fuzz"]);
+    assert_eq!(dom_verify.depends_on, vec!["fuzz"]);
+}
+
+#[test]
+fn build_scan_pipeline_report_depends_on_analyze_and_dom_verify() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let report = def.stages.iter().find(|s| s.name == "report").unwrap();
+    assert!(report.depends_on.contains(&"analyze".to_string()));
+    assert!(report.depends_on.contains(&"dom_verify".to_string()));
+}
+
+#[test]
+fn build_scan_pipeline_propagates_iteration_settings() {
+    let def = pipeline::build_scan_pipeline(5, 3);
+    assert_eq!(def.max_iterations, 5);
+    assert_eq!(def.convergence_threshold, 3);
+}
+
+#[test]
+fn build_scan_pipeline_topological_order_respects_dependencies() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let order = crate::pipeline_composer::topological_order(&def).unwrap();
+    let pos = |name: &str| order.iter().position(|n| n == name).unwrap();
+    assert!(pos("recon") < pos("fingerprint"));
+    assert!(pos("crawl") < pos("fingerprint"));
+    assert!(pos("fingerprint") < pos("fuzz"));
+    assert!(pos("fuzz") < pos("analyze"));
+    assert!(pos("fuzz") < pos("dom_verify"));
+    assert!(pos("analyze") < pos("report"));
+    assert!(pos("dom_verify") < pos("report"));
+}
+
+#[test]
+fn build_scan_pipeline_execution_plan_has_parallel_waves() {
+    let def = pipeline::build_scan_pipeline(1, 2);
+    let waves = crate::pipeline_composer::execution_plan(&def).unwrap();
+    assert!(waves[0].contains(&"recon".to_string()));
+    assert!(waves[0].contains(&"crawl".to_string()));
+    let analyze_wave = waves
+        .iter()
+        .position(|w| w.contains(&"analyze".to_string()))
+        .unwrap();
+    let dom_verify_wave = waves
+        .iter()
+        .position(|w| w.contains(&"dom_verify".to_string()))
+        .unwrap();
+    assert_eq!(
+        analyze_wave, dom_verify_wave,
+        "analyze and dom_verify should be in the same wave"
+    );
+}
+
+#[test]
+fn pipeline_error_display_composer() {
+    let err =
+        PipelineError::PipelineComposer(crate::pipeline_composer::ComposerError::EmptyPipeline);
+    let msg = format!("{err}");
+    assert!(msg.starts_with("pipeline definition:"));
+    assert!(msg.contains("no stages"));
+}
+
+#[test]
+fn pipeline_error_from_composer_error() {
+    let composer_err = crate::pipeline_composer::ComposerError::EmptyPipeline;
+    let pipeline_err: PipelineError = composer_err.into();
+    assert!(matches!(pipeline_err, PipelineError::PipelineComposer(_)));
+}
+
+#[test]
+fn pipeline_error_composer_source_returns_inner() {
+    use std::error::Error;
+    let err = PipelineError::PipelineComposer(
+        crate::pipeline_composer::ComposerError::CyclicDependency("a, b".to_string()),
+    );
+    assert!(err.source().is_some());
+}
