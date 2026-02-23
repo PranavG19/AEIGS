@@ -11,15 +11,11 @@ async fn start_test_server() -> (String, tokio::task::JoinHandle<()>) {
         )
         .route(
             "/api/items",
-            axum::routing::get(|| async {
-                axum::Json(serde_json::json!({"items": [1, 2, 3]}))
-            }),
+            axum::routing::get(|| async { axum::Json(serde_json::json!({"items": [1, 2, 3]})) }),
         )
         .route(
             "/api/status",
-            axum::routing::get(|| async {
-                axum::Json(serde_json::json!({"ok": true}))
-            }),
+            axum::routing::get(|| async { axum::Json(serde_json::json!({"ok": true})) }),
         )
         .route(
             "/admin/settings",
@@ -88,11 +84,7 @@ async fn test_proxy_persistence_round_trip() {
     for path in &paths {
         let url = format!("{server_url}{path}");
         // hyper proxy expects absolute-URI in request line
-        let resp = client
-            .get(&url)
-            .header("host", "test-host")
-            .send()
-            .await;
+        let resp = client.get(&url).header("host", "test-host").send().await;
         drop(resp);
     }
 
@@ -293,7 +285,16 @@ fn test_diff_between_responses() {
     let old_body = b"line1\nline2\nline3";
     let new_body = b"line1\nmodified\nline3\nline4";
 
-    let diff = compare_responses(200, &old_headers, old_body, 50, 404, &new_headers, new_body, 75);
+    let diff = compare_responses(
+        200,
+        &old_headers,
+        old_body,
+        50,
+        404,
+        &new_headers,
+        new_body,
+        75,
+    );
 
     assert!(diff.status_changed);
     assert_eq!(diff.old_status, 200);
@@ -406,11 +407,7 @@ fn test_session_jar_tracks_cookies() {
 fn test_modification_rules_transform_traffic() {
     let mut engine = ModificationEngine::new();
     engine
-        .add_rule(
-            MatchTarget::ResponseHeader,
-            r"(?i)^x-frame-options:.*$",
-            "",
-        )
+        .add_rule(MatchTarget::ResponseHeader, r"(?i)^x-frame-options:.*$", "")
         .unwrap();
 
     let mut headers = vec![
@@ -430,9 +427,7 @@ fn test_modification_rules_transform_traffic() {
     );
     // Other headers should remain.
     assert!(headers.iter().any(|(k, _)| k == "content-type"));
-    assert!(headers
-        .iter()
-        .any(|(k, _)| k == "x-content-type-options"));
+    assert!(headers.iter().any(|(k, _)| k == "x-content-type-options"));
     // Body should be untouched.
     assert_eq!(body, b"<html>hello</html>");
 }
@@ -449,10 +444,7 @@ fn test_graph_sync_from_proxy_exchanges() {
             response_status: 200,
             response_headers: vec![
                 ("server".to_string(), "nginx".to_string()),
-                (
-                    "x-powered-by".to_string(),
-                    "Express".to_string(),
-                ),
+                ("x-powered-by".to_string(), "Express".to_string()),
             ],
             response_body: b"ok".to_vec(),
             timestamp_ms: 1000,
@@ -464,10 +456,7 @@ fn test_graph_sync_from_proxy_exchanges() {
             id: 2,
             request_method: "POST".to_string(),
             request_url: "http://localhost/api/login".to_string(),
-            request_headers: vec![(
-                "content-type".to_string(),
-                "application/json".to_string(),
-            )],
+            request_headers: vec![("content-type".to_string(), "application/json".to_string())],
             request_body: br#"{"username":"admin","password":"secret"}"#.to_vec(),
             response_status: 200,
             response_headers: vec![],
@@ -544,7 +533,9 @@ fn test_graph_sync_from_proxy_exchanges() {
         _ => unreachable!(),
     };
     assert!(
-        first_props.iter().any(|(k, v)| k == "server" && v == "nginx"),
+        first_props
+            .iter()
+            .any(|(k, v)| k == "server" && v == "nginx"),
         "first endpoint should have server=nginx"
     );
     assert!(

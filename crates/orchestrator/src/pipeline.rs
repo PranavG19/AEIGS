@@ -1596,7 +1596,9 @@ async fn run_scan_phases(
         let mut ag = aegis_chain_synthesis::attack_graph::AttackGraph::new();
         let mut kg_to_ag = std::collections::HashMap::new();
         build_attack_graph_from_knowledge_graph(ctx, &mut ag, &mut kg_to_ag);
-        export_attack_graph(ctx, &ag).await.map_err(PipelineError::Report)?;
+        export_attack_graph(ctx, &ag)
+            .await
+            .map_err(PipelineError::Report)?;
     }
 
     emit_event(

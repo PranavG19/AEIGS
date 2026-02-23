@@ -1069,7 +1069,9 @@ async fn run_scan_saves_and_resumes_from_checkpoint() {
         consecutive_zero_findings: 0,
         timestamp_unix_ms: 1700000000000,
     };
-    crate::checkpoint::save_checkpoint(&cp, &graph_db_path).await.unwrap();
+    crate::checkpoint::save_checkpoint(&cp, &graph_db_path)
+        .await
+        .unwrap();
 
     let mut config2 = localhost_config();
     config2.output = dir.path().join("scan2.sarif");
