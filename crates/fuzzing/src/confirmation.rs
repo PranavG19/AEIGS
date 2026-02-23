@@ -35,6 +35,8 @@ pub enum EvidenceType {
     RedirectToExternal,
     DeserializationMarker,
     NoSqlErrorMessage,
+    XxeFileContent,
+    XxeParserError,
 }
 
 impl fmt::Display for EvidenceType {
@@ -52,6 +54,8 @@ impl fmt::Display for EvidenceType {
             Self::RedirectToExternal => "redirect-to-external",
             Self::DeserializationMarker => "deserialization-marker",
             Self::NoSqlErrorMessage => "nosql-error-message",
+            Self::XxeFileContent => "xxe-file-content",
+            Self::XxeParserError => "xxe-parser-error",
         };
         write!(f, "{label}")
     }
@@ -121,6 +125,11 @@ pub fn build_confirmation_registry() -> HashMap<VulnerabilityClass, Vec<ConfirmF
     registry.insert(
         VulnerabilityClass::NoSqlInjection,
         vec![confirm_nosql_error_pattern, confirm_nosql_time_delay],
+    );
+
+    registry.insert(
+        VulnerabilityClass::XmlExternalEntity,
+        vec![confirm_xxe_file_content, confirm_xxe_parser_error],
     );
 
     registry
@@ -680,6 +689,100 @@ pub fn confirm_nosql_time_delay(
         confidence: 0.88,
         description: format!(
             "NoSQL time-based: treatment took {delta:.2}s longer than control (expected delay: {expected_delay_secs}s)"
+        ),
+    })
+}
+
+static XXE_FILE_CONTENT_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [r"root:x:0:0:", r"daemon:x:", r"/bin/bash", r"/bin/sh"]
+        .iter()
+        .map(|p| Regex::new(p).unwrap())
+        .collect()
+});
+
+static XXE_PARSER_ERROR_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    [
+        r"(?i)DOCTYPE",
+        r"(?i)ENTITY",
+        r"(?i)SAXParseException",
+        r"(?i)XMLSyntaxError",
+        r"lxml\.etree",
+        r"(?i)ExpatError",
+        r"org\.xml\.sax",
+    ]
+    .iter()
+    .map(|p| Regex::new(p).unwrap())
+    .collect()
+});
+
+pub fn confirm_xxe_file_content(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_file_pattern = XXE_FILE_CONTENT_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body) && !re.is_match(&control.body));
+
+    if let Some(pattern) = matched_file_pattern {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::XxeFileContent,
+            confidence: 0.95,
+            description: format!(
+                "XXE file content pattern '{}' found in treatment but not control",
+                pattern.as_str()
+            ),
+        });
+    }
+
+    if payload.contains("etc/hostname")
+        && treatment.body != control.body
+        && treatment.body.len() < 256
+        && !treatment.body.is_empty()
+    {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::XxeFileContent,
+            confidence: 0.95,
+            description: format!(
+                "XXE hostname probe: treatment body ({} bytes) differs from control and is short enough to be a hostname",
+                treatment.body.len()
+            ),
+        });
+    }
+
+    if treatment.body.contains("lollollol") && !control.body.contains("lollollol") {
+        return Some(ConfirmationEvidence {
+            evidence_type: EvidenceType::XxeFileContent,
+            confidence: 0.95,
+            description: "XXE billion laughs entity expansion detected (lollollol pattern)"
+                .to_string(),
+        });
+    }
+
+    None
+}
+
+pub fn confirm_xxe_parser_error(
+    treatment: &FuzzResponse,
+    control: &FuzzResponse,
+    _payload: &str,
+    _baseline: &BaselineProfile,
+) -> Option<ConfirmationEvidence> {
+    let matched_pattern = XXE_PARSER_ERROR_PATTERNS
+        .iter()
+        .find(|re| re.is_match(&treatment.body))?;
+
+    if matched_pattern.is_match(&control.body) {
+        return None;
+    }
+
+    Some(ConfirmationEvidence {
+        evidence_type: EvidenceType::XxeParserError,
+        confidence: 0.85,
+        description: format!(
+            "XML parser error pattern '{}' found in treatment but not control",
+            matched_pattern.as_str()
         ),
     })
 }

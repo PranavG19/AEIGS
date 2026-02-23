@@ -65,6 +65,7 @@ mod tests {
         assert!(mutator.template_count(VulnerabilityClass::ServerSideRequestForgery) > 0);
         assert!(mutator.template_count(VulnerabilityClass::ServerSideTemplateInjection) > 0);
         assert!(mutator.template_count(VulnerabilityClass::NoSqlInjection) > 0);
+        assert!(mutator.template_count(VulnerabilityClass::XmlExternalEntity) > 0);
     }
 
     #[test]
@@ -96,6 +97,7 @@ mod tests {
             VulnerabilityClass::OpenRedirect,
             VulnerabilityClass::CrlfInjection,
             VulnerabilityClass::NoSqlInjection,
+            VulnerabilityClass::XmlExternalEntity,
         ];
 
         for class in all_classes {
@@ -768,5 +770,72 @@ mod tests {
             mutator.template_count(VulnerabilityClass::NoSqlInjection),
             12
         );
+    }
+
+    #[test]
+    fn generate_xxe_payloads() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 5);
+        assert_eq!(payloads.len(), 5);
+        for p in &payloads {
+            assert_eq!(p.vulnerability_class, VulnerabilityClass::XmlExternalEntity);
+            assert!(!p.raw.is_empty());
+        }
+    }
+
+    #[test]
+    fn xxe_template_count() {
+        let mutator = PayloadMutator::new();
+        assert_eq!(
+            mutator.template_count(VulnerabilityClass::XmlExternalEntity),
+            7
+        );
+    }
+
+    #[test]
+    fn xxe_payloads_contain_entity_declaration() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(payloads.iter().any(|p| p.raw.contains("ENTITY")));
+        assert!(payloads.iter().any(|p| p.raw.contains("DOCTYPE")));
+    }
+
+    #[test]
+    fn xxe_payloads_contain_xinclude() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(payloads.iter().any(|p| p.raw.contains("XInclude")));
+    }
+
+    #[test]
+    fn xxe_payloads_contain_parameter_entity() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(payloads.iter().any(|p| p.raw.contains("% xxe")));
+    }
+
+    #[test]
+    fn xxe_payloads_contain_billion_laughs() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(payloads.iter().any(|p| p.raw.contains("lolz")));
+    }
+
+    #[test]
+    fn xxe_payloads_contain_error_based() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(
+            payloads
+                .iter()
+                .any(|p| p.raw.contains("nonexistent_aegis_probe"))
+        );
+    }
+
+    #[test]
+    fn xxe_payloads_contain_utf7_bypass() {
+        let mutator = PayloadMutator::new();
+        let payloads = mutator.generate_payloads(VulnerabilityClass::XmlExternalEntity, 7);
+        assert!(payloads.iter().any(|p| p.raw.contains("UTF-7")));
     }
 }

@@ -9,7 +9,7 @@ use crate::confirmation::{
     confirm_sql_boolean_diff, confirm_sql_error_message, confirm_sql_time_delay,
     confirm_sql_union_column_count, confirm_ssrf_internal_content, confirm_ssti_evaluation,
     confirm_xss_reflection_in_attribute, confirm_xss_reflection_in_html_context,
-    confirm_xss_reflection_in_js_context,
+    confirm_xss_reflection_in_js_context, confirm_xxe_file_content, confirm_xxe_parser_error,
 };
 use crate::executor::FuzzResponse;
 use crate::oracle::BaselineProfile;
@@ -1566,5 +1566,275 @@ fn nosql_time_delay_returns_none_when_delta_insufficient() {
         "{\"$where\": \"sleep(5000)\"}",
         &baseline,
     );
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn registry_contains_xxe_functions() {
+    let registry = build_confirmation_registry();
+    assert!(registry.contains_key(&VulnerabilityClass::XmlExternalEntity));
+    assert_eq!(registry[&VulnerabilityClass::XmlExternalEntity].len(), 2);
+}
+
+#[test]
+fn xxe_file_content_detects_etc_passwd_root_entry() {
+    let treatment = make_response(
+        "root:x:0:0:root:/root:/bin/bash\ndaemon:x:1:1:",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+    let payload = "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root>&xxe;</root>";
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::XxeFileContent);
+    assert!((ev.confidence - 0.95).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xxe_file_content_detects_daemon_entry() {
+    let treatment = make_response(
+        "daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_file_content_detects_bin_bash() {
+    let treatment = make_response(
+        "user:x:1000:1000::/home/user:/bin/bash",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_file_content_detects_bin_sh() {
+    let treatment = make_response(
+        "nobody:x:65534:65534::/nonexistent:/bin/sh",
+        200,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_file_content_ignores_pattern_present_in_control() {
+    let body = "root:x:0:0:root:/root:/bin/bash";
+    let treatment = make_response(body, 200, Duration::from_millis(50));
+    let control = make_response(body, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_file_content_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("normal page content", 200, Duration::from_millis(50));
+    let control = make_response("normal page content", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_file_content_detects_hostname_probe() {
+    let treatment = make_response("web-server-01", 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+    let payload = "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><root>&xxe;</root>";
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::XxeFileContent);
+    assert!((ev.confidence - 0.95).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xxe_hostname_probe_ignores_long_response() {
+    let treatment = make_response(&"A".repeat(300), 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+    let payload = "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><root>&xxe;</root>";
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_hostname_probe_ignores_same_response() {
+    let treatment = make_response("same", 200, Duration::from_millis(50));
+    let control = make_response("same", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+    let payload = "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/hostname\">]><root>&xxe;</root>";
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, payload, &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_file_content_detects_billion_laughs() {
+    let treatment = make_response("lollollollollollollol", 200, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "lolz payload", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::XxeFileContent);
+    assert!(ev.description.contains("billion laughs"));
+}
+
+#[test]
+fn xxe_billion_laughs_ignores_pattern_in_control() {
+    let body = "lollollollollollollol";
+    let treatment = make_response(body, 200, Duration::from_millis(50));
+    let control = make_response(body, 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_file_content(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_parser_error_detects_sax_parse_exception() {
+    let treatment = make_response(
+        "org.xml.sax.SAXParseException: External entity not allowed",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "xxe payload", &baseline);
+    assert!(evidence.is_some());
+    let ev = evidence.unwrap();
+    assert_eq!(ev.evidence_type, EvidenceType::XxeParserError);
+    assert!((ev.confidence - 0.85).abs() < f64::EPSILON);
+}
+
+#[test]
+fn xxe_parser_error_detects_xml_syntax_error() {
+    let treatment = make_response(
+        "XMLSyntaxError: Entity 'xxe' not defined",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_detects_lxml_etree() {
+    let treatment = make_response(
+        "lxml.etree.XMLSyntaxError: Entity reference without name",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_detects_expat_error() {
+    let treatment = make_response(
+        "ExpatError: not well-formed (invalid token)",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_detects_doctype_error() {
+    let treatment = make_response(
+        "Error: DOCTYPE is not allowed",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_detects_entity_error() {
+    let treatment = make_response(
+        "Error: ENTITY declaration not supported",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_detects_org_xml_sax() {
+    let treatment = make_response(
+        "org.xml.sax.SAXException: external entities not allowed",
+        500,
+        Duration::from_millis(50),
+    );
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_some());
+}
+
+#[test]
+fn xxe_parser_error_ignores_pattern_present_in_control() {
+    let body = "ExpatError: something went wrong";
+    let treatment = make_response(body, 500, Duration::from_millis(50));
+    let control = make_response(body, 500, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
+    assert!(evidence.is_none());
+}
+
+#[test]
+fn xxe_parser_error_returns_none_when_no_pattern_matches() {
+    let treatment = make_response("normal error page", 500, Duration::from_millis(50));
+    let control = make_response("OK", 200, Duration::from_millis(50));
+    let baseline = make_baseline();
+
+    let evidence = confirm_xxe_parser_error(&treatment, &control, "payload", &baseline);
     assert!(evidence.is_none());
 }
