@@ -131,6 +131,7 @@ fn localhost_config() -> ScanConfig {
             worker_connect: None,
             worker_id: "worker-0".to_string(),
         },
+        telemetry: false,
     }
 }
 
@@ -171,6 +172,7 @@ fn scan_summary_debug() {
         new_findings_count: None,
         previously_known_count: None,
         audit_verified: Some(true),
+        telemetry_path: None,
     };
     let dbg = format!("{summary:?}");
     assert!(dbg.contains("total_findings"));
@@ -443,6 +445,7 @@ fn scan_summary_sarif_path_is_string() {
         new_findings_count: None,
         previously_known_count: None,
         audit_verified: None,
+        telemetry_path: None,
     };
     assert!(summary.sarif_path.is_empty());
 }
@@ -1863,4 +1866,155 @@ async fn run_fuzz_without_llm_payloads_works_unchanged() {
         "should still generate static payloads"
     );
     assert_eq!(result.phase.findings_count, 0);
+}
+
+// --- Telemetry wiring tests ---
+
+#[tokio::test]
+async fn run_scan_without_telemetry_flag_has_no_telemetry_path() {
+    let config = localhost_config();
+    let summary = run_scan(config).await.unwrap();
+    assert!(
+        summary.telemetry_path.is_none(),
+        "telemetry_path should be None when --telemetry is not set"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_with_telemetry_flag_exports_json_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("telemetry-test.sarif");
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.telemetry = true;
+
+    let summary = run_scan(config).await.unwrap();
+    assert!(
+        summary.telemetry_path.is_some(),
+        "telemetry_path should be Some when --telemetry is set"
+    );
+    let path = summary.telemetry_path.unwrap();
+    assert!(path.contains("aegis-telemetry.json"));
+    assert!(
+        std::path::Path::new(&path).exists(),
+        "telemetry file should exist on disk"
+    );
+
+    let contents = std::fs::read_to_string(&path).unwrap();
+    let events: Vec<serde_json::Value> = serde_json::from_str(&contents).unwrap();
+    assert!(
+        !events.is_empty(),
+        "telemetry file should contain at least one event"
+    );
+    let event_types: Vec<String> = events
+        .iter()
+        .filter_map(|e| e["event_type"].as_str().map(String::from))
+        .collect();
+    assert!(
+        event_types.contains(&"ScanStarted".to_string()),
+        "telemetry should contain ScanStarted event"
+    );
+    assert!(
+        event_types.contains(&"ScanCompleted".to_string()),
+        "telemetry should contain ScanCompleted event"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_with_telemetry_records_phase_events() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("telemetry-phases.sarif");
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.telemetry = true;
+
+    let summary = run_scan(config).await.unwrap();
+    let path = summary.telemetry_path.unwrap();
+    let contents = std::fs::read_to_string(&path).unwrap();
+    let events: Vec<serde_json::Value> = serde_json::from_str(&contents).unwrap();
+
+    let phase_events: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["event_type"].as_str() == Some("PhaseCompleted"))
+        .collect();
+    assert!(
+        !phase_events.is_empty(),
+        "telemetry should contain PhaseCompleted events"
+    );
+
+    let phase_names: Vec<&str> = phase_events
+        .iter()
+        .filter_map(|e| e["payload"]["PhaseComplete"]["phase_name"].as_str())
+        .collect();
+    assert!(
+        phase_names.contains(&"recon"),
+        "telemetry should record recon phase, got: {phase_names:?}"
+    );
+    assert!(
+        phase_names.contains(&"fuzz"),
+        "telemetry should record fuzz phase, got: {phase_names:?}"
+    );
+}
+
+#[tokio::test]
+async fn run_scan_telemetry_scan_start_has_correct_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    let sarif_path = dir.path().join("telemetry-metadata.sarif");
+    let mut config = localhost_config();
+    config.output = sarif_path;
+    config.telemetry = true;
+    config.llm.no_llm = true;
+
+    let summary = run_scan(config).await.unwrap();
+    let path = summary.telemetry_path.unwrap();
+    let contents = std::fs::read_to_string(&path).unwrap();
+    let events: Vec<serde_json::Value> = serde_json::from_str(&contents).unwrap();
+
+    let start_event = events
+        .iter()
+        .find(|e| e["event_type"].as_str() == Some("ScanStarted"))
+        .expect("should have ScanStarted event");
+    let payload = &start_event["payload"]["ScanStart"];
+    assert_eq!(payload["crate_count"].as_u64(), Some(11));
+    assert_eq!(payload["has_llm"].as_bool(), Some(false));
+    assert_eq!(payload["stealth_preset"].as_str(), Some("default"));
+}
+
+#[test]
+fn build_telemetry_config_disabled_when_flag_false() {
+    let config = localhost_config();
+    let tc = pipeline::build_telemetry_config(&config);
+    assert!(!tc.enabled);
+}
+
+#[test]
+fn build_telemetry_config_enabled_when_flag_true() {
+    let mut config = localhost_config();
+    config.telemetry = true;
+    config.llm.no_llm = true;
+    let tc = pipeline::build_telemetry_config(&config);
+    assert!(tc.enabled);
+    assert!(tc.include_timing);
+    assert!(tc.include_counts);
+    assert!(!tc.include_llm_usage);
+}
+
+#[test]
+fn build_telemetry_config_includes_llm_when_llm_enabled() {
+    let mut config = localhost_config();
+    config.telemetry = true;
+    config.llm.no_llm = false;
+    let tc = pipeline::build_telemetry_config(&config);
+    assert!(tc.include_llm_usage);
+}
+
+#[test]
+fn derive_telemetry_path_adjacent_to_output() {
+    let mut config = localhost_config();
+    config.output = std::path::PathBuf::from("/tmp/scans/report.sarif");
+    let path = pipeline::derive_telemetry_path(&config);
+    assert_eq!(
+        path,
+        std::path::PathBuf::from("/tmp/scans/aegis-telemetry.json")
+    );
 }

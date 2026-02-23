@@ -35,6 +35,9 @@ use crate::scan_config::{
     ConfigError, ScanConfig, ScanMetrics, load_auth_flow, parse_auth_inputs, parse_stealth_level,
     resolve_report_format,
 };
+use crate::telemetry::{
+    TelemetryCollector, TelemetryConfig, default_telemetry_config, generate_session_id,
+};
 use crate::util::timestamp_ms;
 
 pub struct ScanContext {
@@ -75,6 +78,8 @@ pub struct ScanSummary {
     /// Audit log integrity verification result.
     /// `None` when `--no-audit` is set, `Some(true)` when verified, `Some(false)` when tampered/corrupted.
     pub audit_verified: Option<bool>,
+    /// Path to the telemetry JSON file, if telemetry was enabled and exported.
+    pub telemetry_path: Option<String>,
 }
 
 #[derive(Debug)]
@@ -1326,9 +1331,109 @@ fn load_resume_checkpoint(
     }
 }
 
+pub(crate) fn build_telemetry_config(config: &ScanConfig) -> TelemetryConfig {
+    if config.telemetry {
+        TelemetryConfig {
+            enabled: true,
+            endpoint: None,
+            include_timing: true,
+            include_counts: true,
+            include_llm_usage: !config.llm.no_llm,
+            session_id: generate_session_id(),
+        }
+    } else {
+        default_telemetry_config()
+    }
+}
+
+pub(crate) fn derive_telemetry_path(config: &ScanConfig) -> std::path::PathBuf {
+    config
+        .output
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new("."))
+        .join("aegis-telemetry.json")
+}
+
+/// Records per-phase telemetry events from the completed scan metrics.
+fn record_phase_telemetry(
+    collector: &mut TelemetryCollector,
+    metrics: &ScanMetrics,
+    endpoint_count: usize,
+) {
+    for (phase, duration) in &metrics.phase_timings.timings {
+        collector.record_phase_complete(phase, duration.as_millis() as u64, endpoint_count);
+    }
+}
+
+/// Records LLM usage telemetry from the completed scan metrics.
+fn record_llm_telemetry(collector: &mut TelemetryCollector, metrics: &ScanMetrics) {
+    if metrics.llm_metrics.call_count > 0 {
+        collector.record_llm_usage(
+            metrics.llm_metrics.call_count,
+            metrics.llm_metrics.tokens_used,
+            0,
+        );
+    }
+}
+
+/// Exports telemetry to a JSON file if enabled, returning the path on success.
+fn export_telemetry(collector: &TelemetryCollector, config: &ScanConfig) -> Option<String> {
+    if !collector.is_enabled() {
+        return None;
+    }
+    let path = derive_telemetry_path(config);
+    match collector.export_to_file(&path) {
+        Ok(()) => {
+            tracing::info!(
+                path = %path.display(),
+                events = collector.event_count(),
+                "telemetry exported"
+            );
+            Some(path.to_string_lossy().to_string())
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to export telemetry");
+            None
+        }
+    }
+}
+
+/// Number of workspace crates in the aegis project.
+const WORKSPACE_CRATE_COUNT: usize = 11;
+
+fn verify_audit_log(
+    audit_path: &Option<std::path::PathBuf>,
+    hmac_key_path: &Option<std::path::PathBuf>,
+) -> Option<bool> {
+    let (Some(log_path), Some(key_path)) = (audit_path, hmac_key_path) else {
+        return None;
+    };
+    let Some(key_bytes) = std::fs::read(key_path).ok() else {
+        tracing::warn!("cannot read HMAC key file for audit verification");
+        return Some(false);
+    };
+    match aegis_audit_log::log_verifier::verify_log(Path::new(log_path), &key_bytes) {
+        Ok(report) => {
+            if report.tamper_detected {
+                tracing::warn!(
+                    "audit log integrity check FAILED: possible tampering or disk corruption"
+                );
+            }
+            Some(!report.tamper_detected)
+        }
+        Err(e) => {
+            tracing::warn!("audit log verification error: {e}");
+            Some(false)
+        }
+    }
+}
+
 pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> {
     parse_stealth_level(&config.stealth.stealth_level)?;
     resolve_report_format(&config.report_format)?;
+
+    let telemetry_config = build_telemetry_config(&config);
+    let mut telemetry = TelemetryCollector::new(telemetry_config);
 
     let scope_attestation = if let Some(attestation_path) = &config.audit.scope_attestation {
         let attestation = aegis_protocol::scope_attestation::load_attestation(attestation_path)
@@ -1382,6 +1487,12 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         AuditEventType::ScanStarted {
             target_description: config.target.clone(),
         },
+    );
+
+    telemetry.record_scan_start(
+        WORKSPACE_CRATE_COUNT,
+        !config.llm.no_llm,
+        &config.stealth.stealth_level,
     );
 
     if config.audit.i_am_authorized {
@@ -1469,43 +1580,37 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         let _ = delete_checkpoint(db_path);
     }
 
-    let phases = phases_result?;
+    match phases_result {
+        Ok(phases) => {
+            let endpoint_count = ctx
+                .graph
+                .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+                .unwrap_or_default()
+                .len();
+            record_phase_telemetry(&mut telemetry, &phases.scan_metrics, endpoint_count);
+            record_llm_telemetry(&mut telemetry, &phases.scan_metrics);
+            telemetry.record_scan_end(phases.total_findings as usize, endpoint_count);
+            let telemetry_path = export_telemetry(&telemetry, &ctx.config);
+            let audit_verified = verify_audit_log(&audit_path, &hmac_key_path);
 
-    let audit_verified = if let (Some(log_path), Some(key_path)) = (&audit_path, &hmac_key_path) {
-        let key = std::fs::read(key_path).ok();
-        if let Some(key_bytes) = key {
-            match aegis_audit_log::log_verifier::verify_log(Path::new(log_path), &key_bytes) {
-                Ok(report) => {
-                    if report.tamper_detected {
-                        tracing::warn!(
-                            "audit log integrity check FAILED: possible tampering or disk corruption"
-                        );
-                    }
-                    Some(!report.tamper_detected)
-                }
-                Err(e) => {
-                    tracing::warn!("audit log verification error: {e}");
-                    Some(false)
-                }
-            }
-        } else {
-            tracing::warn!("cannot read HMAC key file for audit verification");
-            Some(false)
+            Ok(ScanSummary {
+                total_findings: phases.total_findings,
+                total_operations: phases.total_operations,
+                phases_completed: phases.phases_completed,
+                sarif_path: phases.sarif_path,
+                audit_log_path: audit_path.map(|p| p.to_string_lossy().to_string()),
+                hmac_key_path: hmac_key_path.map(|p| p.to_string_lossy().to_string()),
+                metrics: phases.scan_metrics,
+                new_findings_count: phases.new_findings_count,
+                previously_known_count: phases.previously_known_count,
+                audit_verified,
+                telemetry_path,
+            })
         }
-    } else {
-        None
-    };
-
-    Ok(ScanSummary {
-        total_findings: phases.total_findings,
-        total_operations: phases.total_operations,
-        phases_completed: phases.phases_completed,
-        sarif_path: phases.sarif_path,
-        audit_log_path: audit_path.map(|p| p.to_string_lossy().to_string()),
-        hmac_key_path: hmac_key_path.map(|p| p.to_string_lossy().to_string()),
-        metrics: phases.scan_metrics,
-        new_findings_count: phases.new_findings_count,
-        previously_known_count: phases.previously_known_count,
-        audit_verified,
-    })
+        Err(e) => {
+            telemetry.record_scan_error(&e.to_string());
+            let _ = export_telemetry(&telemetry, &ctx.config);
+            Err(e)
+        }
+    }
 }

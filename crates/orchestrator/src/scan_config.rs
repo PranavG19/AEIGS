@@ -376,6 +376,12 @@ pub struct ScanConfig {
 
     #[command(flatten)]
     pub distributed: DistributedOptions,
+
+    /// Enable opt-in telemetry collection. When set, aggregate scan metrics
+    /// (phase timings, finding counts, LLM usage) are written to a JSON file
+    /// alongside the SARIF report. Never includes raw findings or payloads.
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
+    pub telemetry: bool,
 }
 
 impl ScanConfig {

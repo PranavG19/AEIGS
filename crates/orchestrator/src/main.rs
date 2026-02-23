@@ -38,6 +38,9 @@ async fn main() {
                 summary.total_findings, summary.phases_completed
             );
             println!("SARIF report: {}", summary.sarif_path);
+            if let Some(ref path) = summary.telemetry_path {
+                println!("Telemetry: {path}");
+            }
             if let Some(verified) = summary.audit_verified {
                 if verified {
                     println!("Audit log integrity: verified");

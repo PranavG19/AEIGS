@@ -120,6 +120,7 @@ fn localhost_config() -> scan_config::ScanConfig {
             worker_connect: None,
             worker_id: "worker-0".to_string(),
         },
+        telemetry: false,
     }
 }
 
