@@ -5,6 +5,7 @@ use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_protocol::edge::EdgeLabel;
 use aegis_protocol::operation::GraphOperation;
 use clap::Parser;
+use pipeline::apply_stealth_adjustments;
 
 fn test_config() -> ScanConfig {
     ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap()
@@ -349,4 +350,163 @@ fn endpoints_to_operations_applied_to_graph_stores_parameters() {
     let content_types: Vec<String> =
         serde_json::from_str(&node.properties["request_content_types"]).unwrap();
     assert_eq!(content_types, vec!["application/json"]);
+}
+
+#[test]
+fn probe_defenses_unreachable_target_returns_empty_profile() {
+    let profile = probe_defenses("http://localhost:19999");
+
+    assert!(profile.waf.is_none());
+    assert!(profile.rate_limit.is_none());
+    assert!(profile.bot_detection.is_none());
+    assert!(profile.fingerprint_timestamp_ms > 0);
+}
+
+#[test]
+fn apply_stealth_adjustments_waf_caps_rps() {
+    let mut config = test_config();
+    assert!(config.stealth.max_rps.is_none());
+
+    let profile = DefenseProfile::empty(0).with_waf(WafProfile {
+        vendor: WafVendor::ModSecurity,
+        paranoia_level: Some(2),
+        blocked_response_code: 403,
+        blocked_categories: vec![],
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(5));
+}
+
+#[test]
+fn apply_stealth_adjustments_waf_does_not_raise_existing_cap() {
+    let mut config = test_config();
+    config.stealth.max_rps = Some(3);
+
+    let profile = DefenseProfile::empty(0).with_waf(WafProfile {
+        vendor: WafVendor::Cloudflare,
+        paranoia_level: None,
+        blocked_response_code: 403,
+        blocked_categories: vec![],
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(3));
+}
+
+#[test]
+fn apply_stealth_adjustments_rate_limit_sets_80_percent() {
+    let mut config = test_config();
+    assert!(config.stealth.max_rps.is_none());
+
+    let profile = DefenseProfile::empty(0).with_rate_limit(RateLimitProfile {
+        requests_per_second: Some(10.0),
+        burst_allowance: Some(20),
+        limit_response_code: 429,
+        limit_window_seconds: Some(60),
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(8));
+}
+
+#[test]
+fn apply_stealth_adjustments_rate_limit_does_not_raise_existing_cap() {
+    let mut config = test_config();
+    config.stealth.max_rps = Some(2);
+
+    let profile = DefenseProfile::empty(0).with_rate_limit(RateLimitProfile {
+        requests_per_second: Some(100.0),
+        burst_allowance: None,
+        limit_response_code: 429,
+        limit_window_seconds: None,
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(2));
+}
+
+#[test]
+fn apply_stealth_adjustments_waf_and_rate_limit_combined() {
+    let mut config = test_config();
+
+    let profile = DefenseProfile::empty(0)
+        .with_waf(WafProfile {
+            vendor: WafVendor::AwsWaf,
+            paranoia_level: None,
+            blocked_response_code: 403,
+            blocked_categories: vec![],
+        })
+        .with_rate_limit(RateLimitProfile {
+            requests_per_second: Some(3.0),
+            burst_allowance: None,
+            limit_response_code: 429,
+            limit_window_seconds: None,
+        });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(2));
+}
+
+#[test]
+fn apply_stealth_adjustments_bot_detection_alone_does_not_change_rps() {
+    let mut config = test_config();
+
+    let profile = DefenseProfile::empty(0).with_bot_detection(BotDetectionProfile {
+        detected: true,
+        detection_method: "header_analysis".to_string(),
+        challenge_response_code: Some(403),
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert!(config.stealth.max_rps.is_none());
+}
+
+#[test]
+fn apply_stealth_adjustments_empty_profile_is_noop() {
+    let mut config = test_config();
+    let original_rps = config.stealth.max_rps;
+
+    let profile = DefenseProfile::empty(0);
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, original_rps);
+}
+
+#[test]
+fn apply_stealth_adjustments_rate_limit_minimum_1_rps() {
+    let mut config = test_config();
+
+    let profile = DefenseProfile::empty(0).with_rate_limit(RateLimitProfile {
+        requests_per_second: Some(0.5),
+        burst_allowance: None,
+        limit_response_code: 429,
+        limit_window_seconds: None,
+    });
+
+    apply_stealth_adjustments(&mut config, &profile);
+
+    assert_eq!(config.stealth.max_rps, Some(1));
+}
+
+#[test]
+fn run_fingerprint_with_unreachable_target_still_sets_profile() {
+    let mut ctx = test_context();
+    ctx.config.target = "http://localhost:19999".to_string();
+
+    let result = run_fingerprint(&mut ctx).unwrap();
+
+    assert!(ctx.defense_profile.is_some());
+    assert_eq!(result.operations_applied, 1);
+    let profile = ctx.defense_profile.unwrap();
+    assert!(profile.waf.is_none());
+    assert!(profile.rate_limit.is_none());
+    assert!(profile.bot_detection.is_none());
 }

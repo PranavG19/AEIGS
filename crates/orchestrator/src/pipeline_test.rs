@@ -520,7 +520,7 @@ fn collect_recon_ops_no_source_dir() {
 #[test]
 fn collect_fingerprint_ops_produces_one_entry() {
     let mut seq = 0;
-    let (ops, profile) = pipeline::collect_fingerprint_ops(&mut seq);
+    let (ops, profile) = pipeline::collect_fingerprint_ops(&mut seq, "http://localhost:9999");
     assert_eq!(ops.len(), 1);
     assert_eq!(
         ops[0].module,

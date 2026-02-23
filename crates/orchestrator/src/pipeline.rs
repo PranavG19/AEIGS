@@ -224,9 +224,19 @@ pub fn register_default_policies(manager: &mut CapabilityManager) {
     }
 }
 
-pub(crate) fn collect_fingerprint_ops(seq: &mut u64) -> (Vec<OperationLogEntry>, DefenseProfile) {
+pub(crate) fn collect_fingerprint_ops(
+    seq: &mut u64,
+    target: &str,
+) -> (Vec<OperationLogEntry>, DefenseProfile) {
+    let target_owned = target.to_string();
+    let profile =
+        std::thread::spawn(move || crate::phase_fingerprint::probe_defenses(&target_owned))
+            .join()
+            .unwrap_or_else(|_| {
+                tracing::warn!("defense fingerprinting thread panicked, using empty profile");
+                DefenseProfile::empty(timestamp_ms())
+            });
     let ts = timestamp_ms();
-    let profile = DefenseProfile::empty(ts);
     *seq += 1;
     let entry = OperationLogEntry {
         sequence_number: *seq,
@@ -238,6 +248,46 @@ pub(crate) fn collect_fingerprint_ops(seq: &mut u64) -> (Vec<OperationLogEntry>,
         timestamp_unix_ms: ts,
     };
     (vec![entry], profile)
+}
+
+/// Adjusts stealth configuration based on detected defenses.
+///
+/// - WAF detected: cap request rate to 5 rps if not already lower
+/// - Rate limit detected: set max_rps to 80% of detected limit
+/// - Bot detection detected: log recommendation for persona rotation
+pub(crate) fn apply_stealth_adjustments(config: &mut ScanConfig, profile: &DefenseProfile) {
+    if let Some(ref waf) = profile.waf {
+        tracing::info!(
+            vendor = ?waf.vendor,
+            "auto-adjusting stealth: WAF detected, capping request rate"
+        );
+        let waf_cap = config.stealth.max_rps.map_or(5, |current| current.min(5));
+        config.stealth.max_rps = Some(waf_cap);
+    }
+    if let Some(ref rl) = profile.rate_limit
+        && let Some(rps) = rl.requests_per_second
+    {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let safe_rps = (rps * 0.8).max(1.0) as u32;
+        let adjusted = config
+            .stealth
+            .max_rps
+            .map_or(safe_rps, |current| current.min(safe_rps));
+        tracing::info!(
+            detected_rps = rps,
+            adjusted_rps = adjusted,
+            "auto-adjusting stealth: rate limit detected"
+        );
+        config.stealth.max_rps = Some(adjusted);
+    }
+    if let Some(ref bd) = profile.bot_detection
+        && bd.detected
+    {
+        tracing::info!(
+            method = %bd.detection_method,
+            "auto-adjusting stealth: bot detection present, persona rotation recommended"
+        );
+    }
 }
 
 /// Run blocking HTTP discovery on a separate thread to avoid conflict with the
@@ -609,14 +659,15 @@ fn run_fingerprint_phase(
         .graph
         .total_operations_applied()
         .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
-    let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
+    let (fp_ops, profile) = collect_fingerprint_ops(&mut seq, &ctx.config.target);
     let fp_ops_count = fp_ops.len() as u64;
     if !fp_ops.is_empty() {
         ctx.graph
             .apply_operations(&fp_ops)
             .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
     }
-    ctx.defense_profile = Some(profile);
+    ctx.defense_profile = Some(profile.clone());
+    apply_stealth_adjustments(&mut ctx.config, &profile);
 
     let mut discovered = discover_openapi_endpoints_http(&ctx.config.target);
 

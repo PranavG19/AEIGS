@@ -1,6 +1,16 @@
+use std::time::Duration;
+
 use aegis_enumeration::introspection::IntrospectedEndpoint;
 use aegis_fuzzing::DefenseProfile;
+use aegis_fuzzing::bot_detection_probe::{BotProbeResult, analyze_bot_detection};
+use aegis_fuzzing::rate_limit_detector::{
+    BurstProbeResult, RateLimitProbeResult, build_rate_limit_profile,
+};
+use aegis_fuzzing::waf_fingerprinter::{
+    WafProbeResult, build_waf_profile, identify_blocked_categories, identify_vendor,
+};
 use aegis_protocol::edge::EdgeLabel;
+use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
@@ -8,8 +18,199 @@ use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
 use crate::util::timestamp_ms;
 
+const WAF_PROBE_PAYLOADS: &[&str] = &[
+    "<script>alert(1)</script>",
+    "' OR 1=1 --",
+    "../../etc/passwd",
+    "; cat /etc/passwd",
+];
+
+const WAF_CATEGORY_PROBES: &[(VulnerabilityClass, &str)] = &[
+    (VulnerabilityClass::SqlInjection, "' OR 1=1 --"),
+    (
+        VulnerabilityClass::CrossSiteScripting,
+        "<script>alert(1)</script>",
+    ),
+    (VulnerabilityClass::CommandInjection, "; cat /etc/passwd"),
+    (VulnerabilityClass::PathTraversal, "../../etc/passwd"),
+];
+
+const PROBE_TIMEOUT_SECS: u64 = 5;
+
+fn build_probe_client() -> Option<reqwest::blocking::Client> {
+    reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(PROBE_TIMEOUT_SECS))
+        .build()
+        .ok()
+}
+
+fn send_probe(
+    client: &reqwest::blocking::Client,
+    url: &str,
+    payload: &str,
+) -> Option<WafProbeResult> {
+    let response = client.get(url).query(&[("q", payload)]).send().ok()?;
+    let status = response.status().as_u16();
+    let headers: Vec<(String, String)> = response
+        .headers()
+        .iter()
+        .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
+        .collect();
+    let body = response.text().unwrap_or_default();
+    let snippet = body.chars().take(2048).collect();
+    Some(WafProbeResult {
+        probe_payload: payload.to_string(),
+        response_status: status,
+        response_headers: headers,
+        response_body_snippet: snippet,
+    })
+}
+
+fn probe_baseline(client: &reqwest::blocking::Client, target: &str) -> Option<u16> {
+    client.get(target).send().ok().map(|r| r.status().as_u16())
+}
+
+fn probe_waf(
+    client: &reqwest::blocking::Client,
+    target: &str,
+) -> Option<aegis_fuzzing::WafProfile> {
+    let baseline_status = probe_baseline(client, target)?;
+    let responses: Vec<WafProbeResult> = WAF_PROBE_PAYLOADS
+        .iter()
+        .filter_map(|payload| send_probe(client, target, payload))
+        .collect();
+    if responses.is_empty() {
+        return None;
+    }
+    let vendor = identify_vendor(&responses);
+    let has_blocking = responses.iter().any(|r| {
+        r.response_status != baseline_status && [403, 406, 419, 451].contains(&r.response_status)
+    });
+    if !has_blocking {
+        return None;
+    }
+    let category_results: Vec<(VulnerabilityClass, WafProbeResult)> = WAF_CATEGORY_PROBES
+        .iter()
+        .filter_map(|(class, payload)| send_probe(client, target, payload).map(|r| (*class, r)))
+        .collect();
+    let blocked_categories = identify_blocked_categories(baseline_status, &category_results);
+    let blocked_code = responses
+        .iter()
+        .find(|r| [403, 406, 419, 451].contains(&r.response_status))
+        .map(|r| r.response_status)
+        .unwrap_or(403);
+    Some(build_waf_profile(
+        vendor,
+        blocked_categories,
+        None,
+        blocked_code,
+    ))
+}
+
+fn probe_rate_limit(
+    client: &reqwest::blocking::Client,
+    target: &str,
+) -> Option<aegis_fuzzing::RateLimitProfile> {
+    let mut probes = Vec::new();
+    let batch_size = 30u32;
+    let mut limited_count = 0u32;
+    for _ in 0..batch_size {
+        if let Ok(resp) = client.get(target).send() {
+            let status = resp.status().as_u16();
+            if status == 429 {
+                limited_count += 1;
+            }
+            probes.push(RateLimitProbeResult {
+                request_rate: batch_size as f64,
+                total_sent: batch_size,
+                limited_count,
+                limit_status_code: if status == 429 { Some(429) } else { None },
+            });
+        }
+    }
+    if probes.is_empty() {
+        return None;
+    }
+    let burst = BurstProbeResult {
+        total_sent: batch_size,
+        first_limited_at: if limited_count > 0 {
+            Some(batch_size - limited_count)
+        } else {
+            None
+        },
+        limit_status_code: if limited_count > 0 { Some(429) } else { None },
+    };
+    build_rate_limit_profile(&probes, Some(&burst), &[])
+}
+
+fn probe_bot_detection(
+    client: &reqwest::blocking::Client,
+    target: &str,
+) -> Option<aegis_fuzzing::BotDetectionProfile> {
+    let no_headers_resp = client.get(target).header("User-Agent", "").send().ok()?;
+    let no_headers_status = no_headers_resp.status().as_u16();
+    let no_headers_body: String = no_headers_resp
+        .text()
+        .unwrap_or_default()
+        .chars()
+        .take(2048)
+        .collect();
+    let no_headers = BotProbeResult {
+        headers_sent: false,
+        response_status: no_headers_status,
+        response_body_snippet: no_headers_body,
+        rapid_request: false,
+    };
+
+    let with_headers_resp = client.get(target).send().ok()?;
+    let with_headers_status = with_headers_resp.status().as_u16();
+    let with_headers_body: String = with_headers_resp
+        .text()
+        .unwrap_or_default()
+        .chars()
+        .take(2048)
+        .collect();
+    let with_headers = BotProbeResult {
+        headers_sent: true,
+        response_status: with_headers_status,
+        response_body_snippet: with_headers_body,
+        rapid_request: false,
+    };
+
+    analyze_bot_detection(&no_headers, &with_headers, &[])
+}
+
+/// Sends real HTTP probes to the target to detect WAF, rate limiting, and bot
+/// detection. Returns an empty profile when the target is unreachable.
+pub fn probe_defenses(target: &str) -> DefenseProfile {
+    let ts = timestamp_ms();
+    let Some(client) = build_probe_client() else {
+        return DefenseProfile::empty(ts);
+    };
+    let mut profile = DefenseProfile::empty(ts);
+    if let Some(waf) = probe_waf(&client, target) {
+        tracing::info!(vendor = ?waf.vendor, "WAF detected");
+        profile = profile.with_waf(waf);
+    }
+    if let Some(rl) = probe_rate_limit(&client, target) {
+        tracing::info!(rps = ?rl.requests_per_second, "rate limiting detected");
+        profile = profile.with_rate_limit(rl);
+    }
+    if let Some(bd) = probe_bot_detection(&client, target) {
+        tracing::info!(method = %bd.detection_method, "bot detection detected");
+        profile = profile.with_bot_detection(bd);
+    }
+    profile
+}
+
 pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
-    let profile = DefenseProfile::empty(timestamp_ms());
+    let target = ctx.config.target.clone();
+    let profile = std::thread::spawn(move || probe_defenses(&target))
+        .join()
+        .unwrap_or_else(|_| {
+            tracing::warn!("defense fingerprinting thread panicked, using empty profile");
+            DefenseProfile::empty(timestamp_ms())
+        });
     let mut entries = Vec::new();
     let mut sequence = ctx.graph.total_operations_applied()?;
 

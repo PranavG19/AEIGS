@@ -10,7 +10,9 @@ use crate::phase_error::PhaseError;
 use crate::phase_fuzz::{FuzzPhaseResult, FuzzTransport, run_fuzz};
 use crate::phase_recon::run_recon_standalone;
 use crate::phase_report::run_report_with_previous;
-use crate::pipeline::{PhaseResult, ScanContext, collect_fingerprint_ops};
+use crate::pipeline::{
+    PhaseResult, ScanContext, apply_stealth_adjustments, collect_fingerprint_ops,
+};
 use crate::scan_config::ScanMetrics;
 
 /// Errors produced by actor processing.
@@ -228,7 +230,7 @@ impl ScanActor for FingerprintActor {
             .graph
             .total_operations_applied()
             .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
-        let (fp_ops, profile) = collect_fingerprint_ops(&mut seq);
+        let (fp_ops, profile) = collect_fingerprint_ops(&mut seq, &ctx.config.target);
         let ops_count = fp_ops.len() as u64;
 
         if !fp_ops.is_empty() {
@@ -236,7 +238,8 @@ impl ScanActor for FingerprintActor {
                 .apply_operations(&fp_ops)
                 .map_err(|e| ActorError::Phase(PhaseError::from(e)))?;
         }
-        ctx.defense_profile = Some(profile);
+        ctx.defense_profile = Some(profile.clone());
+        apply_stealth_adjustments(&mut ctx.config, &profile);
 
         let event = phase_completed_event(
             ModuleIdentifier::Enumeration,
