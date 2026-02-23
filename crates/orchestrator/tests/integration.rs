@@ -372,13 +372,13 @@ fn phase_analyze_builds_attack_graph() {
 }
 
 // 214: phase_report_emits_sarif
-#[test]
-fn phase_report_emits_sarif() {
+#[tokio::test]
+async fn phase_report_emits_sarif() {
     let dir = tempfile::tempdir().unwrap();
     let sarif_path = dir.path().join("test-report.sarif");
     let mut ctx = make_scan_context_real();
     ctx.config.output = sarif_path.clone();
-    let result = aegis_orchestrator::run_report(&mut ctx, None).unwrap();
+    let result = aegis_orchestrator::run_report(&mut ctx, None).await.unwrap();
     assert_eq!(result.findings_count, 0);
     assert!(sarif_path.exists(), "SARIF file should be created");
     let contents = std::fs::read_to_string(&sarif_path).unwrap();
@@ -387,8 +387,8 @@ fn phase_report_emits_sarif() {
 }
 
 // 215: phase_report_diff_mode
-#[test]
-fn phase_report_diff_mode() {
+#[tokio::test]
+async fn phase_report_diff_mode() {
     let dir = tempfile::tempdir().unwrap();
     let sarif_path = dir.path().join("diff-report.sarif");
     let mut ctx = make_scan_context_real();
@@ -396,7 +396,7 @@ fn phase_report_diff_mode() {
     // Empty previous findings
     let previous: Vec<FindingData> = vec![];
     let result =
-        aegis_orchestrator::run_report_with_previous(&mut ctx, None, Some(&previous)).unwrap();
+        aegis_orchestrator::run_report_with_previous(&mut ctx, None, Some(&previous)).await.unwrap();
     assert_eq!(result.findings_count, 0);
     assert!(sarif_path.exists());
 }
@@ -406,8 +406,8 @@ fn phase_report_diff_mode() {
 // ===========================================================================
 
 // 216: checkpoint_save_load_roundtrip
-#[test]
-fn checkpoint_save_load_roundtrip() {
+#[tokio::test]
+async fn checkpoint_save_load_roundtrip() {
     let dir = tempfile::tempdir().unwrap();
     let db_path = dir.path().join("graph.json");
     let checkpoint = ScanCheckpoint {
@@ -418,8 +418,8 @@ fn checkpoint_save_load_roundtrip() {
         consecutive_zero_findings: 1,
         timestamp_unix_ms: 1700000000000,
     };
-    save_checkpoint(&checkpoint, &db_path).unwrap();
-    let loaded = load_checkpoint(&db_path).unwrap().unwrap();
+    save_checkpoint(&checkpoint, &db_path).await.unwrap();
+    let loaded = load_checkpoint(&db_path).await.unwrap().unwrap();
     assert_eq!(loaded.completed_phases, checkpoint.completed_phases);
     assert_eq!(loaded.current_iteration, checkpoint.current_iteration);
     assert_eq!(loaded.total_operations, checkpoint.total_operations);
@@ -449,8 +449,8 @@ fn checkpoint_skip_completed_phases() {
 }
 
 // 218: checkpoint_delete_on_completion
-#[test]
-fn checkpoint_delete_on_completion() {
+#[tokio::test]
+async fn checkpoint_delete_on_completion() {
     let dir = tempfile::tempdir().unwrap();
     let db_path = dir.path().join("graph.json");
     let checkpoint = ScanCheckpoint {
@@ -461,24 +461,24 @@ fn checkpoint_delete_on_completion() {
         consecutive_zero_findings: 0,
         timestamp_unix_ms: 0,
     };
-    save_checkpoint(&checkpoint, &db_path).unwrap();
+    save_checkpoint(&checkpoint, &db_path).await.unwrap();
     let cp_path = checkpoint_path(&db_path);
     assert!(cp_path.exists());
-    delete_checkpoint(&db_path).unwrap();
+    delete_checkpoint(&db_path).await.unwrap();
     assert!(!cp_path.exists());
     // load returns None after delete
-    let loaded = load_checkpoint(&db_path).unwrap();
+    let loaded = load_checkpoint(&db_path).await.unwrap();
     assert!(loaded.is_none());
 }
 
 // 219: checkpoint_corrupted_file_error
-#[test]
-fn checkpoint_corrupted_file_error() {
+#[tokio::test]
+async fn checkpoint_corrupted_file_error() {
     let dir = tempfile::tempdir().unwrap();
     let db_path = dir.path().join("graph.json");
     let cp_path = checkpoint_path(&db_path);
     std::fs::write(&cp_path, b"this is not valid json at all!!!").unwrap();
-    let result = load_checkpoint(&db_path);
+    let result = load_checkpoint(&db_path).await;
     assert!(result.is_err(), "corrupted checkpoint should produce error");
 }
 
@@ -1381,15 +1381,15 @@ fn telemetry_sanitizes_errors() {
 }
 
 // 258: telemetry_export_to_file
-#[test]
-fn telemetry_export_to_file() {
+#[tokio::test]
+async fn telemetry_export_to_file() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("telemetry.json");
     let mut config = default_telemetry_config();
     config.enabled = true;
     let mut collector = TelemetryCollector::new(config);
     collector.record_scan_start(11, false, "default");
-    collector.export_to_file(&path).unwrap();
+    collector.export_to_file(&path).await.unwrap();
     assert!(path.exists());
     let contents = std::fs::read_to_string(&path).unwrap();
     let parsed: serde_json::Value = serde_json::from_str(&contents).unwrap();

@@ -763,7 +763,11 @@ struct ScanProgress {
     completed_phases: Vec<String>,
 }
 
-fn try_save_checkpoint(progress: &ScanProgress, iteration: u32, graph_db_path: Option<&Path>) {
+async fn try_save_checkpoint(
+    progress: &ScanProgress,
+    iteration: u32,
+    graph_db_path: Option<&Path>,
+) {
     let Some(db_path) = graph_db_path else {
         return;
     };
@@ -775,7 +779,7 @@ fn try_save_checkpoint(progress: &ScanProgress, iteration: u32, graph_db_path: O
         consecutive_zero_findings: progress.consecutive_zero_findings,
         timestamp_unix_ms: timestamp_ms(),
     };
-    if let Err(e) = save_checkpoint(&cp, db_path) {
+    if let Err(e) = save_checkpoint(&cp, db_path).await {
         tracing::warn!(error = %e, "failed to save scan checkpoint");
     }
 }
@@ -1271,7 +1275,7 @@ async fn run_fuzz_analyze_loop(
             fuzz_findings = result.phase.findings_count;
             last_fuzz_result = Some(result);
             progress.completed_phases.push(fuzz_phase.clone());
-            try_save_checkpoint(progress, iteration, graph_db_path);
+            try_save_checkpoint(progress, iteration, graph_db_path).await;
             interactive_phase_complete(session, &fuzz_phase, ctx, scan_start);
         }
 
@@ -1307,7 +1311,7 @@ async fn run_fuzz_analyze_loop(
         }
 
         update_convergence(progress, fuzz_findings, analyze_findings);
-        try_save_checkpoint(progress, iteration + 1, graph_db_path);
+        try_save_checkpoint(progress, iteration + 1, graph_db_path).await;
 
         if progress.consecutive_zero_findings >= convergence_threshold
             && iteration + 1 < max_iterations
@@ -1523,7 +1527,7 @@ async fn run_scan_phases(
         && !interactive_gate(session, "recon", scan_start)?
     {
         run_recon_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
-        try_save_checkpoint(&progress, 0, graph_db_path);
+        try_save_checkpoint(&progress, 0, graph_db_path).await;
         interactive_phase_complete(session, "recon", ctx, scan_start);
     }
 
@@ -1538,7 +1542,7 @@ async fn run_scan_phases(
             &mut scan_metrics,
             &crawl_result,
         )?;
-        try_save_checkpoint(&progress, 0, graph_db_path);
+        try_save_checkpoint(&progress, 0, graph_db_path).await;
         interactive_phase_complete(session, "crawl", ctx, scan_start);
     }
 
@@ -1547,7 +1551,7 @@ async fn run_scan_phases(
         && !interactive_gate(session, "fingerprint", scan_start)?
     {
         run_fingerprint_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
-        try_save_checkpoint(&progress, 0, graph_db_path);
+        try_save_checkpoint(&progress, 0, graph_db_path).await;
         interactive_phase_complete(session, "fingerprint", ctx, scan_start);
     }
 
@@ -1567,7 +1571,7 @@ async fn run_scan_phases(
         && !interactive_gate(session, "dom_verify", scan_start)?
     {
         run_dom_verify_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
-        try_save_checkpoint(&progress, 0, graph_db_path);
+        try_save_checkpoint(&progress, 0, graph_db_path).await;
         interactive_phase_complete(session, "dom_verify", ctx, scan_start);
     }
 
@@ -1579,6 +1583,7 @@ async fn run_scan_phases(
     );
     let report_start = std::time::Instant::now();
     let report = run_report_with_previous(ctx, Some(&scan_metrics), previous_findings)
+        .await
         .map_err(PipelineError::Report)?;
     progress.total_ops += report.operations_applied;
     progress.total_findings += report.findings_count;
@@ -1591,7 +1596,7 @@ async fn run_scan_phases(
         let mut ag = aegis_chain_synthesis::attack_graph::AttackGraph::new();
         let mut kg_to_ag = std::collections::HashMap::new();
         build_attack_graph_from_knowledge_graph(ctx, &mut ag, &mut kg_to_ag);
-        export_attack_graph(ctx, &ag).map_err(PipelineError::Report)?;
+        export_attack_graph(ctx, &ag).await.map_err(PipelineError::Report)?;
     }
 
     emit_event(
@@ -1614,7 +1619,7 @@ async fn run_scan_phases(
     })
 }
 
-fn load_resume_checkpoint(
+async fn load_resume_checkpoint(
     config: &ScanConfig,
     graph_db_path: Option<&Path>,
 ) -> Option<ScanCheckpoint> {
@@ -1625,7 +1630,7 @@ fn load_resume_checkpoint(
         tracing::warn!("--resume requires --graph-db; proceeding without checkpoint");
         return None;
     };
-    match crate::checkpoint::load_checkpoint(db_path) {
+    match crate::checkpoint::load_checkpoint(db_path).await {
         Ok(cp) => cp,
         Err(e) => {
             tracing::warn!(error = %e, "failed to load checkpoint; starting fresh");
@@ -1680,12 +1685,12 @@ fn record_llm_telemetry(collector: &mut TelemetryCollector, metrics: &ScanMetric
 }
 
 /// Exports telemetry to a JSON file if enabled, returning the path on success.
-fn export_telemetry(collector: &TelemetryCollector, config: &ScanConfig) -> Option<String> {
+async fn export_telemetry(collector: &TelemetryCollector, config: &ScanConfig) -> Option<String> {
     if !collector.is_enabled() {
         return None;
     }
     let path = derive_telemetry_path(config);
-    match collector.export_to_file(&path) {
+    match collector.export_to_file(&path).await {
         Ok(()) => {
             tracing::info!(
                 path = %path.display(),
@@ -1832,7 +1837,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         None
     };
 
-    let checkpoint = load_resume_checkpoint(&config, graph_db_path.as_deref());
+    let checkpoint = load_resume_checkpoint(&config, graph_db_path.as_deref()).await;
 
     let graph: Box<dyn GraphStore> = Box::new(loaded_graph);
     let master_key: [u8; 32] = rand::random();
@@ -1888,7 +1893,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
     if phases_result.is_ok()
         && let Some(db_path) = graph_db_path.as_deref()
     {
-        let _ = delete_checkpoint(db_path);
+        let _ = delete_checkpoint(db_path).await;
     }
 
     match phases_result {
@@ -1901,7 +1906,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
             record_phase_telemetry(&mut telemetry, &phases.scan_metrics, endpoint_count);
             record_llm_telemetry(&mut telemetry, &phases.scan_metrics);
             telemetry.record_scan_end(phases.total_findings as usize, endpoint_count);
-            let telemetry_path = export_telemetry(&telemetry, &ctx.config);
+            let telemetry_path = export_telemetry(&telemetry, &ctx.config).await;
             let audit_verified = verify_audit_log(&audit_path, &hmac_key_path);
 
             Ok(ScanSummary {
@@ -1920,7 +1925,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         }
         Err(e) => {
             telemetry.record_scan_error(&e.to_string());
-            let _ = export_telemetry(&telemetry, &ctx.config);
+            let _ = export_telemetry(&telemetry, &ctx.config).await;
             Err(e)
         }
     }

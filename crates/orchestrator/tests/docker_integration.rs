@@ -856,8 +856,8 @@ fn scan_history_adaptive_selection() {
 }
 
 // 292: checkpoint_resume_mid_scan
-#[test]
-fn checkpoint_resume_mid_scan() {
+#[tokio::test]
+async fn checkpoint_resume_mid_scan() {
     if !docker_tests_enabled() {
         eprintln!("Skipping Docker test: set AEGIS_INTEGRATION_TESTS=1 to run");
         return;
@@ -872,9 +872,9 @@ fn checkpoint_resume_mid_scan() {
         consecutive_zero_findings: 0,
         timestamp_unix_ms: 1700000000000,
     };
-    save_checkpoint(&checkpoint, &db_path).unwrap();
+    save_checkpoint(&checkpoint, &db_path).await.unwrap();
 
-    let loaded = load_checkpoint(&db_path).unwrap().unwrap();
+    let loaded = load_checkpoint(&db_path).await.unwrap().unwrap();
     assert!(should_skip_phase(&loaded, "recon"));
     assert!(should_skip_phase(&loaded, "fingerprint"));
     assert!(!should_skip_phase(&loaded, "fuzz:0"));

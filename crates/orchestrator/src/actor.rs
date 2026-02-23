@@ -427,13 +427,33 @@ impl ScanActor for ReportActor {
         _events: &[ScanEventEnvelope],
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
-        let result = run_report_with_previous(
-            ctx,
-            self.metrics.as_ref(),
-            self.previous_findings.as_deref(),
-        )
-        .map_err(ActorError::Phase)?;
+        let result = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("tokio runtime")
+            .block_on(run_report_with_previous(
+                ctx,
+                self.metrics.as_ref(),
+                self.previous_findings.as_deref(),
+            ))
+            .map_err(ActorError::Phase)?;
+        let event =
+            phase_completed_event(ModuleIdentifier::ChainSynthesis, "report", &result, start);
+        Ok(vec![event])
+    }
+}
 
+impl ReportActor {
+    /// Async entry point for use inside an existing tokio runtime context.
+    pub async fn process_async(
+        &mut self,
+        ctx: &mut ScanContext,
+        _events: &[ScanEventEnvelope],
+    ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
+        let start = std::time::Instant::now();
+        let result = run_report_with_previous(ctx, self.metrics.as_ref(), self.previous_findings.as_deref())
+            .await
+            .map_err(ActorError::Phase)?;
         let event =
             phase_completed_event(ModuleIdentifier::ChainSynthesis, "report", &result, start);
         Ok(vec![event])
@@ -553,7 +573,7 @@ pub async fn run_actor_pipeline<T: FuzzTransport>(
     all_events.extend(dom_verify_events);
 
     let mut report = ReportActor::new(None, previous_findings);
-    let report_events = report.process(ctx, &all_events)?;
+    let report_events = report.process_async(ctx, &all_events).await?;
     all_events.extend(report_events);
 
     Ok(all_events)
