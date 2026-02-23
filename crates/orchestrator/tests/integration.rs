@@ -378,7 +378,9 @@ async fn phase_report_emits_sarif() {
     let sarif_path = dir.path().join("test-report.sarif");
     let mut ctx = make_scan_context_real();
     ctx.config.output = sarif_path.clone();
-    let result = aegis_orchestrator::run_report(&mut ctx, None).await.unwrap();
+    let result = aegis_orchestrator::run_report(&mut ctx, None)
+        .await
+        .unwrap();
     assert_eq!(result.findings_count, 0);
     assert!(sarif_path.exists(), "SARIF file should be created");
     let contents = std::fs::read_to_string(&sarif_path).unwrap();
@@ -395,8 +397,9 @@ async fn phase_report_diff_mode() {
     ctx.config.output = sarif_path.clone();
     // Empty previous findings
     let previous: Vec<FindingData> = vec![];
-    let result =
-        aegis_orchestrator::run_report_with_previous(&mut ctx, None, Some(&previous)).await.unwrap();
+    let result = aegis_orchestrator::run_report_with_previous(&mut ctx, None, Some(&previous))
+        .await
+        .unwrap();
     assert_eq!(result.findings_count, 0);
     assert!(sarif_path.exists());
 }

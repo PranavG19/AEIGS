@@ -1270,7 +1270,9 @@ async fn findings_linked_to_endpoint_nodes_populate_sarif_endpoint() {
         );
     }
 
-    crate::phase_report::run_report(&mut ctx, None).await.unwrap();
+    crate::phase_report::run_report(&mut ctx, None)
+        .await
+        .unwrap();
 
     let sarif_content = std::fs::read_to_string(&sarif_path).unwrap();
     let sarif: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();

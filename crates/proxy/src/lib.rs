@@ -1,11 +1,25 @@
+mod diff;
 mod graph_sync;
+mod grep;
 mod intruder;
+mod modification;
+mod payload;
+mod persistence;
 mod proxy;
 mod repeater;
+mod scope;
+mod session;
 mod types;
 
+pub use diff::*;
 pub use graph_sync::*;
+pub use grep::*;
 pub use intruder::*;
+pub use modification::*;
+pub use payload::*;
+pub use persistence::*;
 pub use proxy::*;
 pub use repeater::*;
+pub use scope::*;
+pub use session::*;
 pub use types::*;

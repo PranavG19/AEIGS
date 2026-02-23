@@ -1,0 +1,27 @@
+[package]
+name = "aegis-proxy-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aegis-proxy-tui"
+path = "src/main.rs"
+
+[dependencies]
+aegis-knowledge-graph = { path = "../knowledge-graph" }
+aegis-proxy = { path = "../proxy" }
+aegis-protocol = { path = "../protocol" }
+ratatui = "0.29"
+crossterm = "0.28"
+clap = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+tempfile = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+axum = { workspace = true }
+reqwest = { workspace = true }

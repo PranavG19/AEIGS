@@ -12,11 +12,17 @@ tokio = { workspace = true }
 hyper = { workspace = true }
 hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1"] }
 http-body-util = "0.1"
+base64 = { workspace = true }
 reqwest = { workspace = true }
+sha2 = { workspace = true }
 tracing = { workspace = true }
 url = { workspace = true }
+regex = { workspace = true }
+rusqlite = { workspace = true }
+thiserror = { workspace = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "macros"] }
 axum = { workspace = true }
 reqwest = { version = "0.12", features = ["json"] }
+tempfile = { workspace = true }

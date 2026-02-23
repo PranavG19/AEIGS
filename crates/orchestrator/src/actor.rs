@@ -451,9 +451,13 @@ impl ReportActor {
         _events: &[ScanEventEnvelope],
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
-        let result = run_report_with_previous(ctx, self.metrics.as_ref(), self.previous_findings.as_deref())
-            .await
-            .map_err(ActorError::Phase)?;
+        let result = run_report_with_previous(
+            ctx,
+            self.metrics.as_ref(),
+            self.previous_findings.as_deref(),
+        )
+        .await
+        .map_err(ActorError::Phase)?;
         let event =
             phase_completed_event(ModuleIdentifier::ChainSynthesis, "report", &result, start);
         Ok(vec![event])

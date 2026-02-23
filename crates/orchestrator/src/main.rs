@@ -8,6 +8,12 @@ use aegis_orchestrator::update_db::{parse_update_db_args, run_update_db};
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
 
+    if args.len() > 1 && args[1] == "proxy" {
+        eprintln!("Use the aegis-proxy-tui binary directly for the interactive proxy TUI.");
+        eprintln!("Example: aegis-proxy-tui --listen 127.0.0.1:8080");
+        std::process::exit(0);
+    }
+
     if args.len() > 1 && args[1] == "recon" {
         run_recon_command(&args[2..]);
         return;

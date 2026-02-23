@@ -161,7 +161,9 @@ async fn run_report_with_metrics_includes_phase_timings_in_sarif() {
         .phase_timings
         .record("fuzz", std::time::Duration::from_millis(420));
 
-    let result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
+    let result = phase_report::run_report(&mut ctx, Some(&metrics))
+        .await
+        .unwrap();
 
     assert_eq!(result.findings_count, 0);
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
@@ -194,7 +196,9 @@ async fn run_report_with_metrics_includes_llm_metrics_in_sarif() {
         .llm_metrics
         .record_call(std::time::Duration::from_secs(3), 300);
 
-    let _result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
+    let _result = phase_report::run_report(&mut ctx, Some(&metrics))
+        .await
+        .unwrap();
 
     let json: serde_json::Value = serde_json::from_str(&sarif_output(&output)).unwrap();
     let llm = &json["runs"][0]["properties"]["llmMetrics"];
@@ -551,7 +555,9 @@ async fn run_report_with_previous_filters_known_findings() {
     let all_findings = ctx.graph.all_findings().unwrap();
     let previous: Vec<aegis_protocol::finding::FindingData> = vec![all_findings[0].clone()];
 
-    let result = phase_report::run_report_with_previous(&mut ctx, None, Some(&previous)).await.unwrap();
+    let result = phase_report::run_report_with_previous(&mut ctx, None, Some(&previous))
+        .await
+        .unwrap();
     // findings without stable_id: both are "new" because stable_id is None → always new
     assert_eq!(result.findings_count, 2);
     let _ = std::fs::remove_file(&output);
@@ -581,7 +587,9 @@ async fn sarif_extraction_matches_ground_truth_format() {
     ];
     ctx.graph.apply_operations(&entries).unwrap();
 
-    let result = phase_report::run_report(&mut ctx, Some(&metrics)).await.unwrap();
+    let result = phase_report::run_report(&mut ctx, Some(&metrics))
+        .await
+        .unwrap();
     assert_eq!(result.findings_count, 2);
 
     let sarif_content = std::fs::read_to_string(&output).unwrap();

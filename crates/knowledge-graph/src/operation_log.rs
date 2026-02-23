@@ -224,7 +224,7 @@ impl OperationLog {
                 GraphOperation::AddFinding {
                     linked_node_ids,
                     severity,
-                    confidence,
+                    confidence: _,
                     ..
                 } => {
                     for node_id in linked_node_ids {

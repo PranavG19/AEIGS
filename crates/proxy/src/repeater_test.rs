@@ -28,6 +28,8 @@ fn make_exchange(method: &str, url: &str, body: &[u8]) -> RecordedExchange {
         response_body: b"original response".to_vec(),
         timestamp_ms: 1_700_000_000_000,
         duration_ms: 10,
+        in_scope: true,
+        tags: vec![],
     }
 }
 

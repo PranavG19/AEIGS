@@ -30,6 +30,8 @@ fn recorded_exchange_serializes_to_json() {
         response_body: b"{\"ok\":true}".to_vec(),
         timestamp_ms: 1700000000000,
         duration_ms: 42,
+        in_scope: true,
+        tags: vec![],
     };
     let json = serde_json::to_string(&exchange).unwrap();
     let deser: RecordedExchange = serde_json::from_str(&json).unwrap();
