@@ -163,11 +163,11 @@ fn emit_endpoint_events(ctx: &ScanContext) -> Vec<ScanEventEnvelope> {
     events
 }
 
-/// Source actor that discovers endpoints via headless browser crawling.
+/// Source actor that discovers endpoints via browser crawling.
 ///
-/// Ignores input events. Converts a `CrawlResult` into graph operations and
-/// emits a `PhaseCompleted` event. Currently uses an empty crawl result as a
-/// placeholder until browser integration is activated.
+/// Ignores input events. Runs the HTTP crawler on a dedicated thread (to avoid
+/// runtime nesting), converts the `CrawlResult` into graph operations, and
+/// emits a `PhaseCompleted` event. Respects `--skip-crawl`.
 pub struct CrawlActor;
 
 impl ScanActor for CrawlActor {
@@ -181,7 +181,11 @@ impl ScanActor for CrawlActor {
         _events: &[ScanEventEnvelope],
     ) -> Result<Vec<ScanEventEnvelope>, ActorError> {
         let start = std::time::Instant::now();
-        let crawl_result = aegis_crawler::CrawlResult::default();
+        let crawl_result = if ctx.config.pipeline.skip_crawl {
+            aegis_crawler::CrawlResult::default()
+        } else {
+            run_crawl_on_thread(&ctx.config.target)
+        };
 
         let mut seq = ctx
             .graph
@@ -209,6 +213,22 @@ impl ScanActor for CrawlActor {
     }
 }
 
+/// Runs the async crawl on a dedicated thread with its own tokio runtime.
+fn run_crawl_on_thread(target: &str) -> aegis_crawler::CrawlResult {
+    let target = target.to_string();
+    std::thread::spawn(move || {
+        let rt = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("failed to build tokio runtime for crawl");
+        rt.block_on(crate::phase_crawl::run_crawl(&target))
+    })
+    .join()
+    .unwrap_or_else(|_| {
+        tracing::warn!("crawl thread panicked, using empty crawl result");
+        aegis_crawler::CrawlResult::default()
+    })
+}
 /// Source actor that probes defense posture (WAF, rate limits, bot detection).
 ///
 /// Ignores input events. Calls `collect_fingerprint_ops()`, applies to the graph,

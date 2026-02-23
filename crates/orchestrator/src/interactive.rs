@@ -1,5 +1,17 @@
 use serde::Serialize;
 
+const HELP_TEXT: &str = "\
+Commands:
+  status      Show current scan status
+  findings    List discovered findings
+  endpoints   List discovered endpoints
+  pause       Pause the scan after the current phase
+  resume      Resume a paused scan
+  skip        Skip the current phase
+  priority <endpoint> <boost>  Adjust endpoint priority
+  quit        Abort the scan gracefully
+  help        Show this help message";
+
 /// Commands that can be issued during an interactive scan session.
 ///
 /// Parsed from user input via `parse_command()`. Each variant maps to a
@@ -15,6 +27,7 @@ pub enum InteractiveCommand {
     AdjustPriority { endpoint: String, boost: f64 },
     SkipPhase,
     Quit,
+    Help,
 }
 
 impl PartialEq for InteractiveCommand {
@@ -26,7 +39,8 @@ impl PartialEq for InteractiveCommand {
             | (Self::ListFindings, Self::ListFindings)
             | (Self::ListEndpoints, Self::ListEndpoints)
             | (Self::SkipPhase, Self::SkipPhase)
-            | (Self::Quit, Self::Quit) => true,
+            | (Self::Quit, Self::Quit)
+            | (Self::Help, Self::Help) => true,
             (
                 Self::AdjustPriority {
                     endpoint: e1,
@@ -119,6 +133,7 @@ pub fn parse_command(input: &str) -> Result<InteractiveCommand, CommandParseErro
         "skip" => Ok(InteractiveCommand::SkipPhase),
         "quit" | "exit" | "q" => Ok(InteractiveCommand::Quit),
         "priority" => parse_priority_command(trimmed),
+        "help" | "?" => Ok(InteractiveCommand::Help),
         other => Err(CommandParseError::UnknownCommand(other.to_string())),
     }
 }
@@ -213,6 +228,7 @@ impl InteractiveSession {
                 self.quit = true;
                 InteractiveResponse::Acknowledged("scan will terminate".to_string())
             }
+            InteractiveCommand::Help => InteractiveResponse::Acknowledged(HELP_TEXT.to_string()),
         }
     }
 
@@ -250,6 +266,24 @@ impl InteractiveSession {
 
     pub fn set_iterations(&mut self, count: u32) {
         self.iterations_completed = count;
+    }
+
+    pub fn findings_count(&self) -> usize {
+        self.findings.len()
+    }
+
+    pub fn endpoints_count(&self) -> usize {
+        self.endpoints.len()
+    }
+
+    /// Replaces the findings list with a new snapshot.
+    pub fn replace_findings(&mut self, findings: Vec<FindingSummary>) {
+        self.findings = findings;
+    }
+
+    /// Replaces the endpoints list with a new snapshot.
+    pub fn replace_endpoints(&mut self, endpoints: Vec<String>) {
+        self.endpoints = endpoints;
     }
 
     pub fn priority_adjustments(&self) -> &[(String, f64)] {

@@ -488,3 +488,81 @@ fn status_after_pause_shows_paused() {
         panic!("expected StatusReport");
     }
 }
+
+// --- help command tests ---
+
+#[test]
+fn parse_help() {
+    assert_eq!(parse_command("help").unwrap(), InteractiveCommand::Help);
+}
+
+#[test]
+fn parse_question_mark_as_help() {
+    assert_eq!(parse_command("?").unwrap(), InteractiveCommand::Help);
+}
+
+#[test]
+fn handle_help_returns_acknowledged() {
+    let mut session = InteractiveSession::new();
+    let resp = session.handle_command(&InteractiveCommand::Help);
+    if let InteractiveResponse::Acknowledged(msg) = resp {
+        assert!(msg.contains("status"));
+        assert!(msg.contains("findings"));
+        assert!(msg.contains("pause"));
+        assert!(msg.contains("quit"));
+    } else {
+        panic!("expected Acknowledged with help text");
+    }
+}
+
+// --- findings_count / endpoints_count tests ---
+
+#[test]
+fn findings_count_tracks_additions() {
+    let mut session = InteractiveSession::new();
+    assert_eq!(session.findings_count(), 0);
+    session.add_finding(sample_finding(1));
+    session.add_finding(sample_finding(2));
+    assert_eq!(session.findings_count(), 2);
+}
+
+#[test]
+fn endpoints_count_tracks_additions() {
+    let mut session = InteractiveSession::new();
+    assert_eq!(session.endpoints_count(), 0);
+    session.add_endpoint("/a".to_string());
+    assert_eq!(session.endpoints_count(), 1);
+}
+
+// --- replace_findings / replace_endpoints tests ---
+
+#[test]
+fn replace_findings_overwrites_list() {
+    let mut session = InteractiveSession::new();
+    session.add_finding(sample_finding(1));
+    session.add_finding(sample_finding(2));
+    assert_eq!(session.findings_count(), 2);
+
+    session.replace_findings(vec![sample_finding(10)]);
+    assert_eq!(session.findings_count(), 1);
+    let resp = session.handle_command(&InteractiveCommand::ListFindings);
+    if let InteractiveResponse::FindingsList(findings) = resp {
+        assert_eq!(findings[0].id, 10);
+    } else {
+        panic!("expected FindingsList");
+    }
+}
+
+#[test]
+fn replace_endpoints_overwrites_list() {
+    let mut session = InteractiveSession::new();
+    session.add_endpoint("/old".to_string());
+    session.replace_endpoints(vec!["/new".to_string()]);
+    assert_eq!(session.endpoints_count(), 1);
+    let resp = session.handle_command(&InteractiveCommand::ListEndpoints);
+    if let InteractiveResponse::EndpointsList(endpoints) = resp {
+        assert_eq!(endpoints[0], "/new");
+    } else {
+        panic!("expected EndpointsList");
+    }
+}

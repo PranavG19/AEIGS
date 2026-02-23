@@ -108,8 +108,10 @@ fn localhost_config() -> scan_config::ScanConfig {
             max_iterations: 1,
             convergence_threshold: 2,
             skip_fingerprint: false,
+            skip_crawl: false,
             paranoia_sweep: false,
             resume: false,
+            interactive: false,
         },
         llm: scan_config::LlmOptions {
             no_llm: false,

@@ -1,5 +1,5 @@
 use aegis_orchestrator::attest::{parse_attest_args, run_attest};
-use aegis_orchestrator::pipeline::run_scan;
+use aegis_orchestrator::pipeline::{PipelineError, run_scan};
 use aegis_orchestrator::run_recon_standalone;
 use aegis_orchestrator::scan_config::ScanConfig;
 use aegis_orchestrator::update_db::{parse_update_db_args, run_update_db};
@@ -48,6 +48,9 @@ async fn main() {
                     eprintln!("WARNING: Audit log integrity check FAILED");
                 }
             }
+        }
+        Err(PipelineError::InteractiveQuit) => {
+            println!("Scan aborted by user.");
         }
         Err(e) => {
             eprintln!("Scan failed: {e}");

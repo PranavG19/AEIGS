@@ -1,4 +1,6 @@
+use std::io::BufRead;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use aegis_audit_log::AuditWriter;
@@ -18,6 +20,11 @@ use aegis_protocol::scope_attestation::SignedScopeAttestation;
 use aegis_protocol::signed_config::SignableConfig;
 use aegis_protocol::target_validation::validate_target_with_override;
 use aegis_supervisor::capability_manager::{CapabilityManager, ModulePermissionPolicy};
+
+use crate::interactive::{
+    FindingSummary, InteractiveResponse, InteractiveSession, format_finding_summary, format_status,
+    parse_command,
+};
 
 use crate::checkpoint::{ScanCheckpoint, delete_checkpoint, save_checkpoint, should_skip_phase};
 use crate::convergence::RefutedTracker;
@@ -93,6 +100,7 @@ pub enum PipelineError {
     Analysis(PhaseError),
     DomVerify(PhaseError),
     Report(PhaseError),
+    InteractiveQuit,
 }
 
 impl std::fmt::Display for PipelineError {
@@ -107,6 +115,7 @@ impl std::fmt::Display for PipelineError {
             Self::Analysis(e) => write!(f, "analysis: {e}"),
             Self::DomVerify(e) => write!(f, "dom_verify: {e}"),
             Self::Report(e) => write!(f, "report: {e}"),
+            Self::InteractiveQuit => write!(f, "scan aborted by user"),
         }
     }
 }
@@ -121,7 +130,7 @@ impl std::error::Error for PipelineError {
             | Self::Analysis(e)
             | Self::DomVerify(e)
             | Self::Report(e) => Some(e),
-            Self::Config(_) | Self::AuditLog(_) => None,
+            Self::Config(_) | Self::AuditLog(_) | Self::InteractiveQuit => None,
         }
     }
 }
@@ -130,6 +139,217 @@ impl From<ConfigError> for PipelineError {
     fn from(e: ConfigError) -> Self {
         Self::Config(e)
     }
+}
+
+/// Shared handle to the interactive session, protected by a mutex for the
+/// stdin reader thread. `None` when `--interactive` is not set.
+type SharedSession = Option<Arc<Mutex<InteractiveSession>>>;
+
+/// Spawns a daemon thread that reads stdin line-by-line, parses interactive
+/// commands, and dispatches them to the shared session. Returns the shared
+/// session handle. The thread exits when stdin is closed or the session's
+/// `should_quit` flag is set.
+fn spawn_interactive_reader() -> Arc<Mutex<InteractiveSession>> {
+    let session = Arc::new(Mutex::new(InteractiveSession::new()));
+    let reader_session = Arc::clone(&session);
+
+    std::thread::Builder::new()
+        .name("interactive-stdin".to_string())
+        .spawn(move || {
+            let stdin = std::io::stdin();
+            eprint!("aegis> ");
+            for line in stdin.lock().lines() {
+                let Ok(input) = line else { break };
+                match parse_command(&input) {
+                    Ok(cmd) => {
+                        let resp = reader_session.lock().unwrap().handle_command(&cmd);
+                        print_interactive_response(&resp);
+                        if reader_session.lock().unwrap().should_quit() {
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("  {e}");
+                    }
+                }
+                eprint!("aegis> ");
+            }
+        })
+        .expect("failed to spawn interactive stdin reader thread");
+
+    session
+}
+
+fn print_interactive_response(resp: &InteractiveResponse) {
+    match resp {
+        InteractiveResponse::StatusReport(status) => {
+            eprintln!("  {}", format_status(status));
+        }
+        InteractiveResponse::FindingsList(findings) => {
+            if findings.is_empty() {
+                eprintln!("  (no findings yet)");
+            } else {
+                for f in findings {
+                    eprintln!("  {}", format_finding_summary(f));
+                }
+            }
+        }
+        InteractiveResponse::EndpointsList(endpoints) => {
+            if endpoints.is_empty() {
+                eprintln!("  (no endpoints yet)");
+            } else {
+                for ep in endpoints {
+                    eprintln!("  {ep}");
+                }
+            }
+        }
+        InteractiveResponse::Acknowledged(msg) => {
+            eprintln!("  {msg}");
+        }
+        InteractiveResponse::Error(msg) => {
+            eprintln!("  error: {msg}");
+        }
+    }
+}
+
+/// Updates the session's current phase and prints a progress line when
+/// interactive mode is active.
+fn interactive_phase_enter(session: &SharedSession, phase: &str, scan_start: std::time::Instant) {
+    let Some(session) = session else { return };
+    let mut s = session.lock().unwrap();
+    s.set_current_phase(phase);
+    s.set_elapsed_ms(scan_start.elapsed().as_millis() as u64);
+    eprintln!("[interactive] starting phase: {phase}");
+}
+
+/// After a phase completes, syncs findings/endpoints from the graph into the
+/// session and prints a progress summary.
+fn interactive_phase_complete(
+    session: &SharedSession,
+    phase: &str,
+    ctx: &ScanContext,
+    scan_start: std::time::Instant,
+) {
+    let Some(session) = session else { return };
+    let mut s = session.lock().unwrap();
+    s.set_elapsed_ms(scan_start.elapsed().as_millis() as u64);
+    sync_session_from_graph(&mut s, ctx);
+    let findings_count = s.findings_count();
+    let endpoints_count = s.endpoints_count();
+    eprintln!(
+        "[interactive] {phase} done | findings: {findings_count} | endpoints: {endpoints_count}"
+    );
+}
+
+/// Rebuilds the session's findings and endpoints lists from the graph.
+fn sync_session_from_graph(session: &mut InteractiveSession, ctx: &ScanContext) {
+    let findings: Vec<FindingSummary> = ctx
+        .graph
+        .all_findings()
+        .unwrap_or_default()
+        .iter()
+        .enumerate()
+        .map(|(i, f)| {
+            let endpoint = resolve_finding_endpoint(f, ctx);
+            FindingSummary {
+                id: i as u64,
+                endpoint,
+                vulnerability_class: format!("{}", f.vulnerability_class),
+                severity: f.severity,
+                confidence: f.confidence.composite.value(),
+            }
+        })
+        .collect();
+
+    let endpoints: Vec<String> = ctx
+        .graph
+        .nodes_by_type(aegis_protocol::node::NodeType::Endpoint)
+        .unwrap_or_default()
+        .iter()
+        .filter_map(|&id| {
+            ctx.graph
+                .get_node(id)
+                .ok()
+                .flatten()
+                .and_then(|n| n.properties.get("path").cloned())
+        })
+        .collect();
+
+    session.replace_findings(findings);
+    session.replace_endpoints(endpoints);
+}
+
+/// Resolves the endpoint path for a finding by looking up its linked nodes.
+fn resolve_finding_endpoint(finding: &FindingData, ctx: &ScanContext) -> String {
+    for &node_id in &finding.linked_node_ids {
+        if let Ok(Some(node)) = ctx.graph.get_node(node_id)
+            && let Some(path) = node.properties.get("path")
+        {
+            return path.clone();
+        }
+    }
+    "unknown".to_string()
+}
+
+/// Blocks while the interactive session is paused. Returns `true` if the
+/// scan should continue, `false` if quit was requested.
+fn interactive_wait_if_paused(session: &SharedSession) -> bool {
+    let Some(session) = session else { return true };
+    loop {
+        let (paused, quit) = {
+            let s = session.lock().unwrap();
+            (s.is_paused(), s.should_quit())
+        };
+        if quit {
+            return false;
+        }
+        if !paused {
+            return true;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+}
+
+/// Returns `true` if the interactive session has requested a quit.
+fn interactive_should_quit(session: &SharedSession) -> bool {
+    session
+        .as_ref()
+        .is_some_and(|s| s.lock().unwrap().should_quit())
+}
+
+/// Returns `true` if the interactive session has requested skipping the
+/// current phase. Clears the skip flag after reading it.
+fn interactive_should_skip(session: &SharedSession) -> bool {
+    let Some(session) = session else { return false };
+    let mut s = session.lock().unwrap();
+    if s.should_skip_phase() {
+        s.clear_skip_flag();
+        true
+    } else {
+        false
+    }
+}
+
+/// Checks interactive session for quit/pause/skip before a phase. Returns
+/// `Err(InteractiveQuit)` if quit was requested, `Ok(true)` if the phase
+/// should be skipped, and `Ok(false)` if it should run normally.
+fn interactive_gate(
+    session: &SharedSession,
+    phase: &str,
+    scan_start: std::time::Instant,
+) -> Result<bool, PipelineError> {
+    if interactive_should_quit(session) {
+        return Err(PipelineError::InteractiveQuit);
+    }
+    if !interactive_wait_if_paused(session) {
+        return Err(PipelineError::InteractiveQuit);
+    }
+    if interactive_should_skip(session) {
+        eprintln!("[interactive] skipping phase: {phase}");
+        return Ok(true);
+    }
+    interactive_phase_enter(session, phase, scan_start);
+    Ok(false)
 }
 
 fn extract_signable_config(config: &ScanConfig) -> SignableConfig {
@@ -975,6 +1195,7 @@ fn compile_payloads_step(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn run_fuzz_analyze_loop(
     ctx: &mut ScanContext,
     audit_writer: &mut dyn AuditWriter,
@@ -982,6 +1203,8 @@ async fn run_fuzz_analyze_loop(
     scan_metrics: &mut ScanMetrics,
     checkpoint: Option<&ScanCheckpoint>,
     graph_db_path: Option<&Path>,
+    session: &SharedSession,
+    scan_start: std::time::Instant,
 ) -> Result<(), PipelineError> {
     let mut transport = build_fuzz_transport(ctx);
     let max_iterations = ctx.config.pipeline.max_iterations;
@@ -1009,6 +1232,10 @@ async fn run_fuzz_analyze_loop(
     };
 
     for iteration in start_iteration..max_iterations {
+        if let Some(session) = session {
+            session.lock().unwrap().set_iterations(iteration);
+        }
+
         let fuzz_phase = format!("fuzz:{iteration}");
         let analyze_phase = format!("analyze:{iteration}");
 
@@ -1018,7 +1245,9 @@ async fn run_fuzz_analyze_loop(
 
         let payloads_used_this_iteration = ctx.llm_payloads.clone();
 
-        if !should_skip_phase_from_checkpoint(checkpoint, &fuzz_phase) {
+        if !should_skip_phase_from_checkpoint(checkpoint, &fuzz_phase)
+            && !interactive_gate(session, &fuzz_phase, scan_start)?
+        {
             let result = run_single_fuzz(
                 ctx,
                 audit_writer,
@@ -1029,8 +1258,9 @@ async fn run_fuzz_analyze_loop(
             .await?;
             fuzz_findings = result.phase.findings_count;
             last_fuzz_result = Some(result);
-            progress.completed_phases.push(fuzz_phase);
+            progress.completed_phases.push(fuzz_phase.clone());
             try_save_checkpoint(progress, iteration, graph_db_path);
+            interactive_phase_complete(session, &fuzz_phase, ctx, scan_start);
         }
 
         record_refuted_payloads(
@@ -1055,10 +1285,13 @@ async fn run_fuzz_analyze_loop(
             ctx.llm_payloads = filtered;
         }
 
-        if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase) {
+        if !should_skip_phase_from_checkpoint(checkpoint, &analyze_phase)
+            && !interactive_gate(session, &analyze_phase, scan_start)?
+        {
             let result = run_single_analyze(ctx, audit_writer, progress, &mut analyze_cumulative)?;
             analyze_findings = result.findings_count;
-            progress.completed_phases.push(analyze_phase);
+            progress.completed_phases.push(analyze_phase.clone());
+            interactive_phase_complete(session, &analyze_phase, ctx, scan_start);
         }
 
         update_convergence(progress, fuzz_findings, analyze_findings);
@@ -1217,7 +1450,9 @@ async fn run_scan_phases(
     previous_findings: Option<&[FindingData]>,
     checkpoint: Option<&ScanCheckpoint>,
     graph_db_path: Option<&Path>,
+    session: &SharedSession,
 ) -> Result<PhasesResult, PipelineError> {
+    let scan_start = std::time::Instant::now();
     let mut scan_metrics = ScanMetrics::default();
     let mut progress = ScanProgress {
         total_ops: checkpoint.map_or(0, |cp| cp.total_operations),
@@ -1229,12 +1464,17 @@ async fn run_scan_phases(
             .unwrap_or_default(),
     };
 
-    if !should_skip_phase_from_checkpoint(checkpoint, "recon") {
+    if !should_skip_phase_from_checkpoint(checkpoint, "recon")
+        && !interactive_gate(session, "recon", scan_start)?
+    {
         run_recon_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
         try_save_checkpoint(&progress, 0, graph_db_path);
+        interactive_phase_complete(session, "recon", ctx, scan_start);
     }
 
-    if !should_skip_phase_from_checkpoint(checkpoint, "crawl") {
+    if !should_skip_phase_from_checkpoint(checkpoint, "crawl")
+        && !interactive_gate(session, "crawl", scan_start)?
+    {
         let crawl_result = aegis_crawler::CrawlResult::default();
         run_crawl_phase(
             ctx,
@@ -1244,13 +1484,16 @@ async fn run_scan_phases(
             &crawl_result,
         )?;
         try_save_checkpoint(&progress, 0, graph_db_path);
+        interactive_phase_complete(session, "crawl", ctx, scan_start);
     }
 
     if !ctx.config.pipeline.skip_fingerprint
         && !should_skip_phase_from_checkpoint(checkpoint, "fingerprint")
+        && !interactive_gate(session, "fingerprint", scan_start)?
     {
         run_fingerprint_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
         try_save_checkpoint(&progress, 0, graph_db_path);
+        interactive_phase_complete(session, "fingerprint", ctx, scan_start);
     }
 
     run_fuzz_analyze_loop(
@@ -1260,12 +1503,17 @@ async fn run_scan_phases(
         &mut scan_metrics,
         checkpoint,
         graph_db_path,
+        session,
+        scan_start,
     )
     .await?;
 
-    if !should_skip_phase_from_checkpoint(checkpoint, "dom_verify") {
+    if !should_skip_phase_from_checkpoint(checkpoint, "dom_verify")
+        && !interactive_gate(session, "dom_verify", scan_start)?
+    {
         run_dom_verify_phase(ctx, audit_writer, &mut progress, &mut scan_metrics)?;
         try_save_checkpoint(&progress, 0, graph_db_path);
+        interactive_phase_complete(session, "dom_verify", ctx, scan_start);
     }
 
     emit_event(
@@ -1546,6 +1794,13 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         tracing::warn!("--auth-input provided without --auth-flow; inputs will be ignored");
     }
 
+    let interactive_session: SharedSession = if config.pipeline.interactive {
+        eprintln!("[interactive] scan control enabled (type 'help' for commands)");
+        Some(spawn_interactive_reader())
+    } else {
+        None
+    };
+
     let mut ctx = ScanContext {
         config,
         graph,
@@ -1564,6 +1819,7 @@ pub async fn run_scan(config: ScanConfig) -> Result<ScanSummary, PipelineError> 
         previous_findings.as_deref(),
         checkpoint.as_ref(),
         graph_db_path.as_deref(),
+        &interactive_session,
     )
     .await;
 

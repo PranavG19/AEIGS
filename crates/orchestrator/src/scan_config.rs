@@ -191,6 +191,11 @@ pub struct PipelineOptions {
     #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub skip_fingerprint: bool,
 
+    /// Skip browser crawling phase. Useful when endpoints are already known
+    /// via OpenAPI specs or source code route parsing.
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
+    pub skip_crawl: bool,
+
     #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub paranoia_sweep: bool,
 
@@ -198,6 +203,12 @@ pub struct PipelineOptions {
     /// Requires `--graph-db` to locate the checkpoint file.
     #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub resume: bool,
+
+    /// Enable interactive scan control. When set, a command prompt reads
+    /// from stdin allowing pause/resume/status/findings/endpoints/quit
+    /// commands while the scan is running.
+    #[arg(long, default_value_t = false, help_heading = "Advanced")]
+    pub interactive: bool,
 }
 
 /// LLM hypothesis engine options.
