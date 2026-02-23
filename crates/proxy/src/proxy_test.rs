@@ -4,6 +4,7 @@ use axum::Router;
 use axum::routing::{get, post};
 
 use super::*;
+use crate::persistence::ProxyDb;
 
 async fn spawn_target_server() -> SocketAddr {
     let app = Router::new()
@@ -284,6 +285,70 @@ async fn multiple_requests_get_unique_ids() {
     assert_eq!(exchanges.len(), 3);
     let ids: std::collections::HashSet<u64> = exchanges.iter().map(|e| e.id).collect();
     assert_eq!(ids.len(), 3);
+
+    proxy.shutdown().await;
+}
+
+#[tokio::test]
+async fn proxy_with_persistence_writes_to_db() {
+    let target = spawn_target_server().await;
+    let dir = tempfile::tempdir().expect("tempdir");
+    let db_path = dir.path().join("proxy.db");
+    let config = ProxyConfig::default()
+        .with_listen_addr(([127, 0, 0, 1], 0).into())
+        .with_db_path(db_path.clone());
+    let proxy = start_proxy(config).await.expect("start proxy");
+    let proxy_addr = proxy.listen_addr();
+
+    let client = reqwest::Client::builder()
+        .proxy(reqwest::Proxy::http(format!("http://{proxy_addr}")).expect("proxy url"))
+        .build()
+        .expect("build client");
+
+    let _ = client
+        .get(format!("http://{target}/hello"))
+        .send()
+        .await
+        .expect("send request");
+
+    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+    assert_eq!(proxy.exchange_count().await, 1);
+    assert!(proxy.db().is_some());
+
+    let db = ProxyDb::open(&db_path).expect("reopen db");
+    assert_eq!(db.exchange_count().expect("count"), 1);
+    let exchanges = db.list_exchanges(10, 0).expect("list");
+    assert_eq!(exchanges[0].request_method, "GET");
+    assert!(exchanges[0].request_url.contains("/hello"));
+
+    proxy.shutdown().await;
+}
+
+#[tokio::test]
+async fn proxy_without_persistence_still_works() {
+    let target = spawn_target_server().await;
+    let config = ProxyConfig::default().with_listen_addr(([127, 0, 0, 1], 0).into());
+    let proxy = start_proxy(config).await.expect("start proxy");
+    let proxy_addr = proxy.listen_addr();
+
+    assert!(proxy.db().is_none());
+
+    let client = reqwest::Client::builder()
+        .proxy(reqwest::Proxy::http(format!("http://{proxy_addr}")).expect("proxy url"))
+        .build()
+        .expect("build client");
+
+    let resp = client
+        .get(format!("http://{target}/hello"))
+        .send()
+        .await
+        .expect("send request");
+
+    assert_eq!(resp.status(), 200);
+
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    assert_eq!(proxy.exchange_count().await, 1);
 
     proxy.shutdown().await;
 }

@@ -4,6 +4,8 @@ use axum::Router;
 use axum::routing::get;
 
 use super::*;
+use crate::grep::{GrepExtract, GrepMatch, SearchTarget};
+use crate::payload::{PayloadEncoding, PayloadPipeline, PayloadSource};
 use crate::repeater::ModifiedRequest;
 
 fn make_template(url: &str, body: &str) -> ModifiedRequest {
@@ -245,4 +247,135 @@ async fn run_intruder_sorts_anomalous_first() {
     };
     let results = run_intruder(config).await;
     assert_eq!(results[0].status_code, 404);
+}
+
+#[test]
+fn pipeline_intruder_generates_from_number_range() {
+    let marker = "\u{00a7}0\u{00a7}";
+    let pipeline = PayloadPipeline {
+        source: PayloadSource::NumberRange {
+            start: 1,
+            end: 5,
+            step: 1,
+        },
+        processors: vec![],
+        encoding: PayloadEncoding::None,
+    };
+    let config = PipelineIntruderConfig {
+        template: ModifiedRequest {
+            method: "GET".to_string(),
+            url: format!("http://localhost/id={marker}"),
+            headers: vec![],
+            body: vec![],
+        },
+        positions: vec![marker.to_string()],
+        pipelines: vec![pipeline],
+        mode: AttackMode::BatteringRam,
+        concurrency: 1,
+        grep_matches: vec![],
+        grep_extracts: vec![],
+    };
+
+    let payloads = config.pipelines[0].generate().expect("generate");
+    assert_eq!(payloads.len(), 5);
+
+    let inner = IntruderConfig {
+        template: config.template,
+        positions: config.positions,
+        payload_lists: vec![payloads],
+        mode: config.mode,
+        concurrency: config.concurrency,
+    };
+    let requests = generate_attack_requests(&inner);
+    assert_eq!(requests.len(), 5);
+    assert!(requests[0].1.url.contains("id=1"));
+    assert!(requests[4].1.url.contains("id=5"));
+}
+
+#[tokio::test]
+async fn pipeline_intruder_applies_grep_match() {
+    let target = spawn_status_server().await;
+    let marker = "\u{00a7}0\u{00a7}";
+    let pipeline = PayloadPipeline {
+        source: PayloadSource::SimpleList(vec!["ok".to_string()]),
+        processors: vec![],
+        encoding: PayloadEncoding::None,
+    };
+    let config = PipelineIntruderConfig {
+        template: ModifiedRequest {
+            method: "GET".to_string(),
+            url: format!("http://{target}/{marker}"),
+            headers: vec![],
+            body: vec![],
+        },
+        positions: vec![marker.to_string()],
+        pipelines: vec![pipeline],
+        mode: AttackMode::BatteringRam,
+        concurrency: 1,
+        grep_matches: vec![GrepMatch {
+            pattern: "ok".to_string(),
+            search_in: SearchTarget::Body,
+            negate: false,
+        }],
+        grep_extracts: vec![],
+    };
+    let results = run_pipeline_intruder(config).await.expect("run");
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].status_code, 200);
+    assert!(results[0].grep_match_results.contains(&"ok".to_string()));
+}
+
+#[tokio::test]
+async fn pipeline_intruder_applies_grep_extract() {
+    let target = spawn_status_server().await;
+    let marker = "\u{00a7}0\u{00a7}";
+    let pipeline = PayloadPipeline {
+        source: PayloadSource::SimpleList(vec!["ok".to_string()]),
+        processors: vec![],
+        encoding: PayloadEncoding::None,
+    };
+    let config = PipelineIntruderConfig {
+        template: ModifiedRequest {
+            method: "GET".to_string(),
+            url: format!("http://{target}/{marker}"),
+            headers: vec![],
+            body: vec![],
+        },
+        positions: vec![marker.to_string()],
+        pipelines: vec![pipeline],
+        mode: AttackMode::BatteringRam,
+        concurrency: 1,
+        grep_matches: vec![],
+        grep_extracts: vec![GrepExtract {
+            pattern: "(ok)".to_string(),
+            group: 1,
+            search_in: SearchTarget::Body,
+        }],
+    };
+    let results = run_pipeline_intruder(config).await.expect("run");
+    assert_eq!(results.len(), 1);
+    assert!(results[0].grep_extract_results.contains(&"ok".to_string()));
+}
+
+#[tokio::test]
+async fn pipeline_intruder_backwards_compat() {
+    let target = spawn_status_server().await;
+    let marker = "\u{00a7}0\u{00a7}";
+    let config = IntruderConfig {
+        template: ModifiedRequest {
+            method: "GET".to_string(),
+            url: format!("http://{target}/{marker}"),
+            headers: vec![],
+            body: vec![],
+        },
+        positions: vec![marker.to_string()],
+        payload_lists: vec![vec!["ok".to_string(), "not-found".to_string()]],
+        mode: AttackMode::BatteringRam,
+        concurrency: 2,
+    };
+    let results = run_intruder(config).await;
+    assert_eq!(results.len(), 2);
+    let statuses: Vec<u16> = results.iter().map(|r| r.status_code).collect();
+    assert!(statuses.contains(&200));
+    assert!(statuses.contains(&404));
 }

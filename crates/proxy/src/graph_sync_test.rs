@@ -24,6 +24,8 @@ fn make_exchange(
         response_body: Vec::new(),
         timestamp_ms: 1000,
         duration_ms: 50,
+        in_scope: true,
+        tags: vec![],
     }
 }
 
@@ -93,6 +95,8 @@ fn post_with_json_body() {
         response_body: Vec::new(),
         timestamp_ms: 1000,
         duration_ms: 50,
+        in_scope: true,
+        tags: vec![],
     });
     assert_eq!(params.len(), 2);
     assert!(params.iter().any(|(k, v)| k == "username" && v == "admin"));

@@ -579,6 +579,8 @@ fn row_to_exchange(
         response_body: resp_body,
         timestamp_ms: u64::try_from(timestamp).unwrap_or(0),
         duration_ms: u64::try_from(duration).unwrap_or(0),
+        in_scope: true,
+        tags: vec![],
     }))
 }
 

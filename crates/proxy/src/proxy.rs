@@ -11,6 +11,7 @@ use hyper::{Request, Response};
 use tokio::net::TcpListener;
 use tokio::sync::RwLock;
 
+use crate::persistence::ProxyDb;
 use crate::types::{ProxyConfig, RecordedExchange};
 
 /// Handle returned from `start_proxy`, used to query logs and shut down.
@@ -18,6 +19,7 @@ pub struct ProxyHandle {
     shutdown_tx: Option<tokio::sync::oneshot::Sender<()>>,
     log: Arc<RwLock<Vec<RecordedExchange>>>,
     listen_addr: SocketAddr,
+    db: Option<Arc<std::sync::Mutex<ProxyDb>>>,
 }
 
 impl ProxyHandle {
@@ -41,6 +43,11 @@ impl ProxyHandle {
         self.listen_addr
     }
 
+    /// Returns the optional persistence database, if configured.
+    pub fn db(&self) -> Option<&Arc<std::sync::Mutex<ProxyDb>>> {
+        self.db.as_ref()
+    }
+
     /// Shut down the proxy server gracefully.
     pub async fn shutdown(mut self) {
         if let Some(tx) = self.shutdown_tx.take() {
@@ -62,7 +69,13 @@ pub async fn start_proxy(config: ProxyConfig) -> Result<ProxyHandle, std::io::Er
         .build()
         .expect("failed to build reqwest client");
 
+    let db = config.db_path.as_ref().map(|path| {
+        let proxy_db = ProxyDb::open(path).expect("failed to open proxy database");
+        Arc::new(std::sync::Mutex::new(proxy_db))
+    });
+
     let log_clone = Arc::clone(&log);
+    let db_clone = db.clone();
     tokio::spawn(accept_loop(
         listener,
         shutdown_rx,
@@ -70,12 +83,14 @@ pub async fn start_proxy(config: ProxyConfig) -> Result<ProxyHandle, std::io::Er
         counter,
         max_log_size,
         client,
+        db_clone,
     ));
 
     Ok(ProxyHandle {
         shutdown_tx: Some(shutdown_tx),
         log,
         listen_addr,
+        db,
     })
 }
 
@@ -86,6 +101,7 @@ async fn accept_loop(
     counter: Arc<AtomicU64>,
     max_log_size: usize,
     client: reqwest::Client,
+    db: Option<Arc<std::sync::Mutex<ProxyDb>>>,
 ) {
     loop {
         tokio::select! {
@@ -97,6 +113,7 @@ async fn accept_loop(
                 let log = Arc::clone(&log);
                 let counter = Arc::clone(&counter);
                 let client = client.clone();
+                let db = db.clone();
                 let io = hyper_util::rt::TokioIo::new(stream);
                 tokio::spawn(async move {
                     let svc = service_fn(|req| {
@@ -106,6 +123,7 @@ async fn accept_loop(
                             Arc::clone(&counter),
                             max_log_size,
                             client.clone(),
+                            db.clone(),
                         )
                     });
                     let _ = http1::Builder::new()
@@ -124,6 +142,7 @@ async fn handle_request(
     counter: Arc<AtomicU64>,
     max_log_size: usize,
     client: reqwest::Client,
+    db: Option<Arc<std::sync::Mutex<ProxyDb>>>,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
     let start = SystemTime::now();
     let timestamp_ms = start
@@ -163,9 +182,11 @@ async fn handle_request(
         response_body: resp_body.clone(),
         timestamp_ms,
         duration_ms: elapsed,
+        in_scope: true,
+        tags: vec![],
     };
 
-    append_exchange(&log, exchange, max_log_size).await;
+    append_exchange(&log, exchange, max_log_size, &db).await;
 
     let mut builder = Response::builder().status(status);
     for (name, value) in &resp_headers {
@@ -233,7 +254,13 @@ async fn append_exchange(
     log: &RwLock<Vec<RecordedExchange>>,
     exchange: RecordedExchange,
     max_log_size: usize,
+    db: &Option<Arc<std::sync::Mutex<ProxyDb>>>,
 ) {
+    if let Some(db) = db
+        && let Ok(guard) = db.lock()
+    {
+        let _ = guard.insert_exchange(&exchange);
+    }
     let mut entries = log.write().await;
     if entries.len() >= max_log_size {
         entries.remove(0);

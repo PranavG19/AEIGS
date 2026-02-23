@@ -1,5 +1,7 @@
 use std::time::Instant;
 
+use crate::grep::{GrepExtract, GrepMatch, apply_grep_extracts, apply_grep_matches};
+use crate::payload::{PayloadError, PayloadPipeline};
 use crate::repeater::ModifiedRequest;
 
 /// How payload lists are combined across positions.
@@ -208,6 +210,141 @@ async fn send_intruder_request(
             status_code: 0,
             body_length: 0,
             duration_ms: start.elapsed().as_millis() as u64,
+        },
+    }
+}
+
+/// Configuration for an intruder attack run using payload pipelines.
+#[derive(Debug, Clone)]
+pub struct PipelineIntruderConfig {
+    pub template: ModifiedRequest,
+    pub positions: Vec<String>,
+    pub pipelines: Vec<PayloadPipeline>,
+    pub mode: AttackMode,
+    pub concurrency: usize,
+    pub grep_matches: Vec<GrepMatch>,
+    pub grep_extracts: Vec<GrepExtract>,
+}
+
+/// Result of a single pipeline intruder request.
+#[derive(Debug, Clone)]
+pub struct PipelineIntruderResult {
+    pub payload: Vec<String>,
+    pub status_code: u16,
+    pub body_length: usize,
+    pub duration_ms: u64,
+    pub response_body: Vec<u8>,
+    pub grep_match_results: Vec<String>,
+    pub grep_extract_results: Vec<String>,
+}
+
+/// Execute an intruder run using payload pipelines: generate payloads, send
+/// requests, apply grep matches/extracts, and return sorted results.
+pub async fn run_pipeline_intruder(
+    config: PipelineIntruderConfig,
+) -> Result<Vec<PipelineIntruderResult>, PayloadError> {
+    let mut payload_lists = Vec::new();
+    for pipeline in &config.pipelines {
+        payload_lists.push(pipeline.generate()?);
+    }
+
+    let inner_config = IntruderConfig {
+        template: config.template,
+        positions: config.positions,
+        payload_lists,
+        mode: config.mode,
+        concurrency: config.concurrency,
+    };
+
+    let requests = generate_attack_requests(&inner_config);
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .expect("failed to build reqwest client");
+    let semaphore = std::sync::Arc::new(tokio::sync::Semaphore::new(inner_config.concurrency));
+
+    let mut handles = Vec::new();
+    for (payloads, req) in requests {
+        let client = client.clone();
+        let permit = semaphore.clone();
+        let grep_matches = config.grep_matches.clone();
+        let grep_extracts = config.grep_extracts.clone();
+        handles.push(tokio::spawn(async move {
+            let _permit = permit.acquire().await.expect("semaphore closed");
+            send_pipeline_request(&client, payloads, &req, &grep_matches, &grep_extracts).await
+        }));
+    }
+
+    let mut results = Vec::new();
+    for handle in handles {
+        if let Ok(result) = handle.await {
+            results.push(result);
+        }
+    }
+
+    results.sort_by(|a, b| {
+        let a_anomalous = a.status_code != 200;
+        let b_anomalous = b.status_code != 200;
+        b_anomalous
+            .cmp(&a_anomalous)
+            .then(b.body_length.cmp(&a.body_length))
+    });
+
+    Ok(results)
+}
+
+async fn send_pipeline_request(
+    client: &reqwest::Client,
+    payloads: Vec<String>,
+    req: &ModifiedRequest,
+    grep_matches: &[GrepMatch],
+    grep_extracts: &[GrepExtract],
+) -> PipelineIntruderResult {
+    let method = reqwest::Method::from_bytes(req.method.as_bytes()).unwrap_or(reqwest::Method::GET);
+    let start = Instant::now();
+    let mut builder = client.request(method, &req.url);
+    for (name, value) in &req.headers {
+        builder = builder.header(name.as_str(), value.as_str());
+    }
+    if !req.body.is_empty() {
+        builder = builder.body(req.body.clone());
+    }
+    match builder.send().await {
+        Ok(resp) => {
+            let status_code = resp.status().as_u16();
+            let resp_headers: Vec<(String, String)> = resp
+                .headers()
+                .iter()
+                .map(|(k, v)| (k.as_str().to_string(), v.to_str().unwrap_or("").to_string()))
+                .collect();
+            let body = resp.bytes().await.unwrap_or_default().to_vec();
+            let duration_ms = start.elapsed().as_millis() as u64;
+
+            let grep_match_results =
+                apply_grep_matches(grep_matches, status_code, &resp_headers, &body)
+                    .unwrap_or_default();
+
+            let grep_extract_results =
+                apply_grep_extracts(grep_extracts, &resp_headers, &body).unwrap_or_default();
+
+            PipelineIntruderResult {
+                payload: payloads,
+                status_code,
+                body_length: body.len(),
+                duration_ms,
+                response_body: body,
+                grep_match_results,
+                grep_extract_results,
+            }
+        }
+        Err(_) => PipelineIntruderResult {
+            payload: payloads,
+            status_code: 0,
+            body_length: 0,
+            duration_ms: start.elapsed().as_millis() as u64,
+            response_body: vec![],
+            grep_match_results: vec![],
+            grep_extract_results: vec![],
         },
     }
 }

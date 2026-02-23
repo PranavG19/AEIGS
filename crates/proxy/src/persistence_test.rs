@@ -19,6 +19,8 @@ fn sample_exchange() -> RecordedExchange {
         response_body: b"{\"users\":[]}".to_vec(),
         timestamp_ms: 1700000000000,
         duration_ms: 42,
+        in_scope: true,
+        tags: vec![],
     }
 }
 
