@@ -54,34 +54,22 @@ pub struct PayloadListRecord {
     pub entries: String,
 }
 
+/// Structured filter for querying exchanges without raw SQL.
+#[derive(Debug, Clone)]
+pub enum ExchangeFilter {
+    Method(String),
+    StatusCode(u16),
+    UrlContains(String),
+    StatusRange { min: u16, max: u16 },
+}
+
 /// Error type for proxy database operations.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum ProxyDbError {
-    Database(String),
-    Serialization(String),
-}
-
-impl std::fmt::Display for ProxyDbError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Database(msg) => write!(f, "proxy db error: {msg}"),
-            Self::Serialization(msg) => write!(f, "serialization error: {msg}"),
-        }
-    }
-}
-
-impl std::error::Error for ProxyDbError {}
-
-impl From<rusqlite::Error> for ProxyDbError {
-    fn from(e: rusqlite::Error) -> Self {
-        Self::Database(e.to_string())
-    }
-}
-
-impl From<serde_json::Error> for ProxyDbError {
-    fn from(e: serde_json::Error) -> Self {
-        Self::Serialization(e.to_string())
-    }
+    #[error("database error: {0}")]
+    Database(#[from] rusqlite::Error),
+    #[error("serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
 }
 
 /// SQLite-backed persistence for proxy exchanges, saved requests,
@@ -214,8 +202,6 @@ impl ProxyDb {
         Ok(())
     }
 
-    // --- Exchange CRUD ---
-
     /// Inserts a recorded exchange and returns the row ID.
     pub fn insert_exchange(&self, ex: &RecordedExchange) -> Result<i64, ProxyDbError> {
         let req_headers = serialize_headers(&ex.request_headers)?;
@@ -249,9 +235,11 @@ impl ProxyDb {
                     timestamp_ms, duration_ms
              FROM exchanges WHERE id = ?1",
         )?;
-        let mut rows = stmt.query_map(params![id], row_to_exchange)?;
-        match rows.next() {
-            Some(row) => Ok(Some(row?)),
+        let nested_rows: Vec<Result<RecordedExchange, ProxyDbError>> = stmt
+            .query_map(params![id], row_to_exchange)?
+            .collect::<Result<Vec<_>, _>>()?;
+        match nested_rows.into_iter().next() {
+            Some(inner) => Ok(Some(inner?)),
             None => Ok(None),
         }
     }
@@ -268,31 +256,71 @@ impl ProxyDb {
                     timestamp_ms, duration_ms
              FROM exchanges ORDER BY timestamp_ms DESC LIMIT ?1 OFFSET ?2",
         )?;
-        let rows = stmt
-            .query_map(params![limit, offset], row_to_exchange)?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
+        collect_exchange_rows(&mut stmt, params![limit, offset])
     }
 
-    /// Filters exchanges using a raw SQL WHERE clause fragment.
+    /// Filters exchanges using structured filter predicates.
     ///
-    /// The `where_clause` is interpolated directly -- callers must
-    /// ensure inputs are safe or come from trusted code paths.
+    /// Builds parameterized WHERE clauses internally to prevent SQL injection.
+    /// Multiple filters are combined with AND.
     pub fn filter_exchanges(
         &self,
-        where_clause: &str,
+        filters: &[ExchangeFilter],
     ) -> Result<Vec<RecordedExchange>, ProxyDbError> {
+        let mut conditions = Vec::new();
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        let mut idx = 1usize;
+
+        for filter in filters {
+            match filter {
+                ExchangeFilter::Method(m) => {
+                    conditions.push(format!("method = ?{idx}"));
+                    param_values.push(Box::new(m.clone()));
+                    idx += 1;
+                }
+                ExchangeFilter::StatusCode(code) => {
+                    conditions.push(format!("response_status = ?{idx}"));
+                    param_values.push(Box::new(i64::from(*code)));
+                    idx += 1;
+                }
+                ExchangeFilter::UrlContains(pattern) => {
+                    conditions.push(format!("url LIKE ?{idx}"));
+                    param_values.push(Box::new(format!("%{pattern}%")));
+                    idx += 1;
+                }
+                ExchangeFilter::StatusRange { min, max } => {
+                    conditions.push(format!(
+                        "response_status >= ?{} AND response_status <= ?{}",
+                        idx,
+                        idx + 1
+                    ));
+                    param_values.push(Box::new(i64::from(*min)));
+                    param_values.push(Box::new(i64::from(*max)));
+                    idx += 2;
+                }
+            }
+        }
+
+        let where_clause = if conditions.is_empty() {
+            "1=1".to_string()
+        } else {
+            conditions.join(" AND ")
+        };
+
         let sql = format!(
             "SELECT id, method, url, request_headers, request_body,
                     response_status, response_headers, response_body,
                     timestamp_ms, duration_ms
              FROM exchanges WHERE {where_clause} ORDER BY timestamp_ms DESC"
         );
+
         let mut stmt = self.conn.prepare(&sql)?;
-        let rows = stmt
-            .query_map([], row_to_exchange)?
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|b| b.as_ref()).collect();
+        let nested_rows: Vec<Result<RecordedExchange, ProxyDbError>> = stmt
+            .query_map(params_ref.as_slice(), row_to_exchange)?
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
+        nested_rows.into_iter().collect()
     }
 
     /// Searches exchanges by URL pattern using SQL LIKE.
@@ -306,10 +334,7 @@ impl ProxyDb {
                     timestamp_ms, duration_ms
              FROM exchanges WHERE url LIKE ?1 ORDER BY timestamp_ms DESC",
         )?;
-        let rows = stmt
-            .query_map(params![pattern], row_to_exchange)?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
+        collect_exchange_rows(&mut stmt, params![pattern])
     }
 
     /// Deletes an exchange by ID. Returns true if a row was deleted.
@@ -331,10 +356,8 @@ impl ProxyDb {
         let count: i64 = self
             .conn
             .query_row("SELECT COUNT(*) FROM exchanges", [], |row| row.get(0))?;
-        Ok(count as u64)
+        Ok(u64::try_from(count).unwrap_or(0))
     }
-
-    // --- Saved Requests ---
 
     /// Inserts a saved request and returns the row ID.
     pub fn insert_saved_request(&self, req: &SavedRequest) -> Result<i64, ProxyDbError> {
@@ -363,9 +386,11 @@ impl ProxyDb {
             "SELECT id, name, method, url, headers, body, notes, created_at, exchange_id
              FROM saved_requests WHERE id = ?1",
         )?;
-        let mut rows = stmt.query_map(params![id], row_to_saved_request)?;
-        match rows.next() {
-            Some(row) => Ok(Some(row?)),
+        let nested_rows: Vec<Result<SavedRequest, ProxyDbError>> = stmt
+            .query_map(params![id], row_to_saved_request)?
+            .collect::<Result<Vec<_>, _>>()?;
+        match nested_rows.into_iter().next() {
+            Some(inner) => Ok(Some(inner?)),
             None => Ok(None),
         }
     }
@@ -376,13 +401,11 @@ impl ProxyDb {
             "SELECT id, name, method, url, headers, body, notes, created_at, exchange_id
              FROM saved_requests ORDER BY created_at DESC",
         )?;
-        let rows = stmt
+        let nested_rows: Vec<Result<SavedRequest, ProxyDbError>> = stmt
             .query_map([], row_to_saved_request)?
             .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
+        nested_rows.into_iter().collect()
     }
-
-    // --- Intruder Runs ---
 
     /// Inserts an intruder run record and returns the row ID.
     pub fn insert_intruder_run(&self, run: &IntruderRunRecord) -> Result<i64, ProxyDbError> {
@@ -420,20 +443,20 @@ impl ProxyDb {
     }
 
     /// Updates an intruder run with completion timestamp and total request count.
+    ///
+    /// Returns `true` if the run was found and updated, `false` if no row matched.
     pub fn update_intruder_run_completed(
         &self,
         id: i64,
         completed_at: i64,
         total_requests: u32,
-    ) -> Result<(), ProxyDbError> {
-        self.conn.execute(
+    ) -> Result<bool, ProxyDbError> {
+        let rows = self.conn.execute(
             "UPDATE intruder_runs SET completed_at = ?1, total_requests = ?2 WHERE id = ?3",
             params![completed_at, total_requests, id],
         )?;
-        Ok(())
+        Ok(rows > 0)
     }
-
-    // --- Intruder Results ---
 
     /// Inserts a single intruder result row.
     pub fn insert_intruder_result(
@@ -474,8 +497,6 @@ impl ProxyDb {
         Ok(rows)
     }
 
-    // --- Payload Lists ---
-
     /// Inserts a named payload list and returns the row ID.
     ///
     /// The name must be unique; duplicate names produce a database error.
@@ -514,9 +535,19 @@ impl ProxyDb {
     }
 }
 
-// --- Row mapping helpers ---
+fn collect_exchange_rows(
+    stmt: &mut rusqlite::Statement,
+    params: impl rusqlite::Params,
+) -> Result<Vec<RecordedExchange>, ProxyDbError> {
+    let nested: Vec<Result<RecordedExchange, ProxyDbError>> = stmt
+        .query_map(params, row_to_exchange)?
+        .collect::<Result<Vec<_>, _>>()?;
+    nested.into_iter().collect()
+}
 
-fn row_to_exchange(row: &rusqlite::Row) -> rusqlite::Result<RecordedExchange> {
+fn row_to_exchange(
+    row: &rusqlite::Row,
+) -> rusqlite::Result<Result<RecordedExchange, ProxyDbError>> {
     let id: i64 = row.get(0)?;
     let method: String = row.get(1)?;
     let url: String = row.get(2)?;
@@ -528,21 +559,32 @@ fn row_to_exchange(row: &rusqlite::Row) -> rusqlite::Result<RecordedExchange> {
     let timestamp: i64 = row.get(8)?;
     let duration: i64 = row.get(9)?;
 
-    Ok(RecordedExchange {
-        id: id as u64,
+    let req_headers = match deserialize_headers(&req_headers_json) {
+        Ok(h) => h,
+        Err(e) => return Ok(Err(e)),
+    };
+    let resp_headers = match deserialize_headers(&resp_headers_json) {
+        Ok(h) => h,
+        Err(e) => return Ok(Err(e)),
+    };
+
+    Ok(Ok(RecordedExchange {
+        id: u64::try_from(id).unwrap_or(0),
         request_method: method,
         request_url: url,
-        request_headers: deserialize_headers(&req_headers_json),
+        request_headers: req_headers,
         request_body: req_body,
-        response_status: status as u16,
-        response_headers: deserialize_headers(&resp_headers_json),
+        response_status: u16::try_from(status).unwrap_or(0),
+        response_headers: resp_headers,
         response_body: resp_body,
-        timestamp_ms: timestamp as u64,
-        duration_ms: duration as u64,
-    })
+        timestamp_ms: u64::try_from(timestamp).unwrap_or(0),
+        duration_ms: u64::try_from(duration).unwrap_or(0),
+    }))
 }
 
-fn row_to_saved_request(row: &rusqlite::Row) -> rusqlite::Result<SavedRequest> {
+fn row_to_saved_request(
+    row: &rusqlite::Row,
+) -> rusqlite::Result<Result<SavedRequest, ProxyDbError>> {
     let id: i64 = row.get(0)?;
     let name: String = row.get(1)?;
     let method: String = row.get(2)?;
@@ -553,17 +595,22 @@ fn row_to_saved_request(row: &rusqlite::Row) -> rusqlite::Result<SavedRequest> {
     let created_at: i64 = row.get(7)?;
     let exchange_id: Option<i64> = row.get(8)?;
 
-    Ok(SavedRequest {
+    let headers = match deserialize_headers(&headers_json) {
+        Ok(h) => h,
+        Err(e) => return Ok(Err(e)),
+    };
+
+    Ok(Ok(SavedRequest {
         id,
         name,
         method,
         url,
-        headers: deserialize_headers(&headers_json),
+        headers,
         body,
         notes,
         created_at,
         exchange_id,
-    })
+    }))
 }
 
 fn row_to_intruder_run(row: &rusqlite::Row) -> rusqlite::Result<IntruderRunRecord> {
@@ -583,10 +630,10 @@ fn row_to_intruder_run(row: &rusqlite::Row) -> rusqlite::Result<IntruderRunRecor
         mode,
         template_json,
         positions_json,
-        concurrency: concurrency as u32,
+        concurrency: u32::try_from(concurrency).unwrap_or(0),
         started_at,
         completed_at,
-        total_requests: total_requests.map(|v| v as u32),
+        total_requests: total_requests.map(|v| u32::try_from(v).unwrap_or(0)),
     })
 }
 
@@ -604,9 +651,9 @@ fn row_to_intruder_result(row: &rusqlite::Row) -> rusqlite::Result<IntruderResul
         id,
         run_id,
         payload_json,
-        status_code: status_code as u16,
-        body_length: body_length as u32,
-        duration_ms: duration_ms as u64,
+        status_code: u16::try_from(status_code).unwrap_or(0),
+        body_length: u32::try_from(body_length).unwrap_or(0),
+        duration_ms: u64::try_from(duration_ms).unwrap_or(0),
         response_body,
         grep_matches,
     })
@@ -626,8 +673,6 @@ fn row_to_payload_list(row: &rusqlite::Row) -> rusqlite::Result<PayloadListRecor
     })
 }
 
-// --- Header serialization ---
-
 fn serialize_headers(headers: &[(String, String)]) -> Result<String, ProxyDbError> {
     let pairs: Vec<(&str, &str)> = headers
         .iter()
@@ -636,8 +681,8 @@ fn serialize_headers(headers: &[(String, String)]) -> Result<String, ProxyDbErro
     Ok(serde_json::to_string(&pairs)?)
 }
 
-fn deserialize_headers(json: &str) -> Vec<(String, String)> {
-    serde_json::from_str::<Vec<(String, String)>>(json).unwrap_or_default()
+fn deserialize_headers(json: &str) -> Result<Vec<(String, String)>, ProxyDbError> {
+    Ok(serde_json::from_str(json)?)
 }
 
 #[cfg(test)]

@@ -22,8 +22,6 @@ fn sample_exchange() -> RecordedExchange {
     }
 }
 
-// --- Schema ---
-
 #[test]
 fn open_creates_schema_without_error() {
     let _db = test_db();
@@ -36,8 +34,6 @@ fn open_is_idempotent() {
     let _db1 = ProxyDb::open(&path).expect("first open");
     let _db2 = ProxyDb::open(&path).expect("second open");
 }
-
-// --- Exchange CRUD ---
 
 #[test]
 fn insert_and_retrieve_exchange() {
@@ -116,7 +112,7 @@ fn search_exchanges_by_url_pattern() {
 }
 
 #[test]
-fn filter_exchanges_with_where_clause() {
+fn filter_exchanges_by_method() {
     let db = test_db();
     let mut ex1 = sample_exchange();
     ex1.request_method = "GET".into();
@@ -126,9 +122,101 @@ fn filter_exchanges_with_where_clause() {
     ex2.request_method = "POST".into();
     db.insert_exchange(&ex2).expect("insert");
 
-    let gets = db.filter_exchanges("method = 'GET'").expect("filter");
+    let gets = db
+        .filter_exchanges(&[ExchangeFilter::Method("GET".into())])
+        .expect("filter");
     assert_eq!(gets.len(), 1);
     assert_eq!(gets[0].request_method, "GET");
+}
+
+#[test]
+fn filter_exchanges_by_status_code() {
+    let db = test_db();
+    let mut ex1 = sample_exchange();
+    ex1.response_status = 200;
+    db.insert_exchange(&ex1).expect("insert");
+
+    let mut ex2 = sample_exchange();
+    ex2.response_status = 404;
+    db.insert_exchange(&ex2).expect("insert");
+
+    let found = db
+        .filter_exchanges(&[ExchangeFilter::StatusCode(404)])
+        .expect("filter");
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].response_status, 404);
+}
+
+#[test]
+fn filter_exchanges_by_url_contains() {
+    let db = test_db();
+    let mut ex1 = sample_exchange();
+    ex1.request_url = "http://localhost:3000/api/users".into();
+    db.insert_exchange(&ex1).expect("insert");
+
+    let mut ex2 = sample_exchange();
+    ex2.request_url = "http://localhost:3000/api/posts".into();
+    db.insert_exchange(&ex2).expect("insert");
+
+    let found = db
+        .filter_exchanges(&[ExchangeFilter::UrlContains("users".into())])
+        .expect("filter");
+    assert_eq!(found.len(), 1);
+    assert!(found[0].request_url.contains("users"));
+}
+
+#[test]
+fn filter_exchanges_by_status_range() {
+    let db = test_db();
+    for status in [200u16, 301, 404, 500] {
+        let mut ex = sample_exchange();
+        ex.response_status = status;
+        db.insert_exchange(&ex).expect("insert");
+    }
+
+    let found = db
+        .filter_exchanges(&[ExchangeFilter::StatusRange { min: 400, max: 599 }])
+        .expect("filter");
+    assert_eq!(found.len(), 2);
+}
+
+#[test]
+fn filter_exchanges_with_multiple_filters() {
+    let db = test_db();
+    let mut ex1 = sample_exchange();
+    ex1.request_method = "POST".into();
+    ex1.response_status = 201;
+    db.insert_exchange(&ex1).expect("insert");
+
+    let mut ex2 = sample_exchange();
+    ex2.request_method = "POST".into();
+    ex2.response_status = 400;
+    db.insert_exchange(&ex2).expect("insert");
+
+    let mut ex3 = sample_exchange();
+    ex3.request_method = "GET".into();
+    ex3.response_status = 200;
+    db.insert_exchange(&ex3).expect("insert");
+
+    let found = db
+        .filter_exchanges(&[
+            ExchangeFilter::Method("POST".into()),
+            ExchangeFilter::StatusCode(201),
+        ])
+        .expect("filter");
+    assert_eq!(found.len(), 1);
+    assert_eq!(found[0].request_method, "POST");
+    assert_eq!(found[0].response_status, 201);
+}
+
+#[test]
+fn filter_exchanges_empty_filters_returns_all() {
+    let db = test_db();
+    db.insert_exchange(&sample_exchange()).expect("insert");
+    db.insert_exchange(&sample_exchange()).expect("insert");
+
+    let all = db.filter_exchanges(&[]).expect("filter");
+    assert_eq!(all.len(), 2);
 }
 
 #[test]
@@ -178,8 +266,6 @@ fn binary_body_round_trip() {
     assert_eq!(loaded.request_body, binary_body);
     assert_eq!(loaded.response_body, binary_body);
 }
-
-// --- Saved Requests ---
 
 #[test]
 fn insert_and_retrieve_saved_request() {
@@ -249,8 +335,6 @@ fn list_saved_requests() {
     assert_eq!(list.len(), 3);
 }
 
-// --- Intruder Runs ---
-
 #[test]
 fn insert_and_retrieve_intruder_run() {
     let db = test_db();
@@ -290,14 +374,19 @@ fn update_intruder_run_completed() {
     };
     let id = db.insert_intruder_run(&run).expect("insert");
 
-    db.update_intruder_run_completed(id, 1700000001000, 42)
+    let updated = db
+        .update_intruder_run_completed(id, 1700000001000, 42)
         .expect("update");
+    assert!(updated);
     let loaded = db.intruder_run_by_id(id).expect("query").expect("found");
     assert_eq!(loaded.completed_at, Some(1700000001000));
     assert_eq!(loaded.total_requests, Some(42));
-}
 
-// --- Intruder Results ---
+    let not_found = db
+        .update_intruder_run_completed(99999, 0, 0)
+        .expect("update missing");
+    assert!(!not_found);
+}
 
 #[test]
 fn insert_and_query_intruder_results() {
@@ -334,8 +423,6 @@ fn insert_and_query_intruder_results() {
     assert_eq!(results[0].status_code, 200);
     assert_eq!(results[2].response_body, b"body-2");
 }
-
-// --- Payload Lists ---
 
 #[test]
 fn insert_and_retrieve_payload_list() {
@@ -393,8 +480,6 @@ fn payload_list_by_name_returns_none_for_missing() {
     assert!(result.is_none());
 }
 
-// --- Persistence (reopen) ---
-
 #[test]
 fn reopen_preserves_data() {
     let dir = tempfile::tempdir().expect("tempdir");
@@ -426,8 +511,6 @@ fn reopen_preserves_data() {
     }
 }
 
-// --- Edge cases ---
-
 #[test]
 fn empty_headers_round_trip() {
     let db = test_db();
@@ -446,8 +529,5 @@ fn exchange_with_in_scope_and_tags() {
     let ex = sample_exchange();
     let id = db.insert_exchange(&ex).expect("insert");
     let loaded = db.exchange_by_id(id).expect("query").expect("found");
-    // Default values from schema: in_scope=1, tags='[]'
-    // These are stored in DB but not surfaced in RecordedExchange currently.
-    // We verify the insert/read cycle works regardless.
     assert_eq!(loaded.request_method, "GET");
 }
