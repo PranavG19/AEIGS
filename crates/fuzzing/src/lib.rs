@@ -1,4 +1,5 @@
 pub mod bot_detection_probe;
+pub mod cloud_detector;
 pub mod confirmation;
 pub mod cors_detector;
 pub mod defense_profile;
@@ -20,6 +21,7 @@ pub mod subdomain_takeover;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
+pub use cloud_detector::*;
 pub use confirmation::*;
 pub use cors_detector::*;
 pub use defense_profile::*;
