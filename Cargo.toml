@@ -16,6 +16,7 @@ members = [
     "crates/discovery",
     "crates/exploiter",
     "crates/test-support",
+    "crates/proxy",
 ]
 resolver = "2"
 

@@ -1,0 +1,21 @@
+[package]
+name = "aegis-proxy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+aegis-protocol = { path = "../protocol" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+hyper = { workspace = true }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1"] }
+http-body-util = "0.1"
+reqwest = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }
+axum = { workspace = true }
+reqwest = { version = "0.12", features = ["json"] }
