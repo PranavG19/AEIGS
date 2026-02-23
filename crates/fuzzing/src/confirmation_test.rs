@@ -49,10 +49,6 @@ fn make_baseline() -> BaselineProfile {
         p99_response_time_ms: 100.0,
         mean_body_size: 500.0,
         body_size_std_dev: 50.0,
-        status_code_counts: std::collections::HashMap::from([(200, 10)]),
-        total_baseline_responses: 10,
-        response_times_ms: vec![40.0, 45.0, 48.0, 50.0, 50.0, 52.0, 55.0, 58.0, 60.0, 100.0],
-        body_sizes: vec![450, 470, 480, 490, 500, 500, 510, 520, 530, 550],
     }
 }
 
