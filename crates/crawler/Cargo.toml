@@ -7,6 +7,7 @@ license.workspace = true
 [features]
 default = []
 browser = ["chromiumoxide", "futures"]
+katana = []
 
 [dependencies]
 aegis-protocol = { path = "../protocol" }
