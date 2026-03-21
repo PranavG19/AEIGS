@@ -209,6 +209,11 @@ pub struct PipelineOptions {
     /// commands while the scan is running.
     #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub interactive: bool,
+
+    /// Use headless browser mode for crawling (requires katana with
+    /// Chrome/Chromium installed). Enables JavaScript rendering during crawl.
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
+    pub headless_crawl: bool,
 }
 
 /// LLM hypothesis engine options.
@@ -320,6 +325,12 @@ pub struct ScopeOptions {
     /// Defaults to ~/.aegis/vuln.db if it exists.
     #[arg(long, value_name = "PATH", help_heading = "Advanced")]
     pub vuln_db: Option<PathBuf>,
+
+    /// Path to a local SecLists clone directory. When provided, uses
+    /// SecLists wordlists for directory bruting and parameter discovery
+    /// instead of the embedded defaults.
+    #[arg(long, value_name = "DIR", help_heading = "Advanced")]
+    pub seclists_path: Option<PathBuf>,
 }
 
 const PRESET_HELP: &str = "\
@@ -393,6 +404,16 @@ pub struct ScanConfig {
     /// alongside the SARIF report. Never includes raw findings or payloads.
     #[arg(long, default_value_t = false, help_heading = "Advanced")]
     pub telemetry: bool,
+
+    /// Blind XSS callback URL for dalfox. When set, dalfox will use this
+    /// URL as the `-b` (blind XSS) callback endpoint.
+    #[arg(long, value_name = "URL", help_heading = "Advanced")]
+    pub dalfox_blind_xss: Option<String>,
+
+    /// Use passive mode for amass subdomain enumeration (default). Pass
+    /// `--amass-active` to enable active probing (requires --i-am-authorized).
+    #[arg(long, default_value_t = false, help_heading = "Tuning")]
+    pub amass_active: bool,
 }
 
 impl ScanConfig {

@@ -535,6 +535,7 @@ fn scope_options_with_graph_db_some() {
         history_db: None,
         export_graph: None,
         vuln_db: None,
+        seclists_path: None,
     };
     assert_eq!(
         scope.graph_db.unwrap(),
@@ -1189,4 +1190,88 @@ fn scan_preset_debug_format() {
     assert_eq!(format!("{:?}", ScanPreset::Thorough), "Thorough");
     assert_eq!(format!("{:?}", ScanPreset::Paranoid), "Paranoid");
     assert_eq!(format!("{:?}", ScanPreset::Benchmark), "Benchmark");
+}
+
+#[test]
+fn scan_config_default_seclists_path_is_none() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.scope.seclists_path.is_none());
+}
+
+#[test]
+fn scan_config_seclists_path_flag_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--seclists-path",
+        "/opt/seclists",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.scope.seclists_path.unwrap(),
+        PathBuf::from("/opt/seclists")
+    );
+}
+
+#[test]
+fn scan_config_default_dalfox_blind_xss_is_none() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(config.dalfox_blind_xss.is_none());
+}
+
+#[test]
+fn scan_config_dalfox_blind_xss_flag_parses() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--dalfox-blind-xss",
+        "https://callback.example.com",
+    ])
+    .unwrap();
+    assert_eq!(
+        config.dalfox_blind_xss.as_deref(),
+        Some("https://callback.example.com")
+    );
+}
+
+#[test]
+fn scan_config_default_amass_active_is_false() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!config.amass_active);
+}
+
+#[test]
+fn scan_config_amass_active_flag_sets_true() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--amass-active",
+    ])
+    .unwrap();
+    assert!(config.amass_active);
+}
+
+#[test]
+fn scan_config_default_headless_crawl_is_false() {
+    let config =
+        ScanConfig::try_parse_from(["aegis", "--target", "http://localhost:8080"]).unwrap();
+    assert!(!config.pipeline.headless_crawl);
+}
+
+#[test]
+fn scan_config_headless_crawl_flag_sets_true() {
+    let config = ScanConfig::try_parse_from([
+        "aegis",
+        "--target",
+        "http://localhost:8080",
+        "--headless-crawl",
+    ])
+    .unwrap();
+    assert!(config.pipeline.headless_crawl);
 }

@@ -101,6 +101,7 @@ fn localhost_config() -> ScanConfig {
             paranoia_sweep: false,
             resume: false,
             interactive: false,
+            headless_crawl: false,
         },
         llm: scan_config::LlmOptions {
             no_llm: false,
@@ -121,6 +122,7 @@ fn localhost_config() -> ScanConfig {
             history_db: None,
             export_graph: None,
             vuln_db: None,
+            seclists_path: None,
         },
         auth: scan_config::AuthOptions {
             auth_flow: None,
@@ -134,6 +136,8 @@ fn localhost_config() -> ScanConfig {
             worker_id: "worker-0".to_string(),
         },
         telemetry: false,
+        dalfox_blind_xss: None,
+        amass_active: false,
     }
 }
 
