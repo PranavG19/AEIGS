@@ -8,3 +8,6 @@ aegis-protocol = { path = "../protocol" }
 regex = { workspace = true }
 reqwest = { workspace = true, features = ["blocking"] }
 url = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

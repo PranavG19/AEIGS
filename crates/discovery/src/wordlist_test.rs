@@ -1,4 +1,8 @@
-use crate::wordlist::{default_wordlist, parse_wordlist};
+use crate::wordlist::{
+    default_wordlist, load_wordlist_from_path, parse_wordlist, seclists_directories,
+    seclists_params,
+};
+use std::path::Path;
 
 #[test]
 fn default_wordlist_is_non_empty() {
@@ -70,4 +74,60 @@ fn default_wordlist_has_no_duplicates() {
         unique.len(),
         "default wordlist contains duplicates"
     );
+}
+
+#[test]
+fn load_wordlist_from_path_nonexistent_returns_empty() {
+    let words = load_wordlist_from_path(Path::new("/nonexistent/wordlist.txt"));
+    assert!(words.is_empty());
+}
+
+#[test]
+fn load_wordlist_from_path_valid_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("test.txt");
+    std::fs::write(&file_path, "# comment\nadmin\nbackup\n\n.env\n").unwrap();
+    let words = load_wordlist_from_path(&file_path);
+    assert_eq!(words, vec!["admin", "backup", ".env"]);
+}
+
+#[test]
+fn load_wordlist_from_path_filters_comments_and_blanks() {
+    let dir = tempfile::tempdir().unwrap();
+    let file_path = dir.path().join("filtered.txt");
+    std::fs::write(&file_path, "# header\n\nfoo\n# middle\nbar\n").unwrap();
+    let words = load_wordlist_from_path(&file_path);
+    assert_eq!(words, vec!["foo", "bar"]);
+}
+
+#[test]
+fn seclists_directories_nonexistent_base_returns_empty() {
+    let words = seclists_directories(Path::new("/nonexistent/seclists"));
+    assert!(words.is_empty());
+}
+
+#[test]
+fn seclists_params_nonexistent_base_returns_empty() {
+    let words = seclists_params(Path::new("/nonexistent/seclists"));
+    assert!(words.is_empty());
+}
+
+#[test]
+fn seclists_directories_reads_correct_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("Discovery").join("Web-Content");
+    std::fs::create_dir_all(&target).unwrap();
+    std::fs::write(target.join("raft-large-directories.txt"), "admin\napi\n").unwrap();
+    let words = seclists_directories(dir.path());
+    assert_eq!(words, vec!["admin", "api"]);
+}
+
+#[test]
+fn seclists_params_reads_correct_path() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("Discovery").join("Web-Content");
+    std::fs::create_dir_all(&target).unwrap();
+    std::fs::write(target.join("burp-parameter-names.txt"), "id\nname\nq\n").unwrap();
+    let words = seclists_params(dir.path());
+    assert_eq!(words, vec!["id", "name", "q"]);
 }
