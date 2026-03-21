@@ -1,5 +1,5 @@
 use crate::doctor::{
-    CheckStatus, DoctorCheck, format_report, parse_doctor_args, recommend_command,
+    CheckStatus, DoctorCheck, format_report, parse_doctor_args, recommend_command, run_doctor,
 };
 
 fn make_check(name: &str, status: CheckStatus) -> DoctorCheck {
@@ -101,4 +101,73 @@ fn parse_doctor_args_verbose() {
     let args = vec!["--verbose".to_string()];
     let parsed = parse_doctor_args(&args);
     assert!(parsed.verbose);
+}
+
+#[test]
+fn doctor_checks_feroxbuster_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "feroxbuster").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("cargo install"));
+}
+
+#[test]
+fn doctor_checks_httpx_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "httpx").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("go install"));
+}
+
+#[test]
+fn doctor_checks_gau_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "gau").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("go install"));
+}
+
+#[test]
+fn doctor_checks_dalfox_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "dalfox").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("go install"));
+}
+
+#[test]
+fn doctor_checks_trufflehog_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "trufflehog").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("brew install"));
+}
+
+#[test]
+fn doctor_checks_amass_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "amass").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("go install"));
+}
+
+#[test]
+fn doctor_checks_katana_returns_fail_when_not_installed() {
+    let checks = run_doctor();
+    let check = checks.iter().find(|c| c.name == "katana").unwrap();
+    assert_eq!(check.status, CheckStatus::Fail);
+    assert!(check.fix_hint.as_ref().unwrap().contains("go install"));
+}
+
+#[test]
+fn run_doctor_includes_all_tool_checks() {
+    let checks = run_doctor();
+    let names: Vec<_> = checks.iter().map(|c| c.name.as_str()).collect();
+    assert!(names.contains(&"feroxbuster"));
+    assert!(names.contains(&"httpx"));
+    assert!(names.contains(&"gau"));
+    assert!(names.contains(&"dalfox"));
+    assert!(names.contains(&"trufflehog"));
+    assert!(names.contains(&"amass"));
+    assert!(names.contains(&"katana"));
 }

@@ -37,6 +37,13 @@ pub fn run_doctor() -> Vec<DoctorCheck> {
         check_vuln_db(),
         check_docker(),
         check_ollama(),
+        check_feroxbuster(),
+        check_httpx(),
+        check_gau(),
+        check_dalfox(),
+        check_trufflehog(),
+        check_amass(),
+        check_katana(),
     ]
 }
 
@@ -299,6 +306,54 @@ fn check_ollama() -> DoctorCheck {
             fix_hint: fix,
         },
     }
+}
+
+fn check_cli_tool(name: &str, install_hint: &str) -> DoctorCheck {
+    match Command::new(name).arg("--version").output() {
+        Ok(output) if output.status.success() => {
+            let detail = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            DoctorCheck {
+                name: name.to_string(),
+                status: CheckStatus::Pass,
+                detail,
+                fix_hint: Some(install_hint.to_string()),
+            }
+        }
+        _ => DoctorCheck {
+            name: name.to_string(),
+            status: CheckStatus::Fail,
+            detail: format!("{name} not found"),
+            fix_hint: Some(install_hint.to_string()),
+        },
+    }
+}
+
+fn check_feroxbuster() -> DoctorCheck {
+    check_cli_tool("feroxbuster", "cargo install feroxbuster")
+}
+
+fn check_httpx() -> DoctorCheck {
+    check_cli_tool("httpx", "go install github.com/projectdiscovery/httpx/cmd/httpx@latest")
+}
+
+fn check_gau() -> DoctorCheck {
+    check_cli_tool("gau", "go install github.com/lc/gau/v2/cmd/gau@latest")
+}
+
+fn check_dalfox() -> DoctorCheck {
+    check_cli_tool("dalfox", "go install github.com/hahwul/dalfox/v2@latest")
+}
+
+fn check_trufflehog() -> DoctorCheck {
+    check_cli_tool("trufflehog", "brew install trufflehog")
+}
+
+fn check_amass() -> DoctorCheck {
+    check_cli_tool("amass", "go install github.com/owasp-amass/amass/v4/...@master")
+}
+
+fn check_katana() -> DoctorCheck {
+    check_cli_tool("katana", "go install github.com/projectdiscovery/katana/cmd/katana@latest")
 }
 
 fn aegis_home_dir() -> PathBuf {

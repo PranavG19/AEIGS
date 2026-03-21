@@ -15,6 +15,8 @@ pub struct UpdateDbArgs {
     pub db_path: PathBuf,
     pub source_dir: PathBuf,
     pub full_refresh: bool,
+    pub update_wordlists: bool,
+    pub update_tools: bool,
 }
 
 pub struct UpdateDbSummary {
@@ -59,11 +61,15 @@ pub fn parse_update_db_args(args: &[String]) -> Result<UpdateDbArgs, UpdateDbErr
         .map(PathBuf::from)
         .unwrap_or_else(default_db_path);
     let full_refresh = args.iter().any(|a| a == "--full-refresh");
+    let update_wordlists = args.iter().any(|a| a == "--update-wordlists");
+    let update_tools = args.iter().any(|a| a == "--update-tools");
 
     Ok(UpdateDbArgs {
         db_path,
         source_dir: PathBuf::from(source_dir),
         full_refresh,
+        update_wordlists,
+        update_tools,
     })
 }
 

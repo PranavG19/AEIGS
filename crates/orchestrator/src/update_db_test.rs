@@ -89,6 +89,46 @@ fn parse_args_defaults_db_path() {
     let parsed = parse_update_db_args(&args).unwrap();
     assert!(parsed.db_path.ends_with("vuln.db"));
     assert!(!parsed.full_refresh);
+    assert!(!parsed.update_wordlists);
+    assert!(!parsed.update_tools);
+}
+
+#[test]
+fn parse_args_update_wordlists_flag() {
+    let args: Vec<String> = vec!["--source-dir", "/tmp/project", "--update-wordlists"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+    let parsed = parse_update_db_args(&args).unwrap();
+    assert!(parsed.update_wordlists);
+    assert!(!parsed.update_tools);
+}
+
+#[test]
+fn parse_args_update_tools_flag() {
+    let args: Vec<String> = vec!["--source-dir", "/tmp/project", "--update-tools"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+    let parsed = parse_update_db_args(&args).unwrap();
+    assert!(!parsed.update_wordlists);
+    assert!(parsed.update_tools);
+}
+
+#[test]
+fn parse_args_both_update_flags() {
+    let args: Vec<String> = vec![
+        "--source-dir",
+        "/tmp/project",
+        "--update-wordlists",
+        "--update-tools",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+    let parsed = parse_update_db_args(&args).unwrap();
+    assert!(parsed.update_wordlists);
+    assert!(parsed.update_tools);
 }
 
 #[test]
