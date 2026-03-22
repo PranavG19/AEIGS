@@ -67,6 +67,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let email_target = ctx.config.target.clone();
     let email_handle =
         std::thread::spawn(move || crate::email_security::check_email_security(&email_target));
+    let csp_target = ctx.config.target.clone();
+    let csp_handle =
+        std::thread::spawn(move || crate::csp_analyzer::analyze_csp(&csp_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -227,6 +230,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::email_security::email_findings_to_operations(&email_issues, &mut sequence);
     findings_count += email_ops.len() as u64;
     entries.extend(email_ops);
+
+    let csp_issues = csp_handle.join().unwrap_or_default();
+    let csp_ops = crate::csp_analyzer::csp_findings_to_operations(&csp_issues, &mut sequence);
+    findings_count += csp_ops.len() as u64;
+    entries.extend(csp_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

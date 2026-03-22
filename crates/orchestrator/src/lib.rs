@@ -7,6 +7,7 @@ pub mod checkpoint;
 pub mod convergence;
 pub mod cookie_audit;
 pub mod cors_scanner;
+pub mod csp_analyzer;
 pub mod cve_correlator;
 pub mod distributed;
 pub mod dns_enumerator;
@@ -49,6 +50,7 @@ pub use checkpoint::*;
 pub use convergence::*;
 pub use cookie_audit::*;
 pub use cors_scanner::*;
+pub use csp_analyzer::*;
 pub use cve_correlator::*;
 pub use distributed::*;
 pub use dns_enumerator::*;
@@ -235,6 +237,10 @@ mod subdomain_takeover_test;
 #[cfg(test)]
 #[path = "email_security_test.rs"]
 mod email_security_test;
+
+#[cfg(test)]
+#[path = "csp_analyzer_test.rs"]
+mod csp_analyzer_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
