@@ -8,3 +8,7 @@ __pycache__/
 node_modules/
 *.rlib
 .coverage
+.claude/daemon/.combined-prompt.md
+.claude/daemon/logs/
+.claude/ralph-loop.local.md
+SYSTEM_PROMPT.md

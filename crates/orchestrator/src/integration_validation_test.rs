@@ -334,8 +334,9 @@ fn sensitive_paths_has_sufficient_entries() {
 #[test]
 fn exploiter_tools_all_registered() {
     use aegis_exploiter::{
-        JwtTester, NmapWrapper, NucleiWrapper, SqlmapWrapper, SubfinderWrapper, ToolRunner,
-        ToolWrapper,
+        AmassWrapper, DalfoxWrapper, FeroxbusterWrapper, GauWrapper, HttpxWrapper, JwtTester,
+        NmapWrapper, NucleiWrapper, SqlmapWrapper, SubfinderWrapper, ToolRunner, ToolWrapper,
+        TrufflehogWrapper,
     };
 
     let tools: Vec<Box<dyn ToolWrapper>> = vec![
@@ -344,17 +345,26 @@ fn exploiter_tools_all_registered() {
         Box::new(SubfinderWrapper),
         Box::new(NmapWrapper::new()),
         Box::new(JwtTester),
+        Box::new(HttpxWrapper),
+        Box::new(GauWrapper),
+        Box::new(FeroxbusterWrapper),
+        Box::new(TrufflehogWrapper),
+        Box::new(DalfoxWrapper),
+        Box::new(AmassWrapper),
     ];
 
-    let expected_names = ["sqlmap", "nuclei", "subfinder", "nmap", "jwt_tester"];
-    let actual_names: Vec<&str> = tools.iter().map(|t| t.name()).collect();
-
-    for expected in &expected_names {
-        assert!(
-            actual_names.contains(expected),
-            "tool '{expected}' should be constructable and return correct name, got: {actual_names:?}"
-        );
-    }
+    let names: Vec<&str> = tools.iter().map(|t| t.name()).collect();
+    let unique: std::collections::HashSet<&str> = names.iter().copied().collect();
+    assert_eq!(
+        names.len(),
+        unique.len(),
+        "duplicate tool names: {names:?}"
+    );
+    assert_eq!(
+        tools.len(),
+        11,
+        "tool count mismatch — update this test when adding a new wrapper"
+    );
 
     let runner = tools
         .into_iter()
