@@ -28,6 +28,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
+pub mod redirect_scanner;
 pub mod robots_parser;
 pub mod s3_scanner;
 pub mod scan_config;
@@ -66,6 +67,7 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
+pub use redirect_scanner::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
 pub use scan_config::*;
@@ -211,6 +213,10 @@ mod cookie_audit_test;
 #[cfg(test)]
 #[path = "method_scanner_test.rs"]
 mod method_scanner_test;
+
+#[cfg(test)]
+#[path = "redirect_scanner_test.rs"]
+mod redirect_scanner_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

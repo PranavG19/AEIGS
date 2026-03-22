@@ -6,7 +6,7 @@ task: passive recon capability expansion
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1151 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1160 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -27,13 +27,14 @@ status: in-progress
 - [x] DNS record enumeration
 - [x] CORS misconfiguration scanner
 - [x] Cookie security audit
-- [x] HTTP method enumeration (OPTIONS probing)
-- [ ] Open redirect detection
+- [x] HTTP method enumeration
+- [x] Open redirect detection
 - [ ] Subdomain takeover detection
+- [ ] Information disclosure scanner (server/x-powered-by headers)
 
 ## handoff
-P8 continuing. Seven passive recon features done. Next candidates:
-- Open redirect detection: probe common redirect params for
-  unvalidated external redirect (?url=, ?next=, ?redirect=, ?return=)
-- Subdomain takeover: check discovered subdomains for dangling
-  CNAME records pointing to unclaimed services
+P8 continuing. Eight passive recon features done in this session.
+Next: info disclosure scanner — check Server, X-Powered-By, X-AspNet-
+Version, X-Generator headers that leak technology stack info. Simpler
+than CORS/redirect scanners. Then subdomain takeover: check CNAME
+records for dangling pointers to unclaimed services.
