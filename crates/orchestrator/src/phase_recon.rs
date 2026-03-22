@@ -52,6 +52,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let cors_target = ctx.config.target.clone();
     let cors_handle =
         std::thread::spawn(move || crate::cors_scanner::scan_cors(&cors_target));
+    let cookie_target = ctx.config.target.clone();
+    let cookie_handle =
+        std::thread::spawn(move || crate::cookie_audit::audit_cookies(&cookie_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -164,6 +167,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::cors_scanner::cors_findings_to_operations(&cors_findings, &mut sequence);
     findings_count += cors_ops.len() as u64;
     entries.extend(cors_ops);
+
+    let cookie_findings = cookie_handle.join().unwrap_or_default();
+    let cookie_ops =
+        crate::cookie_audit::cookie_findings_to_operations(&cookie_findings, &mut sequence);
+    findings_count += cookie_ops.len() as u64;
+    entries.extend(cookie_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

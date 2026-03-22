@@ -5,6 +5,7 @@ pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
+pub mod cookie_audit;
 pub mod cors_scanner;
 pub mod cve_correlator;
 pub mod distributed;
@@ -41,6 +42,7 @@ pub use actor::*;
 pub use auth_session::*;
 pub use checkpoint::*;
 pub use convergence::*;
+pub use cookie_audit::*;
 pub use cors_scanner::*;
 pub use cve_correlator::*;
 pub use distributed::*;
@@ -199,6 +201,10 @@ mod dns_enumerator_test;
 #[cfg(test)]
 #[path = "cors_scanner_test.rs"]
 mod cors_scanner_test;
+
+#[cfg(test)]
+#[path = "cookie_audit_test.rs"]
+mod cookie_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

@@ -6,7 +6,7 @@ task: adding new passive recon capabilities
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1126 lib (1118+8 cors_scanner), 0 failed
+- cargo test -p aegis-orchestrator: 1140 lib (1126+14 cookie_audit), 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -26,11 +26,15 @@ status: in-progress
 - [x] robots.txt/sitemap.xml passive discovery
 - [x] DNS record enumeration
 - [x] CORS misconfiguration scanner
-- [ ] Cookie security audit (Secure, HttpOnly, SameSite flags)
+- [x] Cookie security audit
+- [ ] Open redirect detection
+- [ ] HTTP method enumeration (OPTIONS probing)
 
 ## handoff
-P8 continuing. Five passive recon features done. Next: cookie security
-audit — check Set-Cookie headers for missing Secure/HttpOnly/SameSite
-flags, flag session cookies without protection. Same pattern as header
-audit. Create cookie_audit.rs + cookie_audit_test.rs, wire into
-phase_recon.rs.
+P8 continuing. Six passive recon features done in this session.
+Next candidates:
+- Open redirect detection: check common redirect params (?url=,
+  ?next=, ?redirect=) for unvalidated redirects
+- HTTP method enumeration: OPTIONS request to discover allowed
+  methods, flag dangerous ones (PUT, DELETE, TRACE)
+Both are lightweight HTTP-based scanners, same pattern as above.
