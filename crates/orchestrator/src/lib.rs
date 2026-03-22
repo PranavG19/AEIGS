@@ -43,6 +43,7 @@ pub mod security_txt;
 pub mod scan_strategy;
 pub mod shodan_lookup;
 pub mod subdomain_takeover;
+pub mod tech_detector;
 pub mod telemetry;
 pub mod tls_scanner;
 pub mod update_db;
@@ -91,6 +92,7 @@ pub use security_txt::*;
 pub use scan_strategy::*;
 pub use shodan_lookup::*;
 pub use subdomain_takeover::*;
+pub use tech_detector::*;
 pub use telemetry::*;
 pub use tls_scanner::*;
 pub use update_db::*;
@@ -271,6 +273,10 @@ mod rate_limit_detector_test;
 #[cfg(test)]
 #[path = "security_txt_test.rs"]
 mod security_txt_test;
+
+#[cfg(test)]
+#[path = "tech_detector_test.rs"]
+mod tech_detector_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

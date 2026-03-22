@@ -21,6 +21,7 @@ aegis-reporting = { path = "../reporting" }
 aegis-evasion-engine = { path = "../evasion-engine" }
 aegis-crawler = { path = "../crawler" }
 aegis-exploiter = { path = "../exploiter" }
+aegis-discovery = { path = "../discovery" }
 clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
@@ -37,4 +38,3 @@ ed25519-dalek = { workspace = true }
 tokio = { version = "1", features = ["rt", "macros"] }
 tempfile = "3"
 aegis-compliance = { path = "../compliance" }
-aegis-discovery = { path = "../discovery" }
