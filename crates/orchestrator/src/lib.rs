@@ -45,6 +45,7 @@ pub mod telemetry;
 pub mod tls_scanner;
 pub mod update_db;
 mod util;
+pub mod waf_detector;
 
 pub use actor::*;
 pub use auth_session::*;
@@ -89,6 +90,7 @@ pub use subdomain_takeover::*;
 pub use telemetry::*;
 pub use tls_scanner::*;
 pub use update_db::*;
+pub use waf_detector::*;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]
@@ -253,6 +255,10 @@ mod hsts_preload_test;
 #[cfg(test)]
 #[path = "http_version_test.rs"]
 mod http_version_test;
+
+#[cfg(test)]
+#[path = "waf_detector_test.rs"]
+mod waf_detector_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
