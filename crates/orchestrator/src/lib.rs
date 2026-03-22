@@ -33,6 +33,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
+pub mod rate_limit_detector;
 pub mod redirect_scanner;
 pub mod robots_parser;
 pub mod s3_scanner;
@@ -79,6 +80,7 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
+pub use rate_limit_detector::*;
 pub use redirect_scanner::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
@@ -259,6 +261,10 @@ mod http_version_test;
 #[cfg(test)]
 #[path = "waf_detector_test.rs"]
 mod waf_detector_test;
+
+#[cfg(test)]
+#[path = "rate_limit_detector_test.rs"]
+mod rate_limit_detector_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

@@ -79,6 +79,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let waf_target = ctx.config.target.clone();
     let waf_handle =
         std::thread::spawn(move || crate::waf_detector::detect_waf(&waf_target));
+    let rl_target = ctx.config.target.clone();
+    let rl_handle =
+        std::thread::spawn(move || crate::rate_limit_detector::detect_rate_limits(&rl_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -263,6 +266,13 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         &waf_detections,
         &mut sequence,
     ));
+
+    if let Some(rl_info) = rl_handle.join().ok().flatten() {
+        entries.extend(crate::rate_limit_detector::rate_limit_to_operations(
+            &rl_info,
+            &mut sequence,
+        ));
+    }
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
