@@ -530,3 +530,50 @@ fn probe_tech_stack_returns_empty_for_unreachable_target() {
     let result = probe_tech_stack("http://localhost:19999");
     assert!(result.is_empty());
 }
+
+#[test]
+fn brute_force_dirs_returns_empty_when_feroxbuster_not_installed() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::FeroxbusterWrapper.is_available() {
+        return;
+    }
+    let result = brute_force_dirs("http://localhost:8080");
+    assert!(result.is_empty());
+}
+
+#[test]
+fn brute_forced_to_operations_creates_endpoint_nodes() {
+    let paths = vec!["/admin".to_string(), "/api/debug".to_string()];
+    let mut seq = 0u64;
+    let ops = phase_fingerprint::brute_forced_to_operations(&paths, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddNode {
+            node_type,
+            properties,
+        } => {
+            assert_eq!(*node_type, aegis_protocol::node::NodeType::Endpoint);
+            let map: std::collections::HashMap<&str, &str> = properties
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            assert_eq!(map["path"], "/admin");
+            assert_eq!(map["method"], "GET");
+            assert_eq!(map["source"], "feroxbuster");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn brute_forced_to_operations_empty_returns_empty() {
+    let paths: Vec<String> = Vec::new();
+    let mut seq = 0u64;
+    let ops = phase_fingerprint::brute_forced_to_operations(&paths, &mut seq);
+
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}

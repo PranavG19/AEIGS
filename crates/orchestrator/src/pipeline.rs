@@ -902,9 +902,8 @@ fn run_fingerprint_phase(
         .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
 
     let tech_target = ctx.config.target.clone();
-    let tech_handle = std::thread::spawn(move || {
-        crate::phase_fingerprint::probe_tech_stack(&tech_target)
-    });
+    let tech_handle =
+        std::thread::spawn(move || crate::phase_fingerprint::probe_tech_stack(&tech_target));
 
     let (fp_ops, profile) = collect_fingerprint_ops(&mut seq, &ctx.config.target);
     let fp_ops_count = fp_ops.len() as u64;

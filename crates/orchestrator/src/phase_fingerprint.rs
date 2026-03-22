@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use aegis_enumeration::introspection::IntrospectedEndpoint;
-use aegis_exploiter::{ExploitContext, HttpxWrapper, ToolWrapper, spawn_with_timeout};
+use aegis_exploiter::{
+    ExploitContext, FeroxbusterWrapper, HttpxWrapper, ToolWrapper, spawn_with_timeout,
+};
 use aegis_fuzzing::DefenseProfile;
 use aegis_fuzzing::bot_detection_probe::{BotProbeResult, analyze_bot_detection};
 use aegis_fuzzing::rate_limit_detector::{
@@ -206,12 +208,17 @@ pub fn probe_defenses(target: &str) -> DefenseProfile {
 
 pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let target = ctx.config.target.clone();
-    let profile = std::thread::spawn(move || probe_defenses(&target))
-        .join()
-        .unwrap_or_else(|_| {
-            tracing::warn!("defense fingerprinting thread panicked, using empty profile");
-            DefenseProfile::empty(timestamp_ms())
-        });
+    let defense_target = target.clone();
+    let ferox_target = target;
+
+    let defense_handle = std::thread::spawn(move || probe_defenses(&defense_target));
+    let ferox_handle = std::thread::spawn(move || brute_force_dirs(&ferox_target));
+
+    let profile = defense_handle.join().unwrap_or_else(|_| {
+        tracing::warn!("defense fingerprinting thread panicked, using empty profile");
+        DefenseProfile::empty(timestamp_ms())
+    });
+
     let mut entries = Vec::new();
     let mut sequence = ctx.graph.total_operations_applied()?;
 
@@ -225,6 +232,9 @@ pub fn run_fingerprint(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError>
         },
         timestamp_unix_ms: timestamp_ms(),
     });
+
+    let ferox_paths = ferox_handle.join().unwrap_or_default();
+    entries.extend(brute_forced_to_operations(&ferox_paths, &mut sequence));
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
@@ -374,4 +384,70 @@ pub fn probe_tech_stack(target: &str) -> Vec<String> {
         tracing::info!(technologies = ?tech, "httpx detected tech stack");
     }
     tech
+}
+
+/// Runs feroxbuster for directory brute-force against the target.
+///
+/// Returns discovered endpoint paths. Returns an empty vec if feroxbuster is
+/// not installed or the probe fails.
+pub fn brute_force_dirs(target: &str) -> Vec<String> {
+    let wrapper = FeroxbusterWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("feroxbuster not installed, skipping dir brute-force");
+        return Vec::new();
+    }
+    let context = ExploitContext::new(
+        target.to_string(),
+        String::new(),
+        VulnerabilityClass::InformationDisclosure,
+    );
+    let command = wrapper.build_command(&context);
+    let (stdout, stderr) = match spawn_with_timeout(command, wrapper.timeout(), "feroxbuster") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(error = %e, "feroxbuster dir brute-force failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &stderr);
+    let mut paths: Vec<String> = results
+        .iter()
+        .filter_map(|r| {
+            r.extracted_data
+                .as_deref()
+                .and_then(crate::util::extract_path_from_url)
+        })
+        .collect();
+    paths.sort();
+    paths.dedup();
+    if !paths.is_empty() {
+        tracing::info!(count = paths.len(), "feroxbuster discovered directories");
+    }
+    paths
+}
+
+/// Converts brute-forced directory paths into Endpoint node operations.
+pub(crate) fn brute_forced_to_operations(
+    paths: &[String],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    paths
+        .iter()
+        .map(|path| {
+            *seq += 1;
+            OperationLogEntry {
+                sequence_number: *seq,
+                module: ModuleIdentifier::Enumeration,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![
+                        ("path".to_string(), path.clone()),
+                        ("method".to_string(), "GET".to_string()),
+                        ("source".to_string(), "feroxbuster".to_string()),
+                    ],
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
 }

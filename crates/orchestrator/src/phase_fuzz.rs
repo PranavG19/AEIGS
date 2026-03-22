@@ -1,5 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
+use aegis_exploiter::{DalfoxWrapper, ExploitContext, ToolWrapper, spawn_with_timeout};
 use aegis_fuzzing::mutator::{MutatedPayload, MutationStrategy, PayloadMutator};
 use aegis_fuzzing::oracle::FuzzOracle;
 use aegis_fuzzing::scheduler::{FuzzScheduler, FuzzTarget};
@@ -111,6 +112,7 @@ pub async fn run_fuzz<T: FuzzTransport>(
     let target_base = ctx.config.target.clone();
 
     let llm_payloads = std::mem::take(&mut ctx.llm_payloads);
+    let mut xss_suspected: HashSet<String> = HashSet::new();
 
     while let Some(target) = scheduler.next_target() {
         let mut payloads = if ctx.config.stealth.stealth {
@@ -174,6 +176,11 @@ pub async fn run_fuzz<T: FuzzTransport>(
                 oracle.analyze_response(&response, &payload.raw, &target.endpoint, &target.method);
 
             let origin = origin_for_strategy(payload.mutation_strategy);
+            if !anomalies.is_empty()
+                && target.vulnerability_class == VulnerabilityClass::CrossSiteScripting
+            {
+                xss_suspected.insert(target.endpoint.clone());
+            }
             append_anomaly_entries(
                 &anomalies,
                 target.vulnerability_class,
@@ -184,6 +191,12 @@ pub async fn run_fuzz<T: FuzzTransport>(
         }
         scheduler.mark_completed(target);
     }
+
+    let xss_endpoints: Vec<String> = xss_suspected.into_iter().collect();
+    let dalfox_ops = confirm_xss_with_dalfox(&target_base, &xss_endpoints, &mut acc.sequence);
+    let dalfox_count = dalfox_ops.len() as u64;
+    acc.entries.extend(dalfox_ops);
+    acc.findings_count += dalfox_count;
 
     let ops_count = acc.entries.len() as u64;
     if !acc.entries.is_empty() {
@@ -388,6 +401,62 @@ impl FuzzTransport for aegis_evasion_engine::EvasionTransport {
             .await
             .map_err(|e| e.to_string())
     }
+}
+
+/// Runs dalfox to confirm XSS findings on endpoints with suspected vulnerabilities.
+///
+/// Returns confirmed XSS results as AddFinding operations with upgraded severity.
+pub fn confirm_xss_with_dalfox(
+    target_base: &str,
+    xss_endpoints: &[String],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    let wrapper = DalfoxWrapper;
+    if !wrapper.is_available() || xss_endpoints.is_empty() {
+        return Vec::new();
+    }
+    let mut entries = Vec::new();
+    for endpoint in xss_endpoints {
+        let context = ExploitContext::new(
+            target_base.to_string(),
+            endpoint.clone(),
+            VulnerabilityClass::CrossSiteScripting,
+        );
+        let command = wrapper.build_command(&context);
+        let (stdout, stderr) = match spawn_with_timeout(command, wrapper.timeout(), "dalfox") {
+            Ok(output) => output,
+            Err(e) => {
+                tracing::warn!(endpoint = %endpoint, error = %e, "dalfox XSS confirmation failed");
+                continue;
+            }
+        };
+        let results = wrapper.parse_output(&stdout, &stderr);
+        for result in &results {
+            *seq += 1;
+            let severity = result.severity_upgrade.unwrap_or(8.0);
+            let confidence = FindingConfidence::compute(0.7, severity.clamp(0.0, 10.0), 0.9);
+            entries.push(OperationLogEntry {
+                sequence_number: *seq,
+                module: ModuleIdentifier::Fuzzing,
+                operation: GraphOperation::AddFinding {
+                    linked_node_ids: vec![],
+                    vulnerability_class: VulnerabilityClass::CrossSiteScripting,
+                    severity,
+                    confidence: confidence.composite,
+                    certificate: Vec::new(),
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            });
+        }
+        if !results.is_empty() {
+            tracing::info!(
+                endpoint = %endpoint,
+                count = results.len(),
+                "dalfox confirmed XSS"
+            );
+        }
+    }
+    entries
 }
 
 pub(crate) fn origin_for_strategy(strategy: MutationStrategy) -> FindingOrigin {

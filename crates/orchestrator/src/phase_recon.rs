@@ -1,18 +1,35 @@
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+use aegis_exploiter::{
+    AmassWrapper, ExploitContext, ExploitResult, GauWrapper, ToolWrapper, TrufflehogWrapper,
+    spawn_with_timeout,
+};
 use aegis_passive_recon::dependency_parser::{ParsedDependency, parse_lock_file};
 use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
 use aegis_passive_recon::vuln_database::VulnDatabase;
+use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
 use crate::phase_error::PhaseError;
 use crate::pipeline::{PhaseResult, ScanContext};
-use crate::util::timestamp_ms;
+use crate::util::{extract_path_from_url, timestamp_ms};
 
 pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let mut entries = Vec::new();
     let mut sequence = 0u64;
+    let mut findings_count = 0u64;
+
+    let target = ctx.config.target.clone();
+    let gau_target = target.clone();
+    let amass_target = target;
+    let gau_handle = std::thread::spawn(move || harvest_urls(&gau_target));
+    let amass_handle = std::thread::spawn(move || enumerate_subdomains(&amass_target));
+    let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
+        let dir = dir.clone();
+        std::thread::spawn(move || scan_secrets(&dir))
+    });
 
     if let Some(source_dir) = &ctx.config.source_dir {
         let walk =
@@ -39,6 +56,19 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         entries.extend(walk_to_operations(&walk.files, &mut sequence));
     }
 
+    if let Some(handle) = trufflehog_handle {
+        let secrets = handle.join().unwrap_or_default();
+        let secret_ops = secret_findings_to_operations(&secrets, &mut sequence);
+        findings_count += secret_ops.len() as u64;
+        entries.extend(secret_ops);
+    }
+
+    let gau_urls = gau_handle.join().unwrap_or_default();
+    entries.extend(harvested_urls_to_operations(&gau_urls, &mut sequence));
+
+    let subdomains = amass_handle.join().unwrap_or_default();
+    entries.extend(subdomains_to_operations(&subdomains, &mut sequence));
+
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
         ctx.graph.apply_operations(&entries)?;
@@ -46,7 +76,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     Ok(PhaseResult {
         operations_applied: ops_count,
-        findings_count: 0,
+        findings_count,
     })
 }
 
@@ -167,4 +197,176 @@ pub fn run_recon_standalone(
     entries.extend(vuln_lookup(&all_deps, &mut sequence, vuln_db_path));
     entries.extend(walk_to_operations(&walk.files, &mut sequence));
     Ok(entries)
+}
+
+/// Runs gau to harvest historical URLs from web archives.
+pub fn harvest_urls(target: &str) -> Vec<String> {
+    let wrapper = GauWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("gau not installed, skipping URL harvest");
+        return Vec::new();
+    }
+    let context = ExploitContext::new(
+        target.to_string(),
+        String::new(),
+        VulnerabilityClass::InformationDisclosure,
+    );
+    let command = wrapper.build_command(&context);
+    let (stdout, stderr) = match spawn_with_timeout(command, wrapper.timeout(), "gau") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(error = %e, "gau URL harvest failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &stderr);
+    let mut urls: Vec<String> = results
+        .iter()
+        .filter_map(|r| r.extracted_data.clone())
+        .collect();
+    urls.sort();
+    urls.dedup();
+    if !urls.is_empty() {
+        tracing::info!(count = urls.len(), "gau harvested historical URLs");
+    }
+    urls
+}
+
+/// Converts harvested URLs into Endpoint node operations, deduplicating by path.
+pub(crate) fn harvested_urls_to_operations(
+    urls: &[String],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    let mut seen_paths = HashSet::new();
+    urls.iter()
+        .filter_map(|url| extract_path_from_url(url))
+        .filter(|path| seen_paths.insert(path.clone()))
+        .map(|path| {
+            *seq += 1;
+            OperationLogEntry {
+                sequence_number: *seq,
+                module: ModuleIdentifier::PassiveRecon,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Endpoint,
+                    properties: vec![
+                        ("path".to_string(), path),
+                        ("method".to_string(), "GET".to_string()),
+                        ("source".to_string(), "gau".to_string()),
+                    ],
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
+}
+
+/// Runs amass for passive subdomain enumeration.
+pub fn enumerate_subdomains(target: &str) -> Vec<String> {
+    let wrapper = AmassWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("amass not installed, skipping subdomain enumeration");
+        return Vec::new();
+    }
+    let context = ExploitContext::new(
+        target.to_string(),
+        String::new(),
+        VulnerabilityClass::InformationDisclosure,
+    );
+    let command = wrapper.build_command(&context);
+    let (stdout, stderr) = match spawn_with_timeout(command, wrapper.timeout(), "amass") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(error = %e, "amass subdomain enumeration failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &stderr);
+    let mut subdomains: Vec<String> = results
+        .iter()
+        .filter_map(|r| r.extracted_data.clone())
+        .collect();
+    subdomains.sort();
+    subdomains.dedup();
+    if !subdomains.is_empty() {
+        tracing::info!(count = subdomains.len(), "amass found subdomains");
+    }
+    subdomains
+}
+
+/// Converts discovered subdomains into Service node operations.
+pub(crate) fn subdomains_to_operations(
+    subdomains: &[String],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    subdomains
+        .iter()
+        .map(|subdomain| {
+            *seq += 1;
+            OperationLogEntry {
+                sequence_number: *seq,
+                module: ModuleIdentifier::PassiveRecon,
+                operation: GraphOperation::AddNode {
+                    node_type: NodeType::Service,
+                    properties: vec![
+                        ("hostname".to_string(), subdomain.clone()),
+                        ("source".to_string(), "amass".to_string()),
+                    ],
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
+}
+
+/// Runs trufflehog to scan source directory for leaked secrets.
+pub fn scan_secrets(source_dir: &Path) -> Vec<ExploitResult> {
+    let wrapper = TrufflehogWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("trufflehog not installed, skipping secret scan");
+        return Vec::new();
+    }
+    let context = ExploitContext::new(
+        String::new(),
+        source_dir.to_string_lossy().to_string(),
+        VulnerabilityClass::SensitiveDataExposure,
+    );
+    let command = wrapper.build_command(&context);
+    let (stdout, stderr) = match spawn_with_timeout(command, wrapper.timeout(), "trufflehog") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(error = %e, "trufflehog secret scan failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &stderr);
+    if !results.is_empty() {
+        tracing::info!(count = results.len(), "trufflehog found potential secrets");
+    }
+    results
+}
+
+/// Converts trufflehog results into AddFinding operations.
+pub(crate) fn secret_findings_to_operations(
+    results: &[ExploitResult],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    results
+        .iter()
+        .map(|r| {
+            *seq += 1;
+            let severity = r.severity_upgrade.unwrap_or(5.0);
+            OperationLogEntry {
+                sequence_number: *seq,
+                module: ModuleIdentifier::PassiveRecon,
+                operation: GraphOperation::AddFinding {
+                    linked_node_ids: vec![],
+                    vulnerability_class: VulnerabilityClass::SensitiveDataExposure,
+                    severity,
+                    confidence: aegis_protocol::finding::Confidence::new(0.85).unwrap(),
+                    certificate: Vec::new(),
+                },
+                timestamp_unix_ms: timestamp_ms(),
+            }
+        })
+        .collect()
 }

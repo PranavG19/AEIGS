@@ -1578,3 +1578,29 @@ async fn run_fuzz_no_auth_flow_works_as_before() {
         "no auth flow should result in no transport errors"
     );
 }
+
+// --- dalfox XSS confirmation tests ---
+
+#[test]
+fn confirm_xss_with_dalfox_returns_empty_when_not_installed() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::DalfoxWrapper.is_available() {
+        return;
+    }
+    let mut seq = 0u64;
+    let ops = phase_fuzz::confirm_xss_with_dalfox(
+        "http://localhost:8080",
+        &["/test".to_string()],
+        &mut seq,
+    );
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}
+
+#[test]
+fn confirm_xss_with_dalfox_empty_endpoints_returns_empty() {
+    let mut seq = 0u64;
+    let ops = phase_fuzz::confirm_xss_with_dalfox("http://localhost:8080", &[], &mut seq);
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}

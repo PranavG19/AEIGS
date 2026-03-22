@@ -355,11 +355,7 @@ fn exploiter_tools_all_registered() {
 
     let names: Vec<&str> = tools.iter().map(|t| t.name()).collect();
     let unique: std::collections::HashSet<&str> = names.iter().copied().collect();
-    assert_eq!(
-        names.len(),
-        unique.len(),
-        "duplicate tool names: {names:?}"
-    );
+    assert_eq!(names.len(), unique.len(), "duplicate tool names: {names:?}");
     assert_eq!(
         tools.len(),
         11,

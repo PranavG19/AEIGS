@@ -1,5 +1,6 @@
 use super::*;
 
+use aegis_exploiter::ExploitResult;
 use aegis_knowledge_graph::graph::KnowledgeGraph;
 use aegis_passive_recon::dependency_parser::{Ecosystem, ParsedDependency};
 use aegis_passive_recon::filesystem_walker::{ClassifiedFile, FileClassification};
@@ -325,4 +326,188 @@ fn vuln_lookup_with_populated_db_finds_match() {
         }
         _ => panic!("expected AddFinding operation"),
     }
+}
+
+#[test]
+fn harvested_urls_to_operations_creates_endpoint_nodes() {
+    let urls = vec![
+        "https://example.com/api/users".to_string(),
+        "https://example.com/api/items".to_string(),
+    ];
+    let mut seq = 0u64;
+    let ops = phase_recon::harvested_urls_to_operations(&urls, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddNode {
+            node_type,
+            properties,
+        } => {
+            assert_eq!(*node_type, NodeType::Endpoint);
+            let map: std::collections::HashMap<&str, &str> = properties
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            assert_eq!(map["path"], "/api/users");
+            assert_eq!(map["method"], "GET");
+            assert_eq!(map["source"], "gau");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn harvested_urls_to_operations_deduplicates_paths() {
+    let urls = vec![
+        "https://example.com/api/users".to_string(),
+        "https://example.com/api/users?page=2".to_string(),
+    ];
+    let mut seq = 0u64;
+    let ops = phase_recon::harvested_urls_to_operations(&urls, &mut seq);
+
+    assert_eq!(ops.len(), 1);
+    assert_eq!(seq, 1);
+}
+
+#[test]
+fn harvested_urls_to_operations_empty_returns_empty() {
+    let urls: Vec<String> = Vec::new();
+    let mut seq = 5u64;
+    let ops = phase_recon::harvested_urls_to_operations(&urls, &mut seq);
+
+    assert!(ops.is_empty());
+    assert_eq!(seq, 5);
+}
+
+#[test]
+fn subdomains_to_operations_creates_service_nodes() {
+    let subdomains = vec!["api.example.com".to_string(), "www.example.com".to_string()];
+    let mut seq = 0u64;
+    let ops = phase_recon::subdomains_to_operations(&subdomains, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddNode {
+            node_type,
+            properties,
+        } => {
+            assert_eq!(*node_type, NodeType::Service);
+            let map: std::collections::HashMap<&str, &str> = properties
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            assert_eq!(map["hostname"], "api.example.com");
+            assert_eq!(map["source"], "amass");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn subdomains_to_operations_empty_returns_empty() {
+    let subdomains: Vec<String> = Vec::new();
+    let mut seq = 0u64;
+    let ops = phase_recon::subdomains_to_operations(&subdomains, &mut seq);
+
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}
+
+#[test]
+fn secret_findings_to_operations_creates_findings() {
+    let results = vec![
+        ExploitResult::new(
+            "trufflehog".to_string(),
+            true,
+            "AWS: AKIA... (true)".to_string(),
+            "trufflehog filesystem .".to_string(),
+        )
+        .with_severity_upgrade(9.5),
+        ExploitResult::new(
+            "trufflehog".to_string(),
+            true,
+            "Generic: token... (false)".to_string(),
+            "trufflehog filesystem .".to_string(),
+        ),
+    ];
+    let mut seq = 0u64;
+    let ops = phase_recon::secret_findings_to_operations(&results, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddFinding { severity, .. } => {
+            assert!((severity - 9.5).abs() < 1e-9);
+        }
+        _ => panic!("expected AddFinding"),
+    }
+    match &ops[1].operation {
+        GraphOperation::AddFinding { severity, .. } => {
+            assert!((severity - 5.0).abs() < 1e-9);
+        }
+        _ => panic!("expected AddFinding"),
+    }
+}
+
+#[test]
+fn secret_findings_to_operations_empty_returns_empty() {
+    let results: Vec<ExploitResult> = Vec::new();
+    let mut seq = 0u64;
+    let ops = phase_recon::secret_findings_to_operations(&results, &mut seq);
+
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}
+
+#[test]
+fn extract_path_from_url_parses_correctly() {
+    assert_eq!(
+        util::extract_path_from_url("https://example.com/api/users"),
+        Some("/api/users".to_string())
+    );
+    assert_eq!(
+        util::extract_path_from_url("https://example.com/api/items?page=2"),
+        Some("/api/items".to_string())
+    );
+    assert_eq!(
+        util::extract_path_from_url("http://localhost:8080/"),
+        Some("/".to_string())
+    );
+    assert_eq!(util::extract_path_from_url("not-a-url"), None);
+}
+
+#[test]
+fn harvest_urls_returns_empty_when_gau_not_installed() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::GauWrapper.is_available() {
+        return;
+    }
+    let result = phase_recon::harvest_urls("http://localhost:8080");
+    assert!(result.is_empty());
+}
+
+#[test]
+fn enumerate_subdomains_returns_empty_when_amass_not_installed() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::AmassWrapper.is_available() {
+        return;
+    }
+    let result = phase_recon::enumerate_subdomains("http://localhost:8080");
+    assert!(result.is_empty());
+}
+
+#[test]
+fn scan_secrets_returns_empty_when_trufflehog_not_installed() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::TrufflehogWrapper.is_available() {
+        return;
+    }
+    let tmp = tempfile::tempdir().unwrap();
+    let result = phase_recon::scan_secrets(tmp.path());
+    assert!(result.is_empty());
 }
