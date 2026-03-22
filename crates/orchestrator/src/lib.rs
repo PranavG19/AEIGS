@@ -23,6 +23,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
+pub mod s3_scanner;
 pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
@@ -52,6 +53,7 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
+pub use s3_scanner::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
@@ -157,6 +159,10 @@ mod cve_correlator_test;
 #[cfg(test)]
 #[path = "scan_strategy_test.rs"]
 mod scan_strategy_test;
+
+#[cfg(test)]
+#[path = "s3_scanner_test.rs"]
+mod s3_scanner_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

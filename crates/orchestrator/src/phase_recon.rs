@@ -25,11 +25,13 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let gau_target = target.clone();
     let amass_target = target.clone();
     let crtsh_target = target.clone();
+    let s3_target = target.clone();
     let st_target = target;
     let gau_handle = std::thread::spawn(move || harvest_urls(&gau_target));
     let amass_handle = std::thread::spawn(move || enumerate_subdomains(&amass_target));
     let crtsh_handle = std::thread::spawn(move || query_crtsh(&crtsh_target));
     let st_handle = std::thread::spawn(move || query_securitytrails(&st_target));
+    let s3_handle = std::thread::spawn(move || crate::s3_scanner::scan_s3_buckets(&s3_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -89,6 +91,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     let st_subdomains = st_handle.join().unwrap_or_default();
     entries.extend(securitytrails_to_operations(&st_subdomains, &mut sequence));
+
+    let s3_findings = s3_handle.join().unwrap_or_default();
+    let s3_ops = crate::s3_scanner::s3_findings_to_operations(&s3_findings, &mut sequence);
+    findings_count += s3_ops
+        .iter()
+        .filter(|op| matches!(op.operation, GraphOperation::AddFinding { .. }))
+        .count() as u64;
+    entries.extend(s3_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
