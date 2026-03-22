@@ -5,6 +5,7 @@ pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
+pub mod cve_correlator;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod endpoint_similarity;
@@ -33,6 +34,7 @@ pub use actor::*;
 pub use auth_session::*;
 pub use checkpoint::*;
 pub use convergence::*;
+pub use cve_correlator::*;
 pub use distributed::*;
 pub use distributed_transport::*;
 pub use endpoint_similarity::*;
@@ -147,6 +149,10 @@ mod idor_analyzer_test;
 #[cfg(test)]
 #[path = "auth_session_test.rs"]
 mod auth_session_test;
+
+#[cfg(test)]
+#[path = "cve_correlator_test.rs"]
+mod cve_correlator_test;
 
 #[cfg(test)]
 #[path = "scan_strategy_test.rs"]

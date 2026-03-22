@@ -936,6 +936,16 @@ fn run_fingerprint_phase(
         ctx.graph
             .apply_operations(&[tech_op])
             .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
+
+        let cve_matches = crate::cve_correlator::correlate_cves(&tech_stack);
+        if !cve_matches.is_empty() {
+            let cve_ops = crate::cve_correlator::cve_matches_to_operations(&cve_matches, &mut seq);
+            let cve_count = cve_ops.len();
+            ctx.graph
+                .apply_operations(&cve_ops)
+                .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
+            tracing::info!(count = cve_count, "CVE correlation added findings");
+        }
     }
 
     let mut discovered = discover_openapi_endpoints_http(&ctx.config.target);
