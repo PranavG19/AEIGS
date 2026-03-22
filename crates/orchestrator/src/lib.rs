@@ -10,6 +10,7 @@ pub mod distributed;
 pub mod distributed_transport;
 pub mod endpoint_similarity;
 mod graph_persistence;
+pub mod header_audit;
 pub mod hypothesis_bridge;
 pub mod idor_analyzer;
 pub mod interactive;
@@ -42,6 +43,7 @@ pub use distributed::*;
 pub use distributed_transport::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
+pub use header_audit::*;
 pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
 pub use interactive::*;
@@ -175,6 +177,10 @@ mod shodan_lookup_test;
 #[cfg(test)]
 #[path = "tls_scanner_test.rs"]
 mod tls_scanner_test;
+
+#[cfg(test)]
+#[path = "header_audit_test.rs"]
+mod header_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

@@ -37,6 +37,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         std::thread::spawn(move || crate::shodan_lookup::shodan_lookup(&shodan_target));
     let tls_target = ctx.config.target.clone();
     let tls_handle = std::thread::spawn(move || crate::tls_scanner::scan_tls(&tls_target));
+    let hdr_target = ctx.config.target.clone();
+    let hdr_handle =
+        std::thread::spawn(move || crate::header_audit::audit_security_headers(&hdr_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -118,6 +121,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let tls_ops = crate::tls_scanner::tls_findings_to_operations(&tls_findings, &mut sequence);
     findings_count += tls_ops.len() as u64;
     entries.extend(tls_ops);
+
+    let hdr_findings = hdr_handle.join().unwrap_or_default();
+    let hdr_ops = crate::header_audit::header_findings_to_operations(&hdr_findings, &mut sequence);
+    findings_count += hdr_ops.len() as u64;
+    entries.extend(hdr_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
