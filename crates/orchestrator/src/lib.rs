@@ -17,6 +17,7 @@ pub mod header_audit;
 pub mod hypothesis_bridge;
 pub mod idor_analyzer;
 pub mod interactive;
+pub mod method_scanner;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -54,6 +55,7 @@ pub use header_audit::*;
 pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
 pub use interactive::*;
+pub use method_scanner::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -205,6 +207,10 @@ mod cors_scanner_test;
 #[cfg(test)]
 #[path = "cookie_audit_test.rs"]
 mod cookie_audit_test;
+
+#[cfg(test)]
+#[path = "method_scanner_test.rs"]
+mod method_scanner_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

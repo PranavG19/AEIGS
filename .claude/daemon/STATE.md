@@ -2,11 +2,11 @@
 
 ## current
 priority: P8 (CONTINUOUS_IMPROVEMENT)
-task: adding new passive recon capabilities
+task: passive recon capability expansion
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1140 lib (1126+14 cookie_audit), 0 failed
+- cargo test -p aegis-orchestrator: 1151 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -27,14 +27,13 @@ status: in-progress
 - [x] DNS record enumeration
 - [x] CORS misconfiguration scanner
 - [x] Cookie security audit
+- [x] HTTP method enumeration (OPTIONS probing)
 - [ ] Open redirect detection
-- [ ] HTTP method enumeration (OPTIONS probing)
+- [ ] Subdomain takeover detection
 
 ## handoff
-P8 continuing. Six passive recon features done in this session.
-Next candidates:
-- Open redirect detection: check common redirect params (?url=,
-  ?next=, ?redirect=) for unvalidated redirects
-- HTTP method enumeration: OPTIONS request to discover allowed
-  methods, flag dangerous ones (PUT, DELETE, TRACE)
-Both are lightweight HTTP-based scanners, same pattern as above.
+P8 continuing. Seven passive recon features done. Next candidates:
+- Open redirect detection: probe common redirect params for
+  unvalidated external redirect (?url=, ?next=, ?redirect=, ?return=)
+- Subdomain takeover: check discovered subdomains for dangling
+  CNAME records pointing to unclaimed services
