@@ -29,6 +29,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod shodan_lookup;
 pub mod telemetry;
+pub mod tls_scanner;
 pub mod update_db;
 mod util;
 
@@ -60,6 +61,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use shodan_lookup::*;
 pub use telemetry::*;
+pub use tls_scanner::*;
 pub use update_db::*;
 
 #[cfg(test)]
@@ -169,6 +171,10 @@ mod s3_scanner_test;
 #[cfg(test)]
 #[path = "shodan_lookup_test.rs"]
 mod shodan_lookup_test;
+
+#[cfg(test)]
+#[path = "tls_scanner_test.rs"]
+mod tls_scanner_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

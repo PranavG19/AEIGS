@@ -35,6 +35,8 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let shodan_target = ctx.config.target.clone();
     let shodan_handle =
         std::thread::spawn(move || crate::shodan_lookup::shodan_lookup(&shodan_target));
+    let tls_target = ctx.config.target.clone();
+    let tls_handle = std::thread::spawn(move || crate::tls_scanner::scan_tls(&tls_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -111,6 +113,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
             .count() as u64;
         entries.extend(shodan_ops);
     }
+
+    let tls_findings = tls_handle.join().unwrap_or_default();
+    let tls_ops = crate::tls_scanner::tls_findings_to_operations(&tls_findings, &mut sequence);
+    findings_count += tls_ops.len() as u64;
+    entries.extend(tls_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
