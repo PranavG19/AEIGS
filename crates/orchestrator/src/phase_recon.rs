@@ -70,6 +70,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let csp_target = ctx.config.target.clone();
     let csp_handle =
         std::thread::spawn(move || crate::csp_analyzer::analyze_csp(&csp_target));
+    let hsts_target = ctx.config.target.clone();
+    let hsts_handle =
+        std::thread::spawn(move || crate::hsts_preload::check_hsts_preload(&hsts_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -235,6 +238,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let csp_ops = crate::csp_analyzer::csp_findings_to_operations(&csp_issues, &mut sequence);
     findings_count += csp_ops.len() as u64;
     entries.extend(csp_ops);
+
+    let hsts_issues = hsts_handle.join().unwrap_or_default();
+    let hsts_ops =
+        crate::hsts_preload::hsts_findings_to_operations(&hsts_issues, &mut sequence);
+    findings_count += hsts_ops.len() as u64;
+    entries.extend(hsts_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

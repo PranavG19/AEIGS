@@ -16,6 +16,7 @@ pub mod email_security;
 pub mod endpoint_similarity;
 mod graph_persistence;
 pub mod header_audit;
+pub mod hsts_preload;
 pub mod hypothesis_bridge;
 pub mod idor_analyzer;
 pub mod info_disclosure;
@@ -59,6 +60,7 @@ pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
+pub use hsts_preload::*;
 pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
 pub use info_disclosure::*;
@@ -241,6 +243,10 @@ mod email_security_test;
 #[cfg(test)]
 #[path = "csp_analyzer_test.rs"]
 mod csp_analyzer_test;
+
+#[cfg(test)]
+#[path = "hsts_preload_test.rs"]
+mod hsts_preload_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

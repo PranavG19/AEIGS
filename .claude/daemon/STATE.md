@@ -6,7 +6,7 @@ task: passive recon capability expansion
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1202 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1215 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -20,7 +20,7 @@ status: in-progress
 - P7: BLOCKED (Docker daemon not running)
 - P8: IN PROGRESS
 
-## P8-progress (12 features)
+## P8-progress (13 features)
 - [x] TLS configuration scanner
 - [x] HTTP security header audit
 - [x] robots.txt/sitemap.xml passive discovery
@@ -33,10 +33,11 @@ status: in-progress
 - [x] Subdomain takeover detection
 - [x] Email security (SPF/DKIM/DMARC)
 - [x] CSP deep analysis
+- [x] HSTS preload readiness check
 
 ## handoff
-P8 continuing. Twelve passive recon features done, 1202 tests total.
-Context getting large. Next session should either:
-1. Continue features: rate limit detection, HSTS preload check
-2. Consolidate: extract shared HTTP client helper from all scanners
-3. Consider running full workspace test to verify no regressions
+P8 continuing. Thirteen passive recon features done. 1215 tests.
+All features follow identical pattern. Next session options:
+- More scanners: rate limit detection, cache poisoning probes
+- Consolidation: shared HTTP client, shared localhost guard
+- Integration: connect scanner output to reporting pipeline
