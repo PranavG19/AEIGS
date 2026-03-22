@@ -16,6 +16,7 @@ mod graph_persistence;
 pub mod header_audit;
 pub mod hypothesis_bridge;
 pub mod idor_analyzer;
+pub mod info_disclosure;
 pub mod interactive;
 pub mod method_scanner;
 mod phase_analyze;
@@ -55,6 +56,7 @@ pub use graph_persistence::*;
 pub use header_audit::*;
 pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
+pub use info_disclosure::*;
 pub use interactive::*;
 pub use method_scanner::*;
 pub use phase_analyze::*;
@@ -217,6 +219,10 @@ mod method_scanner_test;
 #[cfg(test)]
 #[path = "redirect_scanner_test.rs"]
 mod redirect_scanner_test;
+
+#[cfg(test)]
+#[path = "info_disclosure_test.rs"]
+mod info_disclosure_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

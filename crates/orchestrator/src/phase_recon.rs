@@ -61,6 +61,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let redirect_target = ctx.config.target.clone();
     let redirect_handle =
         std::thread::spawn(move || crate::redirect_scanner::scan_redirects(&redirect_target));
+    let info_target = ctx.config.target.clone();
+    let info_handle =
+        std::thread::spawn(move || crate::info_disclosure::scan_info_disclosure(&info_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -192,6 +195,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::redirect_scanner::redirect_findings_to_operations(&redirect_findings, &mut sequence);
     findings_count += redirect_ops.len() as u64;
     entries.extend(redirect_ops);
+
+    let info_findings = info_handle.join().unwrap_or_default();
+    let info_ops =
+        crate::info_disclosure::disclosure_findings_to_operations(&info_findings, &mut sequence);
+    findings_count += info_ops.len() as u64;
+    entries.extend(info_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
