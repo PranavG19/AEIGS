@@ -6,7 +6,7 @@ task: passive recon capability expansion
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1168 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1173 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -29,16 +29,14 @@ status: in-progress
 - [x] Cookie security audit
 - [x] HTTP method enumeration
 - [x] Open redirect detection
-- [x] Information disclosure scanner (Server/X-Powered-By headers)
+- [x] Information disclosure scanner
+- [x] Subdomain takeover detection
 
 ## handoff
-P8 continuing. Nine passive recon features done in this session.
-All features follow the same pattern: extract_domain + localhost guard,
-reqwest HTTP client, parse response, produce OperationLogEntry vec,
-wire into phase_recon.rs as thread spawn + join.
-
-Next session candidates:
-- Subdomain takeover: check CNAME records for dangling pointers
-- Content-Type sniffing: check X-Content-Type-Options nosniff
-- Clickjacking: check X-Frame-Options/CSP frame-ancestors
-- Rate limit detection: time-based probing for rate limit headers
+P8 continuing. Ten passive recon features done. Consider next:
+- Content-Type sniffing check
+- Clickjacking protection check
+- Email security (SPF/DKIM/DMARC via DNS TXT records)
+- Rate limit detection via timing analysis
+- Or shift to improving existing features (consolidate HTTP
+  client construction, add tracing/logging to scanners)

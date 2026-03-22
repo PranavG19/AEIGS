@@ -124,6 +124,23 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let st_subdomains = st_handle.join().unwrap_or_default();
     entries.extend(securitytrails_to_operations(&st_subdomains, &mut sequence));
 
+    let mut all_subdomains = Vec::new();
+    all_subdomains.extend(subdomains.iter().cloned());
+    all_subdomains.extend(ct_subdomains.iter().cloned());
+    all_subdomains.extend(st_subdomains.iter().cloned());
+    all_subdomains.sort();
+    all_subdomains.dedup();
+    if !all_subdomains.is_empty() {
+        let takeover_candidates =
+            crate::subdomain_takeover::check_subdomain_takeover(&all_subdomains);
+        let takeover_ops = crate::subdomain_takeover::takeover_findings_to_operations(
+            &takeover_candidates,
+            &mut sequence,
+        );
+        findings_count += takeover_ops.len() as u64;
+        entries.extend(takeover_ops);
+    }
+
     let s3_findings = s3_handle.join().unwrap_or_default();
     let s3_ops = crate::s3_scanner::s3_findings_to_operations(&s3_findings, &mut sequence);
     findings_count += s3_ops

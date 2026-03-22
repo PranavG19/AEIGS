@@ -36,6 +36,7 @@ pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
 pub mod shodan_lookup;
+pub mod subdomain_takeover;
 pub mod telemetry;
 pub mod tls_scanner;
 pub mod update_db;
@@ -76,6 +77,7 @@ pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
 pub use shodan_lookup::*;
+pub use subdomain_takeover::*;
 pub use telemetry::*;
 pub use tls_scanner::*;
 pub use update_db::*;
@@ -223,6 +225,10 @@ mod redirect_scanner_test;
 #[cfg(test)]
 #[path = "info_disclosure_test.rs"]
 mod info_disclosure_test;
+
+#[cfg(test)]
+#[path = "subdomain_takeover_test.rs"]
+mod subdomain_takeover_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
