@@ -24,10 +24,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let target = ctx.config.target.clone();
     let gau_target = target.clone();
     let amass_target = target.clone();
-    let crtsh_target = target;
+    let crtsh_target = target.clone();
+    let st_target = target;
     let gau_handle = std::thread::spawn(move || harvest_urls(&gau_target));
     let amass_handle = std::thread::spawn(move || enumerate_subdomains(&amass_target));
     let crtsh_handle = std::thread::spawn(move || query_crtsh(&crtsh_target));
+    let st_handle = std::thread::spawn(move || query_securitytrails(&st_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -73,6 +75,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     let ct_subdomains = crtsh_handle.join().unwrap_or_default();
     entries.extend(crtsh_to_operations(&ct_subdomains, &mut sequence));
+
+    let st_subdomains = st_handle.join().unwrap_or_default();
+    entries.extend(securitytrails_to_operations(&st_subdomains, &mut sequence));
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
@@ -436,6 +441,96 @@ struct CrtshEntry {
 
 pub(crate) fn crtsh_to_operations(subdomains: &[String], seq: &mut u64) -> Vec<OperationLogEntry> {
     subdomains_to_operations_with_source(subdomains, "crtsh", seq)
+}
+
+/// Queries SecurityTrails API for subdomains of the target domain.
+///
+/// Requires `SECURITYTRAILS_API_KEY` environment variable. Returns empty vec
+/// if the key is not set or the query fails. Free tier: 50 queries/month.
+pub fn query_securitytrails(target: &str) -> Vec<String> {
+    let api_key = match std::env::var("SECURITYTRAILS_API_KEY") {
+        Ok(key) if !key.is_empty() => key,
+        _ => {
+            tracing::debug!("SECURITYTRAILS_API_KEY not set, skipping SecurityTrails query");
+            return Vec::new();
+        }
+    };
+    let Some(domain) = extract_domain(target) else {
+        return Vec::new();
+    };
+    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+        return Vec::new();
+    }
+    let url = format!("https://api.securitytrails.com/v1/domain/{domain}/subdomains");
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to build HTTP client for SecurityTrails");
+            return Vec::new();
+        }
+    };
+    let response = match client.get(&url).header("APIKEY", &api_key).send() {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(error = %e, "SecurityTrails query failed");
+            return Vec::new();
+        }
+    };
+    if !response.status().is_success() {
+        tracing::warn!(
+            status = %response.status(),
+            "SecurityTrails returned non-success status"
+        );
+        return Vec::new();
+    }
+    let body = match response.text() {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to read SecurityTrails response body");
+            return Vec::new();
+        }
+    };
+    let subdomains = parse_securitytrails_response(&body, &domain);
+    if !subdomains.is_empty() {
+        tracing::info!(count = subdomains.len(), "SecurityTrails found subdomains");
+    }
+    subdomains
+}
+
+/// Parses SecurityTrails JSON response into fully-qualified subdomain names.
+///
+/// SecurityTrails returns subdomain prefixes only (e.g. "www", "api").
+/// This function appends the base domain to create FQDNs.
+pub(crate) fn parse_securitytrails_response(body: &str, domain: &str) -> Vec<String> {
+    let response: SecurityTrailsResponse = match serde_json::from_str(body) {
+        Ok(r) => r,
+        Err(_) => {
+            tracing::debug!("failed to parse SecurityTrails JSON response");
+            return Vec::new();
+        }
+    };
+    response
+        .subdomains
+        .into_iter()
+        .filter(|s| !s.is_empty())
+        .map(|prefix| format!("{prefix}.{domain}"))
+        .collect()
+}
+
+#[derive(serde::Deserialize)]
+struct SecurityTrailsResponse {
+    #[serde(default)]
+    subdomains: Vec<String>,
+}
+
+pub(crate) fn securitytrails_to_operations(
+    subdomains: &[String],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    subdomains_to_operations_with_source(subdomains, "securitytrails", seq)
 }
 
 /// Converts trufflehog results into AddFinding operations.

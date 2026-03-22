@@ -592,3 +592,78 @@ fn crtsh_to_operations_empty_returns_empty() {
     assert!(ops.is_empty());
     assert_eq!(seq, 0);
 }
+
+#[test]
+fn parse_securitytrails_response_creates_fqdns() {
+    let json = r#"{"subdomains": ["www", "api", "mail"], "endpoint": "/v1/domain/example.com/subdomains"}"#;
+    let subs = phase_recon::parse_securitytrails_response(json, "example.com");
+    assert_eq!(subs.len(), 3);
+    assert_eq!(subs[0], "www.example.com");
+    assert_eq!(subs[1], "api.example.com");
+    assert_eq!(subs[2], "mail.example.com");
+}
+
+#[test]
+fn parse_securitytrails_response_filters_empty() {
+    let json = r#"{"subdomains": ["www", "", "api"]}"#;
+    let subs = phase_recon::parse_securitytrails_response(json, "example.com");
+    assert_eq!(subs.len(), 2);
+    assert_eq!(subs[0], "www.example.com");
+    assert_eq!(subs[1], "api.example.com");
+}
+
+#[test]
+fn parse_securitytrails_response_empty_array() {
+    let json = r#"{"subdomains": []}"#;
+    let subs = phase_recon::parse_securitytrails_response(json, "example.com");
+    assert!(subs.is_empty());
+}
+
+#[test]
+fn parse_securitytrails_response_invalid_json() {
+    let subs = phase_recon::parse_securitytrails_response("not json", "example.com");
+    assert!(subs.is_empty());
+}
+
+#[test]
+fn parse_securitytrails_response_missing_field() {
+    let json = r#"{"endpoint": "/v1/domain/example.com/subdomains"}"#;
+    let subs = phase_recon::parse_securitytrails_response(json, "example.com");
+    assert!(subs.is_empty());
+}
+
+#[test]
+fn securitytrails_to_operations_creates_service_nodes() {
+    let subdomains = vec!["api.example.com".to_string(), "dns.example.com".to_string()];
+    let mut seq = 0u64;
+    let ops = phase_recon::securitytrails_to_operations(&subdomains, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddNode {
+            node_type,
+            properties,
+        } => {
+            assert_eq!(*node_type, NodeType::Service);
+            let map: std::collections::HashMap<&str, &str> = properties
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            assert_eq!(map["hostname"], "api.example.com");
+            assert_eq!(map["source"], "securitytrails");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn query_securitytrails_skips_without_api_key() {
+    // SECURITYTRAILS_API_KEY is not set in CI/test environments
+    if std::env::var("SECURITYTRAILS_API_KEY").is_ok() {
+        return;
+    }
+    let result = phase_recon::query_securitytrails("http://example.com");
+    assert!(result.is_empty());
+}
