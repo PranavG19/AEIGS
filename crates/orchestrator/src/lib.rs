@@ -31,6 +31,7 @@ mod phase_fingerprint;
 mod phase_fuzz;
 mod phase_recon;
 mod phase_report;
+pub mod permissions_policy;
 pub mod pipeline;
 pub mod pipeline_composer;
 pub mod rate_limit_detector;
@@ -80,6 +81,7 @@ pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
 pub use phase_recon::*;
 pub use phase_report::*;
+pub use permissions_policy::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
 pub use rate_limit_detector::*;
@@ -277,6 +279,10 @@ mod security_txt_test;
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]
 mod tech_detector_test;
+
+#[cfg(test)]
+#[path = "permissions_policy_test.rs"]
+mod permissions_policy_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

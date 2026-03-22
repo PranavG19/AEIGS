@@ -88,6 +88,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let tech_target = ctx.config.target.clone();
     let tech_handle =
         std::thread::spawn(move || crate::tech_detector::detect_technologies(&tech_target));
+    let pp_target = ctx.config.target.clone();
+    let pp_handle = std::thread::spawn(move || {
+        crate::permissions_policy::check_permissions_policy(&pp_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -292,6 +296,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         &tech_detections,
         &mut sequence,
     ));
+
+    let pp_issues = pp_handle.join().unwrap_or_default();
+    let pp_ops =
+        crate::permissions_policy::policy_findings_to_operations(&pp_issues, &mut sequence);
+    findings_count += pp_ops.len() as u64;
+    entries.extend(pp_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
