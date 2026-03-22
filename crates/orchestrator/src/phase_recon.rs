@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use aegis_exploiter::{
     AmassWrapper, ExploitContext, ExploitResult, GauWrapper, ToolWrapper, TrufflehogWrapper,
-    spawn_with_timeout,
+    extract_domain, spawn_with_timeout,
 };
 use aegis_passive_recon::dependency_parser::{ParsedDependency, parse_lock_file};
 use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
@@ -23,9 +23,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     let target = ctx.config.target.clone();
     let gau_target = target.clone();
-    let amass_target = target;
+    let amass_target = target.clone();
+    let crtsh_target = target;
     let gau_handle = std::thread::spawn(move || harvest_urls(&gau_target));
     let amass_handle = std::thread::spawn(move || enumerate_subdomains(&amass_target));
+    let crtsh_handle = std::thread::spawn(move || query_crtsh(&crtsh_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -68,6 +70,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     let subdomains = amass_handle.join().unwrap_or_default();
     entries.extend(subdomains_to_operations(&subdomains, &mut sequence));
+
+    let ct_subdomains = crtsh_handle.join().unwrap_or_default();
+    entries.extend(crtsh_to_operations(&ct_subdomains, &mut sequence));
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
@@ -298,6 +303,14 @@ pub(crate) fn subdomains_to_operations(
     subdomains: &[String],
     seq: &mut u64,
 ) -> Vec<OperationLogEntry> {
+    subdomains_to_operations_with_source(subdomains, "amass", seq)
+}
+
+pub(crate) fn subdomains_to_operations_with_source(
+    subdomains: &[String],
+    source: &str,
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
     subdomains
         .iter()
         .map(|subdomain| {
@@ -309,7 +322,7 @@ pub(crate) fn subdomains_to_operations(
                     node_type: NodeType::Service,
                     properties: vec![
                         ("hostname".to_string(), subdomain.clone()),
-                        ("source".to_string(), "amass".to_string()),
+                        ("source".to_string(), source.to_string()),
                     ],
                 },
                 timestamp_unix_ms: timestamp_ms(),
@@ -343,6 +356,86 @@ pub fn scan_secrets(source_dir: &Path) -> Vec<ExploitResult> {
         tracing::info!(count = results.len(), "trufflehog found potential secrets");
     }
     results
+}
+
+/// Queries crt.sh Certificate Transparency logs for subdomains of the target.
+///
+/// Uses the free crt.sh HTTPS API (no API key needed). Returns deduplicated
+/// subdomain names. Returns an empty vec on any network/parse error.
+pub fn query_crtsh(target: &str) -> Vec<String> {
+    let Some(domain) = extract_domain(target) else {
+        tracing::debug!("could not extract domain from target for crt.sh query");
+        return Vec::new();
+    };
+    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+        tracing::debug!("skipping crt.sh for localhost target");
+        return Vec::new();
+    }
+    let url = format!("https://crt.sh/?q=%.{domain}&output=json");
+    let client = match reqwest::blocking::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to build HTTP client for crt.sh");
+            return Vec::new();
+        }
+    };
+    let response = match client.get(&url).send() {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!(error = %e, "crt.sh query failed");
+            return Vec::new();
+        }
+    };
+    let body = match response.text() {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::warn!(error = %e, "failed to read crt.sh response body");
+            return Vec::new();
+        }
+    };
+    let subdomains = parse_crtsh_response(&body);
+    if !subdomains.is_empty() {
+        tracing::info!(
+            count = subdomains.len(),
+            "crt.sh found subdomains via CT logs"
+        );
+    }
+    subdomains
+}
+
+/// Parses crt.sh JSON response into a deduplicated list of subdomain names.
+pub(crate) fn parse_crtsh_response(body: &str) -> Vec<String> {
+    let entries: Vec<CrtshEntry> = match serde_json::from_str(body) {
+        Ok(e) => e,
+        Err(_) => {
+            tracing::debug!("failed to parse crt.sh JSON response");
+            return Vec::new();
+        }
+    };
+    let mut seen = HashSet::new();
+    let mut subdomains = Vec::new();
+    for entry in &entries {
+        for name in entry.name_value.split('\n') {
+            let name = name.trim().trim_start_matches("*.");
+            if !name.is_empty() && seen.insert(name) {
+                subdomains.push(name.to_string());
+            }
+        }
+    }
+    subdomains
+}
+
+#[derive(serde::Deserialize)]
+struct CrtshEntry {
+    #[serde(default)]
+    name_value: String,
+}
+
+pub(crate) fn crtsh_to_operations(subdomains: &[String], seq: &mut u64) -> Vec<OperationLogEntry> {
+    subdomains_to_operations_with_source(subdomains, "crtsh", seq)
 }
 
 /// Converts trufflehog results into AddFinding operations.

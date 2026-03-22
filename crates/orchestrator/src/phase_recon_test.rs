@@ -511,3 +511,84 @@ fn scan_secrets_returns_empty_when_trufflehog_not_installed() {
     let result = phase_recon::scan_secrets(tmp.path());
     assert!(result.is_empty());
 }
+
+#[test]
+fn parse_crtsh_response_extracts_subdomains() {
+    let json = r#"[
+        {"name_value": "www.example.com"},
+        {"name_value": "api.example.com\nmail.example.com"},
+        {"name_value": "*.example.com"}
+    ]"#;
+    let subs = phase_recon::parse_crtsh_response(json);
+    assert_eq!(subs.len(), 4);
+    assert!(subs.contains(&"www.example.com".to_string()));
+    assert!(subs.contains(&"api.example.com".to_string()));
+    assert!(subs.contains(&"mail.example.com".to_string()));
+    assert!(subs.contains(&"example.com".to_string()));
+}
+
+#[test]
+fn parse_crtsh_response_deduplicates() {
+    let json = r#"[
+        {"name_value": "api.example.com"},
+        {"name_value": "api.example.com"},
+        {"name_value": "www.example.com"}
+    ]"#;
+    let subs = phase_recon::parse_crtsh_response(json);
+    assert_eq!(subs.len(), 2);
+}
+
+#[test]
+fn parse_crtsh_response_empty_json() {
+    let subs = phase_recon::parse_crtsh_response("[]");
+    assert!(subs.is_empty());
+}
+
+#[test]
+fn parse_crtsh_response_invalid_json() {
+    let subs = phase_recon::parse_crtsh_response("not json");
+    assert!(subs.is_empty());
+}
+
+#[test]
+fn parse_crtsh_response_strips_wildcard_prefix() {
+    let json = r#"[{"name_value": "*.sub.example.com"}]"#;
+    let subs = phase_recon::parse_crtsh_response(json);
+    assert_eq!(subs.len(), 1);
+    assert_eq!(subs[0], "sub.example.com");
+}
+
+#[test]
+fn crtsh_to_operations_creates_service_nodes() {
+    let subdomains = vec!["ct.example.com".to_string(), "log.example.com".to_string()];
+    let mut seq = 0u64;
+    let ops = phase_recon::crtsh_to_operations(&subdomains, &mut seq);
+
+    assert_eq!(ops.len(), 2);
+    assert_eq!(seq, 2);
+
+    match &ops[0].operation {
+        GraphOperation::AddNode {
+            node_type,
+            properties,
+        } => {
+            assert_eq!(*node_type, NodeType::Service);
+            let map: std::collections::HashMap<&str, &str> = properties
+                .iter()
+                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .collect();
+            assert_eq!(map["hostname"], "ct.example.com");
+            assert_eq!(map["source"], "crtsh");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn crtsh_to_operations_empty_returns_empty() {
+    let subdomains: Vec<String> = Vec::new();
+    let mut seq = 0u64;
+    let ops = phase_recon::crtsh_to_operations(&subdomains, &mut seq);
+    assert!(ops.is_empty());
+    assert_eq!(seq, 0);
+}
