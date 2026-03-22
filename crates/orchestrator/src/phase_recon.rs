@@ -82,6 +82,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let rl_target = ctx.config.target.clone();
     let rl_handle =
         std::thread::spawn(move || crate::rate_limit_detector::detect_rate_limits(&rl_target));
+    let sectxt_target = ctx.config.target.clone();
+    let sectxt_handle =
+        std::thread::spawn(move || crate::security_txt::fetch_security_txt(&sectxt_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -270,6 +273,13 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     if let Some(rl_info) = rl_handle.join().ok().flatten() {
         entries.extend(crate::rate_limit_detector::rate_limit_to_operations(
             &rl_info,
+            &mut sequence,
+        ));
+    }
+
+    if let Some(sectxt_info) = sectxt_handle.join().ok().flatten() {
+        entries.extend(crate::security_txt::security_txt_to_operations(
+            &sectxt_info,
             &mut sequence,
         ));
     }

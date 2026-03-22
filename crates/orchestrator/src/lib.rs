@@ -39,6 +39,7 @@ pub mod robots_parser;
 pub mod s3_scanner;
 pub mod scan_config;
 pub mod scan_history;
+pub mod security_txt;
 pub mod scan_strategy;
 pub mod shodan_lookup;
 pub mod subdomain_takeover;
@@ -86,6 +87,7 @@ pub use robots_parser::*;
 pub use s3_scanner::*;
 pub use scan_config::*;
 pub use scan_history::*;
+pub use security_txt::*;
 pub use scan_strategy::*;
 pub use shodan_lookup::*;
 pub use subdomain_takeover::*;
@@ -265,6 +267,10 @@ mod waf_detector_test;
 #[cfg(test)]
 #[path = "rate_limit_detector_test.rs"]
 mod rate_limit_detector_test;
+
+#[cfg(test)]
+#[path = "security_txt_test.rs"]
+mod security_txt_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
