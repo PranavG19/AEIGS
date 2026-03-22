@@ -73,6 +73,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let hsts_target = ctx.config.target.clone();
     let hsts_handle =
         std::thread::spawn(move || crate::hsts_preload::check_hsts_preload(&hsts_target));
+    let version_target = ctx.config.target.clone();
+    let version_handle =
+        std::thread::spawn(move || crate::http_version::detect_http_version(&version_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -244,6 +247,13 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::hsts_preload::hsts_findings_to_operations(&hsts_issues, &mut sequence);
     findings_count += hsts_ops.len() as u64;
     entries.extend(hsts_ops);
+
+    if let Some(version_info) = version_handle.join().ok().flatten() {
+        entries.extend(crate::http_version::version_to_operations(
+            &version_info,
+            &mut sequence,
+        ));
+    }
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
