@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use std::path::Path;
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct GroundTruthEntry {
     pub endpoint: String,
     #[serde(default)]

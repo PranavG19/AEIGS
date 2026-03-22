@@ -414,6 +414,11 @@ pub struct ScanConfig {
     /// `--amass-active` to enable active probing (requires --i-am-authorized).
     #[arg(long, default_value_t = false, help_heading = "Tuning")]
     pub amass_active: bool,
+
+    /// GitHub organization to scan for leaked secrets using trufflehog.
+    /// Requires trufflehog and a valid GITHUB_TOKEN environment variable.
+    #[arg(long, value_name = "ORG", help_heading = "Advanced")]
+    pub github_org: Option<String>,
 }
 
 impl ScanConfig {

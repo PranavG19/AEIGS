@@ -65,6 +65,7 @@ fn localhost_config() -> ScanConfig {
         telemetry: false,
         dalfox_blind_xss: None,
         amass_active: false,
+        github_org: None,
     }
 }
 

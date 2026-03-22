@@ -659,6 +659,25 @@ fn securitytrails_to_operations_creates_service_nodes() {
 }
 
 #[test]
+fn scan_github_org_skips_without_trufflehog() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::TrufflehogWrapper.is_available() {
+        return;
+    }
+    let result = phase_recon::scan_github_org("testorg");
+    assert!(result.is_empty());
+}
+
+#[test]
+fn scan_github_org_skips_without_github_token() {
+    if std::env::var("GITHUB_TOKEN").is_ok() {
+        return;
+    }
+    let result = phase_recon::scan_github_org("testorg");
+    assert!(result.is_empty());
+}
+
+#[test]
 fn query_securitytrails_skips_without_api_key() {
     // SECURITYTRAILS_API_KEY is not set in CI/test environments
     if std::env::var("SECURITYTRAILS_API_KEY").is_ok() {

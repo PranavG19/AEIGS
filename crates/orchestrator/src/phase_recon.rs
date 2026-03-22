@@ -34,6 +34,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
     });
+    let github_org_handle = ctx.config.github_org.as_ref().map(|org| {
+        let org = org.clone();
+        std::thread::spawn(move || scan_github_org(&org))
+    });
 
     if let Some(source_dir) = &ctx.config.source_dir {
         let walk =
@@ -65,6 +69,13 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         let secret_ops = secret_findings_to_operations(&secrets, &mut sequence);
         findings_count += secret_ops.len() as u64;
         entries.extend(secret_ops);
+    }
+
+    if let Some(handle) = github_org_handle {
+        let secrets = handle.join().unwrap_or_default();
+        let org_ops = secret_findings_to_operations(&secrets, &mut sequence);
+        findings_count += org_ops.len() as u64;
+        entries.extend(org_ops);
     }
 
     let gau_urls = gau_handle.join().unwrap_or_default();
@@ -359,6 +370,50 @@ pub fn scan_secrets(source_dir: &Path) -> Vec<ExploitResult> {
     let results = wrapper.parse_output(&stdout, &stderr);
     if !results.is_empty() {
         tracing::info!(count = results.len(), "trufflehog found potential secrets");
+    }
+    results
+}
+
+/// Runs trufflehog in GitHub org mode to scan an organization's repositories.
+///
+/// Requires trufflehog installed and GITHUB_TOKEN env var for API access.
+/// Uses the same output parser as filesystem mode since the JSON format
+/// is identical.
+pub fn scan_github_org(org: &str) -> Vec<ExploitResult> {
+    let wrapper = TrufflehogWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("trufflehog not installed, skipping GitHub org scan");
+        return Vec::new();
+    }
+    if std::env::var("GITHUB_TOKEN").is_err() {
+        tracing::debug!("GITHUB_TOKEN not set, skipping GitHub org scan");
+        return Vec::new();
+    }
+    let mut command = std::process::Command::new("trufflehog");
+    command.args([
+        "github",
+        "--org",
+        org,
+        "--json",
+        "--results=verified,unknown",
+        "--no-update",
+    ]);
+    // GitHub org scanning is slower than filesystem — double the wrapper's base timeout
+    let timeout = wrapper.timeout().saturating_mul(2);
+    let (stdout, stderr) = match spawn_with_timeout(command, timeout, "trufflehog-github") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(org = %org, error = %e, "trufflehog GitHub org scan failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &stderr);
+    if !results.is_empty() {
+        tracing::info!(
+            org = %org,
+            count = results.len(),
+            "trufflehog found secrets in GitHub org"
+        );
     }
     results
 }
