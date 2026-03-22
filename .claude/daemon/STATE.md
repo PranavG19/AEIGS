@@ -15,7 +15,7 @@ status: ready
 - P4: COMPLETE — P5: COMPLETE — P6: CLEAR
 - P7: BLOCKED (Docker daemon not running, need `colima start`)
 - P8: IN PROGRESS
-- P2: NEEDS RE-EVALUATION (was deferred — check coverage gaps now)
+- P2: CLEAR — all 52 source files have ≥3 tests each
 
 ## P8-progress (21 features shipped)
 - [x] TLS scanner, header audit, robots/sitemap parser

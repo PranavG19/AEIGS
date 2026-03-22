@@ -23,6 +23,7 @@ pub mod hypothesis_bridge;
 pub mod idor_analyzer;
 pub mod info_disclosure;
 pub mod interactive;
+pub mod js_library_scanner;
 pub mod method_scanner;
 pub mod permissions_policy;
 mod phase_analyze;
@@ -75,6 +76,7 @@ pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
 pub use info_disclosure::*;
 pub use interactive::*;
+pub use js_library_scanner::*;
 pub use method_scanner::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
@@ -291,6 +293,10 @@ mod permissions_policy_test;
 #[cfg(test)]
 #[path = "cache_audit_test.rs"]
 mod cache_audit_test;
+
+#[cfg(test)]
+#[path = "js_library_scanner_test.rs"]
+mod js_library_scanner_test;
 
 #[cfg(test)]
 #[path = "recon_client_test.rs"]
