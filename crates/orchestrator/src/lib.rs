@@ -5,6 +5,7 @@ pub mod benchmark;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
+pub mod cors_scanner;
 pub mod cve_correlator;
 pub mod distributed;
 pub mod dns_enumerator;
@@ -40,6 +41,7 @@ pub use actor::*;
 pub use auth_session::*;
 pub use checkpoint::*;
 pub use convergence::*;
+pub use cors_scanner::*;
 pub use cve_correlator::*;
 pub use distributed::*;
 pub use dns_enumerator::*;
@@ -193,6 +195,10 @@ mod robots_parser_test;
 #[cfg(test)]
 #[path = "dns_enumerator_test.rs"]
 mod dns_enumerator_test;
+
+#[cfg(test)]
+#[path = "cors_scanner_test.rs"]
+mod cors_scanner_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

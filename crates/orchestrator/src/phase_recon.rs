@@ -49,6 +49,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let dns_target = ctx.config.target.clone();
     let dns_handle =
         std::thread::spawn(move || crate::dns_enumerator::enumerate_dns(&dns_target));
+    let cors_target = ctx.config.target.clone();
+    let cors_handle =
+        std::thread::spawn(move || crate::cors_scanner::scan_cors(&cors_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -155,6 +158,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         &dns_records,
         &mut sequence,
     ));
+
+    let cors_findings = cors_handle.join().unwrap_or_default();
+    let cors_ops =
+        crate::cors_scanner::cors_findings_to_operations(&cors_findings, &mut sequence);
+    findings_count += cors_ops.len() as u64;
+    entries.extend(cors_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
