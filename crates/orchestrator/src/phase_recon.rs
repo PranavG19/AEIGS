@@ -46,6 +46,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let sitemap_target = ctx.config.target.clone();
     let sitemap_handle =
         std::thread::spawn(move || crate::robots_parser::fetch_sitemap(&sitemap_target));
+    let dns_target = ctx.config.target.clone();
+    let dns_handle =
+        std::thread::spawn(move || crate::dns_enumerator::enumerate_dns(&dns_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -144,6 +147,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(crate::robots_parser::discovered_paths_to_operations(
         &sitemap_urls,
         "sitemap.xml",
+        &mut sequence,
+    ));
+
+    let dns_records = dns_handle.join().unwrap_or_default();
+    entries.extend(crate::dns_enumerator::dns_to_operations(
+        &dns_records,
         &mut sequence,
     ));
 

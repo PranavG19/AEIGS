@@ -7,6 +7,7 @@ pub mod checkpoint;
 pub mod convergence;
 pub mod cve_correlator;
 pub mod distributed;
+pub mod dns_enumerator;
 pub mod distributed_transport;
 pub mod endpoint_similarity;
 mod graph_persistence;
@@ -41,6 +42,7 @@ pub use checkpoint::*;
 pub use convergence::*;
 pub use cve_correlator::*;
 pub use distributed::*;
+pub use dns_enumerator::*;
 pub use distributed_transport::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
@@ -187,6 +189,10 @@ mod header_audit_test;
 #[cfg(test)]
 #[path = "robots_parser_test.rs"]
 mod robots_parser_test;
+
+#[cfg(test)]
+#[path = "dns_enumerator_test.rs"]
+mod dns_enumerator_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
