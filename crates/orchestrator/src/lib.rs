@@ -11,6 +11,7 @@ pub mod cve_correlator;
 pub mod distributed;
 pub mod dns_enumerator;
 pub mod distributed_transport;
+pub mod email_security;
 pub mod endpoint_similarity;
 mod graph_persistence;
 pub mod header_audit;
@@ -52,6 +53,7 @@ pub use cve_correlator::*;
 pub use distributed::*;
 pub use dns_enumerator::*;
 pub use distributed_transport::*;
+pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
@@ -229,6 +231,10 @@ mod info_disclosure_test;
 #[cfg(test)]
 #[path = "subdomain_takeover_test.rs"]
 mod subdomain_takeover_test;
+
+#[cfg(test)]
+#[path = "email_security_test.rs"]
+mod email_security_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

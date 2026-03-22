@@ -6,7 +6,7 @@ task: passive recon capability expansion
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1173 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1186 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -31,12 +31,11 @@ status: in-progress
 - [x] Open redirect detection
 - [x] Information disclosure scanner
 - [x] Subdomain takeover detection
+- [x] Email security (SPF/DKIM/DMARC)
 
 ## handoff
-P8 continuing. Ten passive recon features done. Consider next:
-- Content-Type sniffing check
-- Clickjacking protection check
-- Email security (SPF/DKIM/DMARC via DNS TXT records)
-- Rate limit detection via timing analysis
-- Or shift to improving existing features (consolidate HTTP
-  client construction, add tracing/logging to scanners)
+P8 continuing. Eleven passive recon features done. Next session:
+continue adding scanners or consolidate existing code (extract
+shared HTTP client helper, shared localhost guard). Consider
+content-type sniffing, clickjacking checks, or rate limit
+detection as next features.
