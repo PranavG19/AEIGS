@@ -900,6 +900,12 @@ fn run_fingerprint_phase(
         .graph
         .total_operations_applied()
         .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
+
+    let tech_target = ctx.config.target.clone();
+    let tech_handle = std::thread::spawn(move || {
+        crate::phase_fingerprint::probe_tech_stack(&tech_target)
+    });
+
     let (fp_ops, profile) = collect_fingerprint_ops(&mut seq, &ctx.config.target);
     let fp_ops_count = fp_ops.len() as u64;
     if !fp_ops.is_empty() {
@@ -909,6 +915,29 @@ fn run_fingerprint_phase(
     }
     ctx.defense_profile = Some(profile.clone());
     apply_stealth_adjustments(&mut ctx.config, &profile);
+
+    let tech_stack = tech_handle.join().unwrap_or_else(|e| {
+        tracing::warn!("tech stack probe panicked: {e:?}");
+        Vec::new()
+    });
+    if !tech_stack.is_empty() {
+        seq += 1;
+        let tech_op = OperationLogEntry {
+            sequence_number: seq,
+            module: ModuleIdentifier::Enumeration,
+            operation: aegis_protocol::operation::GraphOperation::AddNode {
+                node_type: aegis_protocol::node::NodeType::Config,
+                properties: vec![
+                    ("type".to_string(), "tech_stack".to_string()),
+                    ("technologies".to_string(), tech_stack.join(", ")),
+                ],
+            },
+            timestamp_unix_ms: timestamp_ms(),
+        };
+        ctx.graph
+            .apply_operations(&[tech_op])
+            .map_err(|e| PipelineError::Fingerprint(PhaseError::from(e)))?;
+    }
 
     let mut discovered = discover_openapi_endpoints_http(&ctx.config.target);
 

@@ -510,3 +510,23 @@ fn run_fingerprint_with_unreachable_target_still_sets_profile() {
     assert!(profile.rate_limit.is_none());
     assert!(profile.bot_detection.is_none());
 }
+
+#[test]
+fn probe_tech_stack_returns_empty_when_httpx_unavailable() {
+    use aegis_exploiter::ToolWrapper;
+    if aegis_exploiter::HttpxWrapper.is_available() {
+        return;
+    }
+    let result = probe_tech_stack("http://localhost:8080");
+    assert!(result.is_empty());
+}
+
+#[test]
+fn probe_tech_stack_returns_empty_for_unreachable_target() {
+    use aegis_exploiter::ToolWrapper;
+    if !aegis_exploiter::HttpxWrapper.is_available() {
+        return;
+    }
+    let result = probe_tech_stack("http://localhost:19999");
+    assert!(result.is_empty());
+}

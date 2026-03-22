@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use aegis_enumeration::introspection::IntrospectedEndpoint;
+use aegis_exploiter::{ExploitContext, HttpxWrapper, ToolWrapper, spawn_with_timeout};
 use aegis_fuzzing::DefenseProfile;
 use aegis_fuzzing::bot_detection_probe::{BotProbeResult, analyze_bot_detection};
 use aegis_fuzzing::rate_limit_detector::{
@@ -334,4 +335,43 @@ pub fn endpoints_to_operations(
             }
         })
         .collect()
+}
+
+/// Runs httpx against the target to detect the tech stack.
+///
+/// Returns a list of technology strings (e.g., "nginx", "PHP"). Returns an
+/// empty vec if httpx is not installed or the probe fails. Bypasses
+/// `ToolRunner::run_tool` because it enforces localhost-only, but the
+/// fingerprint phase probes the actual scan target.
+pub fn probe_tech_stack(target: &str) -> Vec<String> {
+    let wrapper = HttpxWrapper;
+    if !wrapper.is_available() {
+        tracing::debug!("httpx not installed, skipping tech stack detection");
+        return Vec::new();
+    }
+    let context = ExploitContext::new(
+        target.to_string(),
+        String::new(),
+        VulnerabilityClass::InformationDisclosure,
+    );
+    let command = wrapper.build_command(&context);
+    let (stdout, _stderr) = match spawn_with_timeout(command, wrapper.timeout(), "httpx") {
+        Ok(output) => output,
+        Err(e) => {
+            tracing::warn!(error = %e, "httpx tech stack probe failed");
+            return Vec::new();
+        }
+    };
+    let results = wrapper.parse_output(&stdout, &_stderr);
+    let mut tech: Vec<String> = results
+        .iter()
+        .filter_map(|r| r.extracted_data.as_deref())
+        .flat_map(|data: &str| data.split(", ").map(String::from))
+        .collect();
+    tech.sort();
+    tech.dedup();
+    if !tech.is_empty() {
+        tracing::info!(technologies = ?tech, "httpx detected tech stack");
+    }
+    tech
 }

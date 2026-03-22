@@ -20,6 +20,7 @@ aegis-chain-synthesis = { path = "../chain-synthesis" }
 aegis-reporting = { path = "../reporting" }
 aegis-evasion-engine = { path = "../evasion-engine" }
 aegis-crawler = { path = "../crawler" }
+aegis-exploiter = { path = "../exploiter" }
 clap = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
@@ -37,4 +38,3 @@ tokio = { version = "1", features = ["rt", "macros"] }
 tempfile = "3"
 aegis-compliance = { path = "../compliance" }
 aegis-discovery = { path = "../discovery" }
-aegis-exploiter = { path = "../exploiter" }
