@@ -40,6 +40,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let hdr_target = ctx.config.target.clone();
     let hdr_handle =
         std::thread::spawn(move || crate::header_audit::audit_security_headers(&hdr_target));
+    let robots_target = ctx.config.target.clone();
+    let robots_handle =
+        std::thread::spawn(move || crate::robots_parser::fetch_robots_txt(&robots_target));
+    let sitemap_target = ctx.config.target.clone();
+    let sitemap_handle =
+        std::thread::spawn(move || crate::robots_parser::fetch_sitemap(&sitemap_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -126,6 +132,20 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let hdr_ops = crate::header_audit::header_findings_to_operations(&hdr_findings, &mut sequence);
     findings_count += hdr_ops.len() as u64;
     entries.extend(hdr_ops);
+
+    let robots_paths = robots_handle.join().unwrap_or_default();
+    entries.extend(crate::robots_parser::discovered_paths_to_operations(
+        &robots_paths,
+        "robots.txt",
+        &mut sequence,
+    ));
+
+    let sitemap_urls = sitemap_handle.join().unwrap_or_default();
+    entries.extend(crate::robots_parser::discovered_paths_to_operations(
+        &sitemap_urls,
+        "sitemap.xml",
+        &mut sequence,
+    ));
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

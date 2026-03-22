@@ -6,7 +6,7 @@ task: adding new passive recon capabilities
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1091 lib + 113 integration, 0 failed
+- cargo test -p aegis-orchestrator: 1106 lib (1091+15 robots_parser), 0 failed
 - Python: 511 passed, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
@@ -24,11 +24,13 @@ status: in-progress
 ## P8-progress
 - [x] TLS configuration scanner (HTTPS, HSTS, HTTP→HTTPS redirect)
 - [x] HTTP security header audit (CSP, X-Frame, X-Content-Type, etc.)
+- [x] robots.txt/sitemap.xml passive discovery
 - [ ] DNS record enumeration (A, AAAA, MX, TXT, NS, CNAME)
-- [ ] robots.txt/sitemap.xml passive discovery
 
 ## handoff
-P8 continuing. TLS scanner and header audit done. Next: DNS record
-enumeration — use std::net for A/AAAA, add MX/TXT/NS via trust-dns
-or native resolution. Alternatively: robots.txt/sitemap.xml parser
-to seed URL discovery. Both are pure Rust, no external tools.
+P8 continuing. TLS scanner, header audit, robots/sitemap parser done.
+Next: DNS record enumeration — use std::net for A/AAAA lookups,
+add MX/TXT/NS via trust-dns-resolver or native resolution.
+Pure Rust, no external tools needed. Create dns_enumerator.rs in
+crates/orchestrator/src/ with adjacent test file, wire into
+phase_recon.rs as another thread spawn.

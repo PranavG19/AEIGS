@@ -24,6 +24,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
+pub mod robots_parser;
 pub mod s3_scanner;
 pub mod scan_config;
 pub mod scan_history;
@@ -57,6 +58,7 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
+pub use robots_parser::*;
 pub use s3_scanner::*;
 pub use scan_config::*;
 pub use scan_history::*;
@@ -181,6 +183,10 @@ mod tls_scanner_test;
 #[cfg(test)]
 #[path = "header_audit_test.rs"]
 mod header_audit_test;
+
+#[cfg(test)]
+#[path = "robots_parser_test.rs"]
+mod robots_parser_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
