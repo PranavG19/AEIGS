@@ -1,9 +1,10 @@
 use std::time::Duration;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
+use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
 
 const S3_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
@@ -93,12 +94,9 @@ pub fn check_bucket(bucket: &str) -> Option<S3Finding> {
 }
 
 pub fn scan_s3_buckets(target: &str) -> Vec<S3Finding> {
-    let Some(domain) = aegis_exploiter::extract_domain(target) else {
+    let Some(domain) = recon_client::validated_domain(target) else {
         return Vec::new();
     };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return Vec::new();
-    }
     let candidates = generate_bucket_candidates(&domain);
     candidates
         .iter()
@@ -131,19 +129,12 @@ pub fn s3_findings_to_operations(findings: &[S3Finding], seq: &mut u64) -> Vec<O
             timestamp_unix_ms: timestamp_ms(),
         });
         if finding.status == BucketStatus::Open {
-            *seq += 1;
-            entries.push(OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::SecurityMisconfiguration,
-                    severity: 8.0,
-                    confidence: Confidence::new(0.9).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            });
+            entries.push(recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                8.0,
+                0.9,
+            ));
         }
     }
     entries

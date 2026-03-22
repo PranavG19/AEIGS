@@ -1,11 +1,8 @@
-use std::time::Duration;
-
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
-
-const RATE_TIMEOUT: Duration = Duration::from_secs(10);
 
 const RATE_LIMIT_HEADERS: &[&str] = &[
     "x-ratelimit-limit",
@@ -26,16 +23,8 @@ pub struct RateLimitInfo {
 }
 
 pub fn detect_rate_limits(target: &str) -> Option<RateLimitInfo> {
-    let domain = aegis_exploiter::extract_domain(target)?;
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return None;
-    }
-
-    let client = reqwest::blocking::Client::builder()
-        .timeout(RATE_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-        .ok()?;
+    recon_client::validated_domain(target)?;
+    let client = recon_client::default_client()?;
 
     let resp = client.get(target).send().ok()?;
     let mut found_headers = Vec::new();
@@ -55,10 +44,7 @@ pub fn detect_rate_limits(target: &str) -> Option<RateLimitInfo> {
     }
 }
 
-pub fn rate_limit_to_operations(
-    info: &RateLimitInfo,
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn rate_limit_to_operations(info: &RateLimitInfo, seq: &mut u64) -> Vec<OperationLogEntry> {
     *seq += 1;
     let props: Vec<(String, String)> = info
         .headers

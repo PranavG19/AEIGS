@@ -1,12 +1,9 @@
-use std::time::Duration;
-
 use aegis_discovery::{DetectedTech, fingerprint_from_headers, fingerprint_from_html};
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
-
-const DETECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone)]
 pub struct TechDetection {
@@ -18,21 +15,11 @@ pub struct TechDetection {
 }
 
 pub fn detect_technologies(target: &str) -> Vec<TechDetection> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(DETECT_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
+    let Some(client) = recon_client::default_client() else {
+        return Vec::new();
     };
 
     let resp = match client.get(target).send() {
@@ -69,10 +56,7 @@ fn dedup_detections(detections: &[DetectedTech]) -> Vec<TechDetection> {
         .collect()
 }
 
-pub fn tech_to_operations(
-    detections: &[TechDetection],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn tech_to_operations(detections: &[TechDetection], seq: &mut u64) -> Vec<OperationLogEntry> {
     detections
         .iter()
         .map(|d| {

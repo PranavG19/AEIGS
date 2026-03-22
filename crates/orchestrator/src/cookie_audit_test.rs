@@ -126,8 +126,5 @@ fn audit_cookies_skips_invalid() {
 fn cookie_issue_display() {
     assert_eq!(CookieIssue::MissingSecure.to_string(), "missing_secure");
     assert_eq!(CookieIssue::MissingHttpOnly.to_string(), "missing_httponly");
-    assert_eq!(
-        CookieIssue::MissingSameSite.to_string(),
-        "missing_samesite"
-    );
+    assert_eq!(CookieIssue::MissingSameSite.to_string(), "missing_samesite");
 }

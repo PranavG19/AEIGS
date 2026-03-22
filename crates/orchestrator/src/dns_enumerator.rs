@@ -4,6 +4,7 @@ use std::process::Command;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
 
 const DIG_TIMEOUT_SECS: u64 = 5;
@@ -15,13 +16,9 @@ pub struct DnsRecord {
 }
 
 pub fn enumerate_dns(target: &str) -> Vec<DnsRecord> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    let Some(domain) = recon_client::validated_domain(target) else {
         return Vec::new();
-    }
+    };
 
     let mut records = Vec::new();
     records.extend(resolve_a_aaaa(&domain));

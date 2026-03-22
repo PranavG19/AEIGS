@@ -1,9 +1,9 @@
 use std::time::Duration;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use crate::util::timestamp_ms;
+use crate::recon_client;
 
 const TLS_CHECK_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -22,24 +22,13 @@ pub enum TlsIssue {
 }
 
 pub fn scan_tls(target: &str) -> Vec<TlsFinding> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    let Some(domain) = recon_client::validated_domain(target) else {
         return Vec::new();
-    }
-
+    };
     let mut findings = Vec::new();
     let https_url = format!("https://{domain}");
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(TLS_CHECK_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return findings,
+    let Some(client) = recon_client::build_client_no_redirect(TLS_CHECK_TIMEOUT) else {
+        return findings;
     };
 
     // Check HTTPS availability
@@ -118,7 +107,6 @@ pub fn tls_findings_to_operations(
     findings
         .iter()
         .map(|f| {
-            *seq += 1;
             let (vuln_class, severity, confidence) = match f.issue {
                 TlsIssue::NoHttps => (VulnerabilityClass::WeakCryptography, 7.0, 0.95),
                 TlsIssue::MissingHsts => (VulnerabilityClass::MissingSecurityHeader, 5.0, 0.9),
@@ -127,18 +115,7 @@ pub fn tls_findings_to_operations(
                     (VulnerabilityClass::SecurityMisconfiguration, 5.0, 0.9)
                 }
             };
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: vuln_class,
-                    severity,
-                    confidence: Confidence::new(confidence).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
+            recon_client::finding_entry(seq, vuln_class, severity, confidence)
         })
         .collect()
 }

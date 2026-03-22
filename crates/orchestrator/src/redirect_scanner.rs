@@ -1,15 +1,30 @@
 use std::time::Duration;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use crate::util::timestamp_ms;
+use crate::recon_client;
 
 const REDIRECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 const REDIRECT_PARAMS: &[&str] = &[
-    "url", "redirect", "next", "return", "redir", "return_to", "redirect_uri", "continue", "dest",
-    "destination", "go", "target", "out", "view", "login", "link", "forward",
+    "url",
+    "redirect",
+    "next",
+    "return",
+    "redir",
+    "return_to",
+    "redirect_uri",
+    "continue",
+    "dest",
+    "destination",
+    "go",
+    "target",
+    "out",
+    "view",
+    "login",
+    "link",
+    "forward",
 ];
 
 const CANARY_URL: &str = "https://evil.example.com";
@@ -21,22 +36,11 @@ pub struct OpenRedirect {
 }
 
 pub fn scan_redirects(target: &str) -> Vec<OpenRedirect> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(REDIRECT_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
+    let Some(client) = recon_client::build_client_no_redirect(REDIRECT_TIMEOUT) else {
+        return Vec::new();
     };
 
     let mut findings = Vec::new();
@@ -86,20 +90,6 @@ pub fn redirect_findings_to_operations(
 ) -> Vec<OperationLogEntry> {
     findings
         .iter()
-        .map(|_f| {
-            *seq += 1;
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::OpenRedirect,
-                    severity: 5.0,
-                    confidence: Confidence::new(0.9).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
-        })
+        .map(|_f| recon_client::finding_entry(seq, VulnerabilityClass::OpenRedirect, 5.0, 0.9))
         .collect()
 }

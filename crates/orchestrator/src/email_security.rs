@@ -1,9 +1,9 @@
 use std::process::Command;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use crate::util::timestamp_ms;
+use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EmailIssue {
@@ -27,13 +27,9 @@ impl std::fmt::Display for EmailIssue {
 }
 
 pub fn check_email_security(target: &str) -> Vec<EmailIssue> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    let Some(domain) = recon_client::validated_domain(target) else {
         return Vec::new();
-    }
+    };
 
     let mut issues = Vec::new();
     let txt_records = query_txt(&domain);
@@ -102,19 +98,12 @@ pub fn email_findings_to_operations(
     issues
         .iter()
         .map(|issue| {
-            *seq += 1;
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::SecurityMisconfiguration,
-                    severity: email_severity(issue),
-                    confidence: Confidence::new(0.9).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                email_severity(issue),
+                0.9,
+            )
         })
         .collect()
 }

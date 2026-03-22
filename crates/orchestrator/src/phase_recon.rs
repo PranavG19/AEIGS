@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use aegis_exploiter::{
     AmassWrapper, ExploitContext, ExploitResult, GauWrapper, ToolWrapper, TrufflehogWrapper,
-    extract_domain, spawn_with_timeout,
+    spawn_with_timeout,
 };
 use aegis_passive_recon::dependency_parser::{ParsedDependency, parse_lock_file};
 use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
@@ -47,11 +47,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let sitemap_handle =
         std::thread::spawn(move || crate::robots_parser::fetch_sitemap(&sitemap_target));
     let dns_target = ctx.config.target.clone();
-    let dns_handle =
-        std::thread::spawn(move || crate::dns_enumerator::enumerate_dns(&dns_target));
+    let dns_handle = std::thread::spawn(move || crate::dns_enumerator::enumerate_dns(&dns_target));
     let cors_target = ctx.config.target.clone();
-    let cors_handle =
-        std::thread::spawn(move || crate::cors_scanner::scan_cors(&cors_target));
+    let cors_handle = std::thread::spawn(move || crate::cors_scanner::scan_cors(&cors_target));
     let cookie_target = ctx.config.target.clone();
     let cookie_handle =
         std::thread::spawn(move || crate::cookie_audit::audit_cookies(&cookie_target));
@@ -68,8 +66,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let email_handle =
         std::thread::spawn(move || crate::email_security::check_email_security(&email_target));
     let csp_target = ctx.config.target.clone();
-    let csp_handle =
-        std::thread::spawn(move || crate::csp_analyzer::analyze_csp(&csp_target));
+    let csp_handle = std::thread::spawn(move || crate::csp_analyzer::analyze_csp(&csp_target));
     let hsts_target = ctx.config.target.clone();
     let hsts_handle =
         std::thread::spawn(move || crate::hsts_preload::check_hsts_preload(&hsts_target));
@@ -77,8 +74,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let version_handle =
         std::thread::spawn(move || crate::http_version::detect_http_version(&version_target));
     let waf_target = ctx.config.target.clone();
-    let waf_handle =
-        std::thread::spawn(move || crate::waf_detector::detect_waf(&waf_target));
+    let waf_handle = std::thread::spawn(move || crate::waf_detector::detect_waf(&waf_target));
     let rl_target = ctx.config.target.clone();
     let rl_handle =
         std::thread::spawn(move || crate::rate_limit_detector::detect_rate_limits(&rl_target));
@@ -89,9 +85,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let tech_handle =
         std::thread::spawn(move || crate::tech_detector::detect_technologies(&tech_target));
     let pp_target = ctx.config.target.clone();
-    let pp_handle = std::thread::spawn(move || {
-        crate::permissions_policy::check_permissions_policy(&pp_target)
-    });
+    let pp_handle =
+        std::thread::spawn(move || crate::permissions_policy::check_permissions_policy(&pp_target));
+    let cache_target = ctx.config.target.clone();
+    let cache_handle =
+        std::thread::spawn(move || crate::cache_audit::audit_cache_headers(&cache_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -217,8 +215,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     ));
 
     let cors_findings = cors_handle.join().unwrap_or_default();
-    let cors_ops =
-        crate::cors_scanner::cors_findings_to_operations(&cors_findings, &mut sequence);
+    let cors_ops = crate::cors_scanner::cors_findings_to_operations(&cors_findings, &mut sequence);
     findings_count += cors_ops.len() as u64;
     entries.extend(cors_ops);
 
@@ -259,8 +256,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(csp_ops);
 
     let hsts_issues = hsts_handle.join().unwrap_or_default();
-    let hsts_ops =
-        crate::hsts_preload::hsts_findings_to_operations(&hsts_issues, &mut sequence);
+    let hsts_ops = crate::hsts_preload::hsts_findings_to_operations(&hsts_issues, &mut sequence);
     findings_count += hsts_ops.len() as u64;
     entries.extend(hsts_ops);
 
@@ -302,6 +298,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::permissions_policy::policy_findings_to_operations(&pp_issues, &mut sequence);
     findings_count += pp_ops.len() as u64;
     entries.extend(pp_ops);
+
+    let cache_issues = cache_handle.join().unwrap_or_default();
+    let cache_ops = crate::cache_audit::cache_findings_to_operations(&cache_issues, &mut sequence);
+    findings_count += cache_ops.len() as u64;
+    entries.extend(cache_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
@@ -636,22 +637,15 @@ pub fn scan_github_org(org: &str) -> Vec<ExploitResult> {
 /// Uses the free crt.sh HTTPS API (no API key needed). Returns deduplicated
 /// subdomain names. Returns an empty vec on any network/parse error.
 pub fn query_crtsh(target: &str) -> Vec<String> {
-    let Some(domain) = extract_domain(target) else {
+    let Some(domain) = crate::recon_client::validated_domain(target) else {
         tracing::debug!("could not extract domain from target for crt.sh query");
         return Vec::new();
     };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        tracing::debug!("skipping crt.sh for localhost target");
-        return Vec::new();
-    }
     let url = format!("https://crt.sh/?q=%.{domain}&output=json");
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-    {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!(error = %e, "failed to build HTTP client for crt.sh");
+    let client = match crate::recon_client::build_client(std::time::Duration::from_secs(30)) {
+        Some(c) => c,
+        None => {
+            tracing::warn!("failed to build HTTP client for crt.sh");
             return Vec::new();
         }
     };
@@ -723,20 +717,14 @@ pub fn query_securitytrails(target: &str) -> Vec<String> {
             return Vec::new();
         }
     };
-    let Some(domain) = extract_domain(target) else {
+    let Some(domain) = crate::recon_client::validated_domain(target) else {
         return Vec::new();
     };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return Vec::new();
-    }
     let url = format!("https://api.securitytrails.com/v1/domain/{domain}/subdomains");
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-    {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!(error = %e, "failed to build HTTP client for SecurityTrails");
+    let client = match crate::recon_client::build_client(std::time::Duration::from_secs(30)) {
+        Some(c) => c,
+        None => {
+            tracing::warn!("failed to build HTTP client for SecurityTrails");
             return Vec::new();
         }
     };

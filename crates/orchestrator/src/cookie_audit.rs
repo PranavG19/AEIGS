@@ -1,11 +1,7 @@
-use std::time::Duration;
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-
-use crate::util::timestamp_ms;
-
-const COOKIE_TIMEOUT: Duration = Duration::from_secs(10);
+use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct InsecureCookie {
@@ -31,22 +27,11 @@ impl std::fmt::Display for CookieIssue {
 }
 
 pub fn audit_cookies(target: &str) -> Vec<InsecureCookie> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(COOKIE_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
+    let Some(client) = recon_client::default_client_no_redirect() else {
+        return Vec::new();
     };
     let resp = match client.get(target).send() {
         Ok(r) => r,
@@ -107,19 +92,12 @@ pub fn cookie_findings_to_operations(
     findings
         .iter()
         .map(|f| {
-            *seq += 1;
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::SecurityMisconfiguration,
-                    severity: cookie_severity(&f.issues),
-                    confidence: Confidence::new(0.85).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                cookie_severity(&f.issues),
+                0.85,
+            )
         })
         .collect()
 }

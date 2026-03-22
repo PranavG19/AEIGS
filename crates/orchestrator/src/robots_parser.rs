@@ -1,28 +1,18 @@
-use std::time::Duration;
-
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
 
-const FETCH_TIMEOUT: Duration = Duration::from_secs(10);
-
 fn fetch_resource(target: &str, path: &str) -> Option<String> {
-    let domain = aegis_exploiter::extract_domain(target)?;
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return None;
-    }
+    let domain = recon_client::validated_domain(target)?;
     let scheme = if target.starts_with("https://") {
         "https"
     } else {
         "http"
     };
     let url = format!("{scheme}://{domain}/{path}");
-    let client = reqwest::blocking::Client::builder()
-        .timeout(FETCH_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-        .ok()?;
+    let client = recon_client::default_client()?;
     let resp = client.get(&url).send().ok()?;
     if !resp.status().is_success() {
         return None;

@@ -26,10 +26,7 @@ fn parse_allow_header_trace() {
 #[test]
 fn parse_allow_header_case_insensitive() {
     let result = parse_allow_header("get, put, options");
-    assert_eq!(
-        result.allowed_methods,
-        vec!["GET", "PUT", "OPTIONS"]
-    );
+    assert_eq!(result.allowed_methods, vec!["GET", "PUT", "OPTIONS"]);
     assert_eq!(result.dangerous_methods, vec!["PUT"]);
 }
 

@@ -2,6 +2,7 @@ pub mod actor;
 pub mod attest;
 pub mod auth_session;
 pub mod benchmark;
+pub mod cache_audit;
 pub mod calibration;
 pub mod checkpoint;
 pub mod convergence;
@@ -10,8 +11,8 @@ pub mod cors_scanner;
 pub mod csp_analyzer;
 pub mod cve_correlator;
 pub mod distributed;
-pub mod dns_enumerator;
 pub mod distributed_transport;
+pub mod dns_enumerator;
 pub mod email_security;
 pub mod endpoint_similarity;
 mod graph_persistence;
@@ -23,6 +24,7 @@ pub mod idor_analyzer;
 pub mod info_disclosure;
 pub mod interactive;
 pub mod method_scanner;
+pub mod permissions_policy;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -31,17 +33,17 @@ mod phase_fingerprint;
 mod phase_fuzz;
 mod phase_recon;
 mod phase_report;
-pub mod permissions_policy;
 pub mod pipeline;
 pub mod pipeline_composer;
 pub mod rate_limit_detector;
+pub mod recon_client;
 pub mod redirect_scanner;
 pub mod robots_parser;
 pub mod s3_scanner;
 pub mod scan_config;
 pub mod scan_history;
-pub mod security_txt;
 pub mod scan_strategy;
+pub mod security_txt;
 pub mod shodan_lookup;
 pub mod subdomain_takeover;
 pub mod tech_detector;
@@ -53,6 +55,7 @@ pub mod waf_detector;
 
 pub use actor::*;
 pub use auth_session::*;
+pub use cache_audit::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use cookie_audit::*;
@@ -60,8 +63,8 @@ pub use cors_scanner::*;
 pub use csp_analyzer::*;
 pub use cve_correlator::*;
 pub use distributed::*;
-pub use dns_enumerator::*;
 pub use distributed_transport::*;
+pub use dns_enumerator::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use graph_persistence::*;
@@ -73,6 +76,7 @@ pub use idor_analyzer::*;
 pub use info_disclosure::*;
 pub use interactive::*;
 pub use method_scanner::*;
+pub use permissions_policy::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -81,17 +85,17 @@ pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
 pub use phase_recon::*;
 pub use phase_report::*;
-pub use permissions_policy::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
 pub use rate_limit_detector::*;
+pub use recon_client::*;
 pub use redirect_scanner::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
 pub use scan_config::*;
 pub use scan_history::*;
-pub use security_txt::*;
 pub use scan_strategy::*;
+pub use security_txt::*;
 pub use shodan_lookup::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
@@ -283,6 +287,14 @@ mod tech_detector_test;
 #[cfg(test)]
 #[path = "permissions_policy_test.rs"]
 mod permissions_policy_test;
+
+#[cfg(test)]
+#[path = "cache_audit_test.rs"]
+mod cache_audit_test;
+
+#[cfg(test)]
+#[path = "recon_client_test.rs"]
+mod recon_client_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

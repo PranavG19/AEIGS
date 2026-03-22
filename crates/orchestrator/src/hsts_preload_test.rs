@@ -2,8 +2,7 @@ use crate::hsts_preload::*;
 
 #[test]
 fn parse_hsts_issues_full_policy() {
-    let issues =
-        parse_hsts_issues("max-age=63072000; includeSubDomains; preload");
+    let issues = parse_hsts_issues("max-age=63072000; includeSubDomains; preload");
     assert!(issues.is_empty());
 }
 
@@ -29,8 +28,7 @@ fn parse_hsts_issues_missing_preload() {
 
 #[test]
 fn parse_hsts_issues_minimal_valid() {
-    let issues =
-        parse_hsts_issues("max-age=31536000; includeSubDomains; preload");
+    let issues = parse_hsts_issues("max-age=31536000; includeSubDomains; preload");
     assert!(issues.is_empty());
 }
 
@@ -56,7 +54,10 @@ fn hsts_severity_ordering() {
 #[test]
 fn hsts_issue_display() {
     assert_eq!(HstsIssue::Missing.to_string(), "missing_hsts");
-    assert_eq!(HstsIssue::ShortMaxAge(3600).to_string(), "short_max_age_3600");
+    assert_eq!(
+        HstsIssue::ShortMaxAge(3600).to_string(),
+        "short_max_age_3600"
+    );
     assert_eq!(
         HstsIssue::MissingIncludeSubDomains.to_string(),
         "missing_includesubdomains"

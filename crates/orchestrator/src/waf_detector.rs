@@ -1,11 +1,8 @@
-use std::time::Duration;
-
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
-
-const WAF_TIMEOUT: Duration = Duration::from_secs(10);
 
 const WAF_SIGNATURES: &[(&str, &str)] = &[
     ("cloudflare", "cf-ray"),
@@ -38,21 +35,11 @@ pub struct WafDetection {
 }
 
 pub fn detect_waf(target: &str) -> Vec<WafDetection> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(WAF_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
+    let Some(client) = recon_client::default_client() else {
+        return Vec::new();
     };
 
     let resp = match client.get(target).send() {
@@ -91,10 +78,7 @@ pub fn detect_waf(target: &str) -> Vec<WafDetection> {
     detections
 }
 
-pub fn waf_to_operations(
-    detections: &[WafDetection],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn waf_to_operations(detections: &[WafDetection], seq: &mut u64) -> Vec<OperationLogEntry> {
     detections
         .iter()
         .map(|d| {

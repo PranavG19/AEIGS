@@ -1,9 +1,9 @@
 use std::process::Command;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use crate::util::timestamp_ms;
+use crate::recon_client;
 
 const TAKEOVER_FINGERPRINTS: &[(&str, &str)] = &[
     ("github.io", "There isn't a GitHub Pages site here"),
@@ -72,19 +72,7 @@ pub fn takeover_findings_to_operations(
     candidates
         .iter()
         .map(|_c| {
-            *seq += 1;
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::SecurityMisconfiguration,
-                    severity: 8.0,
-                    confidence: Confidence::new(0.7).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
+            recon_client::finding_entry(seq, VulnerabilityClass::SecurityMisconfiguration, 8.0, 0.7)
         })
         .collect()
 }

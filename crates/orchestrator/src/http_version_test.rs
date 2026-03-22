@@ -16,7 +16,10 @@ fn version_to_operations_creates_node() {
             properties,
         } => {
             assert_eq!(*node_type, aegis_protocol::node::NodeType::Service);
-            let version = properties.iter().find(|(k, _)| k == "http_version").unwrap();
+            let version = properties
+                .iter()
+                .find(|(k, _)| k == "http_version")
+                .unwrap();
             assert_eq!(version.1, "HTTP/2.0");
             let h2 = properties.iter().find(|(k, _)| k == "supports_h2").unwrap();
             assert_eq!(h2.1, "true");

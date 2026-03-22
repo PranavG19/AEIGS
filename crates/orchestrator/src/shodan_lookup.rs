@@ -1,13 +1,11 @@
 use std::net::ToSocketAddrs;
-use std::time::Duration;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
+use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
-
-const SHODAN_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone)]
 pub struct ShodanResult {
@@ -33,10 +31,7 @@ pub fn resolve_ip(domain: &str) -> Option<String> {
 
 pub fn query_internetdb(ip: &str) -> Option<ShodanResult> {
     let url = format!("https://internetdb.shodan.io/{ip}");
-    let client = reqwest::blocking::Client::builder()
-        .timeout(SHODAN_TIMEOUT)
-        .build()
-        .ok()?;
+    let client = recon_client::default_client()?;
     let resp = client.get(&url).send().ok()?;
     if !resp.status().is_success() {
         return None;
@@ -104,10 +99,7 @@ pub(crate) fn parse_internetdb_response(body: &str, ip: &str) -> Option<ShodanRe
 }
 
 pub fn shodan_lookup(target: &str) -> Option<ShodanResult> {
-    let domain = aegis_exploiter::extract_domain(target)?;
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return None;
-    }
+    let domain = recon_client::validated_domain(target)?;
     let ip = resolve_ip(&domain)?;
     query_internetdb(&ip)
 }
@@ -131,19 +123,12 @@ pub fn shodan_to_operations(result: &ShodanResult, seq: &mut u64) -> Vec<Operati
         });
     }
     for _vuln in &result.vulns {
-        *seq += 1;
-        entries.push(OperationLogEntry {
-            sequence_number: *seq,
-            module: ModuleIdentifier::PassiveRecon,
-            operation: GraphOperation::AddFinding {
-                linked_node_ids: vec![],
-                vulnerability_class: VulnerabilityClass::KnownVulnerableDependency,
-                severity: 7.0,
-                confidence: Confidence::new(0.7).unwrap(),
-                certificate: Vec::new(),
-            },
-            timestamp_unix_ms: timestamp_ms(),
-        });
+        entries.push(recon_client::finding_entry(
+            seq,
+            VulnerabilityClass::KnownVulnerableDependency,
+            7.0,
+            0.7,
+        ));
     }
     entries
 }

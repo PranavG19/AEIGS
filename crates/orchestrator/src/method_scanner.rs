@@ -1,11 +1,7 @@
-use std::time::Duration;
+use aegis_protocol::finding::VulnerabilityClass;
+use aegis_protocol::operation::OperationLogEntry;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-
-use crate::util::timestamp_ms;
-
-const METHOD_TIMEOUT: Duration = Duration::from_secs(10);
+use crate::recon_client;
 
 const DANGEROUS_METHODS: &[&str] = &["PUT", "DELETE", "TRACE", "CONNECT"];
 
@@ -16,29 +12,15 @@ pub struct MethodResult {
 }
 
 pub fn scan_methods(target: &str) -> Option<MethodResult> {
-    let domain = aegis_exploiter::extract_domain(target)?;
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
-        return None;
-    }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(METHOD_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return None,
-    };
+    recon_client::validated_domain(target)?;
+    let client = recon_client::default_client()?;
 
     let resp = client
         .request(reqwest::Method::OPTIONS, target)
         .send()
         .ok()?;
 
-    let allow_header = resp
-        .headers()
-        .get("allow")
-        .and_then(|v| v.to_str().ok())?;
+    let allow_header = resp.headers().get("allow").and_then(|v| v.to_str().ok())?;
 
     Some(parse_allow_header(allow_header))
 }
@@ -78,17 +60,10 @@ pub fn method_findings_to_operations(
             _ => 3.0,
         })
         .fold(0.0_f64, f64::max);
-    *seq += 1;
-    vec![OperationLogEntry {
-        sequence_number: *seq,
-        module: ModuleIdentifier::PassiveRecon,
-        operation: GraphOperation::AddFinding {
-            linked_node_ids: vec![],
-            vulnerability_class: VulnerabilityClass::SecurityMisconfiguration,
-            severity,
-            confidence: Confidence::new(0.8).unwrap(),
-            certificate: Vec::new(),
-        },
-        timestamp_unix_ms: timestamp_ms(),
-    }]
+    vec![recon_client::finding_entry(
+        seq,
+        VulnerabilityClass::SecurityMisconfiguration,
+        severity,
+        0.8,
+    )]
 }

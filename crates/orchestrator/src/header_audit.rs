@@ -1,11 +1,6 @@
-use std::time::Duration;
+use aegis_protocol::operation::OperationLogEntry;
 
-use aegis_protocol::finding::{Confidence, VulnerabilityClass};
-use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
-
-use crate::util::timestamp_ms;
-
-const HEADER_CHECK_TIMEOUT: Duration = Duration::from_secs(10);
+use crate::recon_client;
 
 pub(crate) const SECURITY_HEADERS: &[(&str, f64)] = &[
     ("content-security-policy", 6.0),
@@ -22,21 +17,11 @@ pub struct MissingHeader {
 }
 
 pub fn audit_security_headers(target: &str) -> Vec<MissingHeader> {
-    let domain = match aegis_exploiter::extract_domain(target) {
-        Some(d) => d,
-        None => return Vec::new(),
-    };
-    if domain == "localhost" || domain == "127.0.0.1" || domain == "::1" {
+    if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-
-    let client = match reqwest::blocking::Client::builder()
-        .timeout(HEADER_CHECK_TIMEOUT)
-        .danger_accept_invalid_certs(true)
-        .build()
-    {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
+    let Some(client) = recon_client::default_client() else {
+        return Vec::new();
     };
 
     let resp = match client.get(target).send() {
@@ -62,19 +47,12 @@ pub fn header_findings_to_operations(
     findings
         .iter()
         .map(|f| {
-            *seq += 1;
-            OperationLogEntry {
-                sequence_number: *seq,
-                module: ModuleIdentifier::PassiveRecon,
-                operation: GraphOperation::AddFinding {
-                    linked_node_ids: vec![],
-                    vulnerability_class: VulnerabilityClass::MissingSecurityHeader,
-                    severity: f.severity,
-                    confidence: Confidence::new(0.95).unwrap(),
-                    certificate: Vec::new(),
-                },
-                timestamp_unix_ms: timestamp_ms(),
-            }
+            recon_client::finding_entry(
+                seq,
+                aegis_protocol::finding::VulnerabilityClass::MissingSecurityHeader,
+                f.severity,
+                0.95,
+            )
         })
         .collect()
 }
