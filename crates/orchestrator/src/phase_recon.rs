@@ -836,6 +836,16 @@ fn run_body_analyzers(
         crate::eyedropper_audit::eyedropper_to_operations
     );
 
+    // File System Access API audit
+    let fsa_issues = crate::file_system_access_audit::analyze_file_system_access(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fsa_issues,
+        crate::file_system_access_audit::file_system_access_to_operations
+    );
+
     // Fullscreen API abuse audit
     let fs_issues = crate::fullscreen_audit::analyze_fullscreen(body);
     collect_ops!(
