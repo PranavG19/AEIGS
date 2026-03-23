@@ -151,6 +151,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let ctype_target = ctx.config.target.clone();
     let ctype_handle =
         std::thread::spawn(move || crate::content_type_audit::audit_content_type(&ctype_target));
+    let stiming_target = ctx.config.target.clone();
+    let stiming_handle = std::thread::spawn(move || {
+        crate::server_timing_audit::audit_server_timing(&stiming_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -477,6 +481,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::content_type_audit::content_type_to_operations(&ctype_issues, &mut sequence);
     findings_count += ctype_ops.len() as u64;
     entries.extend(ctype_ops);
+
+    let stiming_leaks = stiming_handle.join().unwrap_or_default();
+    let stiming_ops =
+        crate::server_timing_audit::server_timing_to_operations(&stiming_leaks, &mut sequence);
+    findings_count += stiming_ops.len() as u64;
+    entries.extend(stiming_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

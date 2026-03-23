@@ -61,6 +61,7 @@ pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
 pub mod security_txt;
+pub mod server_timing_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
 pub mod sri_checker;
@@ -132,6 +133,7 @@ pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
 pub use security_txt::*;
+pub use server_timing_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
 pub use sri_checker::*;
@@ -414,6 +416,10 @@ mod corp_audit_test;
 #[cfg(test)]
 #[path = "content_type_audit_test.rs"]
 mod content_type_audit_test;
+
+#[cfg(test)]
+#[path = "server_timing_audit_test.rs"]
+mod server_timing_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

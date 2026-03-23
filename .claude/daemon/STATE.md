@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1530 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1543 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -50,6 +50,7 @@ status: in-progress
 - [x] Cookie SameSite=None detection (added to existing cookie_audit)
 - [x] CORS credentials+reflection detection (severity 8.0, highest)
 - [x] Content-Type/X-Content-Type-Options audit (nosniff, charset, MIME)
+- [x] Server-Timing header leak detection (db, cache, internal metrics)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -58,6 +59,6 @@ status: in-progress
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8: server timing header leak, expect-ct deprecation,
-   feature-policy deprecation check, MIME type confusion detection.
+1. Continue P8: expect-ct deprecation, feature-policy deprecation,
+   access-control-expose-headers audit, nel/report-to audit.
 2. G14 body-fetch consolidation (L-sized, next dedicated session).
