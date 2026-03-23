@@ -866,6 +866,16 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Local Font Access API audit
+    let lf_issues = crate::local_font_audit::analyze_local_font(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        lf_issues,
+        crate::local_font_audit::local_font_to_operations
+    );
+
     // Compute Pressure API audit
     let cp2_issues = crate::compute_pressure_audit::analyze_compute_pressure(body);
     collect_ops!(

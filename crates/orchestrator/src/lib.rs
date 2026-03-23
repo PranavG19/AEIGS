@@ -84,6 +84,7 @@ pub mod js_library_scanner;
 pub mod jwt_header_audit;
 pub mod jsonp_audit;
 pub mod link_header_audit;
+pub mod local_font_audit;
 pub mod mass_assign_audit;
 pub mod meta_redirect_audit;
 pub mod meta_tag_audit;
@@ -259,6 +260,7 @@ pub use js_library_scanner::*;
 pub use jwt_header_audit::*;
 pub use jsonp_audit::*;
 pub use link_header_audit::*;
+pub use local_font_audit::*;
 pub use mass_assign_audit::*;
 pub use meta_redirect_audit::*;
 pub use meta_tag_audit::*;
@@ -717,6 +719,10 @@ mod contact_picker_audit_test;
 #[cfg(test)]
 #[path = "compute_pressure_audit_test.rs"]
 mod compute_pressure_audit_test;
+
+#[cfg(test)]
+#[path = "local_font_audit_test.rs"]
+mod local_font_audit_test;
 
 #[cfg(test)]
 #[path = "js_library_scanner_test.rs"]
