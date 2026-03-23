@@ -626,6 +626,16 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // API endpoint leak detection
+    let apileak_issues = crate::api_endpoint_leak_audit::analyze_api_endpoint_leaks(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        apileak_issues,
+        crate::api_endpoint_leak_audit::api_endpoint_leak_to_operations
+    );
+
     // Trusted Types policy audit (needs CSP header + body)
     let tt_csp = hdr(resp, "content-security-policy").unwrap_or_default();
     let tt_issues = crate::trusted_types_audit::analyze_trusted_types(&tt_csp, body);

@@ -1,4 +1,5 @@
 pub mod actor;
+pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
 pub mod attest;
 pub mod auth_session;
@@ -121,6 +122,7 @@ pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
 pub use actor::*;
+pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use auth_session::*;
 pub use base_tag_audit::*;
@@ -309,6 +311,10 @@ mod form_audit_test;
 #[cfg(test)]
 #[path = "actor_test.rs"]
 mod actor_test;
+
+#[cfg(test)]
+#[path = "api_endpoint_leak_audit_test.rs"]
+mod api_endpoint_leak_audit_test;
 
 #[cfg(test)]
 #[path = "api_version_audit_test.rs"]
