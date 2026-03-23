@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2079 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2098 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -34,9 +34,10 @@ status: in-progress
 15. feat(recon): Add open redirect parameter scanner (+17)
 16. feat(recon): Add path traversal parameter scanner (+15)
 17. feat(recon): Add HTTP request smuggling detection scanner (+17)
+18. feat(recon): Add session fixation detection scanner (+19)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: unsafe deserialization pattern scan, session fixation detection, TRACE method audit, or response splitting detection.
+Continue P8. Next ideas: TRACE method audit, unsafe deserialization pattern scan, response splitting detection, or DNS rebinding detection.

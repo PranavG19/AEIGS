@@ -358,6 +358,17 @@ fn run_header_analyzers(
         cookie_findings,
         crate::cookie_audit::cookie_findings_to_operations
     );
+
+    // Session fixation / session security
+    let session_issues =
+        crate::session_fixation_audit::analyze_session_security("", &set_cookies);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        session_issues,
+        crate::session_fixation_audit::session_fixation_to_operations
+    );
 }
 
 fn run_body_analyzers(
