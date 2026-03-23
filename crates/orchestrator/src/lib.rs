@@ -8,6 +8,7 @@ pub mod cache_poison_audit;
 pub mod calibration;
 pub mod checkpoint;
 pub mod clear_site_data_audit;
+pub mod clickjack_audit;
 pub mod comment_leak;
 pub mod content_type_audit;
 pub mod convergence;
@@ -106,6 +107,7 @@ pub use cache_audit::*;
 pub use cache_poison_audit::*;
 pub use checkpoint::*;
 pub use clear_site_data_audit::*;
+pub use clickjack_audit::*;
 pub use comment_leak::*;
 pub use content_type_audit::*;
 pub use convergence::*;
@@ -487,6 +489,10 @@ mod verb_tamper_audit_test;
 #[cfg(test)]
 #[path = "clear_site_data_audit_test.rs"]
 mod clear_site_data_audit_test;
+
+#[cfg(test)]
+#[path = "clickjack_audit_test.rs"]
+mod clickjack_audit_test;
 
 #[cfg(test)]
 #[path = "sourcemap_header_audit_test.rs"]

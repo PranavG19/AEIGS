@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1924 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1944 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 55 features shipped
+- P8: 56 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -31,4 +31,4 @@ status: in-progress
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: HTTP/2 HPACK bomb, WebSocket security audit, SSRF via redirect chain, or mass assignment detection.
+Continue P8. Next ideas: JWT header audit, API versioning detection, CSP report-uri leak, or mass assignment pattern scan.
