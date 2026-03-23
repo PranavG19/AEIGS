@@ -40,6 +40,7 @@ pub mod interactive;
 pub mod js_library_scanner;
 pub mod meta_tag_audit;
 pub mod method_scanner;
+pub mod nel_audit;
 pub mod mixed_content;
 pub mod opener_audit;
 pub mod permissions_policy;
@@ -115,6 +116,7 @@ pub use interactive::*;
 pub use js_library_scanner::*;
 pub use meta_tag_audit::*;
 pub use method_scanner::*;
+pub use nel_audit::*;
 pub use mixed_content::*;
 pub use opener_audit::*;
 pub use permissions_policy::*;
@@ -398,6 +400,10 @@ mod dangerous_js_audit_test;
 #[cfg(test)]
 #[path = "document_domain_audit_test.rs"]
 mod document_domain_audit_test;
+
+#[cfg(test)]
+#[path = "nel_audit_test.rs"]
+mod nel_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
