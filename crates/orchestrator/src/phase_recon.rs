@@ -1116,6 +1116,16 @@ fn run_body_analyzers(
         crate::local_font_audit::local_font_to_operations
     );
 
+    // Compression Streams audit
+    let csa_issues = crate::compression_stream_audit::analyze_compression_stream(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        csa_issues,
+        crate::compression_stream_audit::compression_stream_to_operations
+    );
+
     // Compute Pressure API audit
     let cp2_issues = crate::compute_pressure_audit::analyze_compute_pressure(body);
     collect_ops!(

@@ -21,6 +21,7 @@ pub mod clear_site_data_audit;
 pub mod clipboard_audit;
 pub mod clickjack_audit;
 pub mod comment_leak;
+pub mod compression_stream_audit;
 pub mod compute_pressure_audit;
 pub mod content_disposition_audit;
 pub mod content_index_audit;
@@ -229,6 +230,7 @@ pub use clear_site_data_audit::*;
 pub use clickjack_audit::*;
 pub use clipboard_audit::*;
 pub use comment_leak::*;
+pub use compression_stream_audit::*;
 pub use compute_pressure_audit::*;
 pub use content_disposition_audit::*;
 pub use content_index_audit::*;
@@ -827,6 +829,10 @@ mod content_index_audit_test;
 #[cfg(test)]
 #[path = "contact_picker_audit_test.rs"]
 mod contact_picker_audit_test;
+
+#[cfg(test)]
+#[path = "compression_stream_audit_test.rs"]
+mod compression_stream_audit_test;
 
 #[cfg(test)]
 #[path = "compute_pressure_audit_test.rs"]
