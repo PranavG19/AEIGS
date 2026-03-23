@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 7419 lib, 0 failed
+- cargo test -p aegis-orchestrator: 7591 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 228 features shipped
+- P8: 231 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -69,6 +69,7 @@ status: in-progress
 220. NEL Audit (13→70), 221. Server Timing (13→73), 222. File Access (13→72)
 223. Ambient Light (13→63), 224. Compute Pressure (13→74), 225. EyeDropper (13→68)
 226. Idle Detection (13→67), 227. Link Header (13→72), 228. Mutation Observer (13→83)
+229. Navigation API (13→76), 230. PiP Audit (13→78), 231. Preconnect (13→73)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
