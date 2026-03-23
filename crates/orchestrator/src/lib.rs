@@ -25,6 +25,7 @@ pub mod csp_report_leak_audit;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
 pub mod deprecated_header_audit;
+pub mod deserialization_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
@@ -132,6 +133,7 @@ pub use csp_report_leak_audit::*;
 pub use cve_correlator::*;
 pub use dangerous_js_audit::*;
 pub use deprecated_header_audit::*;
+pub use deserialization_audit::*;
 pub use distributed::*;
 pub use distributed_transport::*;
 pub use dns_enumerator::*;
@@ -619,6 +621,10 @@ mod server_timing_audit_test;
 #[cfg(test)]
 #[path = "deprecated_header_audit_test.rs"]
 mod deprecated_header_audit_test;
+
+#[cfg(test)]
+#[path = "deserialization_audit_test.rs"]
+mod deserialization_audit_test;
 
 #[cfg(test)]
 #[path = "expose_headers_audit_test.rs"]

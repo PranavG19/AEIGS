@@ -540,6 +540,18 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // Deserialization indicators in response body
+    let ct = hdr(resp, "content-type").unwrap_or_default();
+    let deser_issues =
+        crate::deserialization_audit::analyze_deserialization_response(&ct, body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        deser_issues,
+        crate::deserialization_audit::deserialization_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers
