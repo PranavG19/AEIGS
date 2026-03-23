@@ -699,6 +699,17 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Credential harvesting form detection
+    let cred_issues =
+        crate::credential_harvest_audit::analyze_credential_harvest(body, domain);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cred_issues,
+        crate::credential_harvest_audit::credential_harvest_to_operations
+    );
+
     // Resource timing leak detection
     let rt_issues = crate::resource_timing_audit::analyze_resource_timing(
         body,
