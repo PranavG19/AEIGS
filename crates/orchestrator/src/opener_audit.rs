@@ -27,8 +27,7 @@ pub(crate) fn find_opener_issues(html: &str) -> Vec<OpenerIssue> {
     let mut issues = Vec::new();
 
     for tag in TagIter::new(html, "a") {
-        let target_attr =
-            html_parser::extract_attr_lower(&tag.lower, "target").unwrap_or_default();
+        let target_attr = html_parser::extract_attr_lower(&tag.lower, "target").unwrap_or_default();
         if target_attr != "_blank" {
             continue;
         }
@@ -49,10 +48,7 @@ pub(crate) fn find_opener_issues(html: &str) -> Vec<OpenerIssue> {
     issues
 }
 
-pub fn opener_to_operations(
-    issues: &[OpenerIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn opener_to_operations(issues: &[OpenerIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }

@@ -1,4 +1,4 @@
-use crate::meta_tag_audit::{analyze_meta_tags, meta_findings_to_operations, MetaIssue};
+use crate::meta_tag_audit::{MetaIssue, analyze_meta_tags, meta_findings_to_operations};
 
 #[test]
 fn detects_generator_meta() {
@@ -106,5 +106,8 @@ fn display_variants() {
     assert_eq!(disclosure.to_string(), "generator_disclosure:WP");
     let sensitive = MetaIssue::SensitiveMetaTag("set-cookie".to_string());
     assert_eq!(sensitive.to_string(), "sensitive_meta:set-cookie");
-    assert_eq!(MetaIssue::NoindexOnPublicPage.to_string(), "noindex_on_public");
+    assert_eq!(
+        MetaIssue::NoindexOnPublicPage.to_string(),
+        "noindex_on_public"
+    );
 }

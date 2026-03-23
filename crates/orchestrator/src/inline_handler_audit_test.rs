@@ -1,5 +1,5 @@
 use crate::inline_handler_audit::{
-    find_inline_handlers, inline_handler_to_operations, InlineHandlerIssue,
+    InlineHandlerIssue, find_inline_handlers, inline_handler_to_operations,
 };
 
 #[test]

@@ -1,5 +1,5 @@
 use crate::mixed_content::{
-    find_mixed_content, mixed_content_to_operations, MixedContentIssue, MixedContentKind,
+    MixedContentIssue, MixedContentKind, find_mixed_content, mixed_content_to_operations,
 };
 
 #[test]

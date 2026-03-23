@@ -3,12 +3,7 @@ use aegis_protocol::operation::OperationLogEntry;
 
 use crate::recon_client;
 
-const ERROR_PATHS: &[&str] = &[
-    "/doesnotexist-aegis-404-probe",
-    "/%00",
-    "/~",
-    "/..;/",
-];
+const ERROR_PATHS: &[&str] = &["/doesnotexist-aegis-404-probe", "/%00", "/~", "/..;/"];
 
 const STACK_TRACE_PATTERNS: &[(&str, &str, f64)] = &[
     ("traceback (most recent call last)", "python_traceback", 7.0),
@@ -86,18 +81,12 @@ pub(crate) fn analyze_error_body(body: &str, path: &str) -> Vec<ErrorPageLeak> {
     leaks
 }
 
-pub fn error_page_to_operations(
-    leaks: &[ErrorPageLeak],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn error_page_to_operations(leaks: &[ErrorPageLeak], seq: &mut u64) -> Vec<OperationLogEntry> {
     if leaks.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = leaks
-        .iter()
-        .map(|l| l.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = leaks.iter().map(|l| l.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

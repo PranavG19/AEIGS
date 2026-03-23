@@ -24,10 +24,16 @@ impl std::fmt::Display for XfoIssueKind {
             Self::AllowAll => write!(f, "X-Frame-Options ALLOWALL permits framing by any origin"),
             Self::InvalidValue => write!(f, "unrecognized X-Frame-Options value"),
             Self::AllowFromDeprecated => {
-                write!(f, "X-Frame-Options ALLOW-FROM is deprecated and ignored by modern browsers")
+                write!(
+                    f,
+                    "X-Frame-Options ALLOW-FROM is deprecated and ignored by modern browsers"
+                )
             }
             Self::MultipleHeaders => {
-                write!(f, "multiple X-Frame-Options headers cause undefined behavior")
+                write!(
+                    f,
+                    "multiple X-Frame-Options headers cause undefined behavior"
+                )
             }
         }
     }
@@ -101,18 +107,12 @@ pub(crate) fn analyze_xfo(values: &[String]) -> Vec<XfoIssue> {
     issues
 }
 
-pub fn xfo_to_operations(
-    issues: &[XfoIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn xfo_to_operations(issues: &[XfoIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

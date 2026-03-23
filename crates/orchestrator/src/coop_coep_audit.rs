@@ -60,10 +60,7 @@ pub fn audit_coop_coep(target: &str) -> Vec<CoopCoepIssue> {
     analyze_coop_coep(coop.as_deref(), coep.as_deref())
 }
 
-pub(crate) fn analyze_coop_coep(
-    coop: Option<&str>,
-    coep: Option<&str>,
-) -> Vec<CoopCoepIssue> {
+pub(crate) fn analyze_coop_coep(coop: Option<&str>, coep: Option<&str>) -> Vec<CoopCoepIssue> {
     let mut issues = Vec::new();
 
     match coop {
@@ -105,18 +102,12 @@ pub(crate) fn analyze_coop_coep(
     issues
 }
 
-pub fn coop_coep_to_operations(
-    issues: &[CoopCoepIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn coop_coep_to_operations(issues: &[CoopCoepIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

@@ -1,5 +1,5 @@
 use crate::timing_allow_origin_audit::{
-    analyze_timing_allow_origin, timing_allow_origin_to_operations, TimingAllowIssueKind,
+    TimingAllowIssueKind, analyze_timing_allow_origin, timing_allow_origin_to_operations,
 };
 
 #[test]
@@ -27,9 +27,11 @@ fn single_https_origin_ok() {
 fn http_origin_flagged() {
     let vals = vec!["http://insecure.example.com".to_string()];
     let issues = analyze_timing_allow_origin(&vals);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == TimingAllowIssueKind::HttpOrigin));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == TimingAllowIssueKind::HttpOrigin)
+    );
 }
 
 #[test]
@@ -39,9 +41,11 @@ fn many_origins_flagged() {
             .to_string(),
     ];
     let issues = analyze_timing_allow_origin(&vals);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == TimingAllowIssueKind::ManyOrigins));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == TimingAllowIssueKind::ManyOrigins)
+    );
 }
 
 #[test]
@@ -50,9 +54,11 @@ fn five_origins_not_flagged() {
         "https://a.com, https://b.com, https://c.com, https://d.com, https://e.com".to_string(),
     ];
     let issues = analyze_timing_allow_origin(&vals);
-    assert!(!issues
-        .iter()
-        .any(|i| i.kind == TimingAllowIssueKind::ManyOrigins));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| i.kind == TimingAllowIssueKind::ManyOrigins)
+    );
 }
 
 #[test]
@@ -65,14 +71,13 @@ fn wildcard_returns_early() {
 
 #[test]
 fn multiple_header_values() {
-    let vals = vec![
-        "https://a.com".to_string(),
-        "http://b.com".to_string(),
-    ];
+    let vals = vec!["https://a.com".to_string(), "http://b.com".to_string()];
     let issues = analyze_timing_allow_origin(&vals);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == TimingAllowIssueKind::HttpOrigin));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == TimingAllowIssueKind::HttpOrigin)
+    );
 }
 
 #[test]

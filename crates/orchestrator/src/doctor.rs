@@ -333,7 +333,10 @@ fn check_feroxbuster() -> DoctorCheck {
 }
 
 fn check_httpx() -> DoctorCheck {
-    check_cli_tool("httpx", "go install github.com/projectdiscovery/httpx/cmd/httpx@latest")
+    check_cli_tool(
+        "httpx",
+        "go install github.com/projectdiscovery/httpx/cmd/httpx@latest",
+    )
 }
 
 fn check_gau() -> DoctorCheck {
@@ -349,11 +352,17 @@ fn check_trufflehog() -> DoctorCheck {
 }
 
 fn check_amass() -> DoctorCheck {
-    check_cli_tool("amass", "go install github.com/owasp-amass/amass/v4/...@master")
+    check_cli_tool(
+        "amass",
+        "go install github.com/owasp-amass/amass/v4/...@master",
+    )
 }
 
 fn check_katana() -> DoctorCheck {
-    check_cli_tool("katana", "go install github.com/projectdiscovery/katana/cmd/katana@latest")
+    check_cli_tool(
+        "katana",
+        "go install github.com/projectdiscovery/katana/cmd/katana@latest",
+    )
 }
 
 fn aegis_home_dir() -> PathBuf {

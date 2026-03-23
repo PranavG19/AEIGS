@@ -18,9 +18,11 @@ fn missing_nosniff() {
 #[test]
 fn wrong_nosniff_value() {
     let issues = analyze_content_type(Some("none"), Some("text/html; charset=utf-8"));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::MissingNosniff));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::MissingNosniff)
+    );
 }
 
 #[test]
@@ -32,26 +34,31 @@ fn nosniff_case_insensitive() {
 #[test]
 fn missing_content_type() {
     let issues = analyze_content_type(Some("nosniff"), None);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::MissingContentType));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::MissingContentType)
+    );
 }
 
 #[test]
 fn octet_stream_flagged() {
-    let issues =
-        analyze_content_type(Some("nosniff"), Some("application/octet-stream"));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::OctetStreamForHtml));
+    let issues = analyze_content_type(Some("nosniff"), Some("application/octet-stream"));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::OctetStreamForHtml)
+    );
 }
 
 #[test]
 fn text_without_charset() {
     let issues = analyze_content_type(Some("nosniff"), Some("text/html"));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::CharsetMissing));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::CharsetMissing)
+    );
 }
 
 #[test]
@@ -75,12 +82,16 @@ fn multiple_issues() {
 #[test]
 fn both_missing() {
     let issues = analyze_content_type(None, None);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::MissingNosniff));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ContentTypeIssueKind::MissingContentType));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::MissingNosniff)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ContentTypeIssueKind::MissingContentType)
+    );
 }
 
 #[test]

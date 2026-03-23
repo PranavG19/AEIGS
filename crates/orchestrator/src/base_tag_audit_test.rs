@@ -1,14 +1,16 @@
 use crate::base_tag_audit::{
-    analyze_base_tags, base_tag_to_operations, BaseTagFinding, BaseTagIssue,
+    BaseTagFinding, BaseTagIssue, analyze_base_tags, base_tag_to_operations,
 };
 
 #[test]
 fn detects_external_base_href() {
     let html = r#"<base href="https://evil.com/">"#;
     let findings = analyze_base_tags(html, "example.com");
-    assert!(findings
-        .iter()
-        .any(|f| f.issue == BaseTagIssue::ExternalBaseHref));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.issue == BaseTagIssue::ExternalBaseHref)
+    );
 }
 
 #[test]
@@ -37,9 +39,11 @@ fn detects_http_base_href() {
 fn detects_multiple_base_tags() {
     let html = r#"<base href="/"><base href="/other/">"#;
     let findings = analyze_base_tags(html, "example.com");
-    assert!(findings
-        .iter()
-        .any(|f| f.issue == BaseTagIssue::MultipleBaseTags));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.issue == BaseTagIssue::MultipleBaseTags)
+    );
 }
 
 #[test]
@@ -60,9 +64,11 @@ fn ignores_relative_base_href() {
 fn detects_external_with_port() {
     let html = r#"<base href="https://evil.com:8080/">"#;
     let findings = analyze_base_tags(html, "example.com");
-    assert!(findings
-        .iter()
-        .any(|f| f.issue == BaseTagIssue::ExternalBaseHref));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.issue == BaseTagIssue::ExternalBaseHref)
+    );
 }
 
 #[test]

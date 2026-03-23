@@ -98,10 +98,7 @@ fn resolve_url(base: &str, relative: &str) -> String {
     format!("{base_trimmed}/{relative}")
 }
 
-pub fn sourcemap_to_operations(
-    leaks: &[SourceMapLeak],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn sourcemap_to_operations(leaks: &[SourceMapLeak], seq: &mut u64) -> Vec<OperationLogEntry> {
     if leaks.is_empty() {
         return Vec::new();
     }

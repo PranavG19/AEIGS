@@ -1,6 +1,4 @@
-use crate::deprecated_header_audit::{
-    analyze_deprecated_headers, deprecated_header_to_operations,
-};
+use crate::deprecated_header_audit::{analyze_deprecated_headers, deprecated_header_to_operations};
 
 fn has_headers<'a>(present: &'a [&'a str]) -> impl Fn(&str) -> bool + 'a {
     move |name: &str| present.contains(&name)
@@ -29,8 +27,7 @@ fn detects_hpkp() {
 
 #[test]
 fn detects_hpkp_report_only() {
-    let issues =
-        analyze_deprecated_headers(has_headers(&["public-key-pins-report-only"]));
+    let issues = analyze_deprecated_headers(has_headers(&["public-key-pins-report-only"]));
     assert_eq!(issues.len(), 1);
 }
 

@@ -106,9 +106,7 @@ fn extract_rel(entry: &str) -> Option<String> {
     let pos = lower.find("rel=")?;
     let after = &entry[pos + 4..];
     let after = after.trim_start_matches('"').trim_start_matches('\'');
-    let end = after
-        .find(['"', '\'', ';', ','])
-        .unwrap_or(after.len());
+    let end = after.find(['"', '\'', ';', ',']).unwrap_or(after.len());
     Some(after[..end].trim().to_string())
 }
 
@@ -120,10 +118,7 @@ pub fn link_header_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

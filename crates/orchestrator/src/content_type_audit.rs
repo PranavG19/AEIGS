@@ -25,7 +25,10 @@ impl std::fmt::Display for ContentTypeIssueKind {
             }
             Self::MissingContentType => write!(f, "missing Content-Type header"),
             Self::OctetStreamForHtml => {
-                write!(f, "Content-Type is application/octet-stream for HTML content")
+                write!(
+                    f,
+                    "Content-Type is application/octet-stream for HTML content"
+                )
             }
             Self::CharsetMissing => {
                 write!(f, "Content-Type missing charset for text response")
@@ -112,10 +115,7 @@ pub fn content_type_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

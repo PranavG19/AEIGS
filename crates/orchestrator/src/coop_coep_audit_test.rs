@@ -3,34 +3,46 @@ use crate::coop_coep_audit::{CoopCoepIssueKind, analyze_coop_coep, coop_coep_to_
 #[test]
 fn both_missing() {
     let issues = analyze_coop_coep(None, None);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoop));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoep));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoop)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoep)
+    );
 }
 
 #[test]
 fn coop_present_coep_missing() {
     let issues = analyze_coop_coep(Some("same-origin"), None);
-    assert!(!issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoop));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoep));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoop)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoep)
+    );
 }
 
 #[test]
 fn coep_present_coop_missing() {
     let issues = analyze_coop_coep(None, Some("require-corp"));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoop));
-    assert!(!issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::MissingCoep));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoop)
+    );
+    assert!(
+        !issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::MissingCoep)
+    );
 }
 
 #[test]
@@ -57,26 +69,31 @@ fn coep_unsafe_none() {
 fn both_unsafe_none() {
     let issues = analyze_coop_coep(Some("unsafe-none"), Some("unsafe-none"));
     assert_eq!(issues.len(), 2);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoop));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoep));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoop)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoep)
+    );
 }
 
 #[test]
 fn case_insensitive_unsafe_none() {
     let issues = analyze_coop_coep(Some("Unsafe-None"), Some("require-corp"));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoop));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == CoopCoepIssueKind::UnsafeCoop)
+    );
 }
 
 #[test]
 fn same_origin_allow_popups() {
-    let issues =
-        analyze_coop_coep(Some("same-origin-allow-popups"), Some("require-corp"));
+    let issues = analyze_coop_coep(Some("same-origin-allow-popups"), Some("require-corp"));
     assert!(issues.is_empty());
 }
 

@@ -1,5 +1,5 @@
 use crate::hidden_input_audit::{
-    find_hidden_input_issues, hidden_input_to_operations, HiddenInputIssueKind,
+    HiddenInputIssueKind, find_hidden_input_issues, hidden_input_to_operations,
 };
 
 #[test]

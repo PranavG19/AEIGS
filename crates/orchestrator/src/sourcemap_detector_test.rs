@@ -1,5 +1,5 @@
 use crate::sourcemap_detector::{
-    find_sourcemap_references, sourcemap_to_operations, SourceMapLeak,
+    SourceMapLeak, find_sourcemap_references, sourcemap_to_operations,
 };
 
 #[test]

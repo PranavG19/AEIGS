@@ -1,5 +1,5 @@
 use crate::comment_leak::{
-    comment_leak_to_operations, find_comment_leaks, CommentLeak, LeakCategory,
+    CommentLeak, LeakCategory, comment_leak_to_operations, find_comment_leaks,
 };
 
 #[test]
@@ -21,14 +21,22 @@ fn detects_api_key_in_comment() {
 fn detects_todo_comment() {
     let html = r#"<html><!-- TODO: fix this vulnerability --></html>"#;
     let leaks = find_comment_leaks(html);
-    assert!(leaks.iter().any(|l| l.category == LeakCategory::DeveloperNote));
+    assert!(
+        leaks
+            .iter()
+            .any(|l| l.category == LeakCategory::DeveloperNote)
+    );
 }
 
 #[test]
 fn detects_fixme_comment() {
     let html = r#"<html><!-- FIXME: remove before production --></html>"#;
     let leaks = find_comment_leaks(html);
-    assert!(leaks.iter().any(|l| l.category == LeakCategory::DeveloperNote));
+    assert!(
+        leaks
+            .iter()
+            .any(|l| l.category == LeakCategory::DeveloperNote)
+    );
 }
 
 #[test]
@@ -42,14 +50,22 @@ fn detects_debug_info() {
 fn detects_internal_ip() {
     let html = r#"<html><!-- Backend: 192.168.1.100:8080 --></html>"#;
     let leaks = find_comment_leaks(html);
-    assert!(leaks.iter().any(|l| l.category == LeakCategory::InternalPath));
+    assert!(
+        leaks
+            .iter()
+            .any(|l| l.category == LeakCategory::InternalPath)
+    );
 }
 
 #[test]
 fn detects_filesystem_path() {
     let html = r#"<html><!-- Config: /etc/nginx/nginx.conf --></html>"#;
     let leaks = find_comment_leaks(html);
-    assert!(leaks.iter().any(|l| l.category == LeakCategory::InternalPath));
+    assert!(
+        leaks
+            .iter()
+            .any(|l| l.category == LeakCategory::InternalPath)
+    );
 }
 
 #[test]

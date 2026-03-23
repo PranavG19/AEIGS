@@ -38,10 +38,7 @@ pub fn detect_technologies(target: &str) -> Vec<TechDetection> {
     detect_from_parts(&headers, &body)
 }
 
-pub(crate) fn detect_from_parts(
-    headers: &[(String, String)],
-    body: &str,
-) -> Vec<TechDetection> {
+pub(crate) fn detect_from_parts(headers: &[(String, String)], body: &str) -> Vec<TechDetection> {
     let mut detections: Vec<DetectedTech> = fingerprint_from_headers(headers);
     detections.extend(fingerprint_from_html(body));
     dedup_detections(&detections)

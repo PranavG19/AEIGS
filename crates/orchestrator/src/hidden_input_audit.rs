@@ -20,23 +20,46 @@ pub struct HiddenInputIssue {
 }
 
 const DEBUG_NAMES: &[&str] = &[
-    "debug", "verbose", "test", "staging", "dev", "admin",
-    "internal", "trace", "log_level", "profiling",
+    "debug",
+    "verbose",
+    "test",
+    "staging",
+    "dev",
+    "admin",
+    "internal",
+    "trace",
+    "log_level",
+    "profiling",
 ];
 
 const TOKEN_NAMES: &[&str] = &[
-    "api_key", "apikey", "secret", "access_token",
-    "auth_token", "session_id", "jwt",
+    "api_key",
+    "apikey",
+    "secret",
+    "access_token",
+    "auth_token",
+    "session_id",
+    "jwt",
 ];
 
 const SAFE_TOKEN_NAMES: &[&str] = &[
-    "csrf", "xsrf", "_token", "authenticity_token", "antiforgery",
+    "csrf",
+    "xsrf",
+    "_token",
+    "authenticity_token",
+    "antiforgery",
     "requestverificationtoken",
 ];
 
 const VERSION_NAMES: &[&str] = &[
-    "version", "build", "revision", "commit", "sha", "deploy_id",
-    "release", "build_number",
+    "version",
+    "build",
+    "revision",
+    "commit",
+    "sha",
+    "deploy_id",
+    "release",
+    "build_number",
 ];
 
 pub fn audit_hidden_inputs(target: &str) -> Vec<HiddenInputIssue> {
@@ -113,10 +136,7 @@ pub fn hidden_input_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

@@ -1,6 +1,4 @@
-use crate::document_domain_audit::{
-    document_domain_to_operations, find_document_domain,
-};
+use crate::document_domain_audit::{document_domain_to_operations, find_document_domain};
 
 #[test]
 fn detects_document_domain_assignment() {

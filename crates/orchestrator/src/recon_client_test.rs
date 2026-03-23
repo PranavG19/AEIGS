@@ -124,12 +124,18 @@ fn is_external_case_insensitive() {
 
 #[test]
 fn extract_host_https() {
-    assert_eq!(extract_host("https://example.com/path"), Some("example.com".into()));
+    assert_eq!(
+        extract_host("https://example.com/path"),
+        Some("example.com".into())
+    );
 }
 
 #[test]
 fn extract_host_with_port() {
-    assert_eq!(extract_host("https://example.com:8443/path"), Some("example.com".into()));
+    assert_eq!(
+        extract_host("https://example.com:8443/path"),
+        Some("example.com".into())
+    );
 }
 
 #[test]

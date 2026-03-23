@@ -52,10 +52,7 @@ fn multiple_metrics_comma_separated() {
 
 #[test]
 fn multiple_header_values() {
-    let values = vec![
-        "db;dur=10".to_string(),
-        "redis;dur=1".to_string(),
-    ];
+    let values = vec!["db;dur=10".to_string(), "redis;dur=1".to_string()];
     let leaks = analyze_server_timing(&values);
     assert_eq!(leaks.len(), 2);
 }

@@ -1,4 +1,4 @@
-use crate::error_page_audit::{analyze_error_body, error_page_to_operations, ErrorPageLeak};
+use crate::error_page_audit::{ErrorPageLeak, analyze_error_body, error_page_to_operations};
 
 #[test]
 fn detects_python_traceback() {
@@ -74,7 +74,10 @@ fn no_leaks_in_clean_page() {
 fn deduplicates_same_category() {
     let body = "SQLSTATE[42000] error\nmysql_connect() failed";
     let leaks = analyze_error_body(body, "/test");
-    let sql_count = leaks.iter().filter(|l| l.pattern_name == "sql_error").count();
+    let sql_count = leaks
+        .iter()
+        .filter(|l| l.pattern_name == "sql_error")
+        .count();
     assert_eq!(sql_count, 1);
 }
 

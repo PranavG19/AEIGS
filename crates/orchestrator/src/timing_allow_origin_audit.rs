@@ -74,7 +74,10 @@ pub(crate) fn analyze_timing_allow_origin(values: &[String]) -> Vec<TimingAllowI
     if origins.len() > 5 {
         issues.push(TimingAllowIssue {
             kind: TimingAllowIssueKind::ManyOrigins,
-            detail: format!("{} origins allowed — broad timing data exposure", origins.len()),
+            detail: format!(
+                "{} origins allowed — broad timing data exposure",
+                origins.len()
+            ),
             severity: 3.0,
         });
     }
@@ -90,10 +93,7 @@ pub fn timing_allow_origin_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

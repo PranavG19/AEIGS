@@ -118,10 +118,7 @@ fn truncate_snippet(s: &str, max_len: usize) -> String {
     }
 }
 
-pub fn comment_leak_to_operations(
-    leaks: &[CommentLeak],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn comment_leak_to_operations(leaks: &[CommentLeak], seq: &mut u64) -> Vec<OperationLogEntry> {
     if leaks.is_empty() {
         return Vec::new();
     }

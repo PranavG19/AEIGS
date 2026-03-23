@@ -1,4 +1,6 @@
-use crate::iframe_audit::{analyze_iframes, iframe_findings_to_operations, IframeFinding, IframeIssue};
+use crate::iframe_audit::{
+    IframeFinding, IframeIssue, analyze_iframes, iframe_findings_to_operations,
+};
 
 #[test]
 fn detects_iframe_without_sandbox() {

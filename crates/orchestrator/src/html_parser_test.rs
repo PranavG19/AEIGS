@@ -1,4 +1,4 @@
-use crate::html_parser::{extract_attr, extract_attr_lower, TagIter};
+use crate::html_parser::{TagIter, extract_attr, extract_attr_lower};
 
 #[test]
 fn tag_iter_finds_script_tags() {

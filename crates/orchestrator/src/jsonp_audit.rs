@@ -73,18 +73,12 @@ pub(crate) fn find_jsonp_endpoints(html: &str) -> Vec<JsonpIssue> {
     issues
 }
 
-pub fn jsonp_to_operations(
-    issues: &[JsonpIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn jsonp_to_operations(issues: &[JsonpIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

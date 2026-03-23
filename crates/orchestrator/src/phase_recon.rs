@@ -73,112 +73,246 @@ fn run_header_analyzers(
 
     // Missing security headers
     let hdr_findings = crate::header_audit::check_missing_headers(&resp.headers);
-    collect_ops!(seq, fc, entries, hdr_findings, crate::header_audit::header_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        hdr_findings,
+        crate::header_audit::header_findings_to_operations
+    );
 
     // CSP
     let csp_val = hdr(resp, "content-security-policy");
     let csp_issues = crate::csp_analyzer::analyze_csp_header(csp_val.as_deref());
-    collect_ops!(seq, fc, entries, csp_issues, crate::csp_analyzer::csp_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        csp_issues,
+        crate::csp_analyzer::csp_findings_to_operations
+    );
 
     // HSTS
     let hsts_val = hdr(resp, "strict-transport-security");
     let hsts_issues = crate::hsts_preload::analyze_hsts_header(hsts_val.as_deref());
-    collect_ops!(seq, fc, entries, hsts_issues, crate::hsts_preload::hsts_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        hsts_issues,
+        crate::hsts_preload::hsts_findings_to_operations
+    );
 
     // Permissions-Policy
     if let Some(pp_val) = hdr(resp, "permissions-policy") {
         let pp_issues = crate::permissions_policy::analyze_policy(&pp_val);
-        collect_ops!(seq, fc, entries, pp_issues, crate::permissions_policy::policy_findings_to_operations);
+        collect_ops!(
+            seq,
+            fc,
+            entries,
+            pp_issues,
+            crate::permissions_policy::policy_findings_to_operations
+        );
     }
 
     // Cache headers
     let cc_val = hdr(resp, "cache-control");
     let pragma_val = hdr(resp, "pragma");
-    let cache_issues = crate::cache_audit::analyze_cache_headers(cc_val.as_deref(), pragma_val.as_deref());
-    collect_ops!(seq, fc, entries, cache_issues, crate::cache_audit::cache_findings_to_operations);
+    let cache_issues =
+        crate::cache_audit::analyze_cache_headers(cc_val.as_deref(), pragma_val.as_deref());
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cache_issues,
+        crate::cache_audit::cache_findings_to_operations
+    );
 
     // X-Frame-Options
     let xfo_values = hdr_all(resp, "x-frame-options");
     let xfo_issues = crate::xfo_audit::analyze_xfo(&xfo_values);
-    collect_ops!(seq, fc, entries, xfo_issues, crate::xfo_audit::xfo_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        xfo_issues,
+        crate::xfo_audit::xfo_to_operations
+    );
 
     // COOP/COEP
     let coop_val = hdr(resp, "cross-origin-opener-policy");
     let coep_val = hdr(resp, "cross-origin-embedder-policy");
-    let coop_issues = crate::coop_coep_audit::analyze_coop_coep(coop_val.as_deref(), coep_val.as_deref());
-    collect_ops!(seq, fc, entries, coop_issues, crate::coop_coep_audit::coop_coep_to_operations);
+    let coop_issues =
+        crate::coop_coep_audit::analyze_coop_coep(coop_val.as_deref(), coep_val.as_deref());
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        coop_issues,
+        crate::coop_coep_audit::coop_coep_to_operations
+    );
 
     // CORP
     let corp_val = hdr(resp, "cross-origin-resource-policy");
     let corp_issues = crate::corp_audit::analyze_corp(corp_val.as_deref());
-    collect_ops!(seq, fc, entries, corp_issues, crate::corp_audit::corp_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        corp_issues,
+        crate::corp_audit::corp_to_operations
+    );
 
     // Content-Type + X-Content-Type-Options
     let nosniff = hdr(resp, "x-content-type-options");
     let ct = hdr(resp, "content-type");
-    let ctype_issues = crate::content_type_audit::analyze_content_type(nosniff.as_deref(), ct.as_deref());
-    collect_ops!(seq, fc, entries, ctype_issues, crate::content_type_audit::content_type_to_operations);
+    let ctype_issues =
+        crate::content_type_audit::analyze_content_type(nosniff.as_deref(), ct.as_deref());
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ctype_issues,
+        crate::content_type_audit::content_type_to_operations
+    );
 
     // Server-Timing
     let st_values = hdr_all(resp, "server-timing");
     let stiming_leaks = crate::server_timing_audit::analyze_server_timing(&st_values);
-    collect_ops!(seq, fc, entries, stiming_leaks, crate::server_timing_audit::server_timing_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        stiming_leaks,
+        crate::server_timing_audit::server_timing_to_operations
+    );
 
     // Deprecated headers
-    let dephdr_issues = crate::deprecated_header_audit::analyze_deprecated_headers(|name| resp.headers.get(name).is_some());
-    collect_ops!(seq, fc, entries, dephdr_issues, crate::deprecated_header_audit::deprecated_header_to_operations);
+    let dephdr_issues = crate::deprecated_header_audit::analyze_deprecated_headers(|name| {
+        resp.headers.get(name).is_some()
+    });
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dephdr_issues,
+        crate::deprecated_header_audit::deprecated_header_to_operations
+    );
 
     // Expose-Headers
     let expose_val = hdr(resp, "access-control-expose-headers");
     let exphdr_issues = crate::expose_headers_audit::analyze_expose_headers(expose_val.as_deref());
-    collect_ops!(seq, fc, entries, exphdr_issues, crate::expose_headers_audit::expose_headers_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        exphdr_issues,
+        crate::expose_headers_audit::expose_headers_to_operations
+    );
 
     // Referrer-Policy
     if let Some(ref_val) = hdr(resp, "referrer-policy") {
         let referrer_issues = crate::referrer_audit::analyze_referrer_policy(&ref_val);
-        collect_ops!(seq, fc, entries, referrer_issues, crate::referrer_audit::referrer_to_operations);
+        collect_ops!(
+            seq,
+            fc,
+            entries,
+            referrer_issues,
+            crate::referrer_audit::referrer_to_operations
+        );
     }
 
     // NEL + Report-To
     let nel_val = hdr(resp, "nel");
     let report_to_values = hdr_all(resp, "report-to");
     let nel_issues = crate::nel_audit::analyze_nel(nel_val.as_deref(), &report_to_values, domain);
-    collect_ops!(seq, fc, entries, nel_issues, crate::nel_audit::nel_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        nel_issues,
+        crate::nel_audit::nel_to_operations
+    );
 
     // Link headers
     let link_values = hdr_all(resp, "link");
     let linkhdr_issues = crate::link_header_audit::analyze_link_headers(&link_values, domain);
-    collect_ops!(seq, fc, entries, linkhdr_issues, crate::link_header_audit::link_header_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        linkhdr_issues,
+        crate::link_header_audit::link_header_to_operations
+    );
 
     // Reporting-Endpoints
     let repep_val = hdr(resp, "reporting-endpoints");
-    let repep_issues = crate::reporting_endpoints_audit::analyze_reporting_endpoints(repep_val.as_deref(), domain);
-    collect_ops!(seq, fc, entries, repep_issues, crate::reporting_endpoints_audit::reporting_endpoints_to_operations);
+    let repep_issues =
+        crate::reporting_endpoints_audit::analyze_reporting_endpoints(repep_val.as_deref(), domain);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        repep_issues,
+        crate::reporting_endpoints_audit::reporting_endpoints_to_operations
+    );
 
     // Timing-Allow-Origin
     let tao_values = hdr_all(resp, "timing-allow-origin");
     let tao_issues = crate::timing_allow_origin_audit::analyze_timing_allow_origin(&tao_values);
-    collect_ops!(seq, fc, entries, tao_issues, crate::timing_allow_origin_audit::timing_allow_origin_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        tao_issues,
+        crate::timing_allow_origin_audit::timing_allow_origin_to_operations
+    );
 
     // Clear-Site-Data
     let csd_val = hdr(resp, "clear-site-data");
-    let csd_issues = crate::clear_site_data_audit::analyze_clear_site_data(csd_val.as_deref(), resp.is_https);
-    collect_ops!(seq, fc, entries, csd_issues, crate::clear_site_data_audit::clear_site_data_to_operations);
+    let csd_issues =
+        crate::clear_site_data_audit::analyze_clear_site_data(csd_val.as_deref(), resp.is_https);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        csd_issues,
+        crate::clear_site_data_audit::clear_site_data_to_operations
+    );
 
     // SourceMap header
     let sm_val = hdr(resp, "sourcemap").or_else(|| hdr(resp, "x-sourcemap"));
     let smhdr_issues = crate::sourcemap_header_audit::analyze_sourcemap_header(sm_val.as_deref());
-    collect_ops!(seq, fc, entries, smhdr_issues, crate::sourcemap_header_audit::sourcemap_header_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        smhdr_issues,
+        crate::sourcemap_header_audit::sourcemap_header_to_operations
+    );
 
     // ETag
     let etag_val = hdr(resp, "etag");
     let etag_issues = crate::etag_audit::analyze_etag(etag_val.as_deref());
-    collect_ops!(seq, fc, entries, etag_issues, crate::etag_audit::etag_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        etag_issues,
+        crate::etag_audit::etag_to_operations
+    );
 
     // WWW-Authenticate
     let wwwauth_values = hdr_all(resp, "www-authenticate");
-    let wwwauth_issues = crate::www_authenticate_audit::analyze_www_authenticate(&wwwauth_values, resp.is_https);
-    collect_ops!(seq, fc, entries, wwwauth_issues, crate::www_authenticate_audit::www_authenticate_to_operations);
+    let wwwauth_issues =
+        crate::www_authenticate_audit::analyze_www_authenticate(&wwwauth_values, resp.is_https);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wwwauth_issues,
+        crate::www_authenticate_audit::www_authenticate_to_operations
+    );
 
     // Proxy headers
     let via_values = hdr_all(resp, "via");
@@ -192,18 +326,38 @@ fn run_header_analyzers(
                 .map(|v| (name.to_string(), v.to_string()))
         })
         .collect();
-    let proxyhdr_issues = crate::proxy_header_audit::analyze_proxy_headers(&via_values, has_age, &extra_proxy);
-    collect_ops!(seq, fc, entries, proxyhdr_issues, crate::proxy_header_audit::proxy_header_to_operations);
+    let proxyhdr_issues =
+        crate::proxy_header_audit::analyze_proxy_headers(&via_values, has_age, &extra_proxy);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        proxyhdr_issues,
+        crate::proxy_header_audit::proxy_header_to_operations
+    );
 
     // X-DNS-Prefetch-Control
     let dnspf_val = hdr(resp, "x-dns-prefetch-control");
-    let dnspf_issues = crate::dns_prefetch_control_audit::analyze_dns_prefetch_control(dnspf_val.as_deref());
-    collect_ops!(seq, fc, entries, dnspf_issues, crate::dns_prefetch_control_audit::dns_prefetch_control_to_operations);
+    let dnspf_issues =
+        crate::dns_prefetch_control_audit::analyze_dns_prefetch_control(dnspf_val.as_deref());
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dnspf_issues,
+        crate::dns_prefetch_control_audit::dns_prefetch_control_to_operations
+    );
 
     // Set-Cookie
     let set_cookies = hdr_all(resp, "set-cookie");
     let cookie_findings = crate::cookie_audit::analyze_set_cookies(&set_cookies);
-    collect_ops!(seq, fc, entries, cookie_findings, crate::cookie_audit::cookie_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cookie_findings,
+        crate::cookie_audit::cookie_findings_to_operations
+    );
 }
 
 fn run_body_analyzers(
@@ -217,67 +371,163 @@ fn run_body_analyzers(
 
     // JS library detection
     let jslib_findings = crate::js_library_scanner::detect_libraries(body);
-    collect_ops!(seq, fc, entries, jslib_findings, crate::js_library_scanner::js_library_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        jslib_findings,
+        crate::js_library_scanner::js_library_findings_to_operations
+    );
 
     // SRI
     let sri_issues = crate::sri_checker::find_missing_sri(body);
-    collect_ops!(seq, fc, entries, sri_issues, crate::sri_checker::sri_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sri_issues,
+        crate::sri_checker::sri_findings_to_operations
+    );
 
     // Mixed content
     let mc_issues = crate::mixed_content::find_mixed_content(body);
-    collect_ops!(seq, fc, entries, mc_issues, crate::mixed_content::mixed_content_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        mc_issues,
+        crate::mixed_content::mixed_content_to_operations
+    );
 
     // Forms
     let form_findings = crate::form_audit::analyze_forms(body);
-    collect_ops!(seq, fc, entries, form_findings, crate::form_audit::form_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        form_findings,
+        crate::form_audit::form_findings_to_operations
+    );
 
     // Comment leaks
     let comment_leaks = crate::comment_leak::find_comment_leaks(body);
-    collect_ops!(seq, fc, entries, comment_leaks, crate::comment_leak::comment_leak_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        comment_leaks,
+        crate::comment_leak::comment_leak_to_operations
+    );
 
     // Sourcemap references in HTML
     let smap_leaks = crate::sourcemap_detector::find_sourcemap_references(body, domain);
-    collect_ops!(seq, fc, entries, smap_leaks, crate::sourcemap_detector::sourcemap_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        smap_leaks,
+        crate::sourcemap_detector::sourcemap_to_operations
+    );
 
     // Meta tags
     let meta_issues = crate::meta_tag_audit::analyze_meta_tags(body);
-    collect_ops!(seq, fc, entries, meta_issues, crate::meta_tag_audit::meta_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        meta_issues,
+        crate::meta_tag_audit::meta_findings_to_operations
+    );
 
     // Iframes
     let iframe_findings = crate::iframe_audit::analyze_iframes(body);
-    collect_ops!(seq, fc, entries, iframe_findings, crate::iframe_audit::iframe_findings_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        iframe_findings,
+        crate::iframe_audit::iframe_findings_to_operations
+    );
 
     // Base tags
     let base_findings = crate::base_tag_audit::analyze_base_tags(body, domain);
-    collect_ops!(seq, fc, entries, base_findings, crate::base_tag_audit::base_tag_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        base_findings,
+        crate::base_tag_audit::base_tag_to_operations
+    );
 
     // Opener issues
     let opener_issues = crate::opener_audit::find_opener_issues(body);
-    collect_ops!(seq, fc, entries, opener_issues, crate::opener_audit::opener_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        opener_issues,
+        crate::opener_audit::opener_to_operations
+    );
 
     // Inline event handlers
     let handler_issues = crate::inline_handler_audit::find_inline_handlers(body);
-    collect_ops!(seq, fc, entries, handler_issues, crate::inline_handler_audit::inline_handler_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        handler_issues,
+        crate::inline_handler_audit::inline_handler_to_operations
+    );
 
     // Dangerous JS patterns
     let djs_issues = crate::dangerous_js_audit::find_dangerous_js(body);
-    collect_ops!(seq, fc, entries, djs_issues, crate::dangerous_js_audit::dangerous_js_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        djs_issues,
+        crate::dangerous_js_audit::dangerous_js_to_operations
+    );
 
     // Preconnect audit
     let precon_issues = crate::preconnect_audit::analyze_preconnects(body);
-    collect_ops!(seq, fc, entries, precon_issues, crate::preconnect_audit::preconnect_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        precon_issues,
+        crate::preconnect_audit::preconnect_to_operations
+    );
 
     // document.domain
     let docdomain_issues = crate::document_domain_audit::find_document_domain(body);
-    collect_ops!(seq, fc, entries, docdomain_issues, crate::document_domain_audit::document_domain_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        docdomain_issues,
+        crate::document_domain_audit::document_domain_to_operations
+    );
 
     // JSONP endpoints
     let jsonp_issues = crate::jsonp_audit::find_jsonp_endpoints(body);
-    collect_ops!(seq, fc, entries, jsonp_issues, crate::jsonp_audit::jsonp_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        jsonp_issues,
+        crate::jsonp_audit::jsonp_to_operations
+    );
 
     // Hidden input audit
     let hidinput_issues = crate::hidden_input_audit::find_hidden_input_issues(body);
-    collect_ops!(seq, fc, entries, hidinput_issues, crate::hidden_input_audit::hidden_input_to_operations);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        hidinput_issues,
+        crate::hidden_input_audit::hidden_input_to_operations
+    );
 
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
@@ -352,16 +602,17 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let sectxt_handle =
         std::thread::spawn(move || crate::security_txt::fetch_security_txt(&sectxt_target));
     let errpage_target = ctx.config.target.clone();
-    let errpage_handle = std::thread::spawn(move || {
-        crate::error_page_audit::audit_error_pages(&errpage_target)
-    });
+    let errpage_handle =
+        std::thread::spawn(move || crate::error_page_audit::audit_error_pages(&errpage_target));
     let hosthdr_target = ctx.config.target.clone();
-    let hosthdr_handle = std::thread::spawn(move || {
-        crate::host_header_audit::audit_host_header(&hosthdr_target)
-    });
+    let hosthdr_handle =
+        std::thread::spawn(move || crate::host_header_audit::audit_host_header(&hosthdr_target));
     let crlf_target = ctx.config.target.clone();
-    let crlf_handle = std::thread::spawn(move || {
-        crate::crlf_injection_audit::audit_crlf(&crlf_target)
+    let crlf_handle =
+        std::thread::spawn(move || crate::crlf_injection_audit::audit_crlf(&crlf_target));
+    let sensfile_target = ctx.config.target.clone();
+    let sensfile_handle = std::thread::spawn(move || {
+        crate::sensitive_file_audit::audit_sensitive_files(&sensfile_target)
     });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
@@ -560,10 +811,15 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(hosthdr_ops);
 
     let crlf_issues = crlf_handle.join().unwrap_or_default();
-    let crlf_ops =
-        crate::crlf_injection_audit::crlf_to_operations(&crlf_issues, &mut sequence);
+    let crlf_ops = crate::crlf_injection_audit::crlf_to_operations(&crlf_issues, &mut sequence);
     findings_count += crlf_ops.len() as u64;
     entries.extend(crlf_ops);
+
+    let sensfile_issues = sensfile_handle.join().unwrap_or_default();
+    let sensfile_ops =
+        crate::sensitive_file_audit::sensitive_file_to_operations(&sensfile_issues, &mut sequence);
+    findings_count += sensfile_ops.len() as u64;
+    entries.extend(sensfile_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

@@ -1,6 +1,4 @@
-use crate::sourcemap_header_audit::{
-    analyze_sourcemap_header, sourcemap_header_to_operations,
-};
+use crate::sourcemap_header_audit::{analyze_sourcemap_header, sourcemap_header_to_operations};
 
 #[test]
 fn no_header_no_issues() {

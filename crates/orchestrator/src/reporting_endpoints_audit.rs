@@ -62,7 +62,10 @@ pub(crate) fn analyze_reporting_endpoints(
         if url.starts_with("http://") {
             issues.push(ReportingEndpointIssue {
                 kind: ReportingEndpointIssueKind::HttpEndpoint,
-                detail: format!("Report endpoint uses HTTP: {}", recon_client::truncate(&url, 60)),
+                detail: format!(
+                    "Report endpoint uses HTTP: {}",
+                    recon_client::truncate(&url, 60)
+                ),
                 severity: 5.0,
             });
         }
@@ -72,7 +75,10 @@ pub(crate) fn analyze_reporting_endpoints(
         {
             issues.push(ReportingEndpointIssue {
                 kind: ReportingEndpointIssueKind::ExternalCollector,
-                detail: format!("Reports sent to external collector: {}", recon_client::truncate(&url, 60)),
+                detail: format!(
+                    "Reports sent to external collector: {}",
+                    recon_client::truncate(&url, 60)
+                ),
                 severity: 3.5,
             });
         }
@@ -99,10 +105,7 @@ pub fn reporting_endpoints_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

@@ -20,11 +20,7 @@ pub struct ProxyHeaderIssue {
 
 const PROXY_HEADERS: &[(&str, ProxyHeaderIssueKind, f64)] = &[
     ("x-cache", ProxyHeaderIssueKind::XCacheHit, 2.0),
-    (
-        "x-forwarded-for",
-        ProxyHeaderIssueKind::XForwardedFor,
-        3.0,
-    ),
+    ("x-forwarded-for", ProxyHeaderIssueKind::XForwardedFor, 3.0),
 ];
 
 pub fn audit_proxy_headers(target: &str) -> Vec<ProxyHeaderIssue> {
@@ -71,7 +67,10 @@ pub(crate) fn analyze_proxy_headers(
     for via in via_values {
         issues.push(ProxyHeaderIssue {
             kind: ProxyHeaderIssueKind::ViaProxyLeak,
-            detail: format!("Via header reveals proxy chain: {}", recon_client::truncate(via, 80)),
+            detail: format!(
+                "Via header reveals proxy chain: {}",
+                recon_client::truncate(via, 80)
+            ),
             severity: 3.0,
         });
     }
@@ -113,10 +112,7 @@ pub fn proxy_header_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

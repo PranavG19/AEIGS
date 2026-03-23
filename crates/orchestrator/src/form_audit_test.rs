@@ -1,4 +1,4 @@
-use crate::form_audit::{analyze_forms, form_findings_to_operations, FormFinding, FormIssue};
+use crate::form_audit::{FormFinding, FormIssue, analyze_forms, form_findings_to_operations};
 
 #[test]
 fn detects_insecure_form_action() {
@@ -122,7 +122,10 @@ fn operations_produced_for_csrf() {
 #[test]
 fn display_issue_variants() {
     assert_eq!(FormIssue::InsecureAction.to_string(), "insecure_action");
-    assert_eq!(FormIssue::MissingCsrfToken.to_string(), "missing_csrf_token");
+    assert_eq!(
+        FormIssue::MissingCsrfToken.to_string(),
+        "missing_csrf_token"
+    );
     assert_eq!(
         FormIssue::AutocompleteOnSensitive.to_string(),
         "autocomplete_on_sensitive"

@@ -1,6 +1,4 @@
-use crate::dangerous_js_audit::{
-    dangerous_js_to_operations, find_dangerous_js, DangerousJsIssue,
-};
+use crate::dangerous_js_audit::{DangerousJsIssue, dangerous_js_to_operations, find_dangerous_js};
 
 #[test]
 fn detects_eval() {

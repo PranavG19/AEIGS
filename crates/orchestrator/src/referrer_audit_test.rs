@@ -1,6 +1,4 @@
-use crate::referrer_audit::{
-    ReferrerIssueKind, analyze_referrer_policy, referrer_to_operations,
-};
+use crate::referrer_audit::{ReferrerIssueKind, analyze_referrer_policy, referrer_to_operations};
 
 #[test]
 fn safe_strict_origin() {
@@ -37,28 +35,36 @@ fn unsafe_url_detected() {
 #[test]
 fn no_referrer_when_downgrade_detected() {
     let issues = analyze_referrer_policy("no-referrer-when-downgrade");
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy)
+    );
 }
 
 #[test]
 fn origin_when_cross_origin_detected() {
     let issues = analyze_referrer_policy("origin-when-cross-origin");
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy)
+    );
 }
 
 #[test]
 fn multiple_policies_flagged() {
     let issues = analyze_referrer_policy("no-referrer, unsafe-url");
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ReferrerIssueKind::MultiplePolicies));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ReferrerIssueKind::MultiplePolicies)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ReferrerIssueKind::UnsafePolicy)
+    );
 }
 
 #[test]

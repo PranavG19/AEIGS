@@ -64,8 +64,7 @@ pub(crate) fn analyze_preconnects(html: &str) -> Vec<PreconnectIssue> {
 
         preconnect_count += 1;
 
-        let href = extract_attr(tag.original, &tag.lower, "href")
-            .unwrap_or_default();
+        let href = extract_attr(tag.original, &tag.lower, "href").unwrap_or_default();
         if href.is_empty() {
             continue;
         }
@@ -78,10 +77,7 @@ pub(crate) fn analyze_preconnects(html: &str) -> Vec<PreconnectIssue> {
             });
         }
 
-        if is_preconnect
-            && href.starts_with("http")
-            && !tag.lower.contains("crossorigin")
-        {
+        if is_preconnect && href.starts_with("http") && !tag.lower.contains("crossorigin") {
             issues.push(PreconnectIssue {
                 href,
                 rel,

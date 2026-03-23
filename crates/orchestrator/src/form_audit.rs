@@ -65,7 +65,9 @@ pub(crate) fn analyze_forms(html: &str) -> Vec<FormFinding> {
         let Some(tag_end) = lower[abs_start..].find('>') else {
             break;
         };
-        let form_end = lower[abs_start..].find("</form>").unwrap_or(lower.len() - abs_start);
+        let form_end = lower[abs_start..]
+            .find("</form>")
+            .unwrap_or(lower.len() - abs_start);
         let form_tag = &lower[abs_start..abs_start + tag_end + 1];
         let form_body = &lower[abs_start..abs_start + form_end];
         search_from = abs_start + form_end.max(tag_end + 1);
@@ -100,9 +102,7 @@ pub(crate) fn analyze_forms(html: &str) -> Vec<FormFinding> {
 }
 
 fn has_csrf_token(form_body: &str) -> bool {
-    CSRF_TOKEN_NAMES
-        .iter()
-        .any(|name| form_body.contains(name))
+    CSRF_TOKEN_NAMES.iter().any(|name| form_body.contains(name))
 }
 
 const SENSITIVE_TYPES: &[&str] = &["password", "credit", "card", "ssn", "social"];
@@ -125,9 +125,7 @@ pub fn form_findings_to_operations(
         .map(|f| {
             let (vuln_class, severity) = match f.issue {
                 FormIssue::InsecureAction => (VulnerabilityClass::SecurityMisconfiguration, 5.0),
-                FormIssue::MissingCsrfToken => {
-                    (VulnerabilityClass::SecurityMisconfiguration, 6.0)
-                }
+                FormIssue::MissingCsrfToken => (VulnerabilityClass::SecurityMisconfiguration, 6.0),
                 FormIssue::AutocompleteOnSensitive => {
                     (VulnerabilityClass::SecurityMisconfiguration, 3.0)
                 }

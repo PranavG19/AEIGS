@@ -60,7 +60,10 @@ pub(crate) fn analyze_clear_site_data(
     }
 
     let lower = val.to_ascii_lowercase();
-    let directives: Vec<&str> = lower.split(',').map(|s| s.trim().trim_matches('"')).collect();
+    let directives: Vec<&str> = lower
+        .split(',')
+        .map(|s| s.trim().trim_matches('"'))
+        .collect();
 
     if directives.contains(&"*") {
         issues.push(ClearSiteDataIssue {
@@ -106,10 +109,7 @@ pub fn clear_site_data_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

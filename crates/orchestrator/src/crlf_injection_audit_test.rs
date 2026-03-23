@@ -14,10 +14,7 @@ fn analyze_no_injection() {
 fn analyze_header_injection_detected() {
     let headers = vec![
         ("content-type".to_string(), "text/html".to_string()),
-        (
-            "x-aegis-crlf-test".to_string(),
-            "canary123".to_string(),
-        ),
+        ("x-aegis-crlf-test".to_string(), "canary123".to_string()),
     ];
     let result = analyze_crlf_response(&headers, "", "redirect");
     assert_eq!(
@@ -43,10 +40,7 @@ fn analyze_response_splitting_detected() {
 
 #[test]
 fn analyze_header_injection_takes_priority() {
-    let headers = vec![(
-        "x-aegis-crlf-test".to_string(),
-        "canary123".to_string(),
-    )];
+    let headers = vec![("x-aegis-crlf-test".to_string(), "canary123".to_string())];
     let body = "X-Aegis-Crlf-Test:canary123";
     let result = analyze_crlf_response(&headers, body, "q");
     assert!(matches!(result, Some(CrlfIssue::HeaderInjection { .. })));
@@ -117,10 +111,7 @@ fn audit_crlf_skips_loopback() {
 
 #[test]
 fn analyze_case_insensitive_header_name() {
-    let headers = vec![(
-        "X-AEGIS-CRLF-TEST".to_string(),
-        "canary123".to_string(),
-    )];
+    let headers = vec![("X-AEGIS-CRLF-TEST".to_string(), "canary123".to_string())];
     let result = analyze_crlf_response(&headers, "", "q");
     assert!(matches!(result, Some(CrlfIssue::HeaderInjection { .. })));
 }

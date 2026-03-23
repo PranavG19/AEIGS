@@ -26,10 +26,9 @@ pub fn audit_expose_headers(target: &str) -> Vec<ExposedHeaderIssue> {
     if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-    let Some(client) = recon_client::build_client_limited_redirect(
-        std::time::Duration::from_secs(10),
-        3,
-    ) else {
+    let Some(client) =
+        recon_client::build_client_limited_redirect(std::time::Duration::from_secs(10), 3)
+    else {
         return Vec::new();
     };
     let resp = match client
@@ -87,10 +86,7 @@ pub fn expose_headers_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

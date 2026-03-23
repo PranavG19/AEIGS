@@ -65,7 +65,10 @@ pub(crate) fn analyze_etag(value: Option<&str>) -> Vec<EtagIssue> {
     if etag.len() > 64 {
         issues.push(EtagIssue {
             kind: EtagIssueKind::LongEtag,
-            detail: format!("Unusually long ETag ({} chars) may leak internal state", etag.len()),
+            detail: format!(
+                "Unusually long ETag ({} chars) may leak internal state",
+                etag.len()
+            ),
             severity: 2.5,
         });
     }
@@ -83,18 +86,12 @@ fn is_apache_inode_etag(etag: &str) -> bool {
         .all(|p| !p.is_empty() && p.len() <= 16 && p.chars().all(|c| c.is_ascii_hexdigit()))
 }
 
-pub fn etag_to_operations(
-    issues: &[EtagIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn etag_to_operations(issues: &[EtagIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

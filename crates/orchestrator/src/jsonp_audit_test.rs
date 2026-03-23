@@ -1,4 +1,4 @@
-use crate::jsonp_audit::{find_jsonp_endpoints, jsonp_to_operations, JsonpIssueKind};
+use crate::jsonp_audit::{JsonpIssueKind, find_jsonp_endpoints, jsonp_to_operations};
 
 #[test]
 fn no_scripts_no_issues() {
@@ -18,27 +18,33 @@ fn callback_param_detected() {
 fn jsonp_param_detected() {
     let html = r#"<script src="/api/feed?jsonp=cb123"></script>"#;
     let issues = find_jsonp_endpoints(html);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == JsonpIssueKind::CallbackParam));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == JsonpIssueKind::CallbackParam)
+    );
 }
 
 #[test]
 fn cb_param_detected() {
     let html = r#"<script src="/api/v1?cb=myFunc"></script>"#;
     let issues = find_jsonp_endpoints(html);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == JsonpIssueKind::CallbackParam));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == JsonpIssueKind::CallbackParam)
+    );
 }
 
 #[test]
 fn jsonp_endpoint_path() {
     let html = r#"<script src="/api/data.jsonp"></script>"#;
     let issues = find_jsonp_endpoints(html);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == JsonpIssueKind::JsonpEndpoint));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == JsonpIssueKind::JsonpEndpoint)
+    );
 }
 
 #[test]

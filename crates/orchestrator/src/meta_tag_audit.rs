@@ -74,10 +74,7 @@ pub(crate) fn analyze_meta_tags(html: &str) -> Vec<MetaIssue> {
     issues
 }
 
-pub fn meta_findings_to_operations(
-    issues: &[MetaIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn meta_findings_to_operations(issues: &[MetaIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }

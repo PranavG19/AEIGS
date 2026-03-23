@@ -1,5 +1,5 @@
 use crate::proxy_header_audit::{
-    analyze_proxy_headers, proxy_header_to_operations, ProxyHeaderIssueKind,
+    ProxyHeaderIssueKind, analyze_proxy_headers, proxy_header_to_operations,
 };
 
 #[test]
@@ -12,26 +12,32 @@ fn no_headers_no_issues() {
 fn via_header_detected() {
     let via = vec!["1.1 varnish, 1.1 nginx".to_string()];
     let issues = analyze_proxy_headers(&via, false, &[]);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::ViaProxyLeak));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::ViaProxyLeak)
+    );
 }
 
 #[test]
 fn age_header_detected() {
     let issues = analyze_proxy_headers(&[], true, &[]);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::AgePresent));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::AgePresent)
+    );
 }
 
 #[test]
 fn x_cache_detected() {
     let extra = vec![("x-cache".to_string(), "HIT".to_string())];
     let issues = analyze_proxy_headers(&[], false, &extra);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::XCacheHit));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::XCacheHit)
+    );
 }
 
 #[test]
@@ -41,17 +47,16 @@ fn x_forwarded_for_detected() {
         "10.0.0.1, 192.168.1.1".to_string(),
     )];
     let issues = analyze_proxy_headers(&[], false, &extra);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::XForwardedFor));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::XForwardedFor)
+    );
 }
 
 #[test]
 fn multiple_via_values() {
-    let via = vec![
-        "1.1 proxy1".to_string(),
-        "1.0 proxy2".to_string(),
-    ];
+    let via = vec!["1.1 proxy1".to_string(), "1.0 proxy2".to_string()];
     let issues = analyze_proxy_headers(&via, false, &[]);
     assert_eq!(
         issues
@@ -67,15 +72,21 @@ fn combined_headers() {
     let via = vec!["1.1 squid".to_string()];
     let extra = vec![("x-cache".to_string(), "MISS".to_string())];
     let issues = analyze_proxy_headers(&via, true, &extra);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::ViaProxyLeak));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::AgePresent));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == ProxyHeaderIssueKind::XCacheHit));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::ViaProxyLeak)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::AgePresent)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == ProxyHeaderIssueKind::XCacheHit)
+    );
 }
 
 #[test]

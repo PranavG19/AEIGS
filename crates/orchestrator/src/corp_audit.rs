@@ -21,7 +21,10 @@ impl std::fmt::Display for CorpIssueKind {
         match self {
             Self::Missing => write!(f, "missing Cross-Origin-Resource-Policy header"),
             Self::CrossOrigin => {
-                write!(f, "CORP set to cross-origin allows any site to load resources")
+                write!(
+                    f,
+                    "CORP set to cross-origin allows any site to load resources"
+                )
             }
             Self::InvalidValue => write!(f, "unrecognized CORP header value"),
         }
@@ -71,18 +74,12 @@ pub(crate) fn analyze_corp(value: Option<&str>) -> Vec<CorpIssue> {
     }
 }
 
-pub fn corp_to_operations(
-    issues: &[CorpIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn corp_to_operations(issues: &[CorpIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

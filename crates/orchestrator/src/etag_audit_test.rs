@@ -1,4 +1,4 @@
-use crate::etag_audit::{analyze_etag, etag_to_operations, EtagIssueKind};
+use crate::etag_audit::{EtagIssueKind, analyze_etag, etag_to_operations};
 
 #[test]
 fn no_header_no_issues() {

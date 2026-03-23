@@ -1,5 +1,5 @@
 use crate::www_authenticate_audit::{
-    analyze_www_authenticate, www_authenticate_to_operations, WwwAuthIssueKind,
+    WwwAuthIssueKind, analyze_www_authenticate, www_authenticate_to_operations,
 };
 
 #[test]
@@ -32,50 +32,46 @@ fn basic_over_https_lower_severity() {
 
 #[test]
 fn digest_without_qop_flagged() {
-    let vals =
-        vec!["Digest realm=\"test\", nonce=\"abc123\", algorithm=MD5".to_string()];
+    let vals = vec!["Digest realm=\"test\", nonce=\"abc123\", algorithm=MD5".to_string()];
     let issues = analyze_www_authenticate(&vals, true);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop)
+    );
 }
 
 #[test]
 fn digest_with_qop_ok() {
-    let vals = vec![
-        "Digest realm=\"test\", nonce=\"abc\", qop=\"auth\", algorithm=MD5".to_string(),
-    ];
+    let vals =
+        vec!["Digest realm=\"test\", nonce=\"abc\", qop=\"auth\", algorithm=MD5".to_string()];
     let issues = analyze_www_authenticate(&vals, true);
-    assert!(!issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop)
+    );
 }
 
 #[test]
 fn realm_with_admin_leaks_info() {
     let vals = vec!["Basic realm=\"Admin Panel\"".to_string()];
     let issues = analyze_www_authenticate(&vals, true);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
+    assert!(issues.iter().any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
 }
 
 #[test]
 fn realm_with_staging_leaks_info() {
     let vals = vec!["Basic realm=\"staging-api\"".to_string()];
     let issues = analyze_www_authenticate(&vals, true);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
+    assert!(issues.iter().any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
 }
 
 #[test]
 fn generic_realm_ok() {
     let vals = vec!["Basic realm=\"Restricted\"".to_string()];
     let issues = analyze_www_authenticate(&vals, true);
-    assert!(!issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
+    assert!(!issues.iter().any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
 }
 
 #[test]
@@ -92,15 +88,13 @@ fn multiple_challenges() {
         "Digest realm=\"api\", nonce=\"xyz\"".to_string(),
     ];
     let issues = analyze_www_authenticate(&vals, false);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::BasicAuth));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop));
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
+    assert!(issues.iter().any(|i| i.kind == WwwAuthIssueKind::BasicAuth));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == WwwAuthIssueKind::DigestWithoutQop)
+    );
+    assert!(issues.iter().any(|i| i.kind == WwwAuthIssueKind::RealmLeak));
 }
 
 #[test]

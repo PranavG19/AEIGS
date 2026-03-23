@@ -40,10 +40,7 @@ pub fn audit_www_authenticate(target: &str) -> Vec<WwwAuthIssue> {
     analyze_www_authenticate(&values, is_https)
 }
 
-pub(crate) fn analyze_www_authenticate(
-    values: &[String],
-    is_https: bool,
-) -> Vec<WwwAuthIssue> {
+pub(crate) fn analyze_www_authenticate(values: &[String], is_https: bool) -> Vec<WwwAuthIssue> {
     let mut issues = Vec::new();
 
     for val in values {
@@ -100,9 +97,7 @@ fn extract_realm(value: &str) -> Option<String> {
         let end = quoted.find('"').unwrap_or(quoted.len());
         Some(quoted[..end].to_string())
     } else {
-        let end = after
-            .find([',', ' ', ';'])
-            .unwrap_or(after.len());
+        let end = after.find([',', ' ', ';']).unwrap_or(after.len());
         Some(after[..end].to_string())
     }
 }
@@ -115,10 +110,7 @@ pub fn www_authenticate_to_operations(
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

@@ -45,7 +45,11 @@ pub fn audit_nel(target: &str) -> Vec<NelIssue> {
         .collect();
 
     let target_domain = recon_client::validated_domain(target);
-    analyze_nel(nel_value.as_deref(), &report_to_values, target_domain.as_deref())
+    analyze_nel(
+        nel_value.as_deref(),
+        &report_to_values,
+        target_domain.as_deref(),
+    )
 }
 
 pub(crate) fn analyze_nel(
@@ -84,7 +88,9 @@ fn check_report_to(value: &str, target_domain: Option<&str>) -> Vec<NelIssue> {
     let mut issues = Vec::new();
     let lower = value.to_ascii_lowercase();
 
-    if !issues.iter().any(|i: &NelIssue| i.kind == NelIssueKind::ReportToPresent)
+    if !issues
+        .iter()
+        .any(|i: &NelIssue| i.kind == NelIssueKind::ReportToPresent)
         && lower.contains("\"endpoints\"")
     {
         issues.push(NelIssue {
@@ -98,7 +104,10 @@ fn check_report_to(value: &str, target_domain: Option<&str>) -> Vec<NelIssue> {
         if url.starts_with("http://") {
             issues.push(NelIssue {
                 kind: NelIssueKind::HttpReportEndpoint,
-                detail: format!("Report endpoint uses HTTP (not HTTPS): {}", recon_client::truncate(&url, 80)),
+                detail: format!(
+                    "Report endpoint uses HTTP (not HTTPS): {}",
+                    recon_client::truncate(&url, 80)
+                ),
                 severity: 5.0,
             });
         }
@@ -153,18 +162,12 @@ fn extract_json_f64(json_like: &str, key: &str) -> Option<f64> {
     after_colon[..end].parse().ok()
 }
 
-pub fn nel_to_operations(
-    issues: &[NelIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn nel_to_operations(issues: &[NelIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     if issues.is_empty() {
         return Vec::new();
     }
 
-    let max_severity = issues
-        .iter()
-        .map(|i| i.severity)
-        .fold(0.0_f64, f64::max);
+    let max_severity = issues.iter().map(|i| i.severity).fold(0.0_f64, f64::max);
 
     vec![recon_client::finding_entry(
         seq,

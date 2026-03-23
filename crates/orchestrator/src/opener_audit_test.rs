@@ -1,4 +1,4 @@
-use crate::opener_audit::{find_opener_issues, opener_to_operations, OpenerIssue};
+use crate::opener_audit::{OpenerIssue, find_opener_issues, opener_to_operations};
 
 #[test]
 fn detects_blank_link_without_noopener() {

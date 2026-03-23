@@ -49,17 +49,21 @@ fn invalid_value_flagged() {
 #[test]
 fn multiple_headers_flagged() {
     let issues = analyze_xfo(&["DENY".to_string(), "SAMEORIGIN".to_string()]);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == XfoIssueKind::MultipleHeaders));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == XfoIssueKind::MultipleHeaders)
+    );
 }
 
 #[test]
 fn multiple_with_bad_value() {
     let issues = analyze_xfo(&["DENY".to_string(), "ALLOWALL".to_string()]);
-    assert!(issues
-        .iter()
-        .any(|i| i.kind == XfoIssueKind::MultipleHeaders));
+    assert!(
+        issues
+            .iter()
+            .any(|i| i.kind == XfoIssueKind::MultipleHeaders)
+    );
     assert!(issues.iter().any(|i| i.kind == XfoIssueKind::AllowAll));
 }
 
