@@ -846,6 +846,16 @@ fn run_body_analyzers(
         crate::webhid_audit::webhid_to_operations
     );
 
+    // Web Serial API audit
+    let serial_issues = crate::web_serial_audit::analyze_web_serial(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        serial_issues,
+        crate::web_serial_audit::web_serial_to_operations
+    );
+
     // File System Access API audit
     let fsa_issues = crate::file_system_access_audit::analyze_file_system_access(body);
     collect_ops!(
