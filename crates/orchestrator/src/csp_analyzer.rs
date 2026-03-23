@@ -46,7 +46,11 @@ pub fn analyze_csp(target: &str) -> Vec<CspIssue> {
         .get("content-security-policy")
         .and_then(|v| v.to_str().ok());
 
-    match csp {
+    analyze_csp_header(csp)
+}
+
+pub(crate) fn analyze_csp_header(value: Option<&str>) -> Vec<CspIssue> {
+    match value {
         None => vec![CspIssue::Missing],
         Some(policy) => parse_csp_issues(policy),
     }

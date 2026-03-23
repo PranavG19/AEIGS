@@ -29,7 +29,10 @@ pub fn audit_security_headers(target: &str) -> Vec<MissingHeader> {
         Err(_) => return Vec::new(),
     };
 
-    let headers = resp.headers();
+    check_missing_headers(resp.headers())
+}
+
+pub(crate) fn check_missing_headers(headers: &reqwest::header::HeaderMap) -> Vec<MissingHeader> {
     SECURITY_HEADERS
         .iter()
         .filter(|(name, _)| headers.get(*name).is_none())

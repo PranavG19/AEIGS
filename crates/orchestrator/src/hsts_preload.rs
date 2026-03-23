@@ -47,9 +47,13 @@ pub fn check_hsts_preload(target: &str) -> Vec<HstsIssue> {
         .get("strict-transport-security")
         .and_then(|v| v.to_str().ok());
 
-    match hsts {
+    analyze_hsts_header(hsts)
+}
+
+pub(crate) fn analyze_hsts_header(value: Option<&str>) -> Vec<HstsIssue> {
+    match value {
         None => vec![HstsIssue::Missing],
-        Some(value) => parse_hsts_issues(value),
+        Some(v) => parse_hsts_issues(v),
     }
 }
 

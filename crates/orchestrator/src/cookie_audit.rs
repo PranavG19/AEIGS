@@ -48,7 +48,11 @@ pub fn audit_cookies(target: &str) -> Vec<InsecureCookie> {
         .map(|s| s.to_string())
         .collect();
 
-    set_cookies
+    analyze_set_cookies(&set_cookies)
+}
+
+pub(crate) fn analyze_set_cookies(set_cookie_values: &[String]) -> Vec<InsecureCookie> {
+    set_cookie_values
         .iter()
         .filter_map(|sc| parse_cookie_issues(sc))
         .collect()

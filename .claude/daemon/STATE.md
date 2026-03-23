@@ -1,31 +1,28 @@
 # DAEMON STATE
 
 ## current
-priority: P9 (SIMPLIFY_PASS)
-task: consolidate duplicated code across recon scanners
-status: in-progress
+priority: P10 (ORCHESTRATION_CONSOLIDATION)
+task: fetch-once pattern in phase_recon.rs
+status: DONE — committing
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1708 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1720 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P6: CLEAR — P7: BLOCKED (Docker not running)
-- P8: 46 features shipped — CLEAR for now
-- P9: IN PROGRESS
+- P8: 46 features shipped — CLEAR
+- P9: COMPLETE (helper consolidation + bugfixes)
+- P10: COMPLETE
 
-## P9-progress
-- [x] Consolidate truncate/is_external/extract_host into recon_client.rs (5 modules updated)
-- [x] Cache truncated value in jsonp_audit loop (efficiency fix)
-- [ ] scan_config.rs has duplicate extract_host() — consolidate next
-- [ ] base_tag_audit.rs has is_external_href() — review if recon_client::is_external works
+## P10-progress
+- [x] Extract pure analysis functions from 5 modules (header_audit, csp_analyzer, hsts_preload, cookie_audit, tech_detector)
+- [x] Add SharedResponse struct, fetch_shared_response(), hdr()/hdr_all() helpers
+- [x] Add collect_ops! macro for DRY operation collection
+- [x] Implement run_header_analyzers() — 25 header analyzers from shared response
+- [x] Implement run_body_analyzers() — 17 body analyzers from shared response
+- [x] Rewrite run_recon() — 1 shared fetch + ~20 separate threads (down from ~55)
+- [x] All 1720 tests pass, 0 clippy warnings
 
 ## handoff
-NEXT STEPS (in order):
-1. P9: Consolidate scan_config.rs extract_host → recon_client::extract_host
-2. P9: Review base_tag_audit.rs is_external_href for consolidation
-3. P9: Scan remaining modules for other duplicated patterns
-4. P10 (orchestration consolidation — fetch-once, scanner dispatch)
-5. P11 (90%+ test coverage per file)
-6. P12 (security hardening)
-7. P13 (architecture — Phase trait)
+P10 COMPLETE. NEXT: P11 (test coverage gaps per file)
