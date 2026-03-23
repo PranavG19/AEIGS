@@ -60,6 +60,7 @@ pub mod hsts_preload;
 pub(crate) mod html_parser;
 pub mod http_version;
 pub mod hypothesis_bridge;
+pub mod idle_detection_audit;
 pub mod idor_analyzer;
 pub mod iframe_audit;
 pub mod info_disclosure;
@@ -200,6 +201,7 @@ pub use hidden_input_audit::*;
 pub use hsts_preload::*;
 pub use http_version::*;
 pub use hypothesis_bridge::*;
+pub use idle_detection_audit::*;
 pub use idor_analyzer::*;
 pub use iframe_audit::*;
 pub use info_disclosure::*;
@@ -387,6 +389,10 @@ mod distributed_transport_test;
 #[cfg(test)]
 #[path = "hypothesis_bridge_test.rs"]
 mod hypothesis_bridge_test;
+
+#[cfg(test)]
+#[path = "idle_detection_audit_test.rs"]
+mod idle_detection_audit_test;
 
 #[cfg(test)]
 #[path = "idor_analyzer_test.rs"]
