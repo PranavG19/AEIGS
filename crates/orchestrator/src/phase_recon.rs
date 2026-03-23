@@ -618,6 +618,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let protopoll_handle = std::thread::spawn(move || {
         crate::prototype_pollution_audit::audit_prototype_pollution(&protopoll_target)
     });
+    let cors_pf_target = ctx.config.target.clone();
+    let cors_pf_handle = std::thread::spawn(move || {
+        crate::cors_preflight_audit::audit_cors_preflight(&cors_pf_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -830,6 +834,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::prototype_pollution_audit::pollution_to_operations(&protopoll_issues, &mut sequence);
     findings_count += protopoll_ops.len() as u64;
     entries.extend(protopoll_ops);
+
+    let cors_pf_issues = cors_pf_handle.join().unwrap_or_default();
+    let cors_pf_ops =
+        crate::cors_preflight_audit::preflight_to_operations(&cors_pf_issues, &mut sequence);
+    findings_count += cors_pf_ops.len() as u64;
+    entries.extend(cors_pf_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

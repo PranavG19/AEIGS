@@ -6,22 +6,22 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1833 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1856 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 50 features shipped
+- P8: 51 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
 
 ## session-commits
-1. ref(recon): Consolidate phase_recon with fetch-once pattern
-2. test(recon): Add tests for util, tech_detector, waf_detector, and more (+23)
-3. test(recon): Expand test coverage for cve_correlator and phase_crawl (+12)
-4. fix(orchestrator): Wire orphaned doctor module into lib.rs (+16)
-5. feat(recon): Add host header injection detection scanner (+13)
+1. feat(recon): Add CRLF injection detection scanner (+12)
+2. style(orchestrator): Apply cargo fmt formatting
+3. feat(recon): Add sensitive file exposure scanner (+24)
+4. feat(recon): Add prototype pollution detection scanner (+13)
+5. feat(recon): Add CORS preflight deep check scanner (+23)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.

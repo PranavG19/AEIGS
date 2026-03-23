@@ -13,6 +13,7 @@ pub mod convergence;
 pub mod cookie_audit;
 pub mod coop_coep_audit;
 pub mod corp_audit;
+pub mod cors_preflight_audit;
 pub mod cors_scanner;
 pub mod crlf_injection_audit;
 pub mod csp_analyzer;
@@ -106,6 +107,7 @@ pub use convergence::*;
 pub use cookie_audit::*;
 pub use coop_coep_audit::*;
 pub use corp_audit::*;
+pub use cors_preflight_audit::*;
 pub use cors_scanner::*;
 pub use csp_analyzer::*;
 pub use cve_correlator::*;
@@ -317,6 +319,10 @@ mod robots_parser_test;
 #[cfg(test)]
 #[path = "dns_enumerator_test.rs"]
 mod dns_enumerator_test;
+
+#[cfg(test)]
+#[path = "cors_preflight_audit_test.rs"]
+mod cors_preflight_audit_test;
 
 #[cfg(test)]
 #[path = "cors_scanner_test.rs"]
