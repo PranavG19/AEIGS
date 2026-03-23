@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 6763 lib, 0 failed
+- cargo test -p aegis-orchestrator: 6910 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 216 features shipped
+- P8: 219 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -65,6 +65,7 @@ status: in-progress
 209. WAF Detector (8→68), 210. Tech Detector (9→63)
 211. Shodan Lookup (11→55), 212. Sourcemap Detector (12→60), 213. COOP/COEP Audit (13→65)
 214. Email Security (13→63), 215. Dangerous JS (13→75), 216. Host Header (13→57)
+217. Form Audit (13→64), 218. HSTS Preload (13→84), 219. JS Library (13→58)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
