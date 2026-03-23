@@ -23,6 +23,7 @@ pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
 pub mod dns_prefetch_control_audit;
+pub mod doctor;
 pub mod email_security;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
