@@ -126,6 +126,7 @@ pub mod update_db;
 mod util;
 pub mod waf_detector;
 pub mod wasm_audit;
+pub mod webcrypto_audit;
 pub mod websocket_audit;
 pub mod window_name_audit;
 pub mod www_authenticate_audit;
@@ -251,6 +252,7 @@ pub use tls_scanner::*;
 pub use update_db::*;
 pub use waf_detector::*;
 pub use wasm_audit::*;
+pub use webcrypto_audit::*;
 pub use websocket_audit::*;
 pub use window_name_audit::*;
 pub use www_authenticate_audit::*;
@@ -711,6 +713,10 @@ mod payment_form_audit_test;
 #[cfg(test)]
 #[path = "window_name_audit_test.rs"]
 mod window_name_audit_test;
+
+#[cfg(test)]
+#[path = "webcrypto_audit_test.rs"]
+mod webcrypto_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

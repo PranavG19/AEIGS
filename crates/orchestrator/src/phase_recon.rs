@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Web Crypto API misuse detection
+    let wc_issues = crate::webcrypto_audit::analyze_webcrypto(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wc_issues,
+        crate::webcrypto_audit::webcrypto_to_operations
+    );
+
     // window.name leak detection
     let wn_issues = crate::window_name_audit::analyze_window_name(body);
     collect_ops!(
