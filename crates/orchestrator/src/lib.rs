@@ -49,6 +49,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod security_txt;
 pub mod shodan_lookup;
+pub mod sourcemap_detector;
 pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
@@ -106,6 +107,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use security_txt::*;
 pub use shodan_lookup::*;
+pub use sourcemap_detector::*;
 pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
@@ -321,6 +323,10 @@ mod js_library_scanner_test;
 #[cfg(test)]
 #[path = "recon_client_test.rs"]
 mod recon_client_test;
+
+#[cfg(test)]
+#[path = "sourcemap_detector_test.rs"]
+mod sourcemap_detector_test;
 
 #[cfg(test)]
 #[path = "sri_checker_test.rs"]
