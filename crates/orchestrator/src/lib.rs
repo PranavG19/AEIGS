@@ -19,6 +19,7 @@ pub mod endpoint_similarity;
 pub mod form_audit;
 mod graph_persistence;
 pub mod header_audit;
+pub(crate) mod html_parser;
 pub mod hsts_preload;
 pub mod http_version;
 pub mod hypothesis_bridge;
@@ -239,6 +240,10 @@ mod tls_scanner_test;
 #[cfg(test)]
 #[path = "header_audit_test.rs"]
 mod header_audit_test;
+
+#[cfg(test)]
+#[path = "html_parser_test.rs"]
+mod html_parser_test;
 
 #[cfg(test)]
 #[path = "robots_parser_test.rs"]

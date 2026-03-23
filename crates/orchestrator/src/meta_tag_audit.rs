@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser::{self, TagIter};
 use crate::recon_client;
 
 const DISCLOSURE_META_NAMES: &[&str] = &[
@@ -45,20 +46,10 @@ pub fn audit_meta_tags(target: &str) -> Vec<MetaIssue> {
 
 pub(crate) fn analyze_meta_tags(html: &str) -> Vec<MetaIssue> {
     let mut issues = Vec::new();
-    let lower = html.to_ascii_lowercase();
-    let mut search_from = 0;
 
-    while let Some(start) = lower[search_from..].find("<meta") {
-        let abs_start = search_from + start;
-        let Some(end) = lower[abs_start..].find('>') else {
-            break;
-        };
-        let tag = &html[abs_start..abs_start + end + 1];
-        let tag_lower = &lower[abs_start..abs_start + end + 1];
-        search_from = abs_start + end + 1;
-
-        if let Some(name) = extract_attr_value(tag_lower, "name") {
-            if let Some(content) = extract_attr_value(tag, "content")
+    for tag in TagIter::new(html, "meta") {
+        if let Some(name) = html_parser::extract_attr_lower(&tag.lower, "name") {
+            if let Some(content) = html_parser::extract_attr(tag.original, &tag.lower, "content")
                 && DISCLOSURE_META_NAMES.iter().any(|d| name.contains(d))
                 && !content.is_empty()
             {
@@ -66,14 +57,14 @@ pub(crate) fn analyze_meta_tags(html: &str) -> Vec<MetaIssue> {
             }
 
             if name == "robots"
-                && let Some(content) = extract_attr_value(tag_lower, "content")
+                && let Some(content) = html_parser::extract_attr_lower(&tag.lower, "content")
                 && content.contains("noindex")
             {
                 issues.push(MetaIssue::NoindexOnPublicPage);
             }
         }
 
-        if let Some(equiv) = extract_attr_value(tag_lower, "http-equiv")
+        if let Some(equiv) = html_parser::extract_attr_lower(&tag.lower, "http-equiv")
             && equiv == "set-cookie"
         {
             issues.push(MetaIssue::SensitiveMetaTag("set-cookie".to_string()));
@@ -81,25 +72,6 @@ pub(crate) fn analyze_meta_tags(html: &str) -> Vec<MetaIssue> {
     }
 
     issues
-}
-
-fn extract_attr_value(tag: &str, attr_name: &str) -> Option<String> {
-    let pattern = format!("{attr_name}=");
-    let pos = tag.find(&pattern)?;
-    let rest = &tag[pos + pattern.len()..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>' || c == '/')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
 }
 
 pub fn meta_findings_to_operations(

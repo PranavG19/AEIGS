@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser::{self, TagIter};
 use crate::recon_client;
 
 #[derive(Debug, Clone)]
@@ -30,31 +31,19 @@ pub fn check_sri(target: &str) -> Vec<SriIssue> {
 
 pub(crate) fn find_missing_sri(html: &str) -> Vec<SriIssue> {
     let mut issues = Vec::new();
-    let lower = html.to_ascii_lowercase();
 
     for (tag_name, attr) in &[("script", "src"), ("link", "href")] {
-        let pattern = format!("<{tag_name}");
-        let mut search_from = 0;
-
-        while let Some(start) = lower[search_from..].find(&pattern) {
-            let abs_start = search_from + start;
-            let Some(end) = lower[abs_start..].find('>') else {
-                break;
-            };
-            let tag = &html[abs_start..abs_start + end + 1];
-            let tag_lower = &lower[abs_start..abs_start + end + 1];
-            search_from = abs_start + end + 1;
-
-            let Some(src_val) = extract_attr(tag, tag_lower, attr) else {
+        for tag in TagIter::new(html, tag_name) {
+            let Some(src_val) = html_parser::extract_attr(tag.original, &tag.lower, attr) else {
                 continue;
             };
             if !is_external_resource(&src_val) {
                 continue;
             }
-            if *tag_name == "link" && !is_stylesheet(tag_lower) {
+            if *tag_name == "link" && !is_stylesheet(&tag.lower) {
                 continue;
             }
-            if tag_lower.contains("integrity") {
+            if tag.lower.contains("integrity") {
                 continue;
             }
             issues.push(SriIssue {
@@ -65,25 +54,6 @@ pub(crate) fn find_missing_sri(html: &str) -> Vec<SriIssue> {
     }
 
     issues
-}
-
-fn extract_attr(tag: &str, tag_lower: &str, attr_name: &str) -> Option<String> {
-    let pattern = format!("{attr_name}=");
-    let pos = tag_lower.find(&pattern)?;
-    let rest = &tag[pos + pattern.len()..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
 }
 
 fn is_external_resource(src: &str) -> bool {

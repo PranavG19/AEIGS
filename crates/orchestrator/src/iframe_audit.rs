@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser::{self, TagIter};
 use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -49,26 +50,16 @@ pub fn audit_iframes(target: &str) -> Vec<IframeFinding> {
 
 pub(crate) fn analyze_iframes(html: &str) -> Vec<IframeFinding> {
     let mut findings = Vec::new();
-    let lower = html.to_ascii_lowercase();
-    let mut search_from = 0;
 
-    while let Some(start) = lower[search_from..].find("<iframe") {
-        let abs_start = search_from + start;
-        let Some(end) = lower[abs_start..].find('>') else {
-            break;
-        };
-        let tag = &html[abs_start..abs_start + end + 1];
-        let tag_lower = &lower[abs_start..abs_start + end + 1];
-        search_from = abs_start + end + 1;
+    for tag in TagIter::new(html, "iframe") {
+        let src = html_parser::extract_attr(tag.original, &tag.lower, "src").unwrap_or_default();
 
-        let src = extract_src(tag, tag_lower).unwrap_or_default();
-
-        if !tag_lower.contains("sandbox") {
+        if !tag.lower.contains("sandbox") {
             findings.push(IframeFinding {
                 issue: IframeIssue::MissingSandbox,
                 src: src.clone(),
             });
-        } else if let Some(sandbox_val) = extract_sandbox_value(tag_lower) {
+        } else if let Some(sandbox_val) = html_parser::extract_attr_lower(&tag.lower, "sandbox") {
             let dangerous_count = DANGEROUS_SANDBOX_FLAGS
                 .iter()
                 .filter(|flag| sandbox_val.contains(**flag))
@@ -90,42 +81,6 @@ pub(crate) fn analyze_iframes(html: &str) -> Vec<IframeFinding> {
     }
 
     findings
-}
-
-fn extract_src(tag: &str, tag_lower: &str) -> Option<String> {
-    let pos = tag_lower.find("src=")?;
-    let rest = &tag[pos + 4..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
-}
-
-fn extract_sandbox_value(tag_lower: &str) -> Option<String> {
-    let pos = tag_lower.find("sandbox=")?;
-    let rest = &tag_lower[pos + 8..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
 }
 
 pub fn iframe_findings_to_operations(

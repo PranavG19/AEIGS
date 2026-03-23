@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1372 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1384 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -35,10 +35,11 @@ status: in-progress
 - [x] Source map file exposure detector
 - [x] Meta tag security audit (generator, robots, set-cookie)
 - [x] Iframe sandbox audit (missing sandbox, permissive flags, HTTP src)
+- [x] G14 consolidation: html_parser.rs (TagIter + extract_attr)
+  Refactored: iframe_audit, meta_tag_audit, sri_checker
 
 ## handoff
 NEXT STEPS (in order):
-1. G14 consolidation: 7 HTML body scanners now. Extract shared
-   html_tag_iter() helper if pattern repeats again.
-2. Continue P8: error page leak, link rel preconnect audit,
-   window.postMessage audit, base tag hijack detection.
+1. Refactor remaining scanners to use html_parser: mixed_content,
+   form_audit, sourcemap_detector.
+2. Continue P8: error page leak, base tag hijack, link preconnect.
