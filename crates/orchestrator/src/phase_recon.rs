@@ -946,6 +946,16 @@ fn run_body_analyzers(
         crate::vibration_audit::vibration_to_operations
     );
 
+    // Sanitizer API audit
+    let san_issues = crate::sanitizer_api_audit::analyze_sanitizer_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        san_issues,
+        crate::sanitizer_api_audit::sanitizer_api_to_operations
+    );
+
     // Declarative Shadow DOM audit
     let sdom_issues = crate::shadow_dom_audit::analyze_shadow_dom(body);
     collect_ops!(

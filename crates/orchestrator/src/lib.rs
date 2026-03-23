@@ -142,6 +142,7 @@ pub mod reporting_api_audit;
 pub mod reporting_endpoints_audit;
 pub mod robots_parser;
 pub mod s3_scanner;
+pub mod sanitizer_api_audit;
 pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
@@ -336,6 +337,7 @@ pub use reporting_api_audit::*;
 pub use reporting_endpoints_audit::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
+pub use sanitizer_api_audit::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
@@ -539,6 +541,10 @@ mod scan_strategy_test;
 #[cfg(test)]
 #[path = "s3_scanner_test.rs"]
 mod s3_scanner_test;
+
+#[cfg(test)]
+#[path = "sanitizer_api_audit_test.rs"]
+mod sanitizer_api_audit_test;
 
 #[cfg(test)]
 #[path = "shared_buffer_audit_test.rs"]
