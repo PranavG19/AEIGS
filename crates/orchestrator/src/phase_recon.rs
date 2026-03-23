@@ -92,6 +92,17 @@ fn run_header_analyzers(
         crate::csp_analyzer::csp_findings_to_operations
     );
 
+    // CSP nonce/hash quality
+    let csp_nonce_issues =
+        crate::csp_nonce_audit::analyze_csp_nonces(csp_val.as_deref().unwrap_or(""));
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        csp_nonce_issues,
+        crate::csp_nonce_audit::csp_nonce_to_operations
+    );
+
     // HSTS
     let hsts_val = hdr(resp, "strict-transport-security");
     let hsts_issues = crate::hsts_preload::analyze_hsts_header(hsts_val.as_deref());
