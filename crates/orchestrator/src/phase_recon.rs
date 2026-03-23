@@ -908,6 +908,16 @@ fn run_body_analyzers(
         crate::webcrypto_audit::webcrypto_to_operations
     );
 
+    // Web Locks API audit
+    let wl_issues = crate::web_locks_audit::analyze_web_locks(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wl_issues,
+        crate::web_locks_audit::web_locks_to_operations
+    );
+
     // window.name leak detection
     let wn_issues = crate::window_name_audit::analyze_window_name(body);
     collect_ops!(

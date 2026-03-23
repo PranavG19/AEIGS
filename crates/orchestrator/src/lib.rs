@@ -143,6 +143,7 @@ mod util;
 pub mod viewport_audit;
 pub mod waf_detector;
 pub mod wasm_audit;
+pub mod web_locks_audit;
 pub mod webcrypto_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
@@ -288,6 +289,7 @@ pub use update_db::*;
 pub use viewport_audit::*;
 pub use waf_detector::*;
 pub use wasm_audit::*;
+pub use web_locks_audit::*;
 pub use webcrypto_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
@@ -803,6 +805,10 @@ mod wireless_api_audit_test;
 #[cfg(test)]
 #[path = "webcrypto_audit_test.rs"]
 mod webcrypto_audit_test;
+
+#[cfg(test)]
+#[path = "web_locks_audit_test.rs"]
+mod web_locks_audit_test;
 
 #[cfg(test)]
 #[path = "clipboard_audit_test.rs"]
