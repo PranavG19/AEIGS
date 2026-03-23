@@ -77,6 +77,7 @@ mod phase_recon;
 mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
+pub mod postmessage_audit;
 pub mod preconnect_audit;
 pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
@@ -186,6 +187,7 @@ pub use phase_recon::*;
 pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
+pub use postmessage_audit::*;
 pub use preconnect_audit::*;
 pub use prototype_pollution_audit::*;
 pub use proxy_header_audit::*;
@@ -597,6 +599,10 @@ mod hidden_input_audit_test;
 #[cfg(test)]
 #[path = "host_header_audit_test.rs"]
 mod host_header_audit_test;
+
+#[cfg(test)]
+#[path = "postmessage_audit_test.rs"]
+mod postmessage_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

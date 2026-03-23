@@ -540,6 +540,16 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // postMessage security
+    let pm_issues = crate::postmessage_audit::analyze_postmessage_usage(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pm_issues,
+        crate::postmessage_audit::postmessage_to_operations
+    );
+
     // Client-side storage audit
     let storage_issues = crate::storage_audit::analyze_storage_usage(body);
     collect_ops!(
