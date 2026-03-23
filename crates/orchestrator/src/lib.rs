@@ -1,6 +1,7 @@
 pub mod actor;
 pub mod attest;
 pub mod auth_session;
+pub mod base_tag_audit;
 pub mod benchmark;
 pub mod cache_audit;
 pub mod calibration;
@@ -64,6 +65,7 @@ pub mod waf_detector;
 
 pub use actor::*;
 pub use auth_session::*;
+pub use base_tag_audit::*;
 pub use cache_audit::*;
 pub use comment_leak::*;
 pub use checkpoint::*;
@@ -216,6 +218,10 @@ mod idor_analyzer_test;
 #[cfg(test)]
 #[path = "auth_session_test.rs"]
 mod auth_session_test;
+
+#[cfg(test)]
+#[path = "base_tag_audit_test.rs"]
+mod base_tag_audit_test;
 
 #[cfg(test)]
 #[path = "cve_correlator_test.rs"]
