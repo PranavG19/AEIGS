@@ -98,6 +98,7 @@ pub mod mixed_content;
 pub mod mutation_observer_audit;
 pub mod navigation_api_audit;
 pub mod nel_audit;
+pub mod network_info_audit;
 pub mod notification_audit;
 pub mod object_url_audit;
 pub mod open_redirect_param_audit;
@@ -281,6 +282,7 @@ pub use mixed_content::*;
 pub use mutation_observer_audit::*;
 pub use navigation_api_audit::*;
 pub use nel_audit::*;
+pub use network_info_audit::*;
 pub use notification_audit::*;
 pub use object_url_audit::*;
 pub use open_redirect_param_audit::*;
@@ -837,6 +839,10 @@ mod file_system_access_audit_test;
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]
 mod nel_audit_test;
+
+#[cfg(test)]
+#[path = "network_info_audit_test.rs"]
+mod network_info_audit_test;
 
 #[cfg(test)]
 #[path = "navigation_api_audit_test.rs"]

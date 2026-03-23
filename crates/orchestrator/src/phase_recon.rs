@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Network Information API audit
+    let ni_issues = crate::network_info_audit::analyze_network_info(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ni_issues,
+        crate::network_info_audit::network_info_to_operations
+    );
+
     // Barcode Detection API audit
     let bd_issues = crate::barcode_detection_audit::analyze_barcode_detection(body);
     collect_ops!(
