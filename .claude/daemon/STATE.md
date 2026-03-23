@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3149 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3164 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 80 features shipped
+- P8: 83 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -42,9 +42,10 @@ status: in-progress
 81. WebHID API audit (+15)
 82. Web Serial API audit (+15)
 83. Web Bluetooth API audit (+15)
+84. WebTransport API audit (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: WebTransport API audit, WebNFC API audit, Presentation API audit, or Web Share API audit.
+Continue P8. Next ideas: WebNFC API audit, Presentation API audit, Web Share API audit, or Idle Detection API audit.
