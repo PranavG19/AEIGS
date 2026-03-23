@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1307 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1320 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -30,9 +30,10 @@ status: in-progress
 - [x] JS library version detection scanner
 - [x] Subresource integrity (SRI) checker
 - [x] Mixed content detection (HTTP resources on HTTPS pages)
+- [x] Form security audit (CSRF, insecure action, autocomplete)
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8 features: form security audit, open port detection,
-   GraphQL introspection scanner, API key leak detection.
-2. After 3 more P8 features, re-check G14 for new consolidation needs.
+1. Continue P8 features: CRLF injection detection, X-Powered-By leak
+   detection, GraphQL introspection scanner.
+2. After 2 more P8 features, re-check G14 for new consolidation needs.

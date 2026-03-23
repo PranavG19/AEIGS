@@ -15,6 +15,7 @@ pub mod distributed_transport;
 pub mod dns_enumerator;
 pub mod email_security;
 pub mod endpoint_similarity;
+pub mod form_audit;
 mod graph_persistence;
 pub mod header_audit;
 pub mod hsts_preload;
@@ -70,6 +71,7 @@ pub use distributed_transport::*;
 pub use dns_enumerator::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
+pub use form_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
 pub use hsts_preload::*;
@@ -169,6 +171,10 @@ mod convergence_test;
 #[cfg(test)]
 #[path = "endpoint_similarity_test.rs"]
 mod endpoint_similarity_test;
+
+#[cfg(test)]
+#[path = "form_audit_test.rs"]
+mod form_audit_test;
 
 #[cfg(test)]
 #[path = "actor_test.rs"]
