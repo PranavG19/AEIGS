@@ -936,6 +936,16 @@ fn run_body_analyzers(
         crate::media_session_audit::media_session_to_operations
     );
 
+    // View Transitions API audit
+    let vt_issues = crate::view_transition_audit::analyze_view_transition(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        vt_issues,
+        crate::view_transition_audit::view_transition_to_operations
+    );
+
     // Vibration API audit
     let vib_issues = crate::vibration_audit::analyze_vibration(body);
     collect_ops!(
