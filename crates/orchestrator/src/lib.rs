@@ -96,6 +96,7 @@ pub mod payment_request_audit;
 pub mod perf_observer_audit;
 pub mod permissions_api_audit;
 pub mod permissions_policy;
+pub mod pip_audit;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -253,6 +254,7 @@ pub use payment_request_audit::*;
 pub use perf_observer_audit::*;
 pub use permissions_api_audit::*;
 pub use permissions_policy::*;
+pub use pip_audit::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -841,6 +843,10 @@ mod payment_request_audit_test;
 #[cfg(test)]
 #[path = "perf_observer_audit_test.rs"]
 mod perf_observer_audit_test;
+
+#[cfg(test)]
+#[path = "pip_audit_test.rs"]
+mod pip_audit_test;
 
 #[cfg(test)]
 #[path = "window_name_audit_test.rs"]

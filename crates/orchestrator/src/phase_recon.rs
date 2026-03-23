@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Picture-in-Picture API audit
+    let pip_issues = crate::pip_audit::analyze_pip(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pip_issues,
+        crate::pip_audit::pip_to_operations
+    );
+
     // Storage Access API audit
     let sa_issues = crate::storage_access_audit::analyze_storage_access(body);
     collect_ops!(
