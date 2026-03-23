@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Badging API audit
+    let bg_issues = crate::badging_audit::analyze_badging(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bg_issues,
+        crate::badging_audit::badging_to_operations
+    );
+
     // Payment Handler API audit
     let ph_issues = crate::payment_handler_audit::analyze_payment_handler(body);
     collect_ops!(
