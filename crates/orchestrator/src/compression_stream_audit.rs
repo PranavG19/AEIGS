@@ -1,15 +1,14 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CompressionStreamIssue {
     ApiDetected,
     ZipBombRisk,
-    DataExfiltration,
-    ResourceExhaustion,
-    UntrustedDecompression,
+    NoSizeLimits,
+    TimingLeakRisk,
+    NoChecksumValidation,
 }
 
 impl std::fmt::Display for CompressionStreamIssue {
@@ -17,10 +16,20 @@ impl std::fmt::Display for CompressionStreamIssue {
         match self {
             Self::ApiDetected => write!(f, "api_detected"),
             Self::ZipBombRisk => write!(f, "zip_bomb_risk"),
-            Self::DataExfiltration => write!(f, "data_exfiltration"),
-            Self::ResourceExhaustion => write!(f, "resource_exhaustion"),
-            Self::UntrustedDecompression => write!(f, "untrusted_decompression"),
+            Self::NoSizeLimits => write!(f, "no_size_limits"),
+            Self::TimingLeakRisk => write!(f, "timing_leak_risk"),
+            Self::NoChecksumValidation => write!(f, "no_checksum_validation"),
         }
+    }
+}
+
+pub fn compression_stream_severity(issue: &CompressionStreamIssue) -> f64 {
+    match issue {
+        CompressionStreamIssue::ApiDetected => 2.0,
+        CompressionStreamIssue::ZipBombRisk => 8.0,
+        CompressionStreamIssue::NoSizeLimits => 7.0,
+        CompressionStreamIssue::TimingLeakRisk => 6.0,
+        CompressionStreamIssue::NoChecksumValidation => 5.0,
     }
 }
 
@@ -39,54 +48,41 @@ pub fn audit_compression_stream(target: &str) -> Vec<CompressionStreamIssue> {
 }
 
 pub fn analyze_compression_stream(body: &str) -> Vec<CompressionStreamIssue> {
-    let has_compress = body.contains("CompressionStream");
-    let has_decompress = body.contains("DecompressionStream");
+    let mut issues = Vec::new();
 
-    if !has_compress && !has_decompress {
-        return Vec::new();
+    let has_compression_stream = body.contains("CompressionStream")
+        || body.contains("DecompressionStream")
+        || body.contains("new CompressionStream");
+
+    if has_compression_stream {
+        issues.push(CompressionStreamIssue::ApiDetected);
     }
 
-    let mut issues = Vec::new();
-    issues.push(CompressionStreamIssue::ApiDetected);
-
-    if has_decompress
-        && !body.contains("limit") && !body.contains("maxSize") && !body.contains("MAX_SIZE")
-        && (body.contains("pipeThrough") || body.contains("pipeTo"))
-    {
+    if has_compression_stream && body.contains("untrusted") {
         issues.push(CompressionStreamIssue::ZipBombRisk);
     }
 
-    if has_compress
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+    if has_compression_stream
+        && !body.contains("maxSize")
+        && !body.contains("sizeLimit")
+        && !body.contains("byteLimit")
     {
-        issues.push(CompressionStreamIssue::DataExfiltration);
+        issues.push(CompressionStreamIssue::NoSizeLimits);
     }
 
-    if (has_compress || has_decompress)
-        && (body.contains("while") || body.contains("for(") || body.contains("for ("))
-        && !body.contains("break") && !body.contains("limit")
-    {
-        issues.push(CompressionStreamIssue::ResourceExhaustion);
+    if has_compression_stream && body.contains("secret") {
+        issues.push(CompressionStreamIssue::TimingLeakRisk);
     }
 
-    if has_decompress
-        && (body.contains("user") || body.contains("input") || body.contains("upload") || body.contains("file"))
-        && !body.contains("validate") && !body.contains("sanitize")
+    if has_compression_stream
+        && !body.contains("checksum")
+        && !body.contains("integrity")
+        && !body.contains("hash")
     {
-        issues.push(CompressionStreamIssue::UntrustedDecompression);
+        issues.push(CompressionStreamIssue::NoChecksumValidation);
     }
 
     issues
-}
-
-pub fn compression_stream_severity(issue: &CompressionStreamIssue) -> f64 {
-    match issue {
-        CompressionStreamIssue::ZipBombRisk => 8.0,
-        CompressionStreamIssue::ResourceExhaustion => 7.0,
-        CompressionStreamIssue::DataExfiltration => 6.5,
-        CompressionStreamIssue::UntrustedDecompression => 6.0,
-        CompressionStreamIssue::ApiDetected => 2.0,
-    }
 }
 
 pub fn compression_stream_to_operations(

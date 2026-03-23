@@ -1,26 +1,37 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ViewTransitionIssue {
     ApiDetected,
-    CrossDocumentTransition,
-    UiSpoofing,
-    TransitionHijacking,
-    TimingLeak,
+    DomManipulationInCallback,
+    SensitiveContentExposure,
+    CrossDocumentWithoutOriginCheck,
+    TransitionCallbackOverride,
 }
 
 impl std::fmt::Display for ViewTransitionIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ApiDetected => write!(f, "api_detected"),
-            Self::CrossDocumentTransition => write!(f, "cross_document_transition"),
-            Self::UiSpoofing => write!(f, "ui_spoofing"),
-            Self::TransitionHijacking => write!(f, "transition_hijacking"),
-            Self::TimingLeak => write!(f, "timing_leak"),
+            Self::DomManipulationInCallback => write!(f, "dom_manipulation_in_callback"),
+            Self::SensitiveContentExposure => write!(f, "sensitive_content_exposure"),
+            Self::CrossDocumentWithoutOriginCheck => {
+                write!(f, "cross_document_without_origin_check")
+            }
+            Self::TransitionCallbackOverride => write!(f, "transition_callback_override"),
         }
+    }
+}
+
+pub fn view_transition_severity(issue: &ViewTransitionIssue) -> f64 {
+    match issue {
+        ViewTransitionIssue::ApiDetected => 2.0,
+        ViewTransitionIssue::DomManipulationInCallback => 7.0,
+        ViewTransitionIssue::SensitiveContentExposure => 6.0,
+        ViewTransitionIssue::CrossDocumentWithoutOriginCheck => 8.0,
+        ViewTransitionIssue::TransitionCallbackOverride => 7.5,
     }
 }
 
@@ -39,55 +50,45 @@ pub fn audit_view_transition(target: &str) -> Vec<ViewTransitionIssue> {
 }
 
 pub fn analyze_view_transition(body: &str) -> Vec<ViewTransitionIssue> {
-    let has_api = body.contains("startViewTransition")
-        || body.contains("ViewTransition");
-    let has_css = body.contains("view-transition-name")
-        || body.contains("::view-transition")
-        || body.contains("@view-transition");
-
-    if !has_api && !has_css {
-        return Vec::new();
-    }
-
     let mut issues = Vec::new();
-    issues.push(ViewTransitionIssue::ApiDetected);
 
-    if body.contains("@view-transition") && body.contains("navigation") {
-        issues.push(ViewTransitionIssue::CrossDocumentTransition);
+    let has_view_transition_api = body.contains("document.startViewTransition")
+        || body.contains("ViewTransition")
+        || body.contains("view-transition-name");
+
+    if has_view_transition_api {
+        issues.push(ViewTransitionIssue::ApiDetected);
     }
 
-    if (has_api || has_css)
-        && (body.contains("position: fixed") || body.contains("position: absolute"))
-        && (body.contains("z-index") || body.contains("opacity"))
-    {
-        issues.push(ViewTransitionIssue::UiSpoofing);
-    }
+    if has_view_transition_api {
+        if body.contains(".innerHTML") || body.contains("document.write") {
+            issues.push(ViewTransitionIssue::DomManipulationInCallback);
+        }
 
-    if has_api
-        && (body.contains(".ready") || body.contains(".finished") || body.contains(".updateCallbackDone"))
-        && (body.contains("innerHTML") || body.contains("replaceWith") || body.contains("remove("))
-    {
-        issues.push(ViewTransitionIssue::TransitionHijacking);
-    }
+        if body.contains("password")
+            || body.contains("Password")
+            || body.contains("token")
+            || body.contains("Token")
+            || body.contains("secret")
+            || body.contains("Secret")
+        {
+            issues.push(ViewTransitionIssue::SensitiveContentExposure);
+        }
 
-    if has_api
-        && body.contains(".finished")
-        && (body.contains("performance.now") || body.contains("Date.now"))
-    {
-        issues.push(ViewTransitionIssue::TimingLeak);
+        if body.contains("navigation.addEventListener") && !body.contains("origin") {
+            issues.push(ViewTransitionIssue::CrossDocumentWithoutOriginCheck);
+        }
+
+        if (body.contains(".updateCallbackDone")
+            || body.contains(".ready")
+            || body.contains(".finished"))
+            && body.contains("=")
+        {
+            issues.push(ViewTransitionIssue::TransitionCallbackOverride);
+        }
     }
 
     issues
-}
-
-pub fn view_transition_severity(issue: &ViewTransitionIssue) -> f64 {
-    match issue {
-        ViewTransitionIssue::TransitionHijacking => 7.0,
-        ViewTransitionIssue::UiSpoofing => 6.5,
-        ViewTransitionIssue::CrossDocumentTransition => 5.0,
-        ViewTransitionIssue::TimingLeak => 4.0,
-        ViewTransitionIssue::ApiDetected => 2.0,
-    }
 }
 
 pub fn view_transition_to_operations(

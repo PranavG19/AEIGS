@@ -1,149 +1,285 @@
 use crate::view_transition_audit::*;
 
 #[test]
-fn no_view_transition_no_issues() {
-    assert!(analyze_view_transition("<html><body>hello</body></html>").is_empty());
+fn test_no_view_transition_api() {
+    let body = "<html><body>Normal page</body></html>";
+    let issues = analyze_view_transition(body);
+    assert!(issues.is_empty());
 }
 
 #[test]
-fn detects_start_view_transition() {
-    let body = r#"<script>document.startViewTransition(() => updateDOM());</script>"#;
+fn test_api_detected_start_view_transition() {
+    let body = r#"
+        <script>
+            document.startViewTransition(() => {
+                updateDOM();
+            });
+        </script>
+    "#;
+    let issues = analyze_view_transition(body);
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0], ViewTransitionIssue::ApiDetected);
+}
+
+#[test]
+fn test_api_detected_view_transition_class() {
+    let body = r#"
+        <script>
+            const transition = new ViewTransition();
+        </script>
+    "#;
+    let issues = analyze_view_transition(body);
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0], ViewTransitionIssue::ApiDetected);
+}
+
+#[test]
+fn test_api_detected_css_property() {
+    let body = r#"
+        <style>
+            .card { view-transition-name: card-expand; }
+        </style>
+    "#;
+    let issues = analyze_view_transition(body);
+    assert_eq!(issues.len(), 1);
+    assert_eq!(issues[0], ViewTransitionIssue::ApiDetected);
+}
+
+#[test]
+fn test_dom_manipulation_inner_html() {
+    let body = r#"
+        <script>
+            document.startViewTransition(() => {
+                element.innerHTML = userContent;
+            });
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
     assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::DomManipulationInCallback));
 }
 
 #[test]
-fn detects_css_view_transition_name() {
-    let body = r#"<style>.hero { view-transition-name: hero; }</style>"#;
+fn test_dom_manipulation_document_write() {
+    let body = r#"
+        <script>
+            const vt = new ViewTransition();
+            document.write(content);
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
     assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::DomManipulationInCallback));
 }
 
 #[test]
-fn detects_view_transition_pseudo() {
-    let body = r#"<style>::view-transition-old(hero) { animation: fade-out 0.3s; }</style>"#;
+fn test_sensitive_content_password() {
+    let body = r#"
+        <script>
+            document.startViewTransition(() => {
+                showPasswordField();
+            });
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
     assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::SensitiveContentExposure));
 }
 
 #[test]
-fn detects_cross_document_transition() {
-    let body = r#"<style>@view-transition { navigation: auto; }</style>"#;
+fn test_sensitive_content_token() {
+    let body = r#"
+        <style>.auth { view-transition-name: auth; }</style>
+        <script>const token = getAuthToken();</script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::CrossDocumentTransition));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::SensitiveContentExposure));
 }
 
 #[test]
-fn no_cross_document_without_navigation() {
-    let body = r#"<style>.hero { view-transition-name: hero; }</style>"#;
+fn test_sensitive_content_secret() {
+    let body = r#"
+        <script>
+            ViewTransition.prototype.start = function() {
+                loadSecret();
+            };
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(!issues.contains(&ViewTransitionIssue::CrossDocumentTransition));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::SensitiveContentExposure));
 }
 
 #[test]
-fn detects_ui_spoofing() {
-    let body = r#"<script>document.startViewTransition(() => {});</script>
-        <style>.overlay { position: fixed; z-index: 9999; }</style>"#;
+fn test_cross_document_without_origin_check() {
+    let body = r#"
+        <script>
+            navigation.addEventListener('navigate', (e) => {
+                document.startViewTransition(() => loadContent());
+            });
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::UiSpoofing));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::CrossDocumentWithoutOriginCheck));
 }
 
 #[test]
-fn detects_ui_spoofing_opacity() {
-    let body = r#"<style>
-        .fake { view-transition-name: main; position: absolute; opacity: 0; }
-    </style>"#;
+fn test_cross_document_with_origin_check() {
+    let body = r#"
+        <script>
+            navigation.addEventListener('navigate', (e) => {
+                if (e.destination.url.origin === location.origin) {
+                    document.startViewTransition(() => loadContent());
+                }
+            });
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::UiSpoofing));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(!issues.contains(&ViewTransitionIssue::CrossDocumentWithoutOriginCheck));
 }
 
 #[test]
-fn no_spoofing_without_positioning() {
-    let body = r#"<script>document.startViewTransition(() => {});</script>"#;
+fn test_transition_callback_override_update_callback_done() {
+    let body = r#"
+        <script>
+            const vt = document.startViewTransition(update);
+            vt.updateCallbackDone = Promise.resolve();
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(!issues.contains(&ViewTransitionIssue::UiSpoofing));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::TransitionCallbackOverride));
 }
 
 #[test]
-fn detects_transition_hijacking() {
-    let body = r#"<script>
-        const t = document.startViewTransition(() => {});
-        t.ready.then(() => { el.innerHTML = malicious; });
-    </script>"#;
+fn test_transition_callback_override_ready() {
+    let body = r#"
+        <script>
+            ViewTransition.ready = customPromise;
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::TransitionHijacking));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::TransitionCallbackOverride));
 }
 
 #[test]
-fn detects_hijacking_with_remove() {
-    let body = r#"<script>
-        const t = document.startViewTransition(() => {});
-        t.finished.then(() => { target.remove(); });
-    </script>"#;
+fn test_transition_callback_override_finished() {
+    let body = r#"
+        <script>
+            document.startViewTransition(() => {}).finished = interceptor();
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::TransitionHijacking));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::TransitionCallbackOverride));
 }
 
 #[test]
-fn no_hijacking_without_dom_mutation() {
-    let body = r#"<script>
-        const t = document.startViewTransition(() => {});
-        t.ready.then(() => console.log("done"));
-    </script>"#;
+fn test_multiple_issues_combined() {
+    let body = r#"
+        <style>.card { view-transition-name: card; }</style>
+        <script>
+            navigation.addEventListener('navigate', () => {
+                const vt = document.startViewTransition(() => {
+                    element.innerHTML = getPasswordForm();
+                });
+                vt.finished = hijackedPromise;
+            });
+        </script>
+    "#;
     let issues = analyze_view_transition(body);
-    assert!(!issues.contains(&ViewTransitionIssue::TransitionHijacking));
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::DomManipulationInCallback));
+    assert!(issues.contains(&ViewTransitionIssue::SensitiveContentExposure));
+    assert!(issues.contains(&ViewTransitionIssue::CrossDocumentWithoutOriginCheck));
+    assert!(issues.contains(&ViewTransitionIssue::TransitionCallbackOverride));
+    assert_eq!(issues.len(), 5);
 }
 
 #[test]
-fn detects_timing_leak() {
-    let body = r#"<script>
-        const start = performance.now();
-        const t = document.startViewTransition(() => {});
-        t.finished.then(() => { const elapsed = performance.now() - start; });
-    </script>"#;
-    let issues = analyze_view_transition(body);
-    assert!(issues.contains(&ViewTransitionIssue::TimingLeak));
-}
-
-#[test]
-fn no_timing_without_perf() {
-    let body = r#"<script>
-        const t = document.startViewTransition(() => {});
-        t.finished.then(() => console.log("done"));
-    </script>"#;
-    let issues = analyze_view_transition(body);
-    assert!(!issues.contains(&ViewTransitionIssue::TimingLeak));
-}
-
-#[test]
-fn severity_hijacking_highest() {
-    assert_eq!(view_transition_severity(&ViewTransitionIssue::TransitionHijacking), 7.0);
-}
-
-#[test]
-fn severity_detected_lowest() {
-    assert_eq!(view_transition_severity(&ViewTransitionIssue::ApiDetected), 2.0);
-}
-
-#[test]
-fn to_operations_creates_entries() {
-    let issues = vec![ViewTransitionIssue::ApiDetected, ViewTransitionIssue::UiSpoofing];
-    let mut seq = 0;
+fn test_to_operations() {
+    let issues = vec![
+        ViewTransitionIssue::ApiDetected,
+        ViewTransitionIssue::DomManipulationInCallback,
+    ];
+    let mut seq = 0u64;
     let ops = view_transition_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
     assert_eq!(seq, 2);
 }
 
 #[test]
-fn display_variants() {
-    assert_eq!(ViewTransitionIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ViewTransitionIssue::CrossDocumentTransition.to_string(), "cross_document_transition");
-    assert_eq!(ViewTransitionIssue::UiSpoofing.to_string(), "ui_spoofing");
-    assert_eq!(ViewTransitionIssue::TransitionHijacking.to_string(), "transition_hijacking");
-    assert_eq!(ViewTransitionIssue::TimingLeak.to_string(), "timing_leak");
+fn test_severity_api_detected() {
+    let severity = view_transition_severity(&ViewTransitionIssue::ApiDetected);
+    assert_eq!(severity, 2.0);
 }
 
 #[test]
-fn empty_body_no_issues() {
-    assert!(analyze_view_transition("").is_empty());
+fn test_severity_dom_manipulation() {
+    let severity = view_transition_severity(&ViewTransitionIssue::DomManipulationInCallback);
+    assert_eq!(severity, 7.0);
+}
+
+#[test]
+fn test_severity_cross_document() {
+    let severity = view_transition_severity(&ViewTransitionIssue::CrossDocumentWithoutOriginCheck);
+    assert_eq!(severity, 8.0);
+}
+
+#[test]
+fn test_display_formatting() {
+    assert_eq!(ViewTransitionIssue::ApiDetected.to_string(), "api_detected");
+    assert_eq!(
+        ViewTransitionIssue::DomManipulationInCallback.to_string(),
+        "dom_manipulation_in_callback"
+    );
+    assert_eq!(
+        ViewTransitionIssue::SensitiveContentExposure.to_string(),
+        "sensitive_content_exposure"
+    );
+    assert_eq!(
+        ViewTransitionIssue::CrossDocumentWithoutOriginCheck.to_string(),
+        "cross_document_without_origin_check"
+    );
+    assert_eq!(
+        ViewTransitionIssue::TransitionCallbackOverride.to_string(),
+        "transition_callback_override"
+    );
+}
+
+#[test]
+fn test_empty_body() {
+    let body = "";
+    let issues = analyze_view_transition(body);
+    assert!(issues.is_empty());
+}
+
+#[test]
+fn test_no_false_positive_without_api() {
+    let body = r#"
+        <script>
+            element.innerHTML = content;
+            const password = getPassword();
+        </script>
+    "#;
+    let issues = analyze_view_transition(body);
+    assert!(issues.is_empty());
+}
+
+#[test]
+fn test_callback_override_without_assignment() {
+    let body = r#"
+        <script>
+            document.startViewTransition(() => {
+                console.log(vt.ready);
+            });
+        </script>
+    "#;
+    let issues = analyze_view_transition(body);
+    assert!(issues.contains(&ViewTransitionIssue::ApiDetected));
+    assert!(issues.contains(&ViewTransitionIssue::TransitionCallbackOverride));
 }

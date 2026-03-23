@@ -1,28 +1,35 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
-use crate::recon_client;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum WebLocksIssue {
-    LockRequestDetected,
-    LockQueryDetected,
-    ExcessiveLockNames,
-    SharedLockMode,
-    StealLockOption,
-    NoAbortSignal,
+    ApiDetected,
+    DeadlockRisk,
+    ResourceStarvation,
+    SharedStateCorruption,
+    LockEnumeration,
 }
 
 impl std::fmt::Display for WebLocksIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LockRequestDetected => write!(f, "lock_request_detected"),
-            Self::LockQueryDetected => write!(f, "lock_query_detected"),
-            Self::ExcessiveLockNames => write!(f, "excessive_lock_names"),
-            Self::SharedLockMode => write!(f, "shared_lock_mode"),
-            Self::StealLockOption => write!(f, "steal_lock_option"),
-            Self::NoAbortSignal => write!(f, "no_abort_signal"),
+            Self::ApiDetected => write!(f, "api_detected"),
+            Self::DeadlockRisk => write!(f, "deadlock_risk"),
+            Self::ResourceStarvation => write!(f, "resource_starvation"),
+            Self::SharedStateCorruption => write!(f, "shared_state_corruption"),
+            Self::LockEnumeration => write!(f, "lock_enumeration"),
         }
+    }
+}
+
+pub fn web_locks_severity(issue: &WebLocksIssue) -> f64 {
+    match issue {
+        WebLocksIssue::ApiDetected => 2.0,
+        WebLocksIssue::DeadlockRisk => 6.0,
+        WebLocksIssue::ResourceStarvation => 6.5,
+        WebLocksIssue::SharedStateCorruption => 7.5,
+        WebLocksIssue::LockEnumeration => 5.0,
     }
 }
 
@@ -41,80 +48,48 @@ pub fn audit_web_locks(target: &str) -> Vec<WebLocksIssue> {
 }
 
 pub fn analyze_web_locks(body: &str) -> Vec<WebLocksIssue> {
-    if !body.contains("navigator.locks") {
-        return Vec::new();
-    }
-
     let mut issues = Vec::new();
 
-    if body.contains("navigator.locks.request") {
-        issues.push(WebLocksIssue::LockRequestDetected);
+    let has_lock_request = body.contains("navigator.locks.request");
+    let has_lock_query = body.contains("navigator.locks.query");
+    let has_lock_manager = body.contains("LockManager");
 
-        if body.contains("steal") && body.contains("true") {
-            issues.push(WebLocksIssue::StealLockOption);
+    if has_lock_request || has_lock_query || has_lock_manager {
+        issues.push(WebLocksIssue::ApiDetected);
+    }
+
+    if has_lock_request {
+        let has_nested_request = body.matches("navigator.locks.request").count() >= 2;
+        let has_timeout = body.contains("signal:") || body.contains("AbortController");
+
+        if has_nested_request && !has_timeout {
+            issues.push(WebLocksIssue::DeadlockRisk);
         }
 
-        if !body.contains("AbortController") && !body.contains("signal") {
-            issues.push(WebLocksIssue::NoAbortSignal);
+        let has_catch = body.contains(".catch(") || body.contains("} catch");
+        let has_finally = body.contains(".finally(") || body.contains("} finally");
+
+        if !has_catch && !has_finally {
+            issues.push(WebLocksIssue::ResourceStarvation);
         }
 
-        let lock_name_count = count_unique_lock_names(body);
-        if lock_name_count > 5 {
-            issues.push(WebLocksIssue::ExcessiveLockNames);
-        }
+        let has_shared_mode = body.contains("mode: \"shared\"") || body.contains("mode:'shared'");
+        let has_write_operation =
+            body.contains("=") && (body.contains("state") || body.contains("data"));
 
-        if body.contains("\"shared\"") || body.contains("'shared'") {
-            issues.push(WebLocksIssue::SharedLockMode);
+        if has_shared_mode && has_write_operation {
+            issues.push(WebLocksIssue::SharedStateCorruption);
         }
     }
 
-    if body.contains("navigator.locks.query") {
-        issues.push(WebLocksIssue::LockQueryDetected);
+    if has_lock_query {
+        issues.push(WebLocksIssue::LockEnumeration);
     }
 
     issues
 }
 
-fn count_unique_lock_names(body: &str) -> usize {
-    let mut names = std::collections::HashSet::new();
-    let marker = "navigator.locks.request(";
-    let mut search_from = 0;
-    while let Some(pos) = body[search_from..].find(marker) {
-        let start = search_from + pos + marker.len();
-        if start >= body.len() {
-            break;
-        }
-        let rest = &body[start..];
-        let name = if let Some(stripped) = rest.strip_prefix('"') {
-            stripped.split('"').next()
-        } else if let Some(stripped) = rest.strip_prefix('\'') {
-            stripped.split('\'').next()
-        } else {
-            None
-        };
-        if let Some(n) = name {
-            names.insert(n);
-        }
-        search_from = start;
-    }
-    names.len()
-}
-
-pub fn web_locks_severity(issue: &WebLocksIssue) -> f64 {
-    match issue {
-        WebLocksIssue::StealLockOption => 6.0,
-        WebLocksIssue::LockQueryDetected => 5.5,
-        WebLocksIssue::ExcessiveLockNames => 5.0,
-        WebLocksIssue::SharedLockMode => 4.5,
-        WebLocksIssue::NoAbortSignal => 4.0,
-        WebLocksIssue::LockRequestDetected => 3.0,
-    }
-}
-
-pub fn web_locks_to_operations(
-    issues: &[WebLocksIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn web_locks_to_operations(issues: &[WebLocksIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {
@@ -122,7 +97,7 @@ pub fn web_locks_to_operations(
                 seq,
                 VulnerabilityClass::SecurityMisconfiguration,
                 web_locks_severity(issue),
-                0.7,
+                0.5,
             )
         })
         .collect()
