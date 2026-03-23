@@ -836,6 +836,16 @@ fn run_body_analyzers(
         crate::eyedropper_audit::eyedropper_to_operations
     );
 
+    // WebHID API audit
+    let hid_issues = crate::webhid_audit::analyze_webhid(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        hid_issues,
+        crate::webhid_audit::webhid_to_operations
+    );
+
     // File System Access API audit
     let fsa_issues = crate::file_system_access_audit::analyze_file_system_access(body);
     collect_ops!(

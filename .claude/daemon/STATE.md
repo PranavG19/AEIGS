@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3104 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3119 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -39,9 +39,10 @@ status: in-progress
 78. Selection API data leak audit (+14)
 79. Contact Picker API audit (+16)
 80. File System Access API audit (+15)
+81. WebHID API audit (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: USB/HID API audit, Serial API audit, Bluetooth API audit, or WebTransport API audit.
+Continue P8. Next ideas: Serial API audit, Bluetooth API audit, WebTransport API audit, or WebNFC API audit.

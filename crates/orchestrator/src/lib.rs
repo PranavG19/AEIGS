@@ -164,6 +164,7 @@ pub mod wake_lock_audit;
 pub mod wasm_audit;
 pub mod web_locks_audit;
 pub mod webcrypto_audit;
+pub mod webhid_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
 pub mod window_name_audit;
@@ -329,6 +330,7 @@ pub use wake_lock_audit::*;
 pub use wasm_audit::*;
 pub use web_locks_audit::*;
 pub use webcrypto_audit::*;
+pub use webhid_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
 pub use window_name_audit::*;
@@ -631,6 +633,10 @@ mod security_txt_test;
 #[cfg(test)]
 #[path = "selection_audit_test.rs"]
 mod selection_audit_test;
+
+#[cfg(test)]
+#[path = "webhid_audit_test.rs"]
+mod webhid_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]
