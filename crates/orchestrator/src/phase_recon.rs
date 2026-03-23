@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Web Speech API audit
+    let speech_issues = crate::speech_api_audit::analyze_speech_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        speech_issues,
+        crate::speech_api_audit::speech_api_to_operations
+    );
+
     // USB/HID/Serial hardware API audit
     let hw_issues = crate::hardware_api_audit::analyze_hardware_api(body);
     collect_ops!(

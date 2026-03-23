@@ -125,6 +125,7 @@ pub mod shared_buffer_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
 pub mod sourcemap_header_audit;
+pub mod speech_api_audit;
 pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
@@ -267,6 +268,7 @@ pub use shared_buffer_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
 pub use sourcemap_header_audit::*;
+pub use speech_api_audit::*;
 pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
@@ -611,6 +613,10 @@ mod recon_client_test;
 #[cfg(test)]
 #[path = "sourcemap_detector_test.rs"]
 mod sourcemap_detector_test;
+
+#[cfg(test)]
+#[path = "speech_api_audit_test.rs"]
+mod speech_api_audit_test;
 
 #[cfg(test)]
 #[path = "sri_checker_test.rs"]
