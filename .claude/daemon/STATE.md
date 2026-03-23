@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 6175 lib, 0 failed
+- cargo test -p aegis-orchestrator: 6349 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 205 features shipped
+- P8: 208 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -61,6 +61,7 @@ status: in-progress
 197. Method Override (12→76), 198. S3 Scanner (12→63), 199. SRI Checker (12→80)
 200. WWW-Authenticate (12→64), 201. CVE Correlator (12→66), 202. DNS Enumerator (12→63)
 203. HTTP Version (7→64), 204. Subdomain Takeover (7→57), 205. Info Disclosure (8→77)
+206. Rate Limit Detector (7→64), 207. Permissions Policy (8→65), 208. Security.txt (8→69)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
