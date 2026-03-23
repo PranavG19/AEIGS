@@ -127,4 +127,30 @@ fn cookie_issue_display() {
     assert_eq!(CookieIssue::MissingSecure.to_string(), "missing_secure");
     assert_eq!(CookieIssue::MissingHttpOnly.to_string(), "missing_httponly");
     assert_eq!(CookieIssue::MissingSameSite.to_string(), "missing_samesite");
+    assert_eq!(CookieIssue::SameSiteNone.to_string(), "samesite_none");
+}
+
+#[test]
+fn samesite_none_flagged() {
+    let cookie = "session=abc; Secure; HttpOnly; SameSite=None";
+    let result = parse_cookie_issues(cookie).unwrap();
+    assert!(result.issues.contains(&CookieIssue::SameSiteNone));
+    assert!(!result.issues.contains(&CookieIssue::MissingSameSite));
+}
+
+#[test]
+fn samesite_lax_not_flagged_as_none() {
+    let cookie = "pref=1; SameSite=Lax; Secure; HttpOnly";
+    assert!(parse_cookie_issues(cookie).is_none());
+}
+
+#[test]
+fn samesite_strict_not_flagged_as_none() {
+    let cookie = "id=val; Secure; HttpOnly; SameSite=Strict";
+    assert!(parse_cookie_issues(cookie).is_none());
+}
+
+#[test]
+fn samesite_none_severity() {
+    assert_eq!(cookie_severity(&[CookieIssue::SameSiteNone]), 3.5);
 }

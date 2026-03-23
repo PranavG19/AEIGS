@@ -14,6 +14,7 @@ pub enum CookieIssue {
     MissingSecure,
     MissingHttpOnly,
     MissingSameSite,
+    SameSiteNone,
 }
 
 impl std::fmt::Display for CookieIssue {
@@ -22,6 +23,7 @@ impl std::fmt::Display for CookieIssue {
             CookieIssue::MissingSecure => write!(f, "missing_secure"),
             CookieIssue::MissingHttpOnly => write!(f, "missing_httponly"),
             CookieIssue::MissingSameSite => write!(f, "missing_samesite"),
+            CookieIssue::SameSiteNone => write!(f, "samesite_none"),
         }
     }
 }
@@ -67,6 +69,8 @@ pub(crate) fn parse_cookie_issues(set_cookie: &str) -> Option<InsecureCookie> {
     }
     if !lower.contains("samesite") {
         issues.push(CookieIssue::MissingSameSite);
+    } else if lower.contains("samesite=none") {
+        issues.push(CookieIssue::SameSiteNone);
     }
     if issues.is_empty() {
         return None;
@@ -81,6 +85,7 @@ pub(crate) fn cookie_severity(issues: &[CookieIssue]) -> f64 {
             CookieIssue::MissingSecure => 4.0,
             CookieIssue::MissingHttpOnly => 3.5,
             CookieIssue::MissingSameSite => 3.0,
+            CookieIssue::SameSiteNone => 3.5,
         })
         .fold(0.0_f64, f64::max)
 }
