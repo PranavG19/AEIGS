@@ -595,7 +595,7 @@ fn run_body_analyzers(
     );
 
     // postMessage security
-    let pm_issues = crate::postmessage_audit::analyze_postmessage_usage(body);
+    let pm_issues = crate::postmessage_audit::analyze_postmessage(body);
     collect_ops!(
         seq,
         fc,

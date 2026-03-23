@@ -7,175 +7,317 @@ fn empty_body_no_issues() {
 }
 
 #[test]
-fn no_webrtc_no_issues() {
-    let body = "var x = document.title;";
+fn no_webrtc_indicators_no_issues() {
+    let body = "var x = document.title; console.log('hello');";
     let issues = analyze_webrtc(body);
     assert!(issues.is_empty());
 }
 
 #[test]
-fn detects_rtc_peer_connection() {
+fn detects_api_via_rtc_peer_connection() {
     let body = "var pc = new RTCPeerConnection(config);";
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::RtcPeerConnectionUsed));
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
 }
 
 #[test]
-fn detects_webkit_rtc() {
+fn detects_api_via_webkit_rtc_peer_connection() {
     let body = "var pc = new webkitRTCPeerConnection(config);";
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::RtcPeerConnectionUsed));
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
 }
 
 #[test]
-fn detects_ice_candidate_leak() {
+fn detects_api_via_moz_rtc_peer_connection() {
+    let body = "var pc = new mozRTCPeerConnection(config);";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
+}
+
+#[test]
+fn detects_api_via_get_user_media() {
+    let body = "navigator.mediaDevices.getUserMedia({video: true});";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
+}
+
+#[test]
+fn detects_api_via_create_offer() {
+    let body = "pc.createOffer().then(offer => {});";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
+}
+
+#[test]
+fn detects_api_via_create_answer() {
+    let body = "pc.createAnswer().then(answer => {});";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::ApiDetected));
+}
+
+#[test]
+fn detects_ip_leak_via_stun() {
     let body = r#"
         var pc = new RTCPeerConnection(config);
         pc.onicecandidate = function(event) {
-            var candidate = event.candidate.candidate;
-            send(candidate);
+            if (event.candidate) {
+                var ip = event.candidate.candidate;
+                sendToServer(ip);
+            }
         };
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::IceCandidateLeak));
+    assert!(issues.contains(&WebRtcIssue::IpLeakViaStun));
 }
 
 #[test]
-fn no_ice_leak_without_extraction() {
+fn no_ip_leak_with_relay_policy() {
+    let body = r#"
+        var pc = new RTCPeerConnection({
+            iceTransportPolicy: "relay"
+        });
+        pc.onicecandidate = function(event) {
+            var ip = event.candidate.candidate;
+        };
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::IpLeakViaStun));
+}
+
+#[test]
+fn detects_missing_dtls_srtp() {
+    let body = "var pc = new RTCPeerConnection({});";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::MissingDtlsSrtp));
+}
+
+#[test]
+fn missing_dtls_when_absent() {
+    let body = r#"
+        var pc = new RTCPeerConnection({});
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::MissingDtlsSrtp));
+}
+
+#[test]
+fn no_missing_dtls_with_indicator() {
+    let body = r#"
+        var pc = new RTCPeerConnection({});
+        console.log("DTLS enabled");
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::MissingDtlsSrtp));
+}
+
+#[test]
+fn detects_unrestricted_data_channel() {
     let body = r#"
         var pc = new RTCPeerConnection(config);
-        pc.onicecandidate = function(event) {
-            console.log("got candidate");
-        };
+        var dc = pc.createDataChannel("myChannel");
     "#;
     let issues = analyze_webrtc(body);
-    assert!(!issues.contains(&WebRtcIssue::IceCandidateLeak));
+    assert!(issues.contains(&WebRtcIssue::UnrestrictedDataChannel));
 }
 
 #[test]
-fn detects_stun_server() {
+fn no_unrestricted_with_max_packet_life_time() {
+    let body = r#"
+        var pc = new RTCPeerConnection(config);
+        var dc = pc.createDataChannel("myChannel", {maxPacketLifeTime: 1000});
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::UnrestrictedDataChannel));
+}
+
+#[test]
+fn no_unrestricted_with_max_retransmits() {
+    let body = r#"
+        var pc = new RTCPeerConnection(config);
+        var dc = pc.createDataChannel("myChannel", {maxRetransmits: 5});
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::UnrestrictedDataChannel));
+}
+
+#[test]
+fn detects_third_party_stun_server() {
     let body = r#"
         var pc = new RTCPeerConnection({
             iceServers: [{urls: "stun:stun.example.com:3478"}]
         });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        WebRtcIssue::StunServerExposed { .. }
-    )));
+    assert!(issues
+        .iter()
+        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
 }
 
 #[test]
-fn detects_turn_server() {
+fn detects_third_party_turn_server() {
     let body = r#"
         var pc = new RTCPeerConnection({
-            iceServers: [{urls: "turn:turn.example.com:3478", username: "user", credential: "pass"}]
+            iceServers: [{
+                urls: "turn:turn.example.com:3478",
+                username: "user",
+                credential: "pass"
+            }]
         });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        WebRtcIssue::TurnServerExposed { .. }
-    )));
+    assert!(issues
+        .iter()
+        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
 }
 
 #[test]
-fn detects_data_channel() {
+fn ignores_localhost_ice_servers() {
     let body = r#"
-        var pc = new RTCPeerConnection(config);
-        var dc = pc.createDataChannel("myChannel");
+        var pc = new RTCPeerConnection({
+            iceServers: [{urls: "stun:localhost:3478"}]
+        });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::DataChannelUsed));
+    assert!(!issues
+        .iter()
+        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
 }
 
 #[test]
-fn detects_no_ice_filtering() {
-    let body = "var pc = new RTCPeerConnection({});";
-    let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::NoIceCandidateFiltering));
-}
-
-#[test]
-fn ice_transport_policy_no_filtering_issue() {
-    let body = r#"
-        var pc = new RTCPeerConnection({iceTransportPolicy: "relay"});
-    "#;
-    let issues = analyze_webrtc(body);
-    assert!(!issues.contains(&WebRtcIssue::NoIceCandidateFiltering));
-}
-
-#[test]
-fn detects_get_user_media() {
-    let body = "navigator.mediaDevices.getUserMedia({video: true});";
-    let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::MediaDevicesAccess));
-}
-
-#[test]
-fn detects_get_display_media() {
+fn detects_screen_share_without_consent() {
     let body = "navigator.mediaDevices.getDisplayMedia({video: true});";
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::MediaDevicesAccess));
+    assert!(issues.contains(&WebRtcIssue::ScreenShareWithoutConsent));
 }
 
 #[test]
-fn detects_enumerate_devices() {
-    let body = "navigator.mediaDevices.enumerateDevices().then(devices => {});";
+fn no_screen_share_issue_with_consent_indicator() {
+    let body = r#"
+        navigator.mediaDevices.getDisplayMedia({video: true});
+        showRecordingIndicator();
+        function showRecordingIndicator() {
+            document.querySelector('.recording-indicator').style.display = 'block';
+        }
+    "#;
     let issues = analyze_webrtc(body);
-    assert!(issues.contains(&WebRtcIssue::MediaDevicesAccess));
+    assert!(!issues.contains(&WebRtcIssue::ScreenShareWithoutConsent));
 }
 
 #[test]
-fn severity_ice_leak_highest() {
-    assert_eq!(webrtc_severity(&WebRtcIssue::IceCandidateLeak), 7.0);
+fn detects_missing_ice_candidate_filtering() {
+    let body = "var pc = new RTCPeerConnection({});";
+    let issues = analyze_webrtc(body);
+    assert!(issues.contains(&WebRtcIssue::MissingIceCandidateFiltering));
 }
 
 #[test]
-fn severity_rtc_connection_lowest() {
-    assert_eq!(webrtc_severity(&WebRtcIssue::RtcPeerConnectionUsed), 3.0);
+fn no_missing_filtering_with_relay_policy() {
+    let body = r#"
+        var pc = new RTCPeerConnection({
+            iceTransportPolicy: "relay"
+        });
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::MissingIceCandidateFiltering));
+}
+
+#[test]
+fn no_missing_filtering_with_pool_size() {
+    let body = r#"
+        var pc = new RTCPeerConnection({
+            iceCandidatePoolSize: 10
+        });
+    "#;
+    let issues = analyze_webrtc(body);
+    assert!(!issues.contains(&WebRtcIssue::MissingIceCandidateFiltering));
+}
+
+#[test]
+fn severity_ip_leak_highest() {
+    assert_eq!(webrtc_severity(&WebRtcIssue::IpLeakViaStun), 7.5);
+}
+
+#[test]
+fn severity_missing_dtls() {
+    assert_eq!(webrtc_severity(&WebRtcIssue::MissingDtlsSrtp), 7.0);
+}
+
+#[test]
+fn severity_api_detected_lowest() {
+    assert_eq!(webrtc_severity(&WebRtcIssue::ApiDetected), 2.0);
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![
-        WebRtcIssue::IceCandidateLeak,
-        WebRtcIssue::RtcPeerConnectionUsed,
-    ];
-    let mut seq = 0;
+    let issues = vec![WebRtcIssue::IpLeakViaStun, WebRtcIssue::ApiDetected];
+    let mut seq = 0u64;
     let ops = webrtc_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
     assert_eq!(seq, 2);
 }
 
 #[test]
-fn display_variants() {
-    assert_eq!(
-        WebRtcIssue::RtcPeerConnectionUsed.to_string(),
-        "rtc_peer_connection"
-    );
-    assert_eq!(WebRtcIssue::IceCandidateLeak.to_string(), "ice_candidate_leak");
-    assert_eq!(WebRtcIssue::DataChannelUsed.to_string(), "data_channel");
-    assert_eq!(
-        WebRtcIssue::NoIceCandidateFiltering.to_string(),
-        "no_ice_filtering"
-    );
-    assert_eq!(WebRtcIssue::MediaDevicesAccess.to_string(), "media_devices_access");
+fn to_operations_increments_sequence() {
+    let issues = vec![
+        WebRtcIssue::MissingDtlsSrtp,
+        WebRtcIssue::UnrestrictedDataChannel,
+        WebRtcIssue::MissingIceCandidateFiltering,
+    ];
+    let mut seq = 10u64;
+    let ops = webrtc_to_operations(&issues, &mut seq);
+    assert_eq!(ops.len(), 3);
+    assert_eq!(seq, 13);
 }
 
 #[test]
-fn display_stun_server() {
-    let issue = WebRtcIssue::StunServerExposed {
+fn display_api_detected() {
+    assert_eq!(WebRtcIssue::ApiDetected.to_string(), "api_detected");
+}
+
+#[test]
+fn display_ip_leak() {
+    assert_eq!(WebRtcIssue::IpLeakViaStun.to_string(), "ip_leak_via_stun");
+}
+
+#[test]
+fn display_missing_dtls() {
+    assert_eq!(
+        WebRtcIssue::MissingDtlsSrtp.to_string(),
+        "missing_dtls_srtp"
+    );
+}
+
+#[test]
+fn display_unrestricted_data_channel() {
+    assert_eq!(
+        WebRtcIssue::UnrestrictedDataChannel.to_string(),
+        "unrestricted_data_channel"
+    );
+}
+
+#[test]
+fn display_third_party_ice_server() {
+    let issue = WebRtcIssue::ThirdPartyIceServer {
         server: "stun:stun.example.com".to_string(),
     };
-    assert_eq!(issue.to_string(), "stun_exposed:stun:stun.example.com");
+    assert_eq!(
+        issue.to_string(),
+        "third_party_ice_server:stun:stun.example.com"
+    );
 }
 
 #[test]
-fn display_turn_server() {
-    let issue = WebRtcIssue::TurnServerExposed {
-        server: "turn:turn.example.com".to_string(),
-    };
-    assert_eq!(issue.to_string(), "turn_exposed:turn:turn.example.com");
+fn display_screen_share_without_consent() {
+    assert_eq!(
+        WebRtcIssue::ScreenShareWithoutConsent.to_string(),
+        "screen_share_without_consent"
+    );
+}
+
+#[test]
+fn display_missing_ice_filtering() {
+    assert_eq!(
+        WebRtcIssue::MissingIceCandidateFiltering.to_string(),
+        "missing_ice_candidate_filtering"
+    );
 }

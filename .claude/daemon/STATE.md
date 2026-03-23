@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 4398 lib, 0 failed
+- cargo test -p aegis-orchestrator: 4444 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 157 features shipped
+- P8: 160 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -39,6 +39,7 @@ status: in-progress
 149. Structured Clone (+22), 150. Page Lifecycle (+20), 151. Event Source (+21)
 152. View Transition (19→23), 153. Web Locks (16→22), 154. Compression Stream (16→28)
 155. Trusted Types (+26), 156. WebSocket (11→30), 157. Service Worker (+38)
+158. Storage Access (14→26), 159. WebRTC (19→36), 160. PostMessage (11→33)
 
 ## handoff
-Continue P8. Next: improve existing scanners or add new ones (Storage Access, WebRTC, PostMessage deep).
+Continue P8. Next: improve more scanners (Storage, WebCrypto, CORS) or add new ones.
