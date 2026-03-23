@@ -42,6 +42,7 @@ pub mod dangerous_js_audit;
 pub mod dependency_confusion_audit;
 pub mod deprecated_header_audit;
 pub mod deserialization_audit;
+pub mod device_memory_audit;
 pub mod device_motion_audit;
 pub mod digital_goods_audit;
 pub mod distributed;
@@ -226,6 +227,7 @@ pub use dangerous_js_audit::*;
 pub use dependency_confusion_audit::*;
 pub use deprecated_header_audit::*;
 pub use deserialization_audit::*;
+pub use device_memory_audit::*;
 pub use device_motion_audit::*;
 pub use digital_goods_audit::*;
 pub use distributed::*;
@@ -1077,6 +1079,10 @@ mod deserialization_audit_test;
 #[cfg(test)]
 #[path = "device_motion_audit_test.rs"]
 mod device_motion_audit_test;
+
+#[cfg(test)]
+#[path = "device_memory_audit_test.rs"]
+mod device_memory_audit_test;
 
 #[cfg(test)]
 #[path = "digital_goods_audit_test.rs"]

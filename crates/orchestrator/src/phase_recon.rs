@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Device Memory API audit
+    let dm_issues = crate::device_memory_audit::analyze_device_memory(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dm_issues,
+        crate::device_memory_audit::device_memory_to_operations
+    );
+
     // Content Index API audit
     let ci_issues = crate::content_index_audit::analyze_content_index(body);
     collect_ops!(
