@@ -540,6 +540,16 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // WebSocket references in HTML
+    let ws_issues = crate::websocket_audit::analyze_html_for_websockets(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ws_issues,
+        crate::websocket_audit::websocket_to_operations
+    );
+
     // Deserialization indicators in response body
     let ct = hdr(resp, "content-type").unwrap_or_default();
     let deser_issues =

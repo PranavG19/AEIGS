@@ -107,6 +107,7 @@ pub mod tls_scanner;
 pub mod update_db;
 mod util;
 pub mod waf_detector;
+pub mod websocket_audit;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
@@ -211,6 +212,7 @@ pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
 pub use update_db::*;
 pub use waf_detector::*;
+pub use websocket_audit::*;
 pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
 
@@ -597,6 +599,10 @@ mod error_page_audit_test;
 #[cfg(test)]
 #[path = "referrer_audit_test.rs"]
 mod referrer_audit_test;
+
+#[cfg(test)]
+#[path = "websocket_audit_test.rs"]
+mod websocket_audit_test;
 
 #[cfg(test)]
 #[path = "xfo_audit_test.rs"]

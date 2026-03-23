@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2114 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2125 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -36,9 +36,10 @@ status: in-progress
 17. feat(recon): Add HTTP request smuggling detection scanner (+17)
 18. feat(recon): Add session fixation detection scanner (+19)
 19. feat(recon): Add unsafe deserialization detection scanner (+16)
+20. feat(recon): Add WebSocket security scanner (+11)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: response splitting detection, DNS rebinding detection, subdomain wildcard check, or HTTP/2 downgrade detection.
+Continue P8. Next ideas: IDOR pattern scanner, race condition detector, SSRF parameter scan, or subdomain wildcard check.
