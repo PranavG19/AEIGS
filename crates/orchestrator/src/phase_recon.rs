@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Drag-drop data leak audit
+    let dd_issues = crate::drag_drop_audit::analyze_drag_drop(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dd_issues,
+        crate::drag_drop_audit::drag_drop_to_operations
+    );
+
     // Permissions API abuse
     let perm_issues = crate::permissions_api_audit::analyze_permissions_api(body);
     collect_ops!(

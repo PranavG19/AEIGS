@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2628 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2643 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -65,9 +65,10 @@ status: in-progress
 46. feat(recon): Add battery API fingerprinting scanner (+15)
 47. feat(recon): Add canvas/audio/font fingerprinting scanner (+20)
 48. feat(recon): Add meta redirect and JS redirect detection scanner (+15)
+49. feat(recon): Add Permissions API abuse detection scanner (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Permissions API abuse scanner, drag-drop data leak audit, SharedArrayBuffer/COEP audit, or viewport meta audit.
+Continue P8. Next ideas: drag-drop data leak audit, SharedArrayBuffer/COEP audit, viewport meta audit, or DeviceOrientation/Motion fingerprinting.
