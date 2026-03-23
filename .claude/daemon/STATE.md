@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 4209 lib, 0 failed
+- cargo test -p aegis-orchestrator: 4262 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 145 features shipped
+- P8: 148 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -31,9 +31,10 @@ status: in-progress
 137. Web MIDI (+18), 138. Web OTP (+17), 139. Storage Buckets (+16)
 140. Web Vitals (+24), 141. Priority Hints (+17), 142. Content Visibility (+19)
 143. AbortController (+16), 144. Dialog Element (+18), 145. URL Pattern (+15)
+146. Observable (+19), 147. Navigator Login (+18), 148. Declarative Shadow DOM (+16)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next: Observable API, Async Clipboard, declarative Shadow DOM, or NavigatorLogin scanners.
+Continue P8. Next: Structured Clone, Compression API deep-dive, Page Lifecycle, or Model-View-Transition scanners.

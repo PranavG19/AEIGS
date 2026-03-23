@@ -49,6 +49,7 @@ pub mod csp_nonce_audit;
 pub mod csp_report_leak_audit;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
+pub mod declarative_shadow_dom_audit;
 pub mod dependency_confusion_audit;
 pub mod deprecated_header_audit;
 pub mod deserialization_audit;
@@ -118,10 +119,12 @@ pub mod method_scanner;
 pub mod mixed_content;
 pub mod mutation_observer_audit;
 pub mod navigation_api_audit;
+pub mod navigator_login_audit;
 pub mod nel_audit;
 pub mod network_info_audit;
 pub mod notification_audit;
 pub mod object_url_audit;
+pub mod observable_audit;
 pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod path_traversal_audit;
@@ -282,6 +285,7 @@ pub use custom_element_audit::*;
 pub use csp_report_leak_audit::*;
 pub use cve_correlator::*;
 pub use dangerous_js_audit::*;
+pub use declarative_shadow_dom_audit::*;
 pub use dependency_confusion_audit::*;
 pub use deprecated_header_audit::*;
 pub use deserialization_audit::*;
@@ -348,10 +352,12 @@ pub use method_scanner::*;
 pub use mixed_content::*;
 pub use mutation_observer_audit::*;
 pub use navigation_api_audit::*;
+pub use navigator_login_audit::*;
 pub use nel_audit::*;
 pub use network_info_audit::*;
 pub use notification_audit::*;
 pub use object_url_audit::*;
+pub use observable_audit::*;
 pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use path_traversal_audit::*;
@@ -1387,3 +1393,15 @@ mod dialog_element_audit_test;
 #[cfg(test)]
 #[path = "url_pattern_audit_test.rs"]
 mod url_pattern_audit_test;
+
+#[cfg(test)]
+#[path = "observable_audit_test.rs"]
+mod observable_audit_test;
+
+#[cfg(test)]
+#[path = "navigator_login_audit_test.rs"]
+mod navigator_login_audit_test;
+
+#[cfg(test)]
+#[path = "declarative_shadow_dom_audit_test.rs"]
+mod declarative_shadow_dom_audit_test;

@@ -1236,6 +1236,36 @@ fn run_body_analyzers(
         crate::url_pattern_audit::url_pattern_to_operations
     );
 
+    // Observable API audit
+    let obs_issues = crate::observable_audit::analyze_observable(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        obs_issues,
+        crate::observable_audit::observable_to_operations
+    );
+
+    // Navigator Login API audit
+    let nl_issues = crate::navigator_login_audit::analyze_navigator_login(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        nl_issues,
+        crate::navigator_login_audit::navigator_login_to_operations
+    );
+
+    // Declarative Shadow DOM audit
+    let dsd_issues = crate::declarative_shadow_dom_audit::analyze_declarative_shadow_dom(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dsd_issues,
+        crate::declarative_shadow_dom_audit::declarative_shadow_dom_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
