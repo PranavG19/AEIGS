@@ -42,6 +42,7 @@ pub mod dependency_confusion_audit;
 pub mod deprecated_header_audit;
 pub mod deserialization_audit;
 pub mod device_motion_audit;
+pub mod digital_goods_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
@@ -224,6 +225,7 @@ pub use dependency_confusion_audit::*;
 pub use deprecated_header_audit::*;
 pub use deserialization_audit::*;
 pub use device_motion_audit::*;
+pub use digital_goods_audit::*;
 pub use distributed::*;
 pub use distributed_transport::*;
 pub use dns_enumerator::*;
@@ -1069,6 +1071,10 @@ mod deserialization_audit_test;
 #[cfg(test)]
 #[path = "device_motion_audit_test.rs"]
 mod device_motion_audit_test;
+
+#[cfg(test)]
+#[path = "digital_goods_audit_test.rs"]
+mod digital_goods_audit_test;
 
 #[cfg(test)]
 #[path = "expose_headers_audit_test.rs"]

@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Digital Goods API audit
+    let dg_issues = crate::digital_goods_audit::analyze_digital_goods(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dg_issues,
+        crate::digital_goods_audit::digital_goods_to_operations
+    );
+
     // Topics API audit
     let ta_issues = crate::topics_api_audit::analyze_topics_api(body);
     collect_ops!(
