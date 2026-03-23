@@ -61,6 +61,7 @@ pub mod error_page_audit;
 pub mod etag_audit;
 pub mod expose_headers_audit;
 pub mod eyedropper_audit;
+pub mod fenced_frame_audit;
 pub mod fetch_credential_audit;
 pub mod file_access_audit;
 pub mod file_handling_audit;
@@ -261,6 +262,7 @@ pub use error_page_audit::*;
 pub use etag_audit::*;
 pub use expose_headers_audit::*;
 pub use eyedropper_audit::*;
+pub use fenced_frame_audit::*;
 pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
 pub use file_handling_audit::*;
@@ -891,6 +893,10 @@ mod drag_drop_audit_test;
 #[cfg(test)]
 #[path = "eyedropper_audit_test.rs"]
 mod eyedropper_audit_test;
+
+#[cfg(test)]
+#[path = "fenced_frame_audit_test.rs"]
+mod fenced_frame_audit_test;
 
 #[cfg(test)]
 #[path = "fullscreen_audit_test.rs"]

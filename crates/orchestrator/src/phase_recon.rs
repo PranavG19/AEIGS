@@ -836,6 +836,16 @@ fn run_body_analyzers(
         crate::contact_picker_audit::contact_picker_to_operations
     );
 
+    // Fenced Frames audit
+    let ff_issues = crate::fenced_frame_audit::analyze_fenced_frame(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ff_issues,
+        crate::fenced_frame_audit::fenced_frame_to_operations
+    );
+
     // EyeDropper API audit
     let ed_issues = crate::eyedropper_audit::analyze_eyedropper(body);
     collect_ops!(
