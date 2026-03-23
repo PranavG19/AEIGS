@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Launch Handler API audit
+    let lh_issues = crate::launch_handler_audit::analyze_launch_handler(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        lh_issues,
+        crate::launch_handler_audit::launch_handler_to_operations
+    );
+
     // Badging API audit
     let bg_issues = crate::badging_audit::analyze_badging(body);
     collect_ops!(

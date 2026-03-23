@@ -88,6 +88,7 @@ pub mod interactive;
 pub mod js_library_scanner;
 pub mod jwt_header_audit;
 pub mod jsonp_audit;
+pub mod launch_handler_audit;
 pub mod link_header_audit;
 pub mod local_font_audit;
 pub mod mass_assign_audit;
@@ -277,6 +278,7 @@ pub use interactive::*;
 pub use js_library_scanner::*;
 pub use jwt_header_audit::*;
 pub use jsonp_audit::*;
+pub use launch_handler_audit::*;
 pub use link_header_audit::*;
 pub use local_font_audit::*;
 pub use mass_assign_audit::*;
@@ -877,6 +879,10 @@ mod mutation_observer_audit_test;
 #[cfg(test)]
 #[path = "link_header_audit_test.rs"]
 mod link_header_audit_test;
+
+#[cfg(test)]
+#[path = "launch_handler_audit_test.rs"]
+mod launch_handler_audit_test;
 
 #[cfg(test)]
 #[path = "mass_assign_audit_test.rs"]
