@@ -152,6 +152,7 @@ pub mod sanitizer_api_audit;
 pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
+pub mod scheduler_api_audit;
 pub mod screen_capture_audit;
 pub mod security_txt;
 pub mod selection_audit;
@@ -357,6 +358,7 @@ pub use sanitizer_api_audit::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
+pub use scheduler_api_audit::*;
 pub use screen_capture_audit::*;
 pub use security_txt::*;
 pub use selection_audit::*;
@@ -729,6 +731,10 @@ mod waf_detector_test;
 #[cfg(test)]
 #[path = "rate_limit_detector_test.rs"]
 mod rate_limit_detector_test;
+
+#[cfg(test)]
+#[path = "scheduler_api_audit_test.rs"]
+mod scheduler_api_audit_test;
 
 #[cfg(test)]
 #[path = "screen_capture_audit_test.rs"]

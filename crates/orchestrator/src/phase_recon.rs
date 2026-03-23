@@ -996,6 +996,16 @@ fn run_body_analyzers(
         crate::vibration_audit::vibration_to_operations
     );
 
+    // Scheduler API audit
+    let sched_issues = crate::scheduler_api_audit::analyze_scheduler_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sched_issues,
+        crate::scheduler_api_audit::scheduler_api_to_operations
+    );
+
     // Sanitizer API audit
     let san_issues = crate::sanitizer_api_audit::analyze_sanitizer_api(body);
     collect_ops!(
