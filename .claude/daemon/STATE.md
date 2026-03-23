@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 8162 lib, 0 failed
+- cargo test -p aegis-orchestrator: 8306 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -74,6 +74,7 @@ status: in-progress
 235. Content Type Confusion (14→60), 236. Device Memory (14→68), 237. Gamepad (14→64)
 238. Mass Assign (14→60), 239. Meta Tag (14→50), 240. Mixed Content (14→68)
 241. Resize Observer (14→58), 242. Selection (14→51), 243. Wake Lock (14→59)
+244. Wireless API (14→60), 245. XFO Audit (14→60), 246. Background Sync (15→67)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
