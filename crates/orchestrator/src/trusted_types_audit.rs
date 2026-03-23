@@ -1,51 +1,37 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
-use crate::recon_client;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum TrustedTypesIssue {
-    MissingTrustedTypes,
-    AllowDuplicates,
-    DefaultPolicyWildcard,
-    UnsafeSinkWithoutPolicy { sink: String },
-    TrustedTypesWithUnsafeEval,
+    ApiDetected,
+    MissingEnforcement,
+    DefaultPolicyBypass,
+    UnsafePolicyNoSanitization,
+    XssSinkWithoutTrustedTypes,
 }
 
 impl std::fmt::Display for TrustedTypesIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MissingTrustedTypes => write!(f, "missing_trusted_types"),
-            Self::AllowDuplicates => write!(f, "trusted_types_allow_duplicates"),
-            Self::DefaultPolicyWildcard => write!(f, "trusted_types_wildcard"),
-            Self::UnsafeSinkWithoutPolicy { sink } => {
-                write!(f, "unsafe_sink_no_tt:{sink}")
-            }
-            Self::TrustedTypesWithUnsafeEval => write!(f, "trusted_types_unsafe_eval"),
+            Self::ApiDetected => write!(f, "api_detected"),
+            Self::MissingEnforcement => write!(f, "missing_enforcement"),
+            Self::DefaultPolicyBypass => write!(f, "default_policy_bypass"),
+            Self::UnsafePolicyNoSanitization => write!(f, "unsafe_policy_no_sanitization"),
+            Self::XssSinkWithoutTrustedTypes => write!(f, "xss_sink_without_trusted_types"),
         }
     }
 }
 
-const DANGEROUS_SINKS: &[&str] = &[
-    ".innerHTML",
-    ".outerHTML",
-    ".insertAdjacentHTML",
-    "document.write",
-    "document.writeln",
-    "eval(",
-    "setTimeout(",
-    "setInterval(",
-    "new Function(",
-    "DOMParser",
-    "Range.createContextualFragment",
-    "Element.insertAdjacentHTML",
-    "HTMLElement.setAttribute",
-    "script.src",
-    "script.text",
-    "location.href",
-    "location.assign",
-    "location.replace",
-];
+pub fn trusted_types_severity(issue: &TrustedTypesIssue) -> f64 {
+    match issue {
+        TrustedTypesIssue::ApiDetected => 2.0,
+        TrustedTypesIssue::MissingEnforcement => 6.5,
+        TrustedTypesIssue::DefaultPolicyBypass => 8.0,
+        TrustedTypesIssue::UnsafePolicyNoSanitization => 7.5,
+        TrustedTypesIssue::XssSinkWithoutTrustedTypes => 7.0,
+    }
+}
 
 pub fn audit_trusted_types(target: &str) -> Vec<TrustedTypesIssue> {
     if recon_client::validated_domain(target).is_none() {
@@ -58,14 +44,12 @@ pub fn audit_trusted_types(target: &str) -> Vec<TrustedTypesIssue> {
         Ok(r) => r,
         Err(_) => return Vec::new(),
     };
-
     let csp = resp
         .headers()
         .get("content-security-policy")
         .and_then(|v| v.to_str().ok())
-        .unwrap_or("")
-        .to_string();
-
+        .map(|s| s.to_string())
+        .unwrap_or_default();
     let body = resp.text().unwrap_or_default();
     analyze_trusted_types(&csp, &body)
 }
@@ -73,69 +57,54 @@ pub fn audit_trusted_types(target: &str) -> Vec<TrustedTypesIssue> {
 pub fn analyze_trusted_types(csp: &str, body: &str) -> Vec<TrustedTypesIssue> {
     let mut issues = Vec::new();
 
-    let tt_directive = extract_tt_directive(csp);
-    let has_tt = tt_directive.is_some();
+    let has_api = body.contains("trustedTypes")
+        || body.contains("TrustedHTML")
+        || body.contains("TrustedScript")
+        || body.contains("TrustedScriptURL")
+        || body.contains("createPolicy")
+        || body.contains("createHTML")
+        || body.contains("createScript")
+        || body.contains("createScriptURL");
 
-    if !has_tt && has_dangerous_sinks(body) {
-        issues.push(TrustedTypesIssue::MissingTrustedTypes);
+    if has_api {
+        issues.push(TrustedTypesIssue::ApiDetected);
     }
 
-    if let Some(directive) = &tt_directive {
-        if directive.contains("'allow-duplicates'") {
-            issues.push(TrustedTypesIssue::AllowDuplicates);
-        }
+    let has_enforcement =
+        csp.contains("require-trusted-types-for") || body.contains("require-trusted-types-for");
 
-        let parts: Vec<&str> = directive.split_whitespace().collect();
-        if parts.contains(&"*") {
-            issues.push(TrustedTypesIssue::DefaultPolicyWildcard);
-        }
+    if has_api && !has_enforcement {
+        issues.push(TrustedTypesIssue::MissingEnforcement);
     }
 
-    if has_tt {
-        let csp_lower = csp.to_ascii_lowercase();
-        if csp_lower.contains("'unsafe-eval'") {
-            issues.push(TrustedTypesIssue::TrustedTypesWithUnsafeEval);
-        }
+    if body.contains("createPolicy('default'") || body.contains("createPolicy(\"default\"") {
+        issues.push(TrustedTypesIssue::DefaultPolicyBypass);
     }
 
-    if !has_tt {
-        for &sink in DANGEROUS_SINKS {
-            if body.contains(sink) {
-                issues.push(TrustedTypesIssue::UnsafeSinkWithoutPolicy {
-                    sink: sink.to_string(),
-                });
-                break;
-            }
-        }
+    if has_api && detect_unsafe_policy(body) {
+        issues.push(TrustedTypesIssue::UnsafePolicyNoSanitization);
+    }
+
+    if !has_api && has_xss_sink(body) {
+        issues.push(TrustedTypesIssue::XssSinkWithoutTrustedTypes);
     }
 
     issues
 }
 
-fn extract_tt_directive(csp: &str) -> Option<String> {
-    for directive in csp.split(';') {
-        let trimmed = directive.trim();
-        if trimmed.starts_with("require-trusted-types-for")
-            || trimmed.starts_with("trusted-types")
-        {
-            return Some(trimmed.to_string());
-        }
+fn detect_unsafe_policy(body: &str) -> bool {
+    if (body.contains("return input") || body.contains("return value"))
+        && (body.contains("createHTML")
+            || body.contains("createScript")
+            || body.contains("createScriptURL"))
+    {
+        return true;
     }
-    None
+    false
 }
 
-fn has_dangerous_sinks(body: &str) -> bool {
-    DANGEROUS_SINKS.iter().any(|sink| body.contains(sink))
-}
-
-pub fn trusted_types_severity(issue: &TrustedTypesIssue) -> f64 {
-    match issue {
-        TrustedTypesIssue::DefaultPolicyWildcard => 7.0,
-        TrustedTypesIssue::TrustedTypesWithUnsafeEval => 6.5,
-        TrustedTypesIssue::AllowDuplicates => 5.5,
-        TrustedTypesIssue::UnsafeSinkWithoutPolicy { .. } => 5.0,
-        TrustedTypesIssue::MissingTrustedTypes => 3.0,
-    }
+fn has_xss_sink(body: &str) -> bool {
+    body.contains("innerHTML") || body.contains("eval(") || body.contains("document.write")
 }
 
 pub fn trusted_types_to_operations(
@@ -149,7 +118,7 @@ pub fn trusted_types_to_operations(
                 seq,
                 VulnerabilityClass::CrossSiteScripting,
                 trusted_types_severity(issue),
-                0.8,
+                0.5,
             )
         })
         .collect()

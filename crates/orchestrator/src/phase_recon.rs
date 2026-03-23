@@ -385,8 +385,7 @@ fn run_header_analyzers(
     );
 
     // Session fixation / session security
-    let session_issues =
-        crate::session_fixation_audit::analyze_session_security("", &set_cookies);
+    let session_issues = crate::session_fixation_audit::analyze_session_security("", &set_cookies);
     collect_ops!(
         seq,
         fc,
@@ -576,10 +575,7 @@ fn run_body_analyzers(
     );
 
     // Service worker security
-    let sw_issues = crate::service_worker_audit::analyze_service_worker_usage(
-        body,
-        !resp.is_https,
-    );
+    let sw_issues = crate::service_worker_audit::analyze_service_worker(body, !resp.is_https);
     collect_ops!(
         seq,
         fc,
@@ -619,7 +615,7 @@ fn run_body_analyzers(
     );
 
     // WebSocket references in HTML
-    let ws_issues = crate::websocket_audit::analyze_html_for_websockets(body);
+    let ws_issues = crate::websocket_audit::analyze_websocket(body);
     collect_ops!(
         seq,
         fc,
@@ -640,8 +636,7 @@ fn run_body_analyzers(
 
     // Deserialization indicators in response body
     let ct = hdr(resp, "content-type").unwrap_or_default();
-    let deser_issues =
-        crate::deserialization_audit::analyze_deserialization_response(&ct, body);
+    let deser_issues = crate::deserialization_audit::analyze_deserialization_response(&ct, body);
     collect_ops!(
         seq,
         fc,
@@ -692,8 +687,7 @@ fn run_body_analyzers(
     );
 
     // Third-party script risk audit
-    let tps_issues =
-        crate::third_party_script_audit::analyze_third_party_scripts(body, domain);
+    let tps_issues = crate::third_party_script_audit::analyze_third_party_scripts(body, domain);
     collect_ops!(
         seq,
         fc,
@@ -806,8 +800,7 @@ fn run_body_analyzers(
     // SharedArrayBuffer / COEP audit
     let coep_val = hdr(resp, "cross-origin-embedder-policy").unwrap_or_default();
     let coop_val = hdr(resp, "cross-origin-opener-policy").unwrap_or_default();
-    let sb_issues =
-        crate::shared_buffer_audit::analyze_shared_buffer(body, &coep_val, &coop_val);
+    let sb_issues = crate::shared_buffer_audit::analyze_shared_buffer(body, &coep_val, &coop_val);
     collect_ops!(
         seq,
         fc,
@@ -1467,8 +1460,7 @@ fn run_body_analyzers(
     );
 
     // Notification API audit
-    let notif_issues =
-        crate::notification_audit::analyze_notifications(body, resp.is_https);
+    let notif_issues = crate::notification_audit::analyze_notifications(body, resp.is_https);
     collect_ops!(
         seq,
         fc,
@@ -1498,8 +1490,7 @@ fn run_body_analyzers(
     );
 
     // Geolocation API audit
-    let geo_issues =
-        crate::geolocation_audit::analyze_geolocation(body, resp.is_https);
+    let geo_issues = crate::geolocation_audit::analyze_geolocation(body, resp.is_https);
     collect_ops!(
         seq,
         fc,
@@ -1549,8 +1540,7 @@ fn run_body_analyzers(
     );
 
     // Payment form security audit
-    let payment_issues =
-        crate::payment_form_audit::analyze_payment_forms(body, resp.is_https);
+    let payment_issues = crate::payment_form_audit::analyze_payment_forms(body, resp.is_https);
     collect_ops!(
         seq,
         fc,
@@ -1560,8 +1550,7 @@ fn run_body_analyzers(
     );
 
     // Credential harvesting form detection
-    let cred_issues =
-        crate::credential_harvest_audit::analyze_credential_harvest(body, domain);
+    let cred_issues = crate::credential_harvest_audit::analyze_credential_harvest(body, domain);
     collect_ops!(
         seq,
         fc,
@@ -1736,12 +1725,8 @@ fn run_body_analyzers(
     // Reporting API audit (headers + body)
     let ra_report_to = hdr(resp, "report-to").unwrap_or_default();
     let ra_rep_ep = hdr(resp, "reporting-endpoints").unwrap_or_default();
-    let ra_issues = crate::reporting_api_audit::analyze_reporting_api(
-        domain,
-        &ra_report_to,
-        &ra_rep_ep,
-        body,
-    );
+    let ra_issues =
+        crate::reporting_api_audit::analyze_reporting_api(domain, &ra_report_to, &ra_rep_ep, body);
     collect_ops!(
         seq,
         fc,
@@ -1976,21 +1961,17 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::cache_poison_audit::audit_cache_poison(&cachepoison_target)
     });
     let ssrf_target = ctx.config.target.clone();
-    let ssrf_handle = std::thread::spawn(move || {
-        crate::ssrf_redirect_audit::audit_ssrf_redirect(&ssrf_target)
-    });
+    let ssrf_handle =
+        std::thread::spawn(move || crate::ssrf_redirect_audit::audit_ssrf_redirect(&ssrf_target));
     let clickjack_target = ctx.config.target.clone();
-    let clickjack_handle = std::thread::spawn(move || {
-        crate::clickjack_audit::audit_clickjacking(&clickjack_target)
-    });
+    let clickjack_handle =
+        std::thread::spawn(move || crate::clickjack_audit::audit_clickjacking(&clickjack_target));
     let jwt_target = ctx.config.target.clone();
-    let jwt_handle = std::thread::spawn(move || {
-        crate::jwt_header_audit::audit_jwt_headers(&jwt_target)
-    });
+    let jwt_handle =
+        std::thread::spawn(move || crate::jwt_header_audit::audit_jwt_headers(&jwt_target));
     let apiver_target = ctx.config.target.clone();
-    let apiver_handle = std::thread::spawn(move || {
-        crate::api_version_audit::audit_api_versioning(&apiver_target)
-    });
+    let apiver_handle =
+        std::thread::spawn(move || crate::api_version_audit::audit_api_versioning(&apiver_target));
     let cspreport_target = ctx.config.target.clone();
     let cspreport_handle = std::thread::spawn(move || {
         crate::csp_report_leak_audit::audit_csp_report_leak(&cspreport_target)
@@ -2265,8 +2246,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(clickjack_ops);
 
     let jwt_issues = jwt_handle.join().unwrap_or_default();
-    let jwt_ops =
-        crate::jwt_header_audit::jwt_header_to_operations(&jwt_issues, &mut sequence);
+    let jwt_ops = crate::jwt_header_audit::jwt_header_to_operations(&jwt_issues, &mut sequence);
     findings_count += jwt_ops.len() as u64;
     entries.extend(jwt_ops);
 
@@ -2309,10 +2289,8 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(pathtraversal_ops);
 
     let smuggling_issues = smuggling_handle.join().unwrap_or_default();
-    let smuggling_ops = crate::request_smuggling_audit::smuggling_to_operations(
-        &smuggling_issues,
-        &mut sequence,
-    );
+    let smuggling_ops =
+        crate::request_smuggling_audit::smuggling_to_operations(&smuggling_issues, &mut sequence);
     findings_count += smuggling_ops.len() as u64;
     entries.extend(smuggling_ops);
 

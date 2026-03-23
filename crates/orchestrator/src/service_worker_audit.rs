@@ -1,26 +1,44 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
-use crate::recon_client;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum ServiceWorkerIssue {
-    SwRegistered { scope: String },
-    SwOnHttpOrigin,
-    SwImportsExternalScript { url: String },
-    SwBroadScope { scope: String },
-    SwCachesCredentials,
+    ApiDetected,
+    HttpOrigin,
+    ExternalImport { url: String },
+    BroadScope { scope: String },
+    CachesCredentials,
+    UnvalidatedCachePut,
+    InterceptionWithoutAuth,
+    NoUpdateMechanism,
 }
 
 impl std::fmt::Display for ServiceWorkerIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::SwRegistered { scope } => write!(f, "sw_registered:{scope}"),
-            Self::SwOnHttpOrigin => write!(f, "sw_http_origin"),
-            Self::SwImportsExternalScript { url } => write!(f, "sw_external_import:{url}"),
-            Self::SwBroadScope { scope } => write!(f, "sw_broad_scope:{scope}"),
-            Self::SwCachesCredentials => write!(f, "sw_caches_credentials"),
+            Self::ApiDetected => write!(f, "api_detected"),
+            Self::HttpOrigin => write!(f, "http_origin"),
+            Self::ExternalImport { url } => write!(f, "external_import:{url}"),
+            Self::BroadScope { scope } => write!(f, "broad_scope:{scope}"),
+            Self::CachesCredentials => write!(f, "caches_credentials"),
+            Self::UnvalidatedCachePut => write!(f, "unvalidated_cache_put"),
+            Self::InterceptionWithoutAuth => write!(f, "interception_without_auth"),
+            Self::NoUpdateMechanism => write!(f, "no_update_mechanism"),
         }
+    }
+}
+
+pub fn service_worker_severity(issue: &ServiceWorkerIssue) -> f64 {
+    match issue {
+        ServiceWorkerIssue::ExternalImport { .. } => 8.0,
+        ServiceWorkerIssue::InterceptionWithoutAuth => 7.5,
+        ServiceWorkerIssue::HttpOrigin => 7.0,
+        ServiceWorkerIssue::CachesCredentials => 6.5,
+        ServiceWorkerIssue::UnvalidatedCachePut => 6.0,
+        ServiceWorkerIssue::BroadScope { .. } => 5.0,
+        ServiceWorkerIssue::NoUpdateMechanism => 4.0,
+        ServiceWorkerIssue::ApiDetected => 2.0,
     }
 }
 
@@ -31,60 +49,96 @@ pub fn audit_service_worker(target: &str) -> Vec<ServiceWorkerIssue> {
     let Some(client) = recon_client::default_client() else {
         return Vec::new();
     };
-
-    let resp = match client.get(target).send() {
-        Ok(r) => r,
+    let body = match client.get(target).send() {
+        Ok(r) => r.text().unwrap_or_default(),
         Err(_) => return Vec::new(),
     };
-
     let is_http = target.starts_with("http://");
-    let body = resp.text().unwrap_or_default();
-    analyze_service_worker_usage(&body, is_http)
+    analyze_service_worker(&body, is_http)
 }
 
-pub fn analyze_service_worker_usage(body: &str, is_http: bool) -> Vec<ServiceWorkerIssue> {
+pub fn analyze_service_worker(body: &str, is_http: bool) -> Vec<ServiceWorkerIssue> {
     let mut issues = Vec::new();
 
+    let has_sw_api = body.contains("navigator.serviceWorker.register")
+        || body.contains("ServiceWorker")
+        || body.contains("serviceWorker.controller")
+        || body.contains("importScripts(")
+        || body.contains("addEventListener('fetch'")
+        || body.contains("addEventListener(\"fetch\"")
+        || body.contains("cache.put")
+        || body.contains("cache.add")
+        || body.contains("caches.open")
+        || body.contains("caches.match")
+        || body.contains("skipWaiting")
+        || body.contains("clients.claim");
+
+    if !has_sw_api {
+        return issues;
+    }
+
+    issues.push(ServiceWorkerIssue::ApiDetected);
+
+    if is_http {
+        issues.push(ServiceWorkerIssue::HttpOrigin);
+    }
+
     let registrations = extract_sw_registrations(body);
-
-    for (sw_path, scope) in &registrations {
-        issues.push(ServiceWorkerIssue::SwRegistered {
-            scope: scope.clone().unwrap_or_else(|| sw_path.clone()),
-        });
-
-        if is_http {
-            issues.push(ServiceWorkerIssue::SwOnHttpOrigin);
-        }
-
+    for (_path, scope) in &registrations {
         if let Some(s) = scope
             && (s == "/" || s == "/*")
         {
-            issues.push(ServiceWorkerIssue::SwBroadScope {
-                scope: s.clone(),
-            });
+            issues.push(ServiceWorkerIssue::BroadScope { scope: s.clone() });
         }
     }
 
     if body.contains("importScripts(") {
         for url in extract_import_urls(body) {
             if url.starts_with("http://") || url.starts_with("https://") {
-                issues.push(ServiceWorkerIssue::SwImportsExternalScript { url });
+                issues.push(ServiceWorkerIssue::ExternalImport { url });
             }
         }
     }
 
-    let body_lower = body.to_ascii_lowercase();
-    if body_lower.contains("cache.put")
-        || body_lower.contains("cache.add")
-        || body_lower.contains("caches.open")
-    {
-        let has_credential_caching = body_lower.contains("authorization")
-            || body_lower.contains("cookie")
-            || body_lower.contains("token")
-            || body_lower.contains("credential");
-        if has_credential_caching {
-            issues.push(ServiceWorkerIssue::SwCachesCredentials);
+    let has_caching = body.contains("cache.put")
+        || body.contains("cache.add")
+        || body.contains("caches.open")
+        || body.contains("caches.match");
+
+    if has_caching {
+        let has_credentials = body.contains("Authorization")
+            || body.contains("Cookie")
+            || body.contains("Token")
+            || body.contains("password")
+            || body.contains("secret");
+
+        if has_credentials {
+            issues.push(ServiceWorkerIssue::CachesCredentials);
         }
+
+        let has_validation = body.contains("response.ok")
+            || body.contains("response.status")
+            || body.contains("response.headers");
+
+        if !has_validation && body.contains("cache.put") {
+            issues.push(ServiceWorkerIssue::UnvalidatedCachePut);
+        }
+    }
+
+    if body.contains("addEventListener('fetch'") || body.contains("addEventListener(\"fetch\"") {
+        let has_auth_check = body.contains("Authorization")
+            || body.contains("authenticate")
+            || body.contains("checkAuth")
+            || body.contains("verifyToken");
+
+        if !has_auth_check {
+            issues.push(ServiceWorkerIssue::InterceptionWithoutAuth);
+        }
+    }
+
+    let has_update = body.contains("skipWaiting") || body.contains("clients.claim");
+    if !has_update {
+        issues.push(ServiceWorkerIssue::NoUpdateMechanism);
     }
 
     issues
@@ -143,16 +197,6 @@ fn extract_quoted(s: &str) -> Option<String> {
     Some(inner[..end].to_string())
 }
 
-pub fn service_worker_severity(issue: &ServiceWorkerIssue) -> f64 {
-    match issue {
-        ServiceWorkerIssue::SwImportsExternalScript { .. } => 7.5,
-        ServiceWorkerIssue::SwOnHttpOrigin => 7.0,
-        ServiceWorkerIssue::SwCachesCredentials => 6.0,
-        ServiceWorkerIssue::SwBroadScope { .. } => 4.0,
-        ServiceWorkerIssue::SwRegistered { .. } => 2.0,
-    }
-}
-
 pub fn service_worker_to_operations(
     issues: &[ServiceWorkerIssue],
     seq: &mut u64,
@@ -164,7 +208,7 @@ pub fn service_worker_to_operations(
                 seq,
                 VulnerabilityClass::SecurityMisconfiguration,
                 service_worker_severity(issue),
-                0.75,
+                0.5,
             )
         })
         .collect()
