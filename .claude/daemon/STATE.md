@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3018 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3031 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 79 features shipped
+- P8: 80 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -33,9 +33,10 @@ status: in-progress
 72. Picture-in-Picture API (+13)
 73. Wake Lock API (+14)
 74. Resize Observer fingerprinting (+14)
+75. Mutation Observer surveillance (+13)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Mutation Observer surveillance audit, Eye Dropper API audit, Fullscreen API abuse audit, or Selection API data leak audit.
+Continue P8. Next ideas: Eye Dropper API audit, Fullscreen API abuse audit, Selection API data leak audit, or Contact Picker API audit.

@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Mutation Observer surveillance audit
+    let mo_issues = crate::mutation_observer_audit::analyze_mutation_observer(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        mo_issues,
+        crate::mutation_observer_audit::mutation_observer_to_operations
+    );
+
     // Resize Observer fingerprinting audit
     let ro_issues = crate::resize_observer_audit::analyze_resize_observer(body);
     collect_ops!(

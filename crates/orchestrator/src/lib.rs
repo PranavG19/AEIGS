@@ -84,6 +84,7 @@ pub mod meta_tag_audit;
 pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
+pub mod mutation_observer_audit;
 pub mod navigation_api_audit;
 pub mod nel_audit;
 pub mod notification_audit;
@@ -244,6 +245,7 @@ pub use meta_tag_audit::*;
 pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
+pub use mutation_observer_audit::*;
 pub use navigation_api_audit::*;
 pub use nel_audit::*;
 pub use notification_audit::*;
@@ -719,6 +721,10 @@ mod nel_audit_test;
 #[cfg(test)]
 #[path = "navigation_api_audit_test.rs"]
 mod navigation_api_audit_test;
+
+#[cfg(test)]
+#[path = "mutation_observer_audit_test.rs"]
+mod mutation_observer_audit_test;
 
 #[cfg(test)]
 #[path = "link_header_audit_test.rs"]
