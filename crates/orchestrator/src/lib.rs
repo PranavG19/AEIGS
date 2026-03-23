@@ -34,6 +34,7 @@ mod graph_persistence;
 pub mod header_audit;
 pub(crate) mod html_parser;
 pub mod hidden_input_audit;
+pub mod host_header_audit;
 pub mod hsts_preload;
 pub mod http_version;
 pub mod hypothesis_bridge;
@@ -471,6 +472,10 @@ mod jsonp_audit_test;
 #[cfg(test)]
 #[path = "hidden_input_audit_test.rs"]
 mod hidden_input_audit_test;
+
+#[cfg(test)]
+#[path = "host_header_audit_test.rs"]
+mod host_header_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

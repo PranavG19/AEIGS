@@ -1,36 +1,30 @@
 # DAEMON STATE
 
 ## current
-priority: P10 (ORCHESTRATION_CONSOLIDATION)
-task: fetch-once pattern in phase_recon.rs
-status: DONE — committing
+priority: P8 (CONTINUOUS_IMPROVEMENT)
+task: adding new scanner features
+status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1771 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1784 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
-- P0-P6: CLEAR — P7: BLOCKED (Docker not running)
-- P8: 46 features shipped — CLEAR
-- P9: COMPLETE (helper consolidation + bugfixes)
-- P10: COMPLETE
+- P0-P7: CLEAR (P7 BLOCKED Docker)
+- P8: 47 features shipped
+- P9: COMPLETE (helper consolidation)
+- P10: COMPLETE (fetch-once pattern)
+- P11: COMPLETE (coverage expansion, 1708→1784)
 
-## P10-progress
-- [x] Extract pure analysis functions from 5 modules (header_audit, csp_analyzer, hsts_preload, cookie_audit, tech_detector)
-- [x] Add SharedResponse struct, fetch_shared_response(), hdr()/hdr_all() helpers
-- [x] Add collect_ops! macro for DRY operation collection
-- [x] Implement run_header_analyzers() — 25 header analyzers from shared response
-- [x] Implement run_body_analyzers() — 17 body analyzers from shared response
-- [x] Rewrite run_recon() — 1 shared fetch + ~20 separate threads (down from ~55)
-- [x] All 1720 tests pass, 0 clippy warnings
+## session-commits
+1. ref(recon): Consolidate phase_recon with fetch-once pattern
+2. test(recon): Add tests for util, tech_detector, waf_detector, and more (+23)
+3. test(recon): Expand test coverage for cve_correlator and phase_crawl (+12)
+4. fix(orchestrator): Wire orphaned doctor module into lib.rs (+16)
+5. feat(recon): Add host header injection detection scanner (+13)
 
-## P11-progress
-- [x] Create util_test.rs (8 tests) — was the only missing test file
-- [x] Expand tech_detector (+4), waf_detector (+3), http_version (+3), rate_limit_detector (+3), subdomain_takeover (+2)
-- [x] Expand cve_correlator (+4), phase_crawl (+8: extract_href_links, resolve_url)
-- [x] Wire orphaned doctor module into lib.rs (+16 tests discovered)
-- [x] Identified eval module as dead code (broken imports, never wired)
-- All files now have 7+ tests; critical paths well-covered
+## known-issues
+- eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-P11 DONE (coverage batch). NEXT: continue P11 or move to P12 (security hardening)
+Continue P8. Next ideas: CORS preflight deep check, HTTP/2 HPACK bomb detection, or WebSocket security audit.
