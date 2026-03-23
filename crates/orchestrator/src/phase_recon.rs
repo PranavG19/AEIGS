@@ -626,6 +626,17 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // Third-party script risk audit
+    let tps_issues =
+        crate::third_party_script_audit::analyze_third_party_scripts(body, domain);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        tps_issues,
+        crate::third_party_script_audit::third_party_script_to_operations
+    );
+
     // API endpoint leak detection
     let apileak_issues = crate::api_endpoint_leak_audit::analyze_api_endpoint_leaks(body);
     collect_ops!(

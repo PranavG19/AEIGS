@@ -110,6 +110,7 @@ pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
+pub mod third_party_script_audit;
 pub mod timing_allow_origin_audit;
 pub mod trusted_types_audit;
 pub mod verb_tamper_audit;
@@ -226,6 +227,7 @@ pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
+pub use third_party_script_audit::*;
 pub use timing_allow_origin_audit::*;
 pub use trusted_types_audit::*;
 pub use verb_tamper_audit::*;
@@ -583,6 +585,10 @@ mod mass_assign_audit_test;
 #[cfg(test)]
 #[path = "reporting_endpoints_audit_test.rs"]
 mod reporting_endpoints_audit_test;
+
+#[cfg(test)]
+#[path = "third_party_script_audit_test.rs"]
+mod third_party_script_audit_test;
 
 #[cfg(test)]
 #[path = "timing_allow_origin_audit_test.rs"]
