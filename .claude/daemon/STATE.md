@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1871 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1889 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 52 features shipped
+- P8: 53 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -22,6 +22,8 @@ status: in-progress
 3. feat(recon): Add sensitive file exposure scanner (+24)
 4. feat(recon): Add prototype pollution detection scanner (+13)
 5. feat(recon): Add CORS preflight deep check scanner (+23)
+6. feat(recon): Add HTTP verb tampering auth bypass scanner (+15)
+7. feat(recon): Add cookie prefix audit scanner (+18)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.

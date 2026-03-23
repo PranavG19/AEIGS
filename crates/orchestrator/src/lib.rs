@@ -11,6 +11,7 @@ pub mod comment_leak;
 pub mod content_type_audit;
 pub mod convergence;
 pub mod cookie_audit;
+pub mod cookie_prefix_audit;
 pub mod coop_coep_audit;
 pub mod corp_audit;
 pub mod cors_preflight_audit;
@@ -106,6 +107,7 @@ pub use comment_leak::*;
 pub use content_type_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
+pub use cookie_prefix_audit::*;
 pub use coop_coep_audit::*;
 pub use corp_audit::*;
 pub use cors_preflight_audit::*;
@@ -337,6 +339,10 @@ mod crlf_injection_audit_test;
 #[cfg(test)]
 #[path = "cookie_audit_test.rs"]
 mod cookie_audit_test;
+
+#[cfg(test)]
+#[path = "cookie_prefix_audit_test.rs"]
+mod cookie_prefix_audit_test;
 
 #[cfg(test)]
 #[path = "meta_tag_audit_test.rs"]

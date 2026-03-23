@@ -626,6 +626,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let verbtamp_handle = std::thread::spawn(move || {
         crate::verb_tamper_audit::audit_verb_tampering(&verbtamp_target)
     });
+    let cookiepfx_target = ctx.config.target.clone();
+    let cookiepfx_handle = std::thread::spawn(move || {
+        crate::cookie_prefix_audit::audit_cookie_prefixes(&cookiepfx_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -850,6 +854,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::verb_tamper_audit::verb_tamper_to_operations(&verbtamp_issues, &mut sequence);
     findings_count += verbtamp_ops.len() as u64;
     entries.extend(verbtamp_ops);
+
+    let cookiepfx_issues = cookiepfx_handle.join().unwrap_or_default();
+    let cookiepfx_ops =
+        crate::cookie_prefix_audit::cookie_prefix_to_operations(&cookiepfx_issues, &mut sequence);
+    findings_count += cookiepfx_ops.len() as u64;
+    entries.extend(cookiepfx_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
