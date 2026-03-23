@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Clipboard API audit
+    let clip_issues = crate::clipboard_audit::analyze_clipboard(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        clip_issues,
+        crate::clipboard_audit::clipboard_to_operations
+    );
+
     // Web Crypto API misuse detection
     let wc_issues = crate::webcrypto_audit::analyze_webcrypto(body);
     collect_ops!(

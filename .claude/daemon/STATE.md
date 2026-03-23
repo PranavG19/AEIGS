@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2507 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2527 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -58,9 +58,10 @@ status: in-progress
 39. feat(recon): Add payment form security audit scanner (+20)
 40. feat(recon): Add window.name cross-origin leak scanner (+22)
 41. feat(recon): Add Web Crypto API misuse scanner (+23)
+42. feat(recon): Add clipboard API security audit scanner (+20)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: clipboard API audit, CNAME dangling check, event handler injection scanner, or viewport/meta redirect audit.
+Continue P8. Next ideas: viewport/meta redirect audit, geolocation API audit, notification API audit, or WebRTC leak scanner.

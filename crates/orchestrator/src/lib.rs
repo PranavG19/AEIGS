@@ -10,6 +10,7 @@ pub mod cache_poison_audit;
 pub mod calibration;
 pub mod checkpoint;
 pub mod clear_site_data_audit;
+pub mod clipboard_audit;
 pub mod clickjack_audit;
 pub mod comment_leak;
 pub mod content_type_audit;
@@ -142,6 +143,7 @@ pub use cache_poison_audit::*;
 pub use checkpoint::*;
 pub use clear_site_data_audit::*;
 pub use clickjack_audit::*;
+pub use clipboard_audit::*;
 pub use comment_leak::*;
 pub use content_type_audit::*;
 pub use content_type_confusion_audit::*;
@@ -717,6 +719,10 @@ mod window_name_audit_test;
 #[cfg(test)]
 #[path = "webcrypto_audit_test.rs"]
 mod webcrypto_audit_test;
+
+#[cfg(test)]
+#[path = "clipboard_audit_test.rs"]
+mod clipboard_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]
