@@ -9,6 +9,7 @@ pub mod checkpoint;
 pub mod comment_leak;
 pub mod convergence;
 pub mod cookie_audit;
+pub mod coop_coep_audit;
 pub mod cors_scanner;
 pub mod csp_analyzer;
 pub mod cve_correlator;
@@ -78,6 +79,7 @@ pub use comment_leak::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use cookie_audit::*;
+pub use coop_coep_audit::*;
 pub use cors_scanner::*;
 pub use dangerous_js_audit::*;
 pub use csp_analyzer::*;
@@ -396,6 +398,10 @@ mod referrer_audit_test;
 #[cfg(test)]
 #[path = "xfo_audit_test.rs"]
 mod xfo_audit_test;
+
+#[cfg(test)]
+#[path = "coop_coep_audit_test.rs"]
+mod coop_coep_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
