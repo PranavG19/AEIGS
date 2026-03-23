@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3674 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3692 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 115 features shipped
+- P8: 116 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -22,10 +22,10 @@ status: in-progress
 95. Content Index API (+16), 96. Device Memory API (+14), 97. Barcode Detection (+15)
 98. Network Information API (+16), 99. Shape Detection API (+15), 100. Vibration API (+15)
 101-104: Media Session, Payment Handler, Badging, Launch Handler
-105. Web Codecs API (+17), 106. Ink API (+15), 107. File Handling API (+17), 108. Shadow DOM (+21), 109. Sanitizer API (+23), 110. Window Controls Overlay (+19), 111. View Transitions (+19), 112. Popover API (+20), 113. Fenced Frames (+18), 114. Attribution Reporting (+18), 115. Import Maps (+17)
+105. Web Codecs API (+17), 106. Ink API (+15), 107. File Handling API (+17), 108. Shadow DOM (+21), 109. Sanitizer API (+23), 110. Window Controls Overlay (+19), 111. View Transitions (+19), 112. Popover API (+20), 113. Fenced Frames (+18), 114. Attribution Reporting (+18), 115. Import Maps (+17), 116. Speculation Rules (+18)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Speculation Rules audit, Compute Pressure audit, Document Picture-in-Picture audit, or WebGPU audit.
+Continue P8. Next ideas: Compute Pressure audit, Document Picture-in-Picture audit, WebGPU audit, or CSS Container Queries audit.

@@ -817,6 +817,16 @@ fn run_body_analyzers(
     );
 
     // Drag-drop data leak audit
+    // Document Picture-in-Picture audit
+    let dpip_issues = crate::document_pip_audit::analyze_document_pip(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dpip_issues,
+        crate::document_pip_audit::document_pip_to_operations
+    );
+
     let dd_issues = crate::drag_drop_audit::analyze_drag_drop(body);
     collect_ops!(
         seq,

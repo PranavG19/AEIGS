@@ -55,6 +55,7 @@ pub mod dom_clobbering_audit;
 pub mod dns_prefetch_control_audit;
 pub mod doctor;
 pub mod document_domain_audit;
+pub mod document_pip_audit;
 pub mod drag_drop_audit;
 pub mod email_security;
 pub mod endpoint_similarity;
@@ -259,6 +260,7 @@ pub use dns_enumerator::*;
 pub use dom_clobbering_audit::*;
 pub use dns_prefetch_control_audit::*;
 pub use document_domain_audit::*;
+pub use document_pip_audit::*;
 pub use drag_drop_audit::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
@@ -899,6 +901,10 @@ mod dangerous_js_audit_test;
 #[cfg(test)]
 #[path = "document_domain_audit_test.rs"]
 mod document_domain_audit_test;
+
+#[cfg(test)]
+#[path = "document_pip_audit_test.rs"]
+mod document_pip_audit_test;
 
 #[cfg(test)]
 #[path = "dom_clobbering_audit_test.rs"]
