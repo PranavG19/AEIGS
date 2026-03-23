@@ -1016,6 +1016,16 @@ fn run_body_analyzers(
         crate::shape_detection_audit::shape_detection_to_operations
     );
 
+    // Speculation Rules audit
+    let spec_issues = crate::speculation_rules_audit::analyze_speculation_rules(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        spec_issues,
+        crate::speculation_rules_audit::speculation_rules_to_operations
+    );
+
     // Network Information API audit
     let ni_issues = crate::network_info_audit::analyze_network_info(body);
     collect_ops!(

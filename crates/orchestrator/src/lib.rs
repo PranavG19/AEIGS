@@ -158,6 +158,7 @@ pub mod service_worker_audit;
 pub mod session_fixation_audit;
 pub mod shadow_dom_audit;
 pub mod shape_detection_audit;
+pub mod speculation_rules_audit;
 pub mod sse_audit;
 pub mod ssrf_redirect_audit;
 pub mod storage_access_audit;
@@ -359,6 +360,7 @@ pub use service_worker_audit::*;
 pub use session_fixation_audit::*;
 pub use shadow_dom_audit::*;
 pub use shape_detection_audit::*;
+pub use speculation_rules_audit::*;
 pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
 pub use storage_access_audit::*;
@@ -869,6 +871,10 @@ mod shadow_dom_audit_test;
 #[cfg(test)]
 #[path = "shape_detection_audit_test.rs"]
 mod shape_detection_audit_test;
+
+#[cfg(test)]
+#[path = "speculation_rules_audit_test.rs"]
+mod speculation_rules_audit_test;
 
 #[cfg(test)]
 #[path = "sse_audit_test.rs"]
