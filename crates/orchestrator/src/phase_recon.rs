@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Broadcast Channel API audit
+    let bc_issues = crate::broadcast_channel_audit::analyze_broadcast_channel(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bc_issues,
+        crate::broadcast_channel_audit::broadcast_channel_to_operations
+    );
+
     // Performance Observer leak audit
     let po_issues = crate::perf_observer_audit::analyze_perf_observer(body);
     collect_ops!(

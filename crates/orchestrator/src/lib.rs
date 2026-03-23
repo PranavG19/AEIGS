@@ -7,6 +7,7 @@ pub mod background_sync_audit;
 pub mod base_tag_audit;
 pub mod battery_audit;
 pub mod benchmark;
+pub mod broadcast_channel_audit;
 pub mod cache_audit;
 pub mod cache_poison_audit;
 pub mod calibration;
@@ -164,6 +165,7 @@ pub use auth_session::*;
 pub use background_sync_audit::*;
 pub use battery_audit::*;
 pub use base_tag_audit::*;
+pub use broadcast_channel_audit::*;
 pub use cache_audit::*;
 pub use cache_poison_audit::*;
 pub use canvas_fingerprint_audit::*;
@@ -859,6 +861,10 @@ mod battery_audit_test;
 #[cfg(test)]
 #[path = "background_sync_audit_test.rs"]
 mod background_sync_audit_test;
+
+#[cfg(test)]
+#[path = "broadcast_channel_audit_test.rs"]
+mod broadcast_channel_audit_test;
 
 #[cfg(test)]
 #[path = "canvas_fingerprint_audit_test.rs"]
