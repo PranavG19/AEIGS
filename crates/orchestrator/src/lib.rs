@@ -54,6 +54,7 @@ pub mod js_library_scanner;
 pub mod jwt_header_audit;
 pub mod jsonp_audit;
 pub mod link_header_audit;
+pub mod mass_assign_audit;
 pub mod meta_tag_audit;
 pub mod method_scanner;
 pub mod mixed_content;
@@ -152,6 +153,7 @@ pub use js_library_scanner::*;
 pub use jwt_header_audit::*;
 pub use jsonp_audit::*;
 pub use link_header_audit::*;
+pub use mass_assign_audit::*;
 pub use meta_tag_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
@@ -491,6 +493,10 @@ mod nel_audit_test;
 #[cfg(test)]
 #[path = "link_header_audit_test.rs"]
 mod link_header_audit_test;
+
+#[cfg(test)]
+#[path = "mass_assign_audit_test.rs"]
+mod mass_assign_audit_test;
 
 #[cfg(test)]
 #[path = "reporting_endpoints_audit_test.rs"]
