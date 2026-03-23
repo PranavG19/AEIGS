@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1293 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1307 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -29,9 +29,10 @@ status: in-progress
 - [x] G14 consolidation: recon_client.rs (shared helpers for 20 modules)
 - [x] JS library version detection scanner
 - [x] Subresource integrity (SRI) checker
+- [x] Mixed content detection (HTTP resources on HTTPS pages)
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8 features: GraphQL introspection scanner, API key leak
-   detection, clickjacking protection checker, referrer-policy audit.
-2. After 5 more P8 features, re-check G14 for new consolidation needs.
+1. Continue P8 features: form security audit, open port detection,
+   GraphQL introspection scanner, API key leak detection.
+2. After 3 more P8 features, re-check G14 for new consolidation needs.
