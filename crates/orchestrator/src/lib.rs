@@ -26,6 +26,7 @@ pub mod idor_analyzer;
 pub mod info_disclosure;
 pub mod interactive;
 pub mod js_library_scanner;
+pub mod meta_tag_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod permissions_policy;
@@ -84,6 +85,7 @@ pub use idor_analyzer::*;
 pub use info_disclosure::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
+pub use meta_tag_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
 pub use permissions_policy::*;
@@ -251,6 +253,10 @@ mod cors_scanner_test;
 #[cfg(test)]
 #[path = "cookie_audit_test.rs"]
 mod cookie_audit_test;
+
+#[cfg(test)]
+#[path = "meta_tag_audit_test.rs"]
+mod meta_tag_audit_test;
 
 #[cfg(test)]
 #[path = "method_scanner_test.rs"]

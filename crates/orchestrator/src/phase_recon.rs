@@ -107,6 +107,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let smap_target = ctx.config.target.clone();
     let smap_handle =
         std::thread::spawn(move || crate::sourcemap_detector::detect_sourcemaps(&smap_target));
+    let meta_target = ctx.config.target.clone();
+    let meta_handle =
+        std::thread::spawn(move || crate::meta_tag_audit::audit_meta_tags(&meta_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -357,6 +360,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::sourcemap_detector::sourcemap_to_operations(&smap_leaks, &mut sequence);
     findings_count += smap_ops.len() as u64;
     entries.extend(smap_ops);
+
+    let meta_issues = meta_handle.join().unwrap_or_default();
+    let meta_ops =
+        crate::meta_tag_audit::meta_findings_to_operations(&meta_issues, &mut sequence);
+    findings_count += meta_ops.len() as u64;
+    entries.extend(meta_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

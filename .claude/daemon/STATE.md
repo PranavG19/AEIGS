@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1347 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1361 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -33,11 +33,10 @@ status: in-progress
 - [x] Form security audit (CSRF, insecure action, autocomplete)
 - [x] HTML comment leak scanner (credentials, paths, debug info)
 - [x] Source map file exposure detector
+- [x] Meta tag security audit (generator, robots, set-cookie)
 
 ## handoff
 NEXT STEPS (in order):
-1. G14 consolidation check — 5 HTML tag parsers now share tag iteration
-   pattern. Evaluate extracting shared html_tag_iter helper. Not urgent
-   since each has different tag/attr combos.
-2. Continue P8: error page information leak, meta tag audit, link
-   header preload, open graph metadata validation.
+1. Continue P8: error page leak detection, link rel preconnect audit,
+   iframe sandbox checker, window.postMessage audit.
+2. G14 check at 30 scanners. Currently at ~28.

@@ -68,7 +68,6 @@ fn no_leaks_in_commentless_html() {
 
 #[test]
 fn truncates_long_snippets() {
-    let long_comment = format!("<!-- {} -->", "a".repeat(200));
     let leaks = find_comment_leaks(&format!("<!-- TODO: {} -->", "a".repeat(200)));
     assert!(!leaks.is_empty());
     assert!(leaks[0].snippet.len() <= 83); // 80 + "..."
