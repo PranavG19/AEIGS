@@ -81,6 +81,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod security_txt;
 pub mod sensitive_file_audit;
+pub mod ssrf_redirect_audit;
 pub mod server_timing_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
@@ -174,6 +175,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use security_txt::*;
 pub use sensitive_file_audit::*;
+pub use ssrf_redirect_audit::*;
 pub use server_timing_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
@@ -449,6 +451,10 @@ mod sri_checker_test;
 #[cfg(test)]
 #[path = "sensitive_file_audit_test.rs"]
 mod sensitive_file_audit_test;
+
+#[cfg(test)]
+#[path = "ssrf_redirect_audit_test.rs"]
+mod ssrf_redirect_audit_test;
 
 #[cfg(test)]
 #[path = "dangerous_js_audit_test.rs"]

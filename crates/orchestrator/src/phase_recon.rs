@@ -634,6 +634,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let cachepoison_handle = std::thread::spawn(move || {
         crate::cache_poison_audit::audit_cache_poison(&cachepoison_target)
     });
+    let ssrf_target = ctx.config.target.clone();
+    let ssrf_handle = std::thread::spawn(move || {
+        crate::ssrf_redirect_audit::audit_ssrf_redirect(&ssrf_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -870,6 +874,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::cache_poison_audit::cache_poison_to_operations(&cachepoison_issues, &mut sequence);
     findings_count += cachepoison_ops.len() as u64;
     entries.extend(cachepoison_ops);
+
+    let ssrf_issues = ssrf_handle.join().unwrap_or_default();
+    let ssrf_ops =
+        crate::ssrf_redirect_audit::ssrf_redirect_to_operations(&ssrf_issues, &mut sequence);
+    findings_count += ssrf_ops.len() as u64;
+    entries.extend(ssrf_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
