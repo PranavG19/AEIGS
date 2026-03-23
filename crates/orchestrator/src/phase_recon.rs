@@ -302,8 +302,12 @@ fn run_header_analyzers(
 
     // Reporting-Endpoints
     let repep_val = hdr(resp, "reporting-endpoints");
-    let repep_issues =
-        crate::reporting_endpoints_audit::analyze_reporting_endpoints(repep_val.as_deref(), domain);
+    let report_to_val = hdr(resp, "report-to");
+    let repep_issues = crate::reporting_endpoints_audit::analyze_reporting_endpoints(
+        repep_val.as_deref(),
+        report_to_val.as_deref(),
+        domain,
+    );
     collect_ops!(
         seq,
         fc,
@@ -2175,9 +2179,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     findings_count += cors_ops.len() as u64;
     entries.extend(cors_ops);
 
-    if let Some(method_result) = method_handle.join().ok().flatten() {
+    if let Some(method_issues) = method_handle.join().ok().flatten() {
         let method_ops =
-            crate::method_scanner::method_findings_to_operations(&method_result, &mut sequence);
+            crate::method_scanner::method_findings_to_operations(&method_issues, &mut sequence);
         findings_count += method_ops.len() as u64;
         entries.extend(method_ops);
     }
