@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser::{self, TagIter};
 use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,28 +58,12 @@ const TAG_ATTRS: &[(&str, &str, MixedContentKind)] = &[
 
 pub(crate) fn find_mixed_content(html: &str) -> Vec<MixedContentIssue> {
     let mut issues = Vec::new();
-    let lower = html.to_ascii_lowercase();
 
     for (tag_name, attr, kind) in TAG_ATTRS {
-        let pattern = format!("<{tag_name}");
-        let attr_pattern = format!("{attr}=");
-        let mut search_from = 0;
-
-        while let Some(start) = lower[search_from..].find(&pattern) {
-            let abs_start = search_from + start;
-            let Some(end) = lower[abs_start..].find('>') else {
-                break;
-            };
-            let tag = &html[abs_start..abs_start + end + 1];
-            let tag_lower = &lower[abs_start..abs_start + end + 1];
-            search_from = abs_start + end + 1;
-
-            let Some(pos) = tag_lower.find(&attr_pattern) else {
-                continue;
-            };
-            let rest = &tag[pos + attr_pattern.len()..];
-            let url = extract_quoted_value(rest);
-            if url.starts_with("http://") {
+        for tag in TagIter::new(html, tag_name) {
+            if let Some(url) = html_parser::extract_attr(tag.original, &tag.lower, attr)
+                && url.starts_with("http://")
+            {
                 issues.push(MixedContentIssue {
                     kind: kind.clone(),
                     url,
@@ -88,26 +73,6 @@ pub(crate) fn find_mixed_content(html: &str) -> Vec<MixedContentIssue> {
     }
 
     issues
-}
-
-fn extract_quoted_value(s: &str) -> String {
-    let trimmed = s.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        stripped
-            .find('"')
-            .map(|end| stripped[..end].to_string())
-            .unwrap_or_default()
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        stripped
-            .find('\'')
-            .map(|end| stripped[..end].to_string())
-            .unwrap_or_default()
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        trimmed[..end].to_string()
-    }
 }
 
 pub fn mixed_content_to_operations(

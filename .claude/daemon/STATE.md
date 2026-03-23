@@ -36,10 +36,10 @@ status: in-progress
 - [x] Meta tag security audit (generator, robots, set-cookie)
 - [x] Iframe sandbox audit (missing sandbox, permissive flags, HTTP src)
 - [x] G14 consolidation: html_parser.rs (TagIter + extract_attr)
-  Refactored: iframe_audit, meta_tag_audit, sri_checker
+  All 6 tag scanners now use shared html_parser helpers
 
 ## handoff
 NEXT STEPS (in order):
-1. Refactor remaining scanners to use html_parser: mixed_content,
-   form_audit, sourcemap_detector.
-2. Continue P8: error page leak, base tag hijack, link preconnect.
+1. Continue P8: base tag hijack detection, link preconnect audit,
+   error page info leak, window.opener detection.
+2. Next G14 check after 5 more features.

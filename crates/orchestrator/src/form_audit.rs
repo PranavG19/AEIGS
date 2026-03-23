@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser;
 use crate::recon_client;
 
 const CSRF_TOKEN_NAMES: &[&str] = &[
@@ -69,7 +70,7 @@ pub(crate) fn analyze_forms(html: &str) -> Vec<FormFinding> {
         let form_body = &lower[abs_start..abs_start + form_end];
         search_from = abs_start + form_end.max(tag_end + 1);
 
-        let action = extract_action(form_tag).unwrap_or_default();
+        let action = html_parser::extract_attr_lower(form_tag, "action").unwrap_or_default();
 
         if action.starts_with("http://") {
             findings.push(FormFinding {
@@ -78,7 +79,8 @@ pub(crate) fn analyze_forms(html: &str) -> Vec<FormFinding> {
             });
         }
 
-        let method = extract_method(form_tag);
+        let method =
+            html_parser::extract_attr_lower(form_tag, "method").unwrap_or_else(|| "get".into());
         if method == "post" && !has_csrf_token(form_body) {
             findings.push(FormFinding {
                 issue: FormIssue::MissingCsrfToken,
@@ -95,44 +97,6 @@ pub(crate) fn analyze_forms(html: &str) -> Vec<FormFinding> {
     }
 
     findings
-}
-
-fn extract_action(form_tag: &str) -> Option<String> {
-    let pos = form_tag.find("action=")?;
-    let rest = &form_tag[pos + 7..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
-}
-
-fn extract_method(form_tag: &str) -> String {
-    let pos = match form_tag.find("method=") {
-        Some(p) => p,
-        None => return "get".to_string(),
-    };
-    let rest = &form_tag[pos + 7..];
-    let trimmed = rest.trim_start();
-    let value = if let Some(stripped) = trimmed.strip_prefix('"') {
-        stripped.find('"').map(|end| &stripped[..end])
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        stripped.find('\'').map(|end| &stripped[..end])
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(&trimmed[..end])
-    };
-    value.unwrap_or("get").to_string()
 }
 
 fn has_csrf_token(form_body: &str) -> bool {

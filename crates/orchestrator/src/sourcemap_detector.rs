@@ -1,6 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
+use crate::html_parser::{self, TagIter};
 use crate::recon_client;
 
 #[derive(Debug, Clone)]
@@ -25,28 +26,17 @@ pub fn detect_sourcemaps(target: &str) -> Vec<SourceMapLeak> {
 
 pub(crate) fn find_sourcemap_references(html: &str, base_url: &str) -> Vec<SourceMapLeak> {
     let mut leaks = Vec::new();
-    let lower = html.to_ascii_lowercase();
-    let mut search_from = 0;
 
-    while let Some(start) = lower[search_from..].find("<script") {
-        let abs_start = search_from + start;
-        let Some(end) = lower[abs_start..].find('>') else {
-            break;
-        };
-        let tag = &html[abs_start..abs_start + end + 1];
-        let tag_lower = &lower[abs_start..abs_start + end + 1];
-        search_from = abs_start + end + 1;
-
-        let Some(src) = extract_src(tag, tag_lower) else {
+    for tag in TagIter::new(html, "script") {
+        let Some(src) = html_parser::extract_attr(tag.original, &tag.lower, "src") else {
             continue;
         };
 
-        let map_url = if src.ends_with(".js") {
-            format!("{src}.map")
-        } else {
+        if !src.ends_with(".js") {
             continue;
-        };
+        }
 
+        let map_url = format!("{src}.map");
         let full_map_url = resolve_url(base_url, &map_url);
         leaks.push(SourceMapLeak {
             script_url: src,
@@ -83,26 +73,10 @@ fn extract_sourcemap_comments(html: &str, leaks: &mut Vec<SourceMapLeak>, base_u
     }
 }
 
-fn extract_src(tag: &str, tag_lower: &str) -> Option<String> {
-    let pos = tag_lower.find("src=")?;
-    let rest = &tag[pos + 4..];
-    let trimmed = rest.trim_start();
-    if let Some(stripped) = trimmed.strip_prefix('"') {
-        let end = stripped.find('"')?;
-        Some(stripped[..end].to_string())
-    } else if let Some(stripped) = trimmed.strip_prefix('\'') {
-        let end = stripped.find('\'')?;
-        Some(stripped[..end].to_string())
-    } else {
-        let end = trimmed
-            .find(|c: char| c.is_whitespace() || c == '>')
-            .unwrap_or(trimmed.len());
-        Some(trimmed[..end].to_string())
-    }
-}
-
 fn resolve_url(base: &str, relative: &str) -> String {
-    if relative.starts_with("http://") || relative.starts_with("https://") || relative.starts_with("//")
+    if relative.starts_with("http://")
+        || relative.starts_with("https://")
+        || relative.starts_with("//")
     {
         return relative.to_string();
     }
