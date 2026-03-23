@@ -101,6 +101,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let form_target = ctx.config.target.clone();
     let form_handle =
         std::thread::spawn(move || crate::form_audit::audit_forms(&form_target));
+    let comment_target = ctx.config.target.clone();
+    let comment_handle =
+        std::thread::spawn(move || crate::comment_leak::scan_comment_leaks(&comment_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -339,6 +342,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::form_audit::form_findings_to_operations(&form_findings, &mut sequence);
     findings_count += form_ops.len() as u64;
     entries.extend(form_ops);
+
+    let comment_leaks = comment_handle.join().unwrap_or_default();
+    let comment_ops =
+        crate::comment_leak::comment_leak_to_operations(&comment_leaks, &mut sequence);
+    findings_count += comment_ops.len() as u64;
+    entries.extend(comment_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

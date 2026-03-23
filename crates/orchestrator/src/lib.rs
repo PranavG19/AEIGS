@@ -5,6 +5,7 @@ pub mod benchmark;
 pub mod cache_audit;
 pub mod calibration;
 pub mod checkpoint;
+pub mod comment_leak;
 pub mod convergence;
 pub mod cookie_audit;
 pub mod cors_scanner;
@@ -60,6 +61,7 @@ pub mod waf_detector;
 pub use actor::*;
 pub use auth_session::*;
 pub use cache_audit::*;
+pub use comment_leak::*;
 pub use checkpoint::*;
 pub use convergence::*;
 pub use cookie_audit::*;
@@ -307,6 +309,10 @@ mod permissions_policy_test;
 #[cfg(test)]
 #[path = "cache_audit_test.rs"]
 mod cache_audit_test;
+
+#[cfg(test)]
+#[path = "comment_leak_test.rs"]
+mod comment_leak_test;
 
 #[cfg(test)]
 #[path = "js_library_scanner_test.rs"]
