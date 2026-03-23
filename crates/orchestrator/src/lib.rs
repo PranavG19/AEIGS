@@ -36,6 +36,7 @@ pub mod method_scanner;
 pub mod mixed_content;
 pub mod opener_audit;
 pub mod permissions_policy;
+pub mod preconnect_audit;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -100,6 +101,7 @@ pub use method_scanner::*;
 pub use mixed_content::*;
 pub use opener_audit::*;
 pub use permissions_policy::*;
+pub use preconnect_audit::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -372,6 +374,10 @@ mod sri_checker_test;
 #[cfg(test)]
 #[path = "dangerous_js_audit_test.rs"]
 mod dangerous_js_audit_test;
+
+#[cfg(test)]
+#[path = "preconnect_audit_test.rs"]
+mod preconnect_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

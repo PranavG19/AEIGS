@@ -127,6 +127,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let djs_handle = std::thread::spawn(move || {
         crate::dangerous_js_audit::audit_dangerous_js(&djs_target)
     });
+    let precon_target = ctx.config.target.clone();
+    let precon_handle = std::thread::spawn(move || {
+        crate::preconnect_audit::audit_preconnects(&precon_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -413,6 +417,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::dangerous_js_audit::dangerous_js_to_operations(&djs_issues, &mut sequence);
     findings_count += djs_ops.len() as u64;
     entries.extend(djs_ops);
+
+    let precon_issues = precon_handle.join().unwrap_or_default();
+    let precon_ops =
+        crate::preconnect_audit::preconnect_to_operations(&precon_issues, &mut sequence);
+    findings_count += precon_ops.len() as u64;
+    entries.extend(precon_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
