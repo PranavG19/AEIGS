@@ -110,6 +110,7 @@ pub mod s3_scanner;
 pub mod scan_config;
 pub mod scan_history;
 pub mod scan_strategy;
+pub mod screen_capture_audit;
 pub mod security_txt;
 pub mod sensitive_file_audit;
 pub mod service_worker_audit;
@@ -249,6 +250,7 @@ pub use s3_scanner::*;
 pub use scan_config::*;
 pub use scan_history::*;
 pub use scan_strategy::*;
+pub use screen_capture_audit::*;
 pub use security_txt::*;
 pub use sensitive_file_audit::*;
 pub use service_worker_audit::*;
@@ -549,6 +551,10 @@ mod waf_detector_test;
 #[cfg(test)]
 #[path = "rate_limit_detector_test.rs"]
 mod rate_limit_detector_test;
+
+#[cfg(test)]
+#[path = "screen_capture_audit_test.rs"]
+mod screen_capture_audit_test;
 
 #[cfg(test)]
 #[path = "security_txt_test.rs"]

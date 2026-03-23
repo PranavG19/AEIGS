@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2693 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2708 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -69,9 +69,10 @@ status: in-progress
 50. feat(recon): Add drag-drop data leak detection scanner (+16)
 51. feat(recon): Add SharedArrayBuffer/COEP isolation audit scanner (+18)
 52. feat(recon): Add viewport meta security audit scanner (+16)
+53. feat(recon): Add DeviceOrientation/Motion fingerprinting scanner (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: DeviceOrientation/Motion fingerprinting, screen capture API audit, Web Speech API audit, or idle detection API audit.
+Continue P8. Next ideas: screen capture API audit, Web Speech API audit, idle detection API audit, or USB/HID/Serial API audit.

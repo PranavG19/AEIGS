@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Screen capture API audit
+    let sc_issues = crate::screen_capture_audit::analyze_screen_capture(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sc_issues,
+        crate::screen_capture_audit::screen_capture_to_operations
+    );
+
     // DeviceOrientation/Motion fingerprinting
     let dm_issues = crate::device_motion_audit::analyze_device_motion(body);
     collect_ops!(
