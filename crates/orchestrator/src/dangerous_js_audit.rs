@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
@@ -61,10 +63,9 @@ pub(crate) fn find_dangerous_js(html: &str) -> Vec<DangerousJsIssue> {
         let script_body = &lower[abs_start + tag_end + 1..script_end];
         search_from = script_end;
 
-        let mut seen = Vec::new();
+        let mut seen = HashSet::new();
         for (pattern, name, severity) in DANGEROUS_PATTERNS {
-            if script_body.contains(pattern) && !seen.contains(name) {
-                seen.push(name);
+            if script_body.contains(pattern) && seen.insert(*name) {
                 issues.push(DangerousJsIssue {
                     pattern: name.to_string(),
                     severity: *severity,
@@ -93,6 +94,6 @@ pub fn dangerous_js_to_operations(
         seq,
         VulnerabilityClass::CrossSiteScripting,
         max_severity,
-        0.5,
+        0.7,
     )]
 }
