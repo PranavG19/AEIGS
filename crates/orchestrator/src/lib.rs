@@ -153,6 +153,7 @@ pub mod update_db;
 mod util;
 pub mod viewport_audit;
 pub mod waf_detector;
+pub mod wake_lock_audit;
 pub mod wasm_audit;
 pub mod web_locks_audit;
 pub mod webcrypto_audit;
@@ -310,6 +311,7 @@ pub use tls_scanner::*;
 pub use update_db::*;
 pub use viewport_audit::*;
 pub use waf_detector::*;
+pub use wake_lock_audit::*;
 pub use wasm_audit::*;
 pub use web_locks_audit::*;
 pub use webcrypto_audit::*;
@@ -815,6 +817,10 @@ mod referrer_audit_test;
 #[cfg(test)]
 #[path = "wasm_audit_test.rs"]
 mod wasm_audit_test;
+
+#[cfg(test)]
+#[path = "wake_lock_audit_test.rs"]
+mod wake_lock_audit_test;
 
 #[cfg(test)]
 #[path = "object_url_audit_test.rs"]

@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Wake Lock API audit
+    let wkl_issues = crate::wake_lock_audit::analyze_wake_lock(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wkl_issues,
+        crate::wake_lock_audit::wake_lock_to_operations
+    );
+
     // Picture-in-Picture API audit
     let pip_issues = crate::pip_audit::analyze_pip(body);
     collect_ops!(
