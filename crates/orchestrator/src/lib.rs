@@ -4,6 +4,7 @@ pub mod auth_session;
 pub mod base_tag_audit;
 pub mod benchmark;
 pub mod cache_audit;
+pub mod cache_poison_audit;
 pub mod calibration;
 pub mod checkpoint;
 pub mod clear_site_data_audit;
@@ -101,6 +102,7 @@ pub use actor::*;
 pub use auth_session::*;
 pub use base_tag_audit::*;
 pub use cache_audit::*;
+pub use cache_poison_audit::*;
 pub use checkpoint::*;
 pub use clear_site_data_audit::*;
 pub use comment_leak::*;
@@ -419,6 +421,10 @@ mod permissions_policy_test;
 #[cfg(test)]
 #[path = "cache_audit_test.rs"]
 mod cache_audit_test;
+
+#[cfg(test)]
+#[path = "cache_poison_audit_test.rs"]
+mod cache_poison_audit_test;
 
 #[cfg(test)]
 #[path = "comment_leak_test.rs"]

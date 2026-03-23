@@ -630,6 +630,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let cookiepfx_handle = std::thread::spawn(move || {
         crate::cookie_prefix_audit::audit_cookie_prefixes(&cookiepfx_target)
     });
+    let cachepoison_target = ctx.config.target.clone();
+    let cachepoison_handle = std::thread::spawn(move || {
+        crate::cache_poison_audit::audit_cache_poison(&cachepoison_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -860,6 +864,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::cookie_prefix_audit::cookie_prefix_to_operations(&cookiepfx_issues, &mut sequence);
     findings_count += cookiepfx_ops.len() as u64;
     entries.extend(cookiepfx_ops);
+
+    let cachepoison_issues = cachepoison_handle.join().unwrap_or_default();
+    let cachepoison_ops =
+        crate::cache_poison_audit::cache_poison_to_operations(&cachepoison_issues, &mut sequence);
+    findings_count += cachepoison_ops.len() as u64;
+    entries.extend(cachepoison_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
