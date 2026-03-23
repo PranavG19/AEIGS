@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Credential Management API audit
+    let cma_issues = crate::credential_api_audit::analyze_credential_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cma_issues,
+        crate::credential_api_audit::credential_api_to_operations
+    );
+
     // Payment Request API audit
     let pr_issues = crate::payment_request_audit::analyze_payment_request(body, resp.is_https);
     collect_ops!(

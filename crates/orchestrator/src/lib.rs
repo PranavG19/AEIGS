@@ -24,6 +24,7 @@ pub mod cookie_prefix_audit;
 pub mod coop_coep_audit;
 pub mod corp_audit;
 pub mod cors_preflight_audit;
+pub mod credential_api_audit;
 pub mod credential_harvest_audit;
 pub mod cors_scanner;
 pub mod crlf_injection_audit;
@@ -178,6 +179,7 @@ pub use coop_coep_audit::*;
 pub use corp_audit::*;
 pub use cors_preflight_audit::*;
 pub use cors_scanner::*;
+pub use credential_api_audit::*;
 pub use credential_harvest_audit::*;
 pub use csp_analyzer::*;
 pub use csp_nonce_audit::*;
@@ -797,6 +799,10 @@ mod resource_timing_audit_test;
 #[cfg(test)]
 #[path = "credential_harvest_audit_test.rs"]
 mod credential_harvest_audit_test;
+
+#[cfg(test)]
+#[path = "credential_api_audit_test.rs"]
+mod credential_api_audit_test;
 
 #[cfg(test)]
 #[path = "payment_form_audit_test.rs"]
