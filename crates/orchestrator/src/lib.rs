@@ -170,11 +170,13 @@ pub mod web_bluetooth_audit;
 pub mod web_locks_audit;
 pub mod web_nfc_audit;
 pub mod web_serial_audit;
+pub mod web_share_audit;
 pub mod web_transport_audit;
 pub mod webcrypto_audit;
 pub mod webhid_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
+pub mod webusb_audit;
 pub mod window_management_audit;
 pub mod window_name_audit;
 pub mod wireless_api_audit;
@@ -345,11 +347,13 @@ pub use web_bluetooth_audit::*;
 pub use web_locks_audit::*;
 pub use web_nfc_audit::*;
 pub use web_serial_audit::*;
+pub use web_share_audit::*;
 pub use web_transport_audit::*;
 pub use webcrypto_audit::*;
 pub use webhid_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
+pub use webusb_audit::*;
 pub use window_management_audit::*;
 pub use window_name_audit::*;
 pub use wireless_api_audit::*;
@@ -661,6 +665,10 @@ mod webhid_audit_test;
 mod web_serial_audit_test;
 
 #[cfg(test)]
+#[path = "web_share_audit_test.rs"]
+mod web_share_audit_test;
+
+#[cfg(test)]
 #[path = "web_bluetooth_audit_test.rs"]
 mod web_bluetooth_audit_test;
 
@@ -679,6 +687,10 @@ mod presentation_audit_test;
 #[cfg(test)]
 #[path = "window_management_audit_test.rs"]
 mod window_management_audit_test;
+
+#[cfg(test)]
+#[path = "webusb_audit_test.rs"]
+mod webusb_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]

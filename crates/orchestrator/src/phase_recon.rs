@@ -866,6 +866,26 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Web Share API audit
+    let ws_issues = crate::web_share_audit::analyze_web_share(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ws_issues,
+        crate::web_share_audit::web_share_to_operations
+    );
+
+    // WebUSB API audit
+    let usb_issues = crate::webusb_audit::analyze_webusb(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        usb_issues,
+        crate::webusb_audit::webusb_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
