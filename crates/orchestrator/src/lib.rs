@@ -16,6 +16,7 @@ pub mod cors_scanner;
 pub mod csp_analyzer;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
+pub mod deprecated_header_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
@@ -87,6 +88,7 @@ pub use coop_coep_audit::*;
 pub use corp_audit::*;
 pub use cors_scanner::*;
 pub use dangerous_js_audit::*;
+pub use deprecated_header_audit::*;
 pub use csp_analyzer::*;
 pub use cve_correlator::*;
 pub use distributed::*;
@@ -420,6 +422,10 @@ mod content_type_audit_test;
 #[cfg(test)]
 #[path = "server_timing_audit_test.rs"]
 mod server_timing_audit_test;
+
+#[cfg(test)]
+#[path = "deprecated_header_audit_test.rs"]
+mod deprecated_header_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

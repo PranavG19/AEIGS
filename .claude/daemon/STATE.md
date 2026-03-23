@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1543 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1554 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -51,6 +51,7 @@ status: in-progress
 - [x] CORS credentials+reflection detection (severity 8.0, highest)
 - [x] Content-Type/X-Content-Type-Options audit (nosniff, charset, MIME)
 - [x] Server-Timing header leak detection (db, cache, internal metrics)
+- [x] Deprecated header audit (Expect-CT, Feature-Policy, HPKP, X-XSS-Protection)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -59,6 +60,7 @@ status: in-progress
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8: expect-ct deprecation, feature-policy deprecation,
-   access-control-expose-headers audit, nel/report-to audit.
-2. G14 body-fetch consolidation (L-sized, next dedicated session).
+1. G14 check due: 5+ header scanners since last consolidation.
+2. Continue P8: access-control-expose-headers audit, nel/report-to,
+   link header injection, document.domain detection.
+3. G14 body-fetch consolidation (L-sized, next dedicated session).
