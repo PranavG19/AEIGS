@@ -658,6 +658,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let gqlintro_handle = std::thread::spawn(move || {
         crate::graphql_introspection_audit::audit_graphql_introspection(&gqlintro_target)
     });
+    let openredir_target = ctx.config.target.clone();
+    let openredir_handle = std::thread::spawn(move || {
+        crate::open_redirect_param_audit::audit_open_redirect_params(&openredir_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -934,6 +938,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += gqlintro_ops.len() as u64;
     entries.extend(gqlintro_ops);
+
+    let openredir_issues = openredir_handle.join().unwrap_or_default();
+    let openredir_ops = crate::open_redirect_param_audit::open_redirect_to_operations(
+        &openredir_issues,
+        &mut sequence,
+    );
+    findings_count += openredir_ops.len() as u64;
+    entries.extend(openredir_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

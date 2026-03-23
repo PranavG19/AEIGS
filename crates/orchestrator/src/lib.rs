@@ -60,6 +60,7 @@ pub mod meta_tag_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod nel_audit;
+pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod permissions_policy;
 mod phase_analyze;
@@ -160,6 +161,7 @@ pub use meta_tag_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
 pub use nel_audit::*;
+pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
@@ -379,6 +381,10 @@ mod method_scanner_test;
 #[cfg(test)]
 #[path = "mixed_content_test.rs"]
 mod mixed_content_test;
+
+#[cfg(test)]
+#[path = "open_redirect_param_audit_test.rs"]
+mod open_redirect_param_audit_test;
 
 #[cfg(test)]
 #[path = "opener_audit_test.rs"]
