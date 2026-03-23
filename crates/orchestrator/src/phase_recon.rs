@@ -622,6 +622,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let cors_pf_handle = std::thread::spawn(move || {
         crate::cors_preflight_audit::audit_cors_preflight(&cors_pf_target)
     });
+    let verbtamp_target = ctx.config.target.clone();
+    let verbtamp_handle = std::thread::spawn(move || {
+        crate::verb_tamper_audit::audit_verb_tampering(&verbtamp_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -840,6 +844,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::cors_preflight_audit::preflight_to_operations(&cors_pf_issues, &mut sequence);
     findings_count += cors_pf_ops.len() as u64;
     entries.extend(cors_pf_ops);
+
+    let verbtamp_issues = verbtamp_handle.join().unwrap_or_default();
+    let verbtamp_ops =
+        crate::verb_tamper_audit::verb_tamper_to_operations(&verbtamp_issues, &mut sequence);
+    findings_count += verbtamp_ops.len() as u64;
+    entries.extend(verbtamp_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
