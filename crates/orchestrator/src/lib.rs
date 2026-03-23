@@ -32,6 +32,7 @@ pub mod form_audit;
 mod graph_persistence;
 pub mod header_audit;
 pub(crate) mod html_parser;
+pub mod hidden_input_audit;
 pub mod hsts_preload;
 pub mod http_version;
 pub mod hypothesis_bridge;
@@ -118,6 +119,7 @@ pub use expose_headers_audit::*;
 pub use form_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
+pub use hidden_input_audit::*;
 pub use hsts_preload::*;
 pub use http_version::*;
 pub use hypothesis_bridge::*;
@@ -464,6 +466,10 @@ mod dns_prefetch_control_audit_test;
 #[cfg(test)]
 #[path = "jsonp_audit_test.rs"]
 mod jsonp_audit_test;
+
+#[cfg(test)]
+#[path = "hidden_input_audit_test.rs"]
+mod hidden_input_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

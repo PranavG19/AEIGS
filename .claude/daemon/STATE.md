@@ -6,12 +6,12 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1684 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1708 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P6: CLEAR — P7: BLOCKED (Docker not running)
-- P8: IN PROGRESS (45 features shipped, 12 this session)
+- P8: IN PROGRESS (46 features shipped, 13 this session)
 
 ## P8-progress (43 features)
 Batches 1-3 (31 features): TLS, headers, robots, DNS, CORS, cookies, methods,
@@ -26,7 +26,7 @@ This session (10 features):
 - [x] document.domain detection, NEL/Report-To audit, Link header audit
 - [x] Reporting-Endpoints, Timing-Allow-Origin, Clear-Site-Data
 - [x] SourceMap header, ETag leak, WWW-Authenticate, Proxy headers
-- [x] X-DNS-Prefetch-Control audit, JSONP endpoint detection
+- [x] X-DNS-Prefetch-Control, JSONP endpoint detection, Hidden input audit
 
 ## G14-deferred
 - 20+ header scanners + 13 HTML-body scanners make independent HTTP fetches
@@ -35,7 +35,7 @@ This session (10 features):
 
 ## handoff
 NEXT STEPS (in order):
-1. P8 wrapping up. One more feature (open graph/social meta leak), then move to P9.
+1. P8 batch COMPLETE for this session. 46 features total. Move to P9 next session.
 2. When P8 batch complete → P9 (simplify pass on each module)
 3. P10 (orchestration consolidation — fetch-once, scanner dispatch)
 4. P11 (90%+ test coverage per file)

@@ -207,6 +207,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let jsonp_target = ctx.config.target.clone();
     let jsonp_handle =
         std::thread::spawn(move || crate::jsonp_audit::audit_jsonp(&jsonp_target));
+    let hidinput_target = ctx.config.target.clone();
+    let hidinput_handle = std::thread::spawn(move || {
+        crate::hidden_input_audit::audit_hidden_inputs(&hidinput_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -636,6 +640,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let jsonp_ops = crate::jsonp_audit::jsonp_to_operations(&jsonp_issues, &mut sequence);
     findings_count += jsonp_ops.len() as u64;
     entries.extend(jsonp_ops);
+
+    let hidinput_issues = hidinput_handle.join().unwrap_or_default();
+    let hidinput_ops =
+        crate::hidden_input_audit::hidden_input_to_operations(&hidinput_issues, &mut sequence);
+    findings_count += hidinput_ops.len() as u64;
+    entries.extend(hidinput_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
