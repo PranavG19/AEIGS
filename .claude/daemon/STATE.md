@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3208 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3223 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 87 features shipped
+- P8: 88 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -46,9 +46,10 @@ status: in-progress
 85. WebNFC API audit (+15)
 86. Presentation API audit (+16)
 87. Ambient Light Sensor audit (+13)
+88. Window Management API audit (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Window Management API audit, Web Share API audit, Compute Pressure API audit, or Local Font Access API audit.
+Continue P8. Next ideas: Web Share API audit, Compute Pressure API audit, Local Font Access API audit, or WebUSB API audit.

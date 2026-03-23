@@ -173,6 +173,7 @@ pub mod webcrypto_audit;
 pub mod webhid_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
+pub mod window_management_audit;
 pub mod window_name_audit;
 pub mod wireless_api_audit;
 pub mod www_authenticate_audit;
@@ -345,6 +346,7 @@ pub use webcrypto_audit::*;
 pub use webhid_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
+pub use window_management_audit::*;
 pub use window_name_audit::*;
 pub use wireless_api_audit::*;
 pub use www_authenticate_audit::*;
@@ -669,6 +671,10 @@ mod web_nfc_audit_test;
 #[cfg(test)]
 #[path = "presentation_audit_test.rs"]
 mod presentation_audit_test;
+
+#[cfg(test)]
+#[path = "window_management_audit_test.rs"]
+mod window_management_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]

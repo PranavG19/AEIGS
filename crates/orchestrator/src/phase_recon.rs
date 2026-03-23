@@ -866,6 +866,16 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Window Management API audit
+    let wm_issues = crate::window_management_audit::analyze_window_management(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wm_issues,
+        crate::window_management_audit::window_management_to_operations
+    );
+
     // Ambient Light Sensor audit
     let als_issues = crate::ambient_light_audit::analyze_ambient_light(body);
     collect_ops!(
