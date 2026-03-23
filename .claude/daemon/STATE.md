@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2139 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2151 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -38,9 +38,10 @@ status: in-progress
 19. feat(recon): Add unsafe deserialization detection scanner (+16)
 20. feat(recon): Add WebSocket security scanner (+11)
 21. feat(recon): Add content-type confusion / XXE scanner (+14)
+22. feat(recon): Add HTTP method override detection scanner (+12)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: IDOR pattern scanner, subdomain wildcard check, email header injection, or HTTP method override detection.
+Continue P8. Next ideas: email header injection, IDOR pattern scanner, subdomain wildcard check, or client-side storage audit.

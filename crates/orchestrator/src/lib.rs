@@ -59,6 +59,7 @@ pub mod jsonp_audit;
 pub mod link_header_audit;
 pub mod mass_assign_audit;
 pub mod meta_tag_audit;
+pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod nel_audit;
@@ -166,6 +167,7 @@ pub use jsonp_audit::*;
 pub use link_header_audit::*;
 pub use mass_assign_audit::*;
 pub use meta_tag_audit::*;
+pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
 pub use nel_audit::*;
@@ -385,6 +387,10 @@ mod cookie_prefix_audit_test;
 #[cfg(test)]
 #[path = "meta_tag_audit_test.rs"]
 mod meta_tag_audit_test;
+
+#[cfg(test)]
+#[path = "method_override_audit_test.rs"]
+mod method_override_audit_test;
 
 #[cfg(test)]
 #[path = "method_scanner_test.rs"]

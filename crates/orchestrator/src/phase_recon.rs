@@ -703,6 +703,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let smuggling_handle = std::thread::spawn(move || {
         crate::request_smuggling_audit::audit_request_smuggling(&smuggling_target)
     });
+    let methoverride_target = ctx.config.target.clone();
+    let methoverride_handle = std::thread::spawn(move || {
+        crate::method_override_audit::audit_method_override(&methoverride_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -1003,6 +1007,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += smuggling_ops.len() as u64;
     entries.extend(smuggling_ops);
+
+    let methoverride_issues = methoverride_handle.join().unwrap_or_default();
+    let methoverride_ops = crate::method_override_audit::method_override_to_operations(
+        &methoverride_issues,
+        &mut sequence,
+    );
+    findings_count += methoverride_ops.len() as u64;
+    entries.extend(methoverride_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
