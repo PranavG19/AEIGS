@@ -129,6 +129,7 @@ mod util;
 pub mod waf_detector;
 pub mod wasm_audit;
 pub mod webcrypto_audit;
+pub mod webrtc_audit;
 pub mod websocket_audit;
 pub mod window_name_audit;
 pub mod www_authenticate_audit;
@@ -257,6 +258,7 @@ pub use update_db::*;
 pub use waf_detector::*;
 pub use wasm_audit::*;
 pub use webcrypto_audit::*;
+pub use webrtc_audit::*;
 pub use websocket_audit::*;
 pub use window_name_audit::*;
 pub use www_authenticate_audit::*;
@@ -729,6 +731,10 @@ mod clipboard_audit_test;
 #[cfg(test)]
 #[path = "geolocation_audit_test.rs"]
 mod geolocation_audit_test;
+
+#[cfg(test)]
+#[path = "webrtc_audit_test.rs"]
+mod webrtc_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

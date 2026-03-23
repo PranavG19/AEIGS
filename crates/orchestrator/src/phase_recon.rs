@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // WebRTC leak detection
+    let rtc_issues = crate::webrtc_audit::analyze_webrtc(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        rtc_issues,
+        crate::webrtc_audit::webrtc_to_operations
+    );
+
     // Geolocation API audit
     let geo_issues =
         crate::geolocation_audit::analyze_geolocation(body, resp.is_https);
