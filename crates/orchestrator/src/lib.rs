@@ -1,3 +1,4 @@
+pub mod abort_controller_audit;
 pub mod actor;
 pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
@@ -53,6 +54,7 @@ pub mod deprecated_header_audit;
 pub mod deserialization_audit;
 pub mod device_memory_audit;
 pub mod device_motion_audit;
+pub mod dialog_element_audit;
 pub mod digital_goods_audit;
 pub mod distributed;
 pub mod distributed_transport;
@@ -199,6 +201,7 @@ pub mod verb_tamper_audit;
 pub mod tls_scanner;
 pub mod topics_api_audit;
 pub mod update_db;
+pub mod url_pattern_audit;
 mod util;
 pub mod vibration_audit;
 pub mod view_transition_audit;
@@ -232,6 +235,7 @@ pub mod wireless_api_audit;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
+pub use abort_controller_audit::*;
 pub use actor::*;
 pub use ambient_light_audit::*;
 pub use api_endpoint_leak_audit::*;
@@ -283,6 +287,7 @@ pub use deprecated_header_audit::*;
 pub use deserialization_audit::*;
 pub use device_memory_audit::*;
 pub use device_motion_audit::*;
+pub use dialog_element_audit::*;
 pub use digital_goods_audit::*;
 pub use distributed::*;
 pub use distributed_transport::*;
@@ -426,6 +431,7 @@ pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
 pub use topics_api_audit::*;
 pub use update_db::*;
+pub use url_pattern_audit::*;
 pub use vibration_audit::*;
 pub use view_transition_audit::*;
 pub use viewport_audit::*;
@@ -1369,3 +1375,15 @@ mod priority_hints_audit_test;
 #[cfg(test)]
 #[path = "content_visibility_audit_test.rs"]
 mod content_visibility_audit_test;
+
+#[cfg(test)]
+#[path = "abort_controller_audit_test.rs"]
+mod abort_controller_audit_test;
+
+#[cfg(test)]
+#[path = "dialog_element_audit_test.rs"]
+mod dialog_element_audit_test;
+
+#[cfg(test)]
+#[path = "url_pattern_audit_test.rs"]
+mod url_pattern_audit_test;

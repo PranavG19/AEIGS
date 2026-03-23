@@ -1206,6 +1206,36 @@ fn run_body_analyzers(
         crate::content_visibility_audit::content_visibility_to_operations
     );
 
+    // AbortController API audit
+    let ac_issues = crate::abort_controller_audit::analyze_abort_controller(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ac_issues,
+        crate::abort_controller_audit::abort_controller_to_operations
+    );
+
+    // Dialog Element audit
+    let de_issues = crate::dialog_element_audit::analyze_dialog_element(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        de_issues,
+        crate::dialog_element_audit::dialog_element_to_operations
+    );
+
+    // URL Pattern API audit
+    let up_issues = crate::url_pattern_audit::analyze_url_pattern(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        up_issues,
+        crate::url_pattern_audit::url_pattern_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
