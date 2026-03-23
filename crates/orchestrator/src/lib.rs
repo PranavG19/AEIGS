@@ -108,6 +108,7 @@ pub mod redirect_scanner;
 pub mod resource_timing_audit;
 pub mod request_smuggling_audit;
 pub mod referrer_audit;
+pub mod reporting_api_audit;
 pub mod reporting_endpoints_audit;
 pub mod robots_parser;
 pub mod s3_scanner;
@@ -255,6 +256,7 @@ pub use redirect_scanner::*;
 pub use resource_timing_audit::*;
 pub use request_smuggling_audit::*;
 pub use referrer_audit::*;
+pub use reporting_api_audit::*;
 pub use reporting_endpoints_audit::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
@@ -693,6 +695,10 @@ mod mass_assign_audit_test;
 #[cfg(test)]
 #[path = "reporting_endpoints_audit_test.rs"]
 mod reporting_endpoints_audit_test;
+
+#[cfg(test)]
+#[path = "reporting_api_audit_test.rs"]
+mod reporting_api_audit_test;
 
 #[cfg(test)]
 #[path = "template_injection_audit_test.rs"]

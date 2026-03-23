@@ -973,6 +973,23 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Reporting API audit (headers + body)
+    let ra_report_to = hdr(resp, "report-to").unwrap_or_default();
+    let ra_rep_ep = hdr(resp, "reporting-endpoints").unwrap_or_default();
+    let ra_issues = crate::reporting_api_audit::analyze_reporting_api(
+        domain,
+        &ra_report_to,
+        &ra_rep_ep,
+        body,
+    );
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ra_issues,
+        crate::reporting_api_audit::reporting_api_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers
