@@ -142,3 +142,196 @@ pub fn permissions_api_to_operations(
         })
         .collect()
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PermissionsApiSecurityIssue {
+    ExcessivePermissionRequests,
+    PermissionWithoutUserGesture,
+    PermissionPersistentQuery,
+    SilentPermissionChange,
+    CrossOriginPermissionCheck,
+    PermissionFingerprinting,
+    GeolocationWithoutPurpose,
+    CameraAndMicTogether,
+    NotificationSpam,
+    PermissionGatedDataLeak,
+}
+
+impl std::fmt::Display for PermissionsApiSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExcessivePermissionRequests => write!(f, "excessive_permission_requests"),
+            Self::PermissionWithoutUserGesture => write!(f, "permission_without_user_gesture"),
+            Self::PermissionPersistentQuery => write!(f, "permission_persistent_query"),
+            Self::SilentPermissionChange => write!(f, "silent_permission_change"),
+            Self::CrossOriginPermissionCheck => write!(f, "cross_origin_permission_check"),
+            Self::PermissionFingerprinting => write!(f, "permission_fingerprinting"),
+            Self::GeolocationWithoutPurpose => write!(f, "geolocation_without_purpose"),
+            Self::CameraAndMicTogether => write!(f, "camera_and_mic_together"),
+            Self::NotificationSpam => write!(f, "notification_spam"),
+            Self::PermissionGatedDataLeak => write!(f, "permission_gated_data_leak"),
+        }
+    }
+}
+
+pub fn analyze_permissions_api_security(body: &str) -> Vec<PermissionsApiSecurityIssue> {
+    let mut issues = Vec::new();
+
+    let request_count = count_permission_requests(body);
+    if request_count >= 5 {
+        issues.push(PermissionsApiSecurityIssue::ExcessivePermissionRequests);
+    }
+
+    if has_permission_without_gesture(body) {
+        issues.push(PermissionsApiSecurityIssue::PermissionWithoutUserGesture);
+    }
+
+    if has_persistent_permission_query(body) {
+        issues.push(PermissionsApiSecurityIssue::PermissionPersistentQuery);
+    }
+
+    if has_silent_permission_change(body) {
+        issues.push(PermissionsApiSecurityIssue::SilentPermissionChange);
+    }
+
+    if has_cross_origin_permission_check(body) {
+        issues.push(PermissionsApiSecurityIssue::CrossOriginPermissionCheck);
+    }
+
+    if has_permission_fingerprinting_pattern(body) {
+        issues.push(PermissionsApiSecurityIssue::PermissionFingerprinting);
+    }
+
+    if has_geolocation_without_purpose(body) {
+        issues.push(PermissionsApiSecurityIssue::GeolocationWithoutPurpose);
+    }
+
+    if has_camera_and_mic_together(body) {
+        issues.push(PermissionsApiSecurityIssue::CameraAndMicTogether);
+    }
+
+    if has_notification_spam(body) {
+        issues.push(PermissionsApiSecurityIssue::NotificationSpam);
+    }
+
+    if has_permission_gated_data_leak(body) {
+        issues.push(PermissionsApiSecurityIssue::PermissionGatedDataLeak);
+    }
+
+    issues
+}
+
+fn count_permission_requests(body: &str) -> usize {
+    let notification_count = body.matches("Notification.requestPermission").count();
+    let generic_request = body
+        .matches(".requestPermission")
+        .count()
+        .saturating_sub(notification_count);
+    generic_request
+        + notification_count
+        + body.matches("permissions.request").count()
+        + body.matches("getUserMedia").count()
+        + body.matches("requestMIDIAccess").count()
+}
+
+fn has_permission_without_gesture(body: &str) -> bool {
+    let has_request = body.contains(".requestPermission")
+        || body.contains("permissions.request")
+        || body.contains("getUserMedia");
+    let has_gesture_handlers = body.contains("addEventListener")
+        && (body.contains("'click'")
+            || body.contains("\"click\"")
+            || body.contains("'mousedown'")
+            || body.contains("\"mousedown\""));
+    has_request && !has_gesture_handlers
+}
+
+fn has_persistent_permission_query(body: &str) -> bool {
+    let has_interval = body.contains("setInterval") || body.contains("setTimeout");
+    let has_query = body.contains("permissions.query") || body.contains("permissions.request");
+    has_interval && has_query
+}
+
+fn has_silent_permission_change(body: &str) -> bool {
+    body.contains("permissions.revoke")
+        && !body.contains("alert")
+        && !body.contains("console.log")
+        && !body.contains("notify")
+}
+
+fn has_cross_origin_permission_check(body: &str) -> bool {
+    (body.contains("permissions.query") || body.contains("permissions.request"))
+        && (body.contains("postMessage") || body.contains("iframe"))
+}
+
+fn has_permission_fingerprinting_pattern(body: &str) -> bool {
+    let has_query = body.contains("permissions.query");
+    let has_tracking = body.contains("fetch")
+        || body.contains("XMLHttpRequest")
+        || body.contains("beacon")
+        || body.contains("analytics");
+    let has_multiple_permissions = count_permission_queries(body) >= 3;
+    has_query && has_tracking && has_multiple_permissions
+}
+
+fn has_geolocation_without_purpose(body: &str) -> bool {
+    let has_geolocation = body.contains("geolocation") && body.contains("getCurrentPosition");
+    let has_map = body.contains("map") || body.contains("Map");
+    let has_location_context = body.contains("updateLocation")
+        || body.contains("showLocation")
+        || body.contains("setLocation");
+    has_geolocation && !has_map && !has_location_context
+}
+
+fn has_camera_and_mic_together(body: &str) -> bool {
+    let has_video = body.contains("video: true") || body.contains("video:true");
+    let has_audio = body.contains("audio: true") || body.contains("audio:true");
+    (has_video && has_audio) || (body.contains("camera") && body.contains("microphone"))
+}
+
+fn has_notification_spam(body: &str) -> bool {
+    body.contains("Notification.requestPermission") && body.contains("setInterval")
+}
+
+fn has_permission_gated_data_leak(body: &str) -> bool {
+    let has_permission_check = body.contains("permissions.query")
+        || body.contains(".state")
+        || body.contains("PermissionStatus");
+    let has_data_leak = (body.contains("fetch") || body.contains("XMLHttpRequest"))
+        && (body.contains("localStorage")
+            || body.contains("sessionStorage")
+            || body.contains("cookie"));
+    has_permission_check && has_data_leak
+}
+
+pub fn permissions_api_security_severity(issue: &PermissionsApiSecurityIssue) -> f64 {
+    match issue {
+        PermissionsApiSecurityIssue::PermissionGatedDataLeak => 8.5,
+        PermissionsApiSecurityIssue::PermissionFingerprinting => 8.0,
+        PermissionsApiSecurityIssue::CrossOriginPermissionCheck => 7.5,
+        PermissionsApiSecurityIssue::SilentPermissionChange => 7.0,
+        PermissionsApiSecurityIssue::ExcessivePermissionRequests => 6.5,
+        PermissionsApiSecurityIssue::CameraAndMicTogether => 6.0,
+        PermissionsApiSecurityIssue::PermissionWithoutUserGesture => 5.5,
+        PermissionsApiSecurityIssue::NotificationSpam => 5.0,
+        PermissionsApiSecurityIssue::PermissionPersistentQuery => 4.5,
+        PermissionsApiSecurityIssue::GeolocationWithoutPurpose => 4.0,
+    }
+}
+
+pub fn permissions_api_security_to_operations(
+    issues: &[PermissionsApiSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                permissions_api_security_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}
