@@ -90,6 +90,7 @@ pub mod proxy_header_audit;
 pub mod rate_limit_detector;
 pub mod recon_client;
 pub mod redirect_scanner;
+pub mod resource_timing_audit;
 pub mod request_smuggling_audit;
 pub mod referrer_audit;
 pub mod reporting_endpoints_audit;
@@ -212,6 +213,7 @@ pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
 pub use recon_client::*;
 pub use redirect_scanner::*;
+pub use resource_timing_audit::*;
 pub use request_smuggling_audit::*;
 pub use referrer_audit::*;
 pub use reporting_endpoints_audit::*;
@@ -687,6 +689,10 @@ mod wasm_audit_test;
 #[cfg(test)]
 #[path = "object_url_audit_test.rs"]
 mod object_url_audit_test;
+
+#[cfg(test)]
+#[path = "resource_timing_audit_test.rs"]
+mod resource_timing_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

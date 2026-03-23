@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2375 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2420 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -52,9 +52,11 @@ status: in-progress
 33. feat(recon): Add client-side template injection scanner (+19)
 34. feat(recon): Add Server-Sent Events security scanner (+16)
 35. feat(recon): Add WebAssembly security audit scanner (+17)
+36. feat(recon): Add unsafe object URL and blob/data URI scanner (+23)
+37. feat(recon): Add resource timing leak detection scanner (+22)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: credential harvesting form detection, unsafe object URL audit, resource timing leak, or payment form security audit.
+Continue P8. Next ideas: credential harvesting form detection, payment form security audit, CNAME dangling check, or window.name leak audit.

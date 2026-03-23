@@ -699,6 +699,19 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Resource timing leak detection
+    let rt_issues = crate::resource_timing_audit::analyze_resource_timing(
+        body,
+        &hdr(resp, "timing-allow-origin").unwrap_or_default(),
+    );
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        rt_issues,
+        crate::resource_timing_audit::resource_timing_to_operations
+    );
+
     // Object URL / blob: / data: audit
     let objurl_issues = crate::object_url_audit::analyze_object_urls(body);
     collect_ops!(
