@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 4629 lib, 0 failed
+- cargo test -p aegis-orchestrator: 4708 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 169 features shipped
+- P8: 172 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -44,5 +44,7 @@ status: in-progress
 164. Clipboard (→37), 165. Notification (14→37), 166. Fullscreen (→33)
 167. CSP Analyzer (→37), 168. DOM Clobbering (19→39), 169. Session Fixation (→36)
 
+170. Prototype Pollution (+44), 171. Deserialization (+46), 172. Request Smuggling (+35)
+
 ## handoff
-Continue P8. Next: improve more scanners or add new ones.
+Continue P8. Next: commit remaining 215 reformatted scanner files, then improve more scanners.

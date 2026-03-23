@@ -637,7 +637,10 @@ fn run_body_analyzers(
 
     // Deserialization indicators in response body
     let ct = hdr(resp, "content-type").unwrap_or_default();
-    let deser_issues = crate::deserialization_audit::analyze_deserialization_response(&ct, body);
+    let mut deser_issues = crate::deserialization_audit::analyze_deserialization(body);
+    deser_issues.extend(crate::deserialization_audit::analyze_content_type_headers(
+        &ct, body,
+    ));
     collect_ops!(
         seq,
         fc,
@@ -2205,8 +2208,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     entries.extend(sensfile_ops);
 
     let protopoll_issues = protopoll_handle.join().unwrap_or_default();
-    let protopoll_ops =
-        crate::prototype_pollution_audit::pollution_to_operations(&protopoll_issues, &mut sequence);
+    let protopoll_ops = crate::prototype_pollution_audit::prototype_pollution_to_operations(
+        &protopoll_issues,
+        &mut sequence,
+    );
     findings_count += protopoll_ops.len() as u64;
     entries.extend(protopoll_ops);
 
