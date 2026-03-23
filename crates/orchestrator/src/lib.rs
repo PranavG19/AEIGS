@@ -130,6 +130,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod screen_capture_audit;
 pub mod security_txt;
+pub mod selection_audit;
 pub mod sensitive_file_audit;
 pub mod service_worker_audit;
 pub mod session_fixation_audit;
@@ -293,6 +294,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use screen_capture_audit::*;
 pub use security_txt::*;
+pub use selection_audit::*;
 pub use sensitive_file_audit::*;
 pub use service_worker_audit::*;
 pub use session_fixation_audit::*;
@@ -621,6 +623,10 @@ mod screen_capture_audit_test;
 #[cfg(test)]
 #[path = "security_txt_test.rs"]
 mod security_txt_test;
+
+#[cfg(test)]
+#[path = "selection_audit_test.rs"]
+mod selection_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]

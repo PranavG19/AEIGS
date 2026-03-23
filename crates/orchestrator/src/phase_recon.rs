@@ -836,6 +836,16 @@ fn run_body_analyzers(
         crate::fullscreen_audit::fullscreen_to_operations
     );
 
+    // Selection API data leak audit
+    let sel_issues = crate::selection_audit::analyze_selection(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sel_issues,
+        crate::selection_audit::selection_to_operations
+    );
+
     // Permissions API abuse
     let perm_issues = crate::permissions_api_audit::analyze_permissions_api(body);
     collect_ops!(
