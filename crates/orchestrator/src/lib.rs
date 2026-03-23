@@ -179,6 +179,7 @@ pub mod waf_detector;
 pub mod wake_lock_audit;
 pub mod wasm_audit;
 pub mod web_bluetooth_audit;
+pub mod web_codecs_audit;
 pub mod web_locks_audit;
 pub mod web_nfc_audit;
 pub mod web_serial_audit;
@@ -368,6 +369,7 @@ pub use waf_detector::*;
 pub use wake_lock_audit::*;
 pub use wasm_audit::*;
 pub use web_bluetooth_audit::*;
+pub use web_codecs_audit::*;
 pub use web_locks_audit::*;
 pub use web_nfc_audit::*;
 pub use web_serial_audit::*;
@@ -707,6 +709,10 @@ mod web_share_audit_test;
 #[cfg(test)]
 #[path = "web_bluetooth_audit_test.rs"]
 mod web_bluetooth_audit_test;
+
+#[cfg(test)]
+#[path = "web_codecs_audit_test.rs"]
+mod web_codecs_audit_test;
 
 #[cfg(test)]
 #[path = "web_transport_audit_test.rs"]

@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Web Codecs API audit
+    let wc_issues = crate::web_codecs_audit::analyze_web_codecs(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wc_issues,
+        crate::web_codecs_audit::web_codecs_to_operations
+    );
+
     // Launch Handler API audit
     let lh_issues = crate::launch_handler_audit::analyze_launch_handler(body);
     collect_ops!(
