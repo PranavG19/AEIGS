@@ -1600,6 +1600,36 @@ fn run_body_analyzers(
         crate::screen_orientation_audit::screen_orientation_to_operations
     );
 
+    // Pointer Lock API security audit
+    let pl_issues = crate::pointer_lock_audit::analyze_pointer_lock(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pl_issues,
+        crate::pointer_lock_audit::pointer_lock_to_operations
+    );
+
+    // Text Fragment security audit
+    let tf_issues = crate::text_fragment_audit::analyze_text_fragment(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        tf_issues,
+        crate::text_fragment_audit::text_fragment_to_operations
+    );
+
+    // Media Recorder API security audit
+    let mr_issues = crate::media_recorder_audit::analyze_media_recorder(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        mr_issues,
+        crate::media_recorder_audit::media_recorder_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers

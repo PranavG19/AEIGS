@@ -99,6 +99,7 @@ pub mod launch_handler_audit;
 pub mod link_header_audit;
 pub mod local_font_audit;
 pub mod mass_assign_audit;
+pub mod media_recorder_audit;
 pub mod media_session_audit;
 pub mod meta_redirect_audit;
 pub mod meta_tag_audit;
@@ -121,6 +122,7 @@ pub mod perf_observer_audit;
 pub mod permissions_api_audit;
 pub mod permissions_policy;
 pub mod pip_audit;
+pub mod pointer_lock_audit;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -178,6 +180,7 @@ pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
 pub mod template_injection_audit;
+pub mod text_fragment_audit;
 pub mod third_party_script_audit;
 pub mod timing_allow_origin_audit;
 pub mod trusted_types_audit;
@@ -308,6 +311,7 @@ pub use launch_handler_audit::*;
 pub use link_header_audit::*;
 pub use local_font_audit::*;
 pub use mass_assign_audit::*;
+pub use media_recorder_audit::*;
 pub use media_session_audit::*;
 pub use meta_redirect_audit::*;
 pub use meta_tag_audit::*;
@@ -330,6 +334,7 @@ pub use perf_observer_audit::*;
 pub use permissions_api_audit::*;
 pub use permissions_policy::*;
 pub use pip_audit::*;
+pub use pointer_lock_audit::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -387,6 +392,7 @@ pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
 pub use template_injection_audit::*;
+pub use text_fragment_audit::*;
 pub use third_party_script_audit::*;
 pub use timing_allow_origin_audit::*;
 pub use trusted_types_audit::*;
@@ -1257,6 +1263,18 @@ mod integration_validation_test;
 #[cfg(test)]
 #[path = "web_audio_audit_test.rs"]
 mod web_audio_audit_test;
+
+#[cfg(test)]
+#[path = "pointer_lock_audit_test.rs"]
+mod pointer_lock_audit_test;
+
+#[cfg(test)]
+#[path = "text_fragment_audit_test.rs"]
+mod text_fragment_audit_test;
+
+#[cfg(test)]
+#[path = "media_recorder_audit_test.rs"]
+mod media_recorder_audit_test;
 
 #[cfg(test)]
 #[path = "util_test.rs"]
