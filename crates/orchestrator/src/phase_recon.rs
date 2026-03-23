@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Storage Access API audit
+    let sa_issues = crate::storage_access_audit::analyze_storage_access(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sa_issues,
+        crate::storage_access_audit::storage_access_to_operations
+    );
+
     // Intersection Observer timing audit
     let io_issues = crate::intersection_observer_audit::analyze_intersection_observer(body);
     collect_ops!(

@@ -130,6 +130,7 @@ pub mod service_worker_audit;
 pub mod session_fixation_audit;
 pub mod sse_audit;
 pub mod ssrf_redirect_audit;
+pub mod storage_access_audit;
 pub mod storage_audit;
 pub mod server_timing_audit;
 pub mod shared_buffer_audit;
@@ -286,6 +287,7 @@ pub use service_worker_audit::*;
 pub use session_fixation_audit::*;
 pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
+pub use storage_access_audit::*;
 pub use storage_audit::*;
 pub use server_timing_audit::*;
 pub use shared_buffer_audit::*;
@@ -683,6 +685,10 @@ mod ssrf_redirect_audit_test;
 #[cfg(test)]
 #[path = "storage_audit_test.rs"]
 mod storage_audit_test;
+
+#[cfg(test)]
+#[path = "storage_access_audit_test.rs"]
+mod storage_access_audit_test;
 
 #[cfg(test)]
 #[path = "dangerous_js_audit_test.rs"]
