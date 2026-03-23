@@ -646,6 +646,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let jwt_handle = std::thread::spawn(move || {
         crate::jwt_header_audit::audit_jwt_headers(&jwt_target)
     });
+    let apiver_target = ctx.config.target.clone();
+    let apiver_handle = std::thread::spawn(move || {
+        crate::api_version_audit::audit_api_versioning(&apiver_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -900,6 +904,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::jwt_header_audit::jwt_header_to_operations(&jwt_issues, &mut sequence);
     findings_count += jwt_ops.len() as u64;
     entries.extend(jwt_ops);
+
+    let apiver_issues = apiver_handle.join().unwrap_or_default();
+    let apiver_ops =
+        crate::api_version_audit::api_version_to_operations(&apiver_issues, &mut sequence);
+    findings_count += apiver_ops.len() as u64;
+    entries.extend(apiver_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
