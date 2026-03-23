@@ -46,6 +46,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod security_txt;
 pub mod shodan_lookup;
+pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
@@ -99,6 +100,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use security_txt::*;
 pub use shodan_lookup::*;
+pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
@@ -301,6 +303,10 @@ mod js_library_scanner_test;
 #[cfg(test)]
 #[path = "recon_client_test.rs"]
 mod recon_client_test;
+
+#[cfg(test)]
+#[path = "sri_checker_test.rs"]
+mod sri_checker_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

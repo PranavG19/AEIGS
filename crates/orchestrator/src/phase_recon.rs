@@ -93,6 +93,8 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let jslib_target = ctx.config.target.clone();
     let jslib_handle =
         std::thread::spawn(move || crate::js_library_scanner::scan_js_libraries(&jslib_target));
+    let sri_target = ctx.config.target.clone();
+    let sri_handle = std::thread::spawn(move || crate::sri_checker::check_sri(&sri_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -314,6 +316,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += jslib_ops.len() as u64;
     entries.extend(jslib_ops);
+
+    let sri_issues = sri_handle.join().unwrap_or_default();
+    let sri_ops = crate::sri_checker::sri_findings_to_operations(&sri_issues, &mut sequence);
+    findings_count += sri_ops.len() as u64;
+    entries.extend(sri_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
