@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1499 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1509 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -46,6 +46,7 @@ status: in-progress
 - [x] Referrer-Policy value audit (unsafe-url, downgrade, invalid)
 - [x] X-Frame-Options value audit (ALLOWALL, ALLOW-FROM, invalid, multiple)
 - [x] COOP/COEP header audit (missing, unsafe-none)
+- [x] CORP header audit (missing, cross-origin, invalid)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -54,6 +55,6 @@ status: in-progress
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8: CORP header audit, cookie prefix audit (__Host-/__Secure-),
-   document.domain deprecation check.
+1. Continue P8: cookie prefix audit (__Host-/__Secure-),
+   document.domain deprecation check, MIME sniffing detection.
 2. G14 body-fetch consolidation (L-sized, next dedicated session).

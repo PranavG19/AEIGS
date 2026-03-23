@@ -145,6 +145,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let coop_target = ctx.config.target.clone();
     let coop_handle =
         std::thread::spawn(move || crate::coop_coep_audit::audit_coop_coep(&coop_target));
+    let corp_target = ctx.config.target.clone();
+    let corp_handle =
+        std::thread::spawn(move || crate::corp_audit::audit_corp(&corp_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -460,6 +463,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::coop_coep_audit::coop_coep_to_operations(&coop_issues, &mut sequence);
     findings_count += coop_ops.len() as u64;
     entries.extend(coop_ops);
+
+    let corp_issues = corp_handle.join().unwrap_or_default();
+    let corp_ops = crate::corp_audit::corp_to_operations(&corp_issues, &mut sequence);
+    findings_count += corp_ops.len() as u64;
+    entries.extend(corp_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
