@@ -62,6 +62,7 @@ status: in-progress
 - [x] SourceMap response header audit (SourceMap + X-SourceMap headers)
 - [x] ETag leak detection (Apache inode, weak ETags, unusually long ETags)
 - [x] WWW-Authenticate audit (Basic over HTTP, Digest w/o qop, realm info leak)
+- [x] Proxy header audit (Via chain, Age, X-Cache, X-Forwarded-For)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -151,7 +152,7 @@ Address findings from recon scanner audit.
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: age/via header fingerprinting, x-dns-prefetch-control audit.
+2. Continue P8: x-dns-prefetch-control audit, content-disposition audit.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).

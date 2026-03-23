@@ -196,6 +196,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let wwwauth_handle = std::thread::spawn(move || {
         crate::www_authenticate_audit::audit_www_authenticate(&wwwauth_target)
     });
+    let proxyhdr_target = ctx.config.target.clone();
+    let proxyhdr_handle = std::thread::spawn(move || {
+        crate::proxy_header_audit::audit_proxy_headers(&proxyhdr_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -606,6 +610,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += wwwauth_ops.len() as u64;
     entries.extend(wwwauth_ops);
+
+    let proxyhdr_issues = proxyhdr_handle.join().unwrap_or_default();
+    let proxyhdr_ops =
+        crate::proxy_header_audit::proxy_header_to_operations(&proxyhdr_issues, &mut sequence);
+    findings_count += proxyhdr_ops.len() as u64;
+    entries.extend(proxyhdr_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

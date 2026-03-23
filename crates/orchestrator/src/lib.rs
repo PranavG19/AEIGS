@@ -48,6 +48,7 @@ pub mod mixed_content;
 pub mod opener_audit;
 pub mod permissions_policy;
 pub mod preconnect_audit;
+pub mod proxy_header_audit;
 mod phase_analyze;
 mod phase_crawl;
 mod phase_dom_verify;
@@ -131,6 +132,7 @@ pub use mixed_content::*;
 pub use opener_audit::*;
 pub use permissions_policy::*;
 pub use preconnect_audit::*;
+pub use proxy_header_audit::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
 pub use phase_dom_verify::*;
@@ -446,6 +448,10 @@ mod etag_audit_test;
 #[cfg(test)]
 #[path = "www_authenticate_audit_test.rs"]
 mod www_authenticate_audit_test;
+
+#[cfg(test)]
+#[path = "proxy_header_audit_test.rs"]
+mod proxy_header_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
