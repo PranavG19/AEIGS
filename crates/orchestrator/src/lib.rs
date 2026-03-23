@@ -56,6 +56,7 @@ pub mod eyedropper_audit;
 pub mod fetch_credential_audit;
 pub mod file_access_audit;
 pub mod form_audit;
+pub mod fullscreen_audit;
 pub mod gamepad_audit;
 pub mod geolocation_audit;
 pub mod graphql_introspection_audit;
@@ -220,6 +221,7 @@ pub use eyedropper_audit::*;
 pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
 pub use form_audit::*;
+pub use fullscreen_audit::*;
 pub use gamepad_audit::*;
 pub use geolocation_audit::*;
 pub use graphql_introspection_audit::*;
@@ -719,6 +721,10 @@ mod drag_drop_audit_test;
 #[cfg(test)]
 #[path = "eyedropper_audit_test.rs"]
 mod eyedropper_audit_test;
+
+#[cfg(test)]
+#[path = "fullscreen_audit_test.rs"]
+mod fullscreen_audit_test;
 
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]

@@ -826,6 +826,16 @@ fn run_body_analyzers(
         crate::eyedropper_audit::eyedropper_to_operations
     );
 
+    // Fullscreen API abuse audit
+    let fs_issues = crate::fullscreen_audit::analyze_fullscreen(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fs_issues,
+        crate::fullscreen_audit::fullscreen_to_operations
+    );
+
     // Permissions API abuse
     let perm_issues = crate::permissions_api_audit::analyze_permissions_api(body);
     collect_ops!(
