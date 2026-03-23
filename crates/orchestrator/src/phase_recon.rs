@@ -170,6 +170,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let nel_target = ctx.config.target.clone();
     let nel_handle =
         std::thread::spawn(move || crate::nel_audit::audit_nel(&nel_target));
+    let linkhdr_target = ctx.config.target.clone();
+    let linkhdr_handle =
+        std::thread::spawn(move || crate::link_header_audit::audit_link_header(&linkhdr_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -529,6 +532,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let nel_ops = crate::nel_audit::nel_to_operations(&nel_issues, &mut sequence);
     findings_count += nel_ops.len() as u64;
     entries.extend(nel_ops);
+
+    let linkhdr_issues = linkhdr_handle.join().unwrap_or_default();
+    let linkhdr_ops =
+        crate::link_header_audit::link_header_to_operations(&linkhdr_issues, &mut sequence);
+    findings_count += linkhdr_ops.len() as u64;
+    entries.extend(linkhdr_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

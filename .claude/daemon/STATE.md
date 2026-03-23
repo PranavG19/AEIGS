@@ -55,6 +55,7 @@ status: in-progress
 - [x] Access-Control-Expose-Headers audit (sensitive header leak)
 - [x] document.domain detection (deprecated API, XSS relaxation)
 - [x] NEL/Report-To header audit (external collectors, HTTP endpoints, high sample rates)
+- [x] Link header audit (external preload/prefetch, HTTP resources, dns-prefetch)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -144,7 +145,7 @@ Address findings from recon scanner audit.
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: link header injection, reporting-endpoints audit.
+2. Continue P8: reporting-endpoints audit, feature-policy vs permissions-policy dup check.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).

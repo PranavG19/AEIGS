@@ -38,6 +38,7 @@ pub mod info_disclosure;
 pub mod inline_handler_audit;
 pub mod interactive;
 pub mod js_library_scanner;
+pub mod link_header_audit;
 pub mod meta_tag_audit;
 pub mod method_scanner;
 pub mod nel_audit;
@@ -114,6 +115,7 @@ pub use info_disclosure::*;
 pub use inline_handler_audit::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
+pub use link_header_audit::*;
 pub use meta_tag_audit::*;
 pub use method_scanner::*;
 pub use nel_audit::*;
@@ -404,6 +406,10 @@ mod document_domain_audit_test;
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]
 mod nel_audit_test;
+
+#[cfg(test)]
+#[path = "link_header_audit_test.rs"]
+mod link_header_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
