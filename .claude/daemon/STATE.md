@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2013 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2030 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 60 features shipped
+- P8: 61 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -30,9 +30,10 @@ status: in-progress
 11. feat(recon): Add API versioning detection scanner (+18)
 12. feat(recon): Add CSP report-uri leak scanner (+19)
 13. feat(recon): Add mass assignment pattern scanner (+14)
+14. feat(recon): Add GraphQL introspection leak scanner (+17)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: GraphQL introspection leak, open redirect via parameter scan, feature policy legacy audit, or storage header audit (cross-origin-embedder).
+Continue P8. Next ideas: open redirect via parameter scan, feature policy legacy audit, storage header audit (cross-origin-embedder), or unsafe deserialization pattern scan.

@@ -37,6 +37,7 @@ pub mod error_page_audit;
 pub mod etag_audit;
 pub mod expose_headers_audit;
 pub mod form_audit;
+pub mod graphql_introspection_audit;
 mod graph_persistence;
 pub mod header_audit;
 pub mod hidden_input_audit;
@@ -138,6 +139,7 @@ pub use error_page_audit::*;
 pub use etag_audit::*;
 pub use expose_headers_audit::*;
 pub use form_audit::*;
+pub use graphql_introspection_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
 pub use hidden_input_audit::*;
@@ -245,6 +247,10 @@ mod phase_report_test;
 #[cfg(test)]
 #[path = "graph_persistence_test.rs"]
 mod graph_persistence_test;
+
+#[cfg(test)]
+#[path = "graphql_introspection_audit_test.rs"]
+mod graphql_introspection_audit_test;
 
 #[cfg(test)]
 #[path = "phase_error_test.rs"]

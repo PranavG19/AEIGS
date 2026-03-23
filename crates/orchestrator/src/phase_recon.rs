@@ -654,6 +654,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let cspreport_handle = std::thread::spawn(move || {
         crate::csp_report_leak_audit::audit_csp_report_leak(&cspreport_target)
     });
+    let gqlintro_target = ctx.config.target.clone();
+    let gqlintro_handle = std::thread::spawn(move || {
+        crate::graphql_introspection_audit::audit_graphql_introspection(&gqlintro_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -922,6 +926,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += cspreport_ops.len() as u64;
     entries.extend(cspreport_ops);
+
+    let gqlintro_issues = gqlintro_handle.join().unwrap_or_default();
+    let gqlintro_ops = crate::graphql_introspection_audit::graphql_intro_to_operations(
+        &gqlintro_issues,
+        &mut sequence,
+    );
+    findings_count += gqlintro_ops.len() as u64;
+    entries.extend(gqlintro_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
