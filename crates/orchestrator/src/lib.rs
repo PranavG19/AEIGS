@@ -3,6 +3,7 @@ pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
 pub mod attest;
 pub mod auth_session;
+pub mod background_sync_audit;
 pub mod base_tag_audit;
 pub mod battery_audit;
 pub mod benchmark;
@@ -159,6 +160,7 @@ pub use actor::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use auth_session::*;
+pub use background_sync_audit::*;
 pub use battery_audit::*;
 pub use base_tag_audit::*;
 pub use cache_audit::*;
@@ -847,6 +849,10 @@ mod notification_audit_test;
 #[cfg(test)]
 #[path = "battery_audit_test.rs"]
 mod battery_audit_test;
+
+#[cfg(test)]
+#[path = "background_sync_audit_test.rs"]
+mod background_sync_audit_test;
 
 #[cfg(test)]
 #[path = "canvas_fingerprint_audit_test.rs"]

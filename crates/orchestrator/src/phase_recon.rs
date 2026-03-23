@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Background Sync API audit
+    let bgsync_issues = crate::background_sync_audit::analyze_background_sync(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bgsync_issues,
+        crate::background_sync_audit::background_sync_to_operations
+    );
+
     // Credential Management API audit
     let cma_issues = crate::credential_api_audit::analyze_credential_api(body);
     collect_ops!(
