@@ -146,6 +146,7 @@ pub mod webcrypto_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
 pub mod window_name_audit;
+pub mod wireless_api_audit;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
@@ -289,6 +290,7 @@ pub use webcrypto_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
 pub use window_name_audit::*;
+pub use wireless_api_audit::*;
 pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
 
@@ -787,6 +789,10 @@ mod payment_form_audit_test;
 #[cfg(test)]
 #[path = "window_name_audit_test.rs"]
 mod window_name_audit_test;
+
+#[cfg(test)]
+#[path = "wireless_api_audit_test.rs"]
+mod wireless_api_audit_test;
 
 #[cfg(test)]
 #[path = "webcrypto_audit_test.rs"]

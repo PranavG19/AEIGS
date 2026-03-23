@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Web NFC/Bluetooth wireless API audit
+    let wl_issues = crate::wireless_api_audit::analyze_wireless_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wl_issues,
+        crate::wireless_api_audit::wireless_api_to_operations
+    );
+
     // File System Access API audit
     let fa_issues = crate::file_access_audit::analyze_file_access(body);
     collect_ops!(
