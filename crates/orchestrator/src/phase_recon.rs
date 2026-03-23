@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Topics API audit
+    let ta_issues = crate::topics_api_audit::analyze_topics_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ta_issues,
+        crate::topics_api_audit::topics_api_to_operations
+    );
+
     // WebUSB API audit
     let usb_issues = crate::webusb_audit::analyze_webusb(body);
     collect_ops!(

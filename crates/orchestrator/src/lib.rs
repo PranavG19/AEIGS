@@ -160,6 +160,7 @@ pub mod timing_allow_origin_audit;
 pub mod trusted_types_audit;
 pub mod verb_tamper_audit;
 pub mod tls_scanner;
+pub mod topics_api_audit;
 pub mod update_db;
 mod util;
 pub mod viewport_audit;
@@ -338,6 +339,7 @@ pub use timing_allow_origin_audit::*;
 pub use trusted_types_audit::*;
 pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
+pub use topics_api_audit::*;
 pub use update_db::*;
 pub use viewport_audit::*;
 pub use waf_detector::*;
@@ -855,6 +857,10 @@ mod third_party_script_audit_test;
 #[cfg(test)]
 #[path = "timing_allow_origin_audit_test.rs"]
 mod timing_allow_origin_audit_test;
+
+#[cfg(test)]
+#[path = "topics_api_audit_test.rs"]
+mod topics_api_audit_test;
 
 #[cfg(test)]
 #[path = "trusted_types_audit_test.rs"]
