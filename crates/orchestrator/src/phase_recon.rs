@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Battery API fingerprinting
+    let batt_issues = crate::battery_audit::analyze_battery(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        batt_issues,
+        crate::battery_audit::battery_to_operations
+    );
+
     // Notification API audit
     let notif_issues =
         crate::notification_audit::analyze_notifications(body, resp.is_https);

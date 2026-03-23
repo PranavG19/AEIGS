@@ -4,6 +4,7 @@ pub mod api_version_audit;
 pub mod attest;
 pub mod auth_session;
 pub mod base_tag_audit;
+pub mod battery_audit;
 pub mod benchmark;
 pub mod cache_audit;
 pub mod cache_poison_audit;
@@ -140,6 +141,7 @@ pub use actor::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use auth_session::*;
+pub use battery_audit::*;
 pub use base_tag_audit::*;
 pub use cache_audit::*;
 pub use cache_poison_audit::*;
@@ -741,6 +743,10 @@ mod webrtc_audit_test;
 #[cfg(test)]
 #[path = "notification_audit_test.rs"]
 mod notification_audit_test;
+
+#[cfg(test)]
+#[path = "battery_audit_test.rs"]
+mod battery_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]
