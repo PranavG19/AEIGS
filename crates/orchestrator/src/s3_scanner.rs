@@ -1,3 +1,4 @@
+use std::fmt;
 use std::time::Duration;
 
 use aegis_protocol::finding::VulnerabilityClass;
@@ -136,6 +137,157 @@ pub fn s3_findings_to_operations(findings: &[S3Finding], seq: &mut u64) -> Vec<O
                 0.9,
             ));
         }
+    }
+    entries
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum S3Issue {
+    OpenBucket { bucket: String },
+    ExistsBucket { bucket: String },
+    ListableBucket { bucket: String },
+    SensitiveBucketName { bucket: String, category: String },
+    DefaultRegionBucket { bucket: String },
+    HttpBucket { bucket: String },
+    WebsiteHostingEnabled { bucket: String },
+    CrossAccountBucket { bucket: String },
+}
+
+impl fmt::Display for S3Issue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            S3Issue::OpenBucket { bucket } => {
+                write!(f, "Open S3 bucket: {bucket}")
+            }
+            S3Issue::ExistsBucket { bucket } => {
+                write!(f, "S3 bucket exists (access denied): {bucket}")
+            }
+            S3Issue::ListableBucket { bucket } => {
+                write!(f, "Listable S3 bucket: {bucket}")
+            }
+            S3Issue::SensitiveBucketName { bucket, category } => {
+                write!(f, "Sensitive bucket name ({category}): {bucket}")
+            }
+            S3Issue::DefaultRegionBucket { bucket } => {
+                write!(f, "Default region (us-east-1) bucket: {bucket}")
+            }
+            S3Issue::HttpBucket { bucket } => {
+                write!(f, "HTTP-accessible bucket: {bucket}")
+            }
+            S3Issue::WebsiteHostingEnabled { bucket } => {
+                write!(f, "Website hosting enabled: {bucket}")
+            }
+            S3Issue::CrossAccountBucket { bucket } => {
+                write!(f, "Cross-account bucket: {bucket}")
+            }
+        }
+    }
+}
+
+const SENSITIVE_CATEGORIES: &[(&str, &str)] = &[
+    ("backup", "backup"),
+    ("private", "private"),
+    ("internal", "internal"),
+    ("logs", "logs"),
+    ("credentials", "credentials"),
+    ("secrets", "secrets"),
+];
+
+pub fn s3_issue_severity(issue: &S3Issue) -> f64 {
+    match issue {
+        S3Issue::ListableBucket { .. } => 9.0,
+        S3Issue::OpenBucket { .. } => 8.0,
+        S3Issue::WebsiteHostingEnabled { .. } => 6.0,
+        S3Issue::HttpBucket { .. } => 5.0,
+        S3Issue::SensitiveBucketName { .. } => 4.0,
+        S3Issue::CrossAccountBucket { .. } => 3.0,
+        S3Issue::DefaultRegionBucket { .. } => 2.0,
+        S3Issue::ExistsBucket { .. } => 1.0,
+    }
+}
+
+pub fn analyze_bucket_name(bucket: &str, domain: &str) -> Vec<S3Issue> {
+    if bucket.is_empty() {
+        return Vec::new();
+    }
+    let lower = bucket.to_lowercase();
+    let mut issues = Vec::new();
+
+    for &(keyword, category) in SENSITIVE_CATEGORIES {
+        if lower.contains(keyword) {
+            issues.push(S3Issue::SensitiveBucketName {
+                bucket: bucket.to_string(),
+                category: category.to_string(),
+            });
+        }
+    }
+
+    let domain_base = domain.split('.').next().unwrap_or(domain).to_lowercase();
+    if !domain_base.is_empty() && !lower.contains(&domain_base) {
+        issues.push(S3Issue::CrossAccountBucket {
+            bucket: bucket.to_string(),
+        });
+    }
+
+    issues
+}
+
+pub fn analyze_bucket_response(bucket: &str, status: u16, body: &str) -> Vec<S3Issue> {
+    if bucket.is_empty() {
+        return Vec::new();
+    }
+    let mut issues = Vec::new();
+
+    match status {
+        200 => {
+            issues.push(S3Issue::OpenBucket {
+                bucket: bucket.to_string(),
+            });
+            if body.contains("<ListBucketResult") {
+                issues.push(S3Issue::ListableBucket {
+                    bucket: bucket.to_string(),
+                });
+            }
+        }
+        403 => {
+            issues.push(S3Issue::ExistsBucket {
+                bucket: bucket.to_string(),
+            });
+        }
+        301 | 307 => {
+            if body.contains("us-east-1") || body.contains("s3.amazonaws.com") {
+                issues.push(S3Issue::DefaultRegionBucket {
+                    bucket: bucket.to_string(),
+                });
+            }
+            if body.contains(".s3-website") || body.contains("x-amz-website-redirect-location") {
+                issues.push(S3Issue::WebsiteHostingEnabled {
+                    bucket: bucket.to_string(),
+                });
+            }
+        }
+        _ => {}
+    }
+
+    if body.contains("http://") && body.contains(".s3.amazonaws.com") {
+        issues.push(S3Issue::HttpBucket {
+            bucket: bucket.to_string(),
+        });
+    }
+
+    issues
+}
+
+pub fn s3_issues_to_operations(issues: &[S3Issue], seq: &mut u64) -> Vec<OperationLogEntry> {
+    let mut entries = Vec::new();
+    for issue in issues {
+        let severity = s3_issue_severity(issue);
+        entries.push(recon_client::finding_entry(
+            seq,
+            VulnerabilityClass::SecurityMisconfiguration,
+            severity,
+            0.5,
+        ));
     }
     entries
 }

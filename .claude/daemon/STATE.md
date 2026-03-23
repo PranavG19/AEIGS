@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 5022 lib, 0 failed
+- cargo test -p aegis-orchestrator: 5842 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 181 features shipped
+- P8: 199 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -51,6 +51,14 @@ status: in-progress
 176. Proxy Header (9→28), 177. Cache Audit (10→37), 178. CORP Audit (10→52)
 
 179. Inline Handler (10→30), 180. Timing Allow Origin (10→28), 181. Base Tag (11→41)
+
+182. Clear-Site-Data (11→47), 183. Deprecated Header (11→49), 184. Expose Headers (11→58)
+185. Redirect Scanner (9→55), 186. CORS Scanner (11→58), 187. Iframe Audit (11→59)
+188. Method Scanner (11→56), 189. Opener Audit (11→55), 190. Reporting Endpoints (11→51)
+191. CRLF Injection (12→49), 192. Document Domain (12→45), 193. ETag Audit (12→56)
+
+194. Fetch Credential (12→58), 195. Hidden Input (12→46), 196. JSONP Audit (12→64)
+197. Method Override (12→76), 198. S3 Scanner (12→63), 199. SRI Checker (12→80)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
