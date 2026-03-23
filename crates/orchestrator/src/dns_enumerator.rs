@@ -1,6 +1,7 @@
 use std::net::ToSocketAddrs;
 use std::process::Command;
 
+use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
@@ -69,7 +70,7 @@ fn query_dig(domain: &str, record_type: &str) -> Vec<DnsRecord> {
     parse_dig_output(&stdout, record_type)
 }
 
-pub(crate) fn parse_dig_output(stdout: &str, record_type: &str) -> Vec<DnsRecord> {
+pub fn parse_dig_output(stdout: &str, record_type: &str) -> Vec<DnsRecord> {
     stdout
         .lines()
         .map(|l| l.trim())
@@ -99,6 +100,137 @@ pub fn dns_to_operations(records: &[DnsRecord], seq: &mut u64) -> Vec<OperationL
                 },
                 timestamp_unix_ms: timestamp_ms(),
             }
+        })
+        .collect()
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum DnsIssue {
+    OpenResolver { nameserver: String },
+    ZoneTransferPossible { nameserver: String },
+    MissingSpf,
+    WeakSpf { record: String },
+    MissingDmarc,
+    WeakDmarc { policy: String },
+    DanglingCname { cname: String },
+    InternalIpLeak { ip: String },
+    WildcardDns,
+    MissingDnssec,
+    LowTtl { record_type: String, value: String },
+}
+
+impl std::fmt::Display for DnsIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DnsIssue::OpenResolver { nameserver } => {
+                write!(f, "open_resolver: {nameserver}")
+            }
+            DnsIssue::ZoneTransferPossible { nameserver } => {
+                write!(f, "zone_transfer_possible: {nameserver}")
+            }
+            DnsIssue::MissingSpf => write!(f, "missing_spf"),
+            DnsIssue::WeakSpf { record } => write!(f, "weak_spf: {record}"),
+            DnsIssue::MissingDmarc => write!(f, "missing_dmarc"),
+            DnsIssue::WeakDmarc { policy } => write!(f, "weak_dmarc: {policy}"),
+            DnsIssue::DanglingCname { cname } => {
+                write!(f, "dangling_cname: {cname}")
+            }
+            DnsIssue::InternalIpLeak { ip } => {
+                write!(f, "internal_ip_leak: {ip}")
+            }
+            DnsIssue::WildcardDns => write!(f, "wildcard_dns"),
+            DnsIssue::MissingDnssec => write!(f, "missing_dnssec"),
+            DnsIssue::LowTtl { record_type, value } => write!(f, "low_ttl: {record_type} {value}"),
+        }
+    }
+}
+
+pub fn dns_issue_severity(issue: &DnsIssue) -> f64 {
+    match issue {
+        DnsIssue::ZoneTransferPossible { .. } => 9.0,
+        DnsIssue::OpenResolver { .. } => 7.0,
+        DnsIssue::DanglingCname { .. } => 6.5,
+        DnsIssue::InternalIpLeak { .. } => 6.0,
+        DnsIssue::WeakSpf { .. } => 5.0,
+        DnsIssue::WeakDmarc { .. } => 4.5,
+        DnsIssue::MissingSpf => 4.0,
+        DnsIssue::MissingDmarc => 3.5,
+        DnsIssue::WildcardDns => 3.0,
+        DnsIssue::MissingDnssec => 2.5,
+        DnsIssue::LowTtl { .. } => 2.0,
+    }
+}
+
+pub fn analyze_dns_records(records: &[DnsRecord]) -> Vec<DnsIssue> {
+    let mut issues = Vec::new();
+
+    let txt_records: Vec<&DnsRecord> = records.iter().filter(|r| r.record_type == "TXT").collect();
+
+    let has_spf = txt_records.iter().any(|r| r.value.starts_with("v=spf1"));
+    if !has_spf {
+        issues.push(DnsIssue::MissingSpf);
+    } else {
+        for rec in &txt_records {
+            if rec.value.starts_with("v=spf1") && rec.value.contains("+all") {
+                issues.push(DnsIssue::WeakSpf {
+                    record: rec.value.clone(),
+                });
+            }
+        }
+    }
+
+    let has_dmarc = txt_records.iter().any(|r| r.value.starts_with("v=DMARC1"));
+    if !has_dmarc {
+        issues.push(DnsIssue::MissingDmarc);
+    } else {
+        for rec in &txt_records {
+            if rec.value.starts_with("v=DMARC1") && rec.value.contains("p=none") {
+                issues.push(DnsIssue::WeakDmarc {
+                    policy: "none".to_string(),
+                });
+            }
+        }
+    }
+
+    for rec in records {
+        if (rec.record_type == "A" || rec.record_type == "AAAA") && is_internal_ip(&rec.value) {
+            issues.push(DnsIssue::InternalIpLeak {
+                ip: rec.value.clone(),
+            });
+        }
+    }
+
+    issues
+}
+
+fn is_internal_ip(ip: &str) -> bool {
+    if let Some(rest) = ip.strip_prefix("10.") {
+        return rest.split('.').count() == 3;
+    }
+    if let Some(rest) = ip.strip_prefix("192.168.") {
+        return rest.split('.').count() == 2;
+    }
+    if let Some(rest) = ip.strip_prefix("172.") {
+        let parts: Vec<&str> = rest.split('.').collect();
+        if parts.len() == 3
+            && let Ok(second) = parts[0].parse::<u8>()
+        {
+            return (16..=31).contains(&second);
+        }
+    }
+    false
+}
+
+pub fn dns_issues_to_operations(issues: &[DnsIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                dns_issue_severity(issue),
+                0.5,
+            )
         })
         .collect()
 }

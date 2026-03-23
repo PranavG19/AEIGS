@@ -1,6 +1,10 @@
+use std::collections::HashMap;
+use std::fmt;
+
 use aegis_protocol::finding::{Confidence, VulnerabilityClass};
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 
+use crate::recon_client;
 use crate::util::timestamp_ms;
 
 const NVD_API_BASE: &str = "https://services.nvd.nist.gov/rest/json/cves/2.0";
@@ -86,7 +90,7 @@ pub struct NvdCveMatch {
     pub technology: String,
 }
 
-pub(crate) fn parse_nvd_response(body: &str, tech: &str) -> Vec<NvdCveMatch> {
+pub fn parse_nvd_response(body: &str, tech: &str) -> Vec<NvdCveMatch> {
     let response: NvdResponse = match serde_json::from_str(body) {
         Ok(r) => r,
         Err(_) => {
@@ -132,10 +136,7 @@ fn extract_cvss_score(metrics: NvdMetrics) -> Option<f64> {
         })
 }
 
-pub(crate) fn cve_matches_to_operations(
-    matches: &[NvdCveMatch],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn cve_matches_to_operations(matches: &[NvdCveMatch], seq: &mut u64) -> Vec<OperationLogEntry> {
     matches
         .iter()
         .map(|m| {
@@ -155,6 +156,211 @@ pub(crate) fn cve_matches_to_operations(
             }
         })
         .collect()
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum CveIssue {
+    KnownCve {
+        cve_id: String,
+        technology: String,
+        cvss_score: f64,
+    },
+    CriticalCve {
+        cve_id: String,
+        technology: String,
+        cvss_score: f64,
+    },
+    ExploitAvailable {
+        cve_id: String,
+        technology: String,
+    },
+    RemoteCodeExecution {
+        cve_id: String,
+        technology: String,
+    },
+    AuthBypass {
+        cve_id: String,
+        technology: String,
+    },
+    OutdatedTechnology {
+        technology: String,
+        latest_cve_year: u16,
+    },
+    HighCveCount {
+        technology: String,
+        count: usize,
+    },
+    NoScoreAvailable {
+        cve_id: String,
+        technology: String,
+    },
+}
+
+impl fmt::Display for CveIssue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::KnownCve {
+                cve_id,
+                technology,
+                cvss_score,
+            } => write!(f, "known_cve:{cve_id}:{technology}:{cvss_score}"),
+            Self::CriticalCve {
+                cve_id,
+                technology,
+                cvss_score,
+            } => write!(f, "critical_cve:{cve_id}:{technology}:{cvss_score}"),
+            Self::ExploitAvailable { cve_id, technology } => {
+                write!(f, "exploit_available:{cve_id}:{technology}")
+            }
+            Self::RemoteCodeExecution { cve_id, technology } => {
+                write!(f, "remote_code_execution:{cve_id}:{technology}")
+            }
+            Self::AuthBypass { cve_id, technology } => {
+                write!(f, "auth_bypass:{cve_id}:{technology}")
+            }
+            Self::OutdatedTechnology {
+                technology,
+                latest_cve_year,
+            } => write!(f, "outdated_technology:{technology}:{latest_cve_year}"),
+            Self::HighCveCount { technology, count } => {
+                write!(f, "high_cve_count:{technology}:{count}")
+            }
+            Self::NoScoreAvailable { cve_id, technology } => {
+                write!(f, "no_score_available:{cve_id}:{technology}")
+            }
+        }
+    }
+}
+
+pub fn cve_issue_severity(issue: &CveIssue) -> f64 {
+    match issue {
+        CveIssue::CriticalCve { cvss_score, .. } => *cvss_score,
+        CveIssue::RemoteCodeExecution { .. } => 9.5,
+        CveIssue::AuthBypass { .. } => 8.5,
+        CveIssue::ExploitAvailable { .. } => 8.0,
+        CveIssue::KnownCve { cvss_score, .. } => *cvss_score,
+        CveIssue::HighCveCount { .. } => 7.0,
+        CveIssue::OutdatedTechnology { .. } => 6.0,
+        CveIssue::NoScoreAvailable { .. } => 5.0,
+    }
+}
+
+pub fn analyze_cve_matches(matches: &[NvdCveMatch]) -> Vec<CveIssue> {
+    let mut issues = Vec::new();
+    let mut tech_counts: HashMap<&str, usize> = HashMap::new();
+    let mut tech_latest_year: HashMap<&str, u16> = HashMap::new();
+    let current_year = current_year();
+
+    for m in matches {
+        *tech_counts.entry(&m.technology).or_insert(0) += 1;
+
+        if let Some(year) = extract_cve_year(&m.cve_id) {
+            let entry = tech_latest_year.entry(&m.technology).or_insert(0);
+            if year > *entry {
+                *entry = year;
+            }
+        }
+
+        if let Some(score) = m.cvss_score {
+            issues.push(CveIssue::KnownCve {
+                cve_id: m.cve_id.clone(),
+                technology: m.technology.clone(),
+                cvss_score: score,
+            });
+
+            if score >= 9.0 {
+                issues.push(CveIssue::CriticalCve {
+                    cve_id: m.cve_id.clone(),
+                    technology: m.technology.clone(),
+                    cvss_score: score,
+                });
+            }
+        } else {
+            issues.push(CveIssue::NoScoreAvailable {
+                cve_id: m.cve_id.clone(),
+                technology: m.technology.clone(),
+            });
+        }
+
+        let desc_lower = m.description.to_ascii_lowercase();
+
+        if desc_lower.contains("remote code execution") || desc_lower.contains("rce") {
+            issues.push(CveIssue::RemoteCodeExecution {
+                cve_id: m.cve_id.clone(),
+                technology: m.technology.clone(),
+            });
+        }
+
+        if desc_lower.contains("authentication bypass") || desc_lower.contains("auth bypass") {
+            issues.push(CveIssue::AuthBypass {
+                cve_id: m.cve_id.clone(),
+                technology: m.technology.clone(),
+            });
+        }
+
+        if desc_lower.contains("exploit")
+            || desc_lower.contains("proof of concept")
+            || desc_lower.contains("poc")
+        {
+            issues.push(CveIssue::ExploitAvailable {
+                cve_id: m.cve_id.clone(),
+                technology: m.technology.clone(),
+            });
+        }
+    }
+
+    for (tech, count) in &tech_counts {
+        if *count > 5 {
+            issues.push(CveIssue::HighCveCount {
+                technology: tech.to_string(),
+                count: *count,
+            });
+        }
+    }
+
+    for (tech, year) in &tech_latest_year {
+        if *year >= current_year - 1 {
+            issues.push(CveIssue::OutdatedTechnology {
+                technology: tech.to_string(),
+                latest_cve_year: *year,
+            });
+        }
+    }
+
+    issues
+}
+
+pub fn cve_issues_to_operations(issues: &[CveIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::KnownVulnerableDependency,
+                cve_issue_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}
+
+fn extract_cve_year(cve_id: &str) -> Option<u16> {
+    let parts: Vec<&str> = cve_id.split('-').collect();
+    if parts.len() >= 2 {
+        parts[1].parse().ok()
+    } else {
+        None
+    }
+}
+
+fn current_year() -> u16 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    // 31_557_600 = 365.25 * 86400 (average seconds per year)
+    (1970 + secs / 31_557_600) as u16
 }
 
 #[derive(serde::Deserialize)]
