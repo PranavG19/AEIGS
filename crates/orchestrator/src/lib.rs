@@ -38,6 +38,7 @@ pub mod endpoint_similarity;
 pub mod error_page_audit;
 pub mod etag_audit;
 pub mod expose_headers_audit;
+pub mod fetch_credential_audit;
 pub mod form_audit;
 pub mod graphql_introspection_audit;
 mod graph_persistence;
@@ -151,6 +152,7 @@ pub use endpoint_similarity::*;
 pub use error_page_audit::*;
 pub use etag_audit::*;
 pub use expose_headers_audit::*;
+pub use fetch_credential_audit::*;
 pub use form_audit::*;
 pub use graphql_introspection_audit::*;
 pub use graph_persistence::*;
@@ -289,6 +291,10 @@ mod convergence_test;
 #[cfg(test)]
 #[path = "endpoint_similarity_test.rs"]
 mod endpoint_similarity_test;
+
+#[cfg(test)]
+#[path = "fetch_credential_audit_test.rs"]
+mod fetch_credential_audit_test;
 
 #[cfg(test)]
 #[path = "form_audit_test.rs"]

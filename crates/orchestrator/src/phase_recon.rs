@@ -540,6 +540,16 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // Fetch/XHR credential audit
+    let fetchcred_issues = crate::fetch_credential_audit::analyze_fetch_credentials(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fetchcred_issues,
+        crate::fetch_credential_audit::fetch_credential_to_operations
+    );
+
     // Service worker security
     let sw_issues = crate::service_worker_audit::analyze_service_worker_usage(
         body,

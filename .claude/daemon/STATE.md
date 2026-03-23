@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2196 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2208 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -42,9 +42,10 @@ status: in-progress
 23. feat(recon): Add client-side storage security scanner (+15)
 24. feat(recon): Add postMessage security scanner (+15)
 25. feat(recon): Add service worker security scanner (+15)
+26. feat(recon): Add fetch/XHR credential audit scanner (+12)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: email header injection, IDOR pattern scanner, subdomain wildcard check, or fetch/XHR credential audit.
+Continue P8. Next ideas: email header injection, IDOR pattern scanner, subdomain wildcard check, or CSP nonce/hash audit.
