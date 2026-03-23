@@ -102,3 +102,40 @@ fn dedup_detections_removes_duplicates() {
     // Both WordPress entries create separate ops (dedup is in detect_technologies)
     assert_eq!(ops.len(), 3);
 }
+
+#[test]
+fn detect_from_parts_finds_server_header() {
+    let headers = vec![("server".to_string(), "nginx/1.24.0".to_string())];
+    let body = "";
+    let results = detect_from_parts(&headers, body);
+    assert!(
+        results.iter().any(|d| d.name.contains("nginx")),
+        "should detect nginx from server header, got: {results:?}"
+    );
+}
+
+#[test]
+fn detect_from_parts_finds_html_patterns() {
+    let headers = vec![];
+    let body = r#"<html><head><script src="/wp-includes/js/jquery.js"></script></head></html>"#;
+    let results = detect_from_parts(&headers, body);
+    assert!(
+        results.iter().any(|d| d.name == "WordPress"),
+        "should detect WordPress from HTML, got: {results:?}"
+    );
+}
+
+#[test]
+fn detect_from_parts_empty_inputs() {
+    let results = detect_from_parts(&[], "");
+    assert!(results.is_empty());
+}
+
+#[test]
+fn detect_from_parts_deduplicates() {
+    let headers = vec![("x-powered-by".to_string(), "Express".to_string())];
+    let body = r#"<html><head><meta name="generator" content="Express"></head></html>"#;
+    let results = detect_from_parts(&headers, body);
+    let express_count = results.iter().filter(|d| d.name == "Express").count();
+    assert!(express_count <= 1, "should deduplicate Express detections");
+}

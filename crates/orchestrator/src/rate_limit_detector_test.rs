@@ -60,3 +60,37 @@ fn detect_rate_limits_skips_loopback() {
     let result = detect_rate_limits("http://127.0.0.1");
     assert!(result.is_none());
 }
+
+#[test]
+fn rate_limit_to_operations_increments_sequence() {
+    let info = RateLimitInfo {
+        headers: vec![("retry-after".to_string(), "60".to_string())],
+    };
+    let mut seq = 10;
+    let ops = rate_limit_to_operations(&info, &mut seq);
+    assert_eq!(seq, 11);
+    assert_eq!(ops[0].sequence_number, 11);
+}
+
+#[test]
+fn rate_limit_to_operations_single_header() {
+    let info = RateLimitInfo {
+        headers: vec![("retry-after".to_string(), "120".to_string())],
+    };
+    let mut seq = 0;
+    let ops = rate_limit_to_operations(&info, &mut seq);
+    match &ops[0].operation {
+        aegis_protocol::operation::GraphOperation::AddNode { properties, .. } => {
+            assert_eq!(properties.len(), 2); // 1 header + source
+            let retry = properties.iter().find(|(k, _)| k == "retry-after").unwrap();
+            assert_eq!(retry.1, "120");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn detect_rate_limits_skips_invalid() {
+    let result = detect_rate_limits("not-a-url");
+    assert!(result.is_none());
+}

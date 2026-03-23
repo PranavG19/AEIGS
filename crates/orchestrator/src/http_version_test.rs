@@ -58,3 +58,38 @@ fn detect_http_version_skips_invalid() {
     let result = detect_http_version("not-a-url");
     assert!(result.is_none());
 }
+
+#[test]
+fn version_to_operations_increments_sequence() {
+    let info = HttpVersionInfo {
+        version: "HTTP/1.1".to_string(),
+        supports_h2: false,
+    };
+    let mut seq = 10;
+    let ops = version_to_operations(&info, &mut seq);
+    assert_eq!(seq, 11);
+    assert_eq!(ops[0].sequence_number, 11);
+}
+
+#[test]
+fn version_to_operations_includes_source() {
+    let info = HttpVersionInfo {
+        version: "HTTP/2.0".to_string(),
+        supports_h2: true,
+    };
+    let mut seq = 0;
+    let ops = version_to_operations(&info, &mut seq);
+    match &ops[0].operation {
+        aegis_protocol::operation::GraphOperation::AddNode { properties, .. } => {
+            let source = properties.iter().find(|(k, _)| k == "source").unwrap();
+            assert_eq!(source.1, "http_version_detect");
+        }
+        _ => panic!("expected AddNode"),
+    }
+}
+
+#[test]
+fn detect_http_version_skips_loopback() {
+    let result = detect_http_version("http://127.0.0.1:8080");
+    assert!(result.is_none());
+}
