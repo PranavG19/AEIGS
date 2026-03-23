@@ -14,6 +14,7 @@ pub mod cookie_audit;
 pub mod coop_coep_audit;
 pub mod corp_audit;
 pub mod cors_scanner;
+pub mod crlf_injection_audit;
 pub mod csp_analyzer;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
@@ -316,6 +317,10 @@ mod dns_enumerator_test;
 #[cfg(test)]
 #[path = "cors_scanner_test.rs"]
 mod cors_scanner_test;
+
+#[cfg(test)]
+#[path = "crlf_injection_audit_test.rs"]
+mod crlf_injection_audit_test;
 
 #[cfg(test)]
 #[path = "cookie_audit_test.rs"]

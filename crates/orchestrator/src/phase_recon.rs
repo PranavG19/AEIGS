@@ -359,6 +359,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let hosthdr_handle = std::thread::spawn(move || {
         crate::host_header_audit::audit_host_header(&hosthdr_target)
     });
+    let crlf_target = ctx.config.target.clone();
+    let crlf_handle = std::thread::spawn(move || {
+        crate::crlf_injection_audit::audit_crlf(&crlf_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -554,6 +558,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::host_header_audit::host_header_to_operations(&hosthdr_issues, &mut sequence);
     findings_count += hosthdr_ops.len() as u64;
     entries.extend(hosthdr_ops);
+
+    let crlf_issues = crlf_handle.join().unwrap_or_default();
+    let crlf_ops =
+        crate::crlf_injection_audit::crlf_to_operations(&crlf_issues, &mut sequence);
+    findings_count += crlf_ops.len() as u64;
+    entries.extend(crlf_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
