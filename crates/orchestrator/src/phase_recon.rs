@@ -308,7 +308,7 @@ fn run_header_analyzers(
         fc,
         entries,
         tao_issues,
-        crate::timing_allow_origin_audit::timing_allow_origin_to_operations
+        crate::timing_allow_origin_audit::timing_allow_to_operations
     );
 
     // Clear-Site-Data
