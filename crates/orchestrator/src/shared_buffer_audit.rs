@@ -75,15 +75,11 @@ pub fn analyze_shared_buffer(body: &str, coep: &str, coop: &str) -> Vec<SharedBu
         issues.push(SharedBufferIssue::AtomicsUsage);
     }
 
-    if has_sab
-        && (body.contains("performance.now") || body.contains("performance.timeOrigin"))
-    {
+    if has_sab && (body.contains("performance.now") || body.contains("performance.timeOrigin")) {
         issues.push(SharedBufferIssue::HighResTimerWithSharedBuffer);
     }
 
-    if body.contains("WebAssembly.Memory")
-        && body.contains("shared")
-    {
+    if body.contains("WebAssembly.Memory") && body.contains("shared") {
         issues.push(SharedBufferIssue::WasmSharedMemory);
     }
 

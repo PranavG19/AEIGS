@@ -130,9 +130,18 @@ fn display_variants() {
     assert_eq!(WebCodecsIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(WebCodecsIssue::VideoCapture.to_string(), "video_capture");
     assert_eq!(WebCodecsIssue::AudioCapture.to_string(), "audio_capture");
-    assert_eq!(WebCodecsIssue::RawFrameAccess.to_string(), "raw_frame_access");
-    assert_eq!(WebCodecsIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebCodecsIssue::ContinuousEncoding.to_string(), "continuous_encoding");
+    assert_eq!(
+        WebCodecsIssue::RawFrameAccess.to_string(),
+        "raw_frame_access"
+    );
+    assert_eq!(
+        WebCodecsIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebCodecsIssue::ContinuousEncoding.to_string(),
+        "continuous_encoding"
+    );
 }
 
 #[test]

@@ -63,7 +63,11 @@ pub fn analyze_sse_usage(body: &str) -> Vec<SseIssue> {
 }
 
 fn find_eventsource_constructors(body: &str, issues: &mut Vec<SseIssue>) {
-    for prefix in ["new EventSource(\"", "new EventSource('", "new EventSource(`"] {
+    for prefix in [
+        "new EventSource(\"",
+        "new EventSource('",
+        "new EventSource(`",
+    ] {
         let mut pos = 0;
         while let Some(idx) = body[pos..].find(prefix) {
             let abs = pos + idx + prefix.len();

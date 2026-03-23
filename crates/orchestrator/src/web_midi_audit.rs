@@ -64,7 +64,8 @@ pub fn analyze_web_midi(body: &str) -> Vec<WebMidiIssue> {
     }
 
     let has_midi_event = body.contains("onmidimessage") || body.contains("midimessage");
-    let has_network = body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
+    let has_network =
+        body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
     if has_api && has_midi_event && has_network {
         issues.push(WebMidiIssue::DataExfiltration);
     }

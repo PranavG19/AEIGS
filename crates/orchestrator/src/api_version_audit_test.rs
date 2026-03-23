@@ -3,71 +3,77 @@ use crate::api_version_audit::*;
 #[test]
 fn deprecated_v1_in_path() {
     let issues = analyze_api_versioning("/api/v1/users", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v1")));
+    assert!(issues.iter().any(
+        |i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v1")
+    ));
 }
 
 #[test]
 fn deprecated_v0_in_path() {
     let issues = analyze_api_versioning("/api/v0/health", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v0")));
+    assert!(issues.iter().any(
+        |i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v0")
+    ));
 }
 
 #[test]
 fn current_version_not_deprecated() {
     let issues = analyze_api_versioning("/api/v2/users", &[]);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { .. }))
+    );
 }
 
 #[test]
 fn unversioned_api_detected() {
     let issues = analyze_api_versioning("/api/users", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ApiVersionIssue::UnversionedApi));
+    assert!(issues.iter().any(|i| *i == ApiVersionIssue::UnversionedApi));
 }
 
 #[test]
 fn path_version_without_header() {
     let issues = analyze_api_versioning("/api/v2/users", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ApiVersionIssue::NoVersionHeader));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ApiVersionIssue::NoVersionHeader)
+    );
 }
 
 #[test]
 fn header_version_only_no_issues() {
     let headers = vec![("api-version".to_string(), "2".to_string())];
     let issues = analyze_api_versioning("/api/users", &headers);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == ApiVersionIssue::UnversionedApi));
-    assert!(!issues
-        .iter()
-        .any(|i| *i == ApiVersionIssue::NoVersionHeader));
+    assert!(!issues.iter().any(|i| *i == ApiVersionIssue::UnversionedApi));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == ApiVersionIssue::NoVersionHeader)
+    );
 }
 
 #[test]
 fn version_mismatch_detected() {
     let headers = vec![("api-version".to_string(), "3".to_string())];
     let issues = analyze_api_versioning("/api/v2/users", &headers);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::VersionMismatch { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiVersionIssue::VersionMismatch { .. }))
+    );
 }
 
 #[test]
 fn version_match_no_mismatch() {
     let headers = vec![("api-version".to_string(), "2".to_string())];
     let issues = analyze_api_versioning("/api/v2/users", &headers);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::VersionMismatch { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ApiVersionIssue::VersionMismatch { .. }))
+    );
 }
 
 #[test]
@@ -77,9 +83,11 @@ fn multiple_version_headers() {
         ("x-api-version".to_string(), "2".to_string()),
     ];
     let issues = analyze_api_versioning("/api/v2/users", &headers);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ApiVersionIssue::MultipleVersionSchemes));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ApiVersionIssue::MultipleVersionSchemes)
+    );
 }
 
 #[test]
@@ -172,15 +180,17 @@ fn audit_skips_loopback() {
 #[test]
 fn path_version_case_insensitive() {
     let issues = analyze_api_versioning("/api/V1/users", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { .. }))
+    );
 }
 
 #[test]
 fn nested_path_version() {
     let issues = analyze_api_versioning("/service/api/v1/resource/123", &[]);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v1")));
+    assert!(issues.iter().any(
+        |i| matches!(i, ApiVersionIssue::DeprecatedVersionInPath { version } if version == "v1")
+    ));
 }

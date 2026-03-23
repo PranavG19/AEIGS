@@ -84,10 +84,7 @@ pub fn gamepad_severity(issue: &GamepadIssue) -> f64 {
     }
 }
 
-pub fn gamepad_to_operations(
-    issues: &[GamepadIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn gamepad_to_operations(issues: &[GamepadIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

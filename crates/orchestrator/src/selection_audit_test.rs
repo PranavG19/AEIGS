@@ -84,7 +84,10 @@ fn detects_range_manipulation() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(selection_severity(&SelectionIssue::SelectionExfiltration), 6.5);
+    assert_eq!(
+        selection_severity(&SelectionIssue::SelectionExfiltration),
+        6.5
+    );
 }
 
 #[test]
@@ -104,11 +107,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(SelectionIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(SelectionIssue::SelectionExfiltration.to_string(), "selection_exfiltration");
-    assert_eq!(SelectionIssue::ClipboardHijack.to_string(), "clipboard_hijack");
-    assert_eq!(SelectionIssue::HiddenTextSelection.to_string(), "hidden_text_selection");
-    assert_eq!(SelectionIssue::ContinuousMonitoring.to_string(), "continuous_monitoring");
-    assert_eq!(SelectionIssue::RangeManipulation.to_string(), "range_manipulation");
+    assert_eq!(
+        SelectionIssue::SelectionExfiltration.to_string(),
+        "selection_exfiltration"
+    );
+    assert_eq!(
+        SelectionIssue::ClipboardHijack.to_string(),
+        "clipboard_hijack"
+    );
+    assert_eq!(
+        SelectionIssue::HiddenTextSelection.to_string(),
+        "hidden_text_selection"
+    );
+    assert_eq!(
+        SelectionIssue::ContinuousMonitoring.to_string(),
+        "continuous_monitoring"
+    );
+    assert_eq!(
+        SelectionIssue::RangeManipulation.to_string(),
+        "range_manipulation"
+    );
 }
 
 #[test]

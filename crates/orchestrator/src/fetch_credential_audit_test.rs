@@ -17,27 +17,33 @@ fn normal_fetch_no_credentials() {
 fn credentials_include_double_quotes() {
     let body = r#"<script>fetch("/api", {credentials: "include"});</script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == FetchCredentialIssue::CredentialsInclude));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == FetchCredentialIssue::CredentialsInclude)
+    );
 }
 
 #[test]
 fn credentials_include_single_quotes() {
     let body = "<script>fetch('/api', {credentials: 'include'});</script>";
     let issues = analyze_fetch_credentials(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == FetchCredentialIssue::CredentialsInclude));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == FetchCredentialIssue::CredentialsInclude)
+    );
 }
 
 #[test]
 fn credentials_same_origin_not_flagged() {
     let body = r#"<script>fetch("/api", {credentials: "same-origin"});</script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == FetchCredentialIssue::CredentialsInclude));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == FetchCredentialIssue::CredentialsInclude)
+    );
 }
 
 #[test]
@@ -48,9 +54,11 @@ fn xhr_with_credentials_detected() {
         xhr.open("GET", "/api");
     </script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == FetchCredentialIssue::XhrWithCredentials));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == FetchCredentialIssue::XhrWithCredentials)
+    );
 }
 
 #[test]
@@ -60,27 +68,33 @@ fn xhr_without_credentials_not_flagged() {
         xhr.open("GET", "/api");
     </script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == FetchCredentialIssue::XhrWithCredentials));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == FetchCredentialIssue::XhrWithCredentials)
+    );
 }
 
 #[test]
 fn hardcoded_api_key_detected() {
     let body = r#"<script>var config = {apiKey":"sk-1234567890abcdef"};</script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, FetchCredentialIssue::HardcodedApiKey { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, FetchCredentialIssue::HardcodedApiKey { .. }))
+    );
 }
 
 #[test]
 fn no_hardcoded_key_in_normal_code() {
     let body = r#"<script>var x = {name: "test", value: 42};</script>"#;
     let issues = analyze_fetch_credentials(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, FetchCredentialIssue::HardcodedApiKey { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, FetchCredentialIssue::HardcodedApiKey { .. }))
+    );
 }
 
 #[test]

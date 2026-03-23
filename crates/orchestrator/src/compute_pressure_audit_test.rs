@@ -78,17 +78,26 @@ fn no_continuous_with_disconnect() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(compute_pressure_severity(&ComputePressureIssue::StateExfiltration), 6.5);
+    assert_eq!(
+        compute_pressure_severity(&ComputePressureIssue::StateExfiltration),
+        6.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(compute_pressure_severity(&ComputePressureIssue::ApiDetected), 3.0);
+    assert_eq!(
+        compute_pressure_severity(&ComputePressureIssue::ApiDetected),
+        3.0
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ComputePressureIssue::ApiDetected, ComputePressureIssue::CpuFingerprinting];
+    let issues = vec![
+        ComputePressureIssue::ApiDetected,
+        ComputePressureIssue::CpuFingerprinting,
+    ];
     let mut seq = 0;
     let ops = compute_pressure_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -97,11 +106,26 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ComputePressureIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ComputePressureIssue::StateExfiltration.to_string(), "state_exfiltration");
-    assert_eq!(ComputePressureIssue::CpuFingerprinting.to_string(), "cpu_fingerprinting");
-    assert_eq!(ComputePressureIssue::CrossOriginLeak.to_string(), "cross_origin_leak");
-    assert_eq!(ComputePressureIssue::ContinuousObserving.to_string(), "continuous_observing");
+    assert_eq!(
+        ComputePressureIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        ComputePressureIssue::StateExfiltration.to_string(),
+        "state_exfiltration"
+    );
+    assert_eq!(
+        ComputePressureIssue::CpuFingerprinting.to_string(),
+        "cpu_fingerprinting"
+    );
+    assert_eq!(
+        ComputePressureIssue::CrossOriginLeak.to_string(),
+        "cross_origin_leak"
+    );
+    assert_eq!(
+        ComputePressureIssue::ContinuousObserving.to_string(),
+        "continuous_observing"
+    );
 }
 
 #[test]

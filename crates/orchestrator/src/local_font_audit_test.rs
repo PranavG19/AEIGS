@@ -111,10 +111,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(LocalFontIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(LocalFontIssue::FontExfiltration.to_string(), "font_exfiltration");
-    assert_eq!(LocalFontIssue::FullEnumeration.to_string(), "full_enumeration");
-    assert_eq!(LocalFontIssue::FontDataAccess.to_string(), "font_data_access");
-    assert_eq!(LocalFontIssue::NoPermissionCheck.to_string(), "no_permission_check");
+    assert_eq!(
+        LocalFontIssue::FontExfiltration.to_string(),
+        "font_exfiltration"
+    );
+    assert_eq!(
+        LocalFontIssue::FullEnumeration.to_string(),
+        "full_enumeration"
+    );
+    assert_eq!(
+        LocalFontIssue::FontDataAccess.to_string(),
+        "font_data_access"
+    );
+    assert_eq!(
+        LocalFontIssue::NoPermissionCheck.to_string(),
+        "no_permission_check"
+    );
 }
 
 #[test]

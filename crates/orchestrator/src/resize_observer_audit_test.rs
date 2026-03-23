@@ -93,12 +93,18 @@ fn detects_continuous_tracking() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(resize_observer_severity(&ResizeObserverIssue::DataExfiltration), 5.5);
+    assert_eq!(
+        resize_observer_severity(&ResizeObserverIssue::DataExfiltration),
+        5.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(resize_observer_severity(&ResizeObserverIssue::ObserverDetected), 3.0);
+    assert_eq!(
+        resize_observer_severity(&ResizeObserverIssue::ObserverDetected),
+        3.0
+    );
 }
 
 #[test]
@@ -115,12 +121,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ResizeObserverIssue::ObserverDetected.to_string(), "observer_detected");
-    assert_eq!(ResizeObserverIssue::ContentRectAccess.to_string(), "content_rect_access");
-    assert_eq!(ResizeObserverIssue::BorderBoxSize.to_string(), "border_box_size");
-    assert_eq!(ResizeObserverIssue::MultipleTargets.to_string(), "multiple_targets");
-    assert_eq!(ResizeObserverIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(ResizeObserverIssue::ContinuousTracking.to_string(), "continuous_tracking");
+    assert_eq!(
+        ResizeObserverIssue::ObserverDetected.to_string(),
+        "observer_detected"
+    );
+    assert_eq!(
+        ResizeObserverIssue::ContentRectAccess.to_string(),
+        "content_rect_access"
+    );
+    assert_eq!(
+        ResizeObserverIssue::BorderBoxSize.to_string(),
+        "border_box_size"
+    );
+    assert_eq!(
+        ResizeObserverIssue::MultipleTargets.to_string(),
+        "multiple_targets"
+    );
+    assert_eq!(
+        ResizeObserverIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        ResizeObserverIssue::ContinuousTracking.to_string(),
+        "continuous_tracking"
+    );
 }
 
 #[test]

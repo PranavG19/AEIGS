@@ -81,7 +81,10 @@ fn detects_pixel_data_access() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(eyedropper_severity(&EyeDropperIssue::ColorExfiltration), 6.0);
+    assert_eq!(
+        eyedropper_severity(&EyeDropperIssue::ColorExfiltration),
+        6.0
+    );
 }
 
 #[test]
@@ -91,7 +94,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![EyeDropperIssue::ApiDetected, EyeDropperIssue::PixelDataAccess];
+    let issues = vec![
+        EyeDropperIssue::ApiDetected,
+        EyeDropperIssue::PixelDataAccess,
+    ];
     let mut seq = 0;
     let ops = eyedropper_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -101,10 +107,19 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(EyeDropperIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(EyeDropperIssue::ColorExfiltration.to_string(), "color_exfiltration");
-    assert_eq!(EyeDropperIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        EyeDropperIssue::ColorExfiltration.to_string(),
+        "color_exfiltration"
+    );
+    assert_eq!(
+        EyeDropperIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(EyeDropperIssue::LoopedPicking.to_string(), "looped_picking");
-    assert_eq!(EyeDropperIssue::PixelDataAccess.to_string(), "pixel_data_access");
+    assert_eq!(
+        EyeDropperIssue::PixelDataAccess.to_string(),
+        "pixel_data_access"
+    );
 }
 
 #[test]

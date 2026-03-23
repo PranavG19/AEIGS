@@ -39,11 +39,15 @@ pub fn audit_file_handling(target: &str) -> Vec<FileHandlingIssue> {
 }
 
 pub fn analyze_file_handling(body: &str) -> Vec<FileHandlingIssue> {
-    if !body.contains("file_handlers") && !body.contains("launchQueue") && !body.contains("LaunchParams") {
+    if !body.contains("file_handlers")
+        && !body.contains("launchQueue")
+        && !body.contains("LaunchParams")
+    {
         return Vec::new();
     }
 
-    let has_files = body.contains("files") && (body.contains("launchQueue") || body.contains("LaunchParams"));
+    let has_files =
+        body.contains("files") && (body.contains("launchQueue") || body.contains("LaunchParams"));
     let has_handlers = body.contains("file_handlers");
 
     if !has_files && !has_handlers {
@@ -58,7 +62,9 @@ pub fn analyze_file_handling(body: &str) -> Vec<FileHandlingIssue> {
     }
 
     if has_files
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(FileHandlingIssue::DataExfiltration);
     }
@@ -73,8 +79,11 @@ pub fn analyze_file_handling(body: &str) -> Vec<FileHandlingIssue> {
     }
 
     if has_handlers
-        && (body.contains(".exe") || body.contains(".bat") || body.contains(".sh")
-            || body.contains(".cmd") || body.contains(".ps1"))
+        && (body.contains(".exe")
+            || body.contains(".bat")
+            || body.contains(".sh")
+            || body.contains(".cmd")
+            || body.contains(".ps1"))
     {
         issues.push(FileHandlingIssue::ExecutableHandling);
     }

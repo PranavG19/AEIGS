@@ -50,16 +50,22 @@ pub fn analyze_web_otp(body: &str) -> Vec<WebOtpIssue> {
 
     let mut issues = vec![WebOtpIssue::ApiDetected];
 
-    let has_external_send = body.contains("fetch(")
-        || body.contains("sendBeacon")
-        || body.contains("XMLHttpRequest");
-    let has_otp_param = body.contains("otp") || body.contains("code") || body.contains("token") || body.contains("pin");
+    let has_external_send =
+        body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
+    let has_otp_param = body.contains("otp")
+        || body.contains("code")
+        || body.contains("token")
+        || body.contains("pin");
     if has_external_send && has_otp_param {
         issues.push(WebOtpIssue::OtpInterception);
     }
 
-    let has_verification = body.contains("verify") || body.contains("validate") || body.contains("check");
-    let has_rate_limit = body.contains("rateLimit") || body.contains("throttle") || body.contains("cooldown") || body.contains("attempt");
+    let has_verification =
+        body.contains("verify") || body.contains("validate") || body.contains("check");
+    let has_rate_limit = body.contains("rateLimit")
+        || body.contains("throttle")
+        || body.contains("cooldown")
+        || body.contains("attempt");
     if has_verification && !has_rate_limit {
         issues.push(WebOtpIssue::NoRateLimiting);
     }
@@ -68,7 +74,8 @@ pub fn analyze_web_otp(body: &str) -> Vec<WebOtpIssue> {
         issues.push(WebOtpIssue::InsecureTransport);
     }
 
-    let has_cross_origin = body.contains("postMessage") || body.contains("iframe") || body.contains("cross-origin");
+    let has_cross_origin =
+        body.contains("postMessage") || body.contains("iframe") || body.contains("cross-origin");
     if has_cross_origin {
         issues.push(WebOtpIssue::CrossOriginRisk);
     }

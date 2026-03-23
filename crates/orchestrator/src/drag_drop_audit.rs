@@ -110,10 +110,7 @@ pub fn drag_drop_severity(issue: &DragDropIssue) -> f64 {
     }
 }
 
-pub fn drag_drop_to_operations(
-    issues: &[DragDropIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn drag_drop_to_operations(issues: &[DragDropIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

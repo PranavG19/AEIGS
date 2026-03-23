@@ -56,10 +56,9 @@ pub fn audit_open_redirect_params(target: &str) -> Vec<OpenRedirectIssue> {
     if recon_client::validated_domain(target).is_none() {
         return Vec::new();
     }
-    let Some(client) = recon_client::build_client_limited_redirect(
-        std::time::Duration::from_secs(10),
-        0,
-    ) else {
+    let Some(client) =
+        recon_client::build_client_limited_redirect(std::time::Duration::from_secs(10), 0)
+    else {
         return Vec::new();
     };
 
@@ -70,10 +69,7 @@ pub fn audit_open_redirect_params(target: &str) -> Vec<OpenRedirectIssue> {
         let test_url = format!("{base}?{param}={CANARY_DOMAIN}");
         if let Ok(resp) = client.get(&test_url).send()
             && (300..400).contains(&resp.status().as_u16())
-            && let Some(location) = resp
-                .headers()
-                .get("location")
-                .and_then(|v| v.to_str().ok())
+            && let Some(location) = resp.headers().get("location").and_then(|v| v.to_str().ok())
         {
             let loc_lower = location.to_ascii_lowercase();
             if loc_lower.contains("evil.example.com") {
@@ -86,10 +82,7 @@ pub fn audit_open_redirect_params(target: &str) -> Vec<OpenRedirectIssue> {
 
         let js_url = format!("{base}?{param}={JS_PAYLOAD}");
         if let Ok(resp) = client.get(&js_url).send()
-            && let Some(location) = resp
-                .headers()
-                .get("location")
-                .and_then(|v| v.to_str().ok())
+            && let Some(location) = resp.headers().get("location").and_then(|v| v.to_str().ok())
             && location.to_ascii_lowercase().starts_with("javascript:")
         {
             issues.push(OpenRedirectIssue::JavascriptSchemeRedirect {

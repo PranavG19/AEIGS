@@ -46,7 +46,10 @@ pub fn analyze_ink_api(body: &str) -> Vec<InkApiIssue> {
     let mut issues = Vec::new();
     issues.push(InkApiIssue::ApiDetected);
 
-    if body.contains("pointermove") || body.contains("pointerdown") || body.contains("pointerrawupdate") {
+    if body.contains("pointermove")
+        || body.contains("pointerdown")
+        || body.contains("pointerrawupdate")
+    {
         issues.push(InkApiIssue::InputTracking);
     }
 
@@ -60,7 +63,9 @@ pub fn analyze_ink_api(body: &str) -> Vec<InkApiIssue> {
         issues.push(InkApiIssue::ContinuousCapture);
     }
 
-    if body.contains("canvas") && (body.contains("toDataURL") || body.contains("getImageData") || body.contains("toBlob")) {
+    if body.contains("canvas")
+        && (body.contains("toDataURL") || body.contains("getImageData") || body.contains("toBlob"))
+    {
         issues.push(InkApiIssue::CanvasFingerprinting);
     }
 
@@ -77,10 +82,7 @@ pub fn ink_api_severity(issue: &InkApiIssue) -> f64 {
     }
 }
 
-pub fn ink_api_to_operations(
-    issues: &[InkApiIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn ink_api_to_operations(issues: &[InkApiIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

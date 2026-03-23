@@ -111,10 +111,7 @@ fn display_variants() {
         WirelessApiIssue::BluetoothGattConnection.to_string(),
         "bluetooth_gatt_connection"
     );
-    assert_eq!(
-        WirelessApiIssue::WebNfcAccess.to_string(),
-        "web_nfc_access"
-    );
+    assert_eq!(WirelessApiIssue::WebNfcAccess.to_string(), "web_nfc_access");
     assert_eq!(
         WirelessApiIssue::NfcWriteOperation.to_string(),
         "nfc_write_operation"

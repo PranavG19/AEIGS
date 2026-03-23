@@ -155,8 +155,7 @@ fn extract_script_domain(src: &str) -> Option<String> {
 }
 
 fn is_same_site(script_domain: &str, site_domain: &str) -> bool {
-    script_domain == site_domain
-        || script_domain.ends_with(&format!(".{site_domain}"))
+    script_domain == site_domain || script_domain.ends_with(&format!(".{site_domain}"))
 }
 
 fn is_tracker(domain: &str) -> bool {

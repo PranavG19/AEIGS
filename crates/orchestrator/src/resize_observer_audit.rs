@@ -52,7 +52,8 @@ pub fn analyze_resize_observer(body: &str) -> Vec<ResizeObserverIssue> {
         issues.push(ResizeObserverIssue::ContentRectAccess);
     }
 
-    if body.contains("borderBoxSize") || body.contains("contentBoxSize")
+    if body.contains("borderBoxSize")
+        || body.contains("contentBoxSize")
         || body.contains("devicePixelContentBoxSize")
     {
         issues.push(ResizeObserverIssue::BorderBoxSize);

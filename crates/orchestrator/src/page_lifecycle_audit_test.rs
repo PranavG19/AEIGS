@@ -215,11 +215,26 @@ fn test_unload_with_save_is_safe() {
 
 #[test]
 fn test_severity_values() {
-    assert_eq!(page_lifecycle_severity(&PageLifecycleIssue::ApiDetected), 2.0);
-    assert_eq!(page_lifecycle_severity(&PageLifecycleIssue::DataLeakOnFreeze), 7.0);
-    assert_eq!(page_lifecycle_severity(&PageLifecycleIssue::StateRestorationRisk), 6.5);
-    assert_eq!(page_lifecycle_severity(&PageLifecycleIssue::BackForwardCacheAbuse), 6.0);
-    assert_eq!(page_lifecycle_severity(&PageLifecycleIssue::UnloadDataLoss), 5.5);
+    assert_eq!(
+        page_lifecycle_severity(&PageLifecycleIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        page_lifecycle_severity(&PageLifecycleIssue::DataLeakOnFreeze),
+        7.0
+    );
+    assert_eq!(
+        page_lifecycle_severity(&PageLifecycleIssue::StateRestorationRisk),
+        6.5
+    );
+    assert_eq!(
+        page_lifecycle_severity(&PageLifecycleIssue::BackForwardCacheAbuse),
+        6.0
+    );
+    assert_eq!(
+        page_lifecycle_severity(&PageLifecycleIssue::UnloadDataLoss),
+        5.5
+    );
 }
 
 #[test]

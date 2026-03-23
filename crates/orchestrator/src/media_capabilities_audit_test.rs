@@ -214,11 +214,26 @@ fn test_all_issues_detected() {
 
 #[test]
 fn test_severity_values() {
-    assert_eq!(media_capabilities_severity(&MediaCapabilitiesIssue::ApiDetected), 2.0);
-    assert_eq!(media_capabilities_severity(&MediaCapabilitiesIssue::CodecFingerprinting), 7.0);
-    assert_eq!(media_capabilities_severity(&MediaCapabilitiesIssue::HardwareFingerprinting), 7.5);
-    assert_eq!(media_capabilities_severity(&MediaCapabilitiesIssue::PerformanceProbing), 6.0);
-    assert_eq!(media_capabilities_severity(&MediaCapabilitiesIssue::DataExfiltration), 6.5);
+    assert_eq!(
+        media_capabilities_severity(&MediaCapabilitiesIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        media_capabilities_severity(&MediaCapabilitiesIssue::CodecFingerprinting),
+        7.0
+    );
+    assert_eq!(
+        media_capabilities_severity(&MediaCapabilitiesIssue::HardwareFingerprinting),
+        7.5
+    );
+    assert_eq!(
+        media_capabilities_severity(&MediaCapabilitiesIssue::PerformanceProbing),
+        6.0
+    );
+    assert_eq!(
+        media_capabilities_severity(&MediaCapabilitiesIssue::DataExfiltration),
+        6.5
+    );
 }
 
 #[test]
@@ -245,11 +260,26 @@ fn test_to_operations_empty() {
 
 #[test]
 fn test_display_strings() {
-    assert_eq!(MediaCapabilitiesIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(MediaCapabilitiesIssue::CodecFingerprinting.to_string(), "codec_fingerprinting");
-    assert_eq!(MediaCapabilitiesIssue::HardwareFingerprinting.to_string(), "hardware_fingerprinting");
-    assert_eq!(MediaCapabilitiesIssue::PerformanceProbing.to_string(), "performance_probing");
-    assert_eq!(MediaCapabilitiesIssue::DataExfiltration.to_string(), "data_exfiltration");
+    assert_eq!(
+        MediaCapabilitiesIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        MediaCapabilitiesIssue::CodecFingerprinting.to_string(),
+        "codec_fingerprinting"
+    );
+    assert_eq!(
+        MediaCapabilitiesIssue::HardwareFingerprinting.to_string(),
+        "hardware_fingerprinting"
+    );
+    assert_eq!(
+        MediaCapabilitiesIssue::PerformanceProbing.to_string(),
+        "performance_probing"
+    );
+    assert_eq!(
+        MediaCapabilitiesIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
 }
 
 #[test]

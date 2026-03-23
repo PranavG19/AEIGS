@@ -39,7 +39,10 @@ pub fn audit_launch_handler(target: &str) -> Vec<LaunchHandlerIssue> {
 }
 
 pub fn analyze_launch_handler(body: &str) -> Vec<LaunchHandlerIssue> {
-    if !body.contains("launchQueue") && !body.contains("LaunchParams") && !body.contains("launch_handler") {
+    if !body.contains("launchQueue")
+        && !body.contains("LaunchParams")
+        && !body.contains("launch_handler")
+    {
         return Vec::new();
     }
 
@@ -61,7 +64,9 @@ pub fn analyze_launch_handler(body: &str) -> Vec<LaunchHandlerIssue> {
     }
 
     if has_consumer
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(LaunchHandlerIssue::DataExfiltration);
     }

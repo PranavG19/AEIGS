@@ -15,27 +15,25 @@ fn no_redirect_no_issues() {
 
 #[test]
 fn detects_meta_refresh_redirect() {
-    let body =
-        r#"<meta http-equiv="refresh" content="0;url=https://example.com">"#;
+    let body = r#"<meta http-equiv="refresh" content="0;url=https://example.com">"#;
     let issues = analyze_meta_redirect(body);
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        MetaRedirectIssue::MetaRefreshRedirect { .. }
-    )));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, MetaRedirectIssue::MetaRefreshRedirect { .. }))
+    );
 }
 
 #[test]
 fn detects_meta_refresh_short_delay() {
-    let body =
-        r#"<meta http-equiv="refresh" content="0;url=https://example.com">"#;
+    let body = r#"<meta http-equiv="refresh" content="0;url=https://example.com">"#;
     let issues = analyze_meta_redirect(body);
     assert!(issues.contains(&MetaRedirectIssue::MetaRefreshShortDelay));
 }
 
 #[test]
 fn long_delay_no_short_delay_issue() {
-    let body =
-        r#"<meta http-equiv="refresh" content="30;url=https://example.com">"#;
+    let body = r#"<meta http-equiv="refresh" content="30;url=https://example.com">"#;
     let issues = analyze_meta_redirect(body);
     assert!(!issues.contains(&MetaRedirectIssue::MetaRefreshShortDelay));
 }

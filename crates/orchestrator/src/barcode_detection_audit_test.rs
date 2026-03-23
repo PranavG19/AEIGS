@@ -103,17 +103,26 @@ fn no_activation_issue_with_click() {
 
 #[test]
 fn severity_exfil_highest() {
-    assert_eq!(barcode_detection_severity(&BarcodeDetectionIssue::DataExfiltration), 7.0);
+    assert_eq!(
+        barcode_detection_severity(&BarcodeDetectionIssue::DataExfiltration),
+        7.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(barcode_detection_severity(&BarcodeDetectionIssue::ApiDetected), 2.5);
+    assert_eq!(
+        barcode_detection_severity(&BarcodeDetectionIssue::ApiDetected),
+        2.5
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![BarcodeDetectionIssue::ApiDetected, BarcodeDetectionIssue::CameraAccess];
+    let issues = vec![
+        BarcodeDetectionIssue::ApiDetected,
+        BarcodeDetectionIssue::CameraAccess,
+    ];
     let mut seq = 0;
     let ops = barcode_detection_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -122,11 +131,26 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(BarcodeDetectionIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(BarcodeDetectionIssue::CameraAccess.to_string(), "camera_access");
-    assert_eq!(BarcodeDetectionIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(BarcodeDetectionIssue::ContinuousScanning.to_string(), "continuous_scanning");
-    assert_eq!(BarcodeDetectionIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        BarcodeDetectionIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        BarcodeDetectionIssue::CameraAccess.to_string(),
+        "camera_access"
+    );
+    assert_eq!(
+        BarcodeDetectionIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        BarcodeDetectionIssue::ContinuousScanning.to_string(),
+        "continuous_scanning"
+    );
+    assert_eq!(
+        BarcodeDetectionIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
 }
 
 #[test]

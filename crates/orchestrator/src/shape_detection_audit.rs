@@ -65,7 +65,9 @@ pub fn analyze_shape_detection(body: &str) -> Vec<ShapeDetectionIssue> {
     }
 
     if body.contains(".detect(")
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(ShapeDetectionIssue::DataExfiltration);
     }

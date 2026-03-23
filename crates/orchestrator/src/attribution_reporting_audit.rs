@@ -76,8 +76,7 @@ pub fn analyze_attribution_reporting(body: &str) -> Vec<AttributionReportingIssu
         issues.push(AttributionReportingIssue::EventLevelFingerprint);
     }
 
-    if (has_attr || has_header)
-        && (body.contains("debug_key") || body.contains("debug_reporting"))
+    if (has_attr || has_header) && (body.contains("debug_key") || body.contains("debug_reporting"))
     {
         issues.push(AttributionReportingIssue::DebugKeyLeak);
     }

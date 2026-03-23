@@ -111,12 +111,18 @@ fn stripe_present_no_missing_iframe() {
 
 #[test]
 fn severity_http_highest() {
-    assert_eq!(payment_form_severity(&PaymentFormIssue::PaymentFormOverHttp), 9.0);
+    assert_eq!(
+        payment_form_severity(&PaymentFormIssue::PaymentFormOverHttp),
+        9.0
+    );
 }
 
 #[test]
 fn severity_hidden_card_high() {
-    assert_eq!(payment_form_severity(&PaymentFormIssue::CardDataInHiddenField), 8.0);
+    assert_eq!(
+        payment_form_severity(&PaymentFormIssue::CardDataInHiddenField),
+        8.0
+    );
 }
 
 #[test]
@@ -141,12 +147,18 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(PaymentFormIssue::PaymentFormOverHttp.to_string(), "payment_over_http");
+    assert_eq!(
+        PaymentFormIssue::PaymentFormOverHttp.to_string(),
+        "payment_over_http"
+    );
     assert_eq!(
         PaymentFormIssue::MissingAutocompleteOnCardField.to_string(),
         "missing_cc_autocomplete"
     );
-    assert_eq!(PaymentFormIssue::CardDataInHiddenField.to_string(), "card_hidden_field");
+    assert_eq!(
+        PaymentFormIssue::CardDataInHiddenField.to_string(),
+        "card_hidden_field"
+    );
     assert_eq!(
         PaymentFormIssue::InlineCardProcessing.to_string(),
         "inline_card_processing"
@@ -155,7 +167,10 @@ fn display_variants() {
         PaymentFormIssue::CardNumberMaxlengthMissing.to_string(),
         "card_no_maxlength"
     );
-    assert_eq!(PaymentFormIssue::NoPaymentIframe.to_string(), "no_payment_iframe");
+    assert_eq!(
+        PaymentFormIssue::NoPaymentIframe.to_string(),
+        "no_payment_iframe"
+    );
 }
 
 #[test]
@@ -163,5 +178,8 @@ fn external_payment_script_display() {
     let issue = PaymentFormIssue::ExternalPaymentScript {
         domain: "https://evil.com/pay".to_string(),
     };
-    assert_eq!(issue.to_string(), "external_payment_script:https://evil.com/pay");
+    assert_eq!(
+        issue.to_string(),
+        "external_payment_script:https://evil.com/pay"
+    );
 }

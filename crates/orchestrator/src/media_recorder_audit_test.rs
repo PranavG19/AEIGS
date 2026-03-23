@@ -29,58 +29,91 @@ fn detects_media_recorder_lowercase() {
 
 #[test]
 fn detects_surveillance() {
-    let body = "new MediaRecorder(stream); navigator.mediaDevices.getUserMedia(c); fetch('/upload');";
+    let body =
+        "new MediaRecorder(stream); navigator.mediaDevices.getUserMedia(c); fetch('/upload');";
     let issues = analyze_media_recorder(body);
-    assert!(issues.iter().any(|i| *i == MediaRecorderIssue::SurveillanceRisk));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::SurveillanceRisk)
+    );
 }
 
 #[test]
 fn no_surveillance_without_network() {
     let body = "new MediaRecorder(stream); navigator.mediaDevices.getUserMedia(c);";
     let issues = analyze_media_recorder(body);
-    assert!(!issues.iter().any(|i| *i == MediaRecorderIssue::SurveillanceRisk));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::SurveillanceRisk)
+    );
 }
 
 #[test]
 fn detects_silent_recording() {
     let body = "new MediaRecorder(stream); recorder.start(1000);";
     let issues = analyze_media_recorder(body);
-    assert!(issues.iter().any(|i| *i == MediaRecorderIssue::SilentRecording));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::SilentRecording)
+    );
 }
 
 #[test]
 fn no_silent_with_notification() {
     let body = "new MediaRecorder(stream); recorder.start(1000); showNotification('Recording'); notification.show();";
     let issues = analyze_media_recorder(body);
-    assert!(!issues.iter().any(|i| *i == MediaRecorderIssue::SilentRecording));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::SilentRecording)
+    );
 }
 
 #[test]
 fn detects_data_exfiltration() {
     let body = "new MediaRecorder(s); recorder.ondataavailable = function(e) { upload(e.data); };";
     let issues = analyze_media_recorder(body);
-    assert!(issues.iter().any(|i| *i == MediaRecorderIssue::DataExfiltration));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::DataExfiltration)
+    );
 }
 
 #[test]
 fn no_exfiltration_without_network() {
     let body = "new MediaRecorder(s); recorder.ondataavailable = function(e) { save(e.data); };";
     let issues = analyze_media_recorder(body);
-    assert!(!issues.iter().any(|i| *i == MediaRecorderIssue::DataExfiltration));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::DataExfiltration)
+    );
 }
 
 #[test]
 fn detects_unbounded_recording() {
     let body = "new MediaRecorder(stream); recorder.start(1000);";
     let issues = analyze_media_recorder(body);
-    assert!(issues.iter().any(|i| *i == MediaRecorderIssue::UnboundedRecording));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::UnboundedRecording)
+    );
 }
 
 #[test]
 fn no_unbounded_with_stop() {
     let body = "new MediaRecorder(stream); recorder.start(1000); recorder.stop();";
     let issues = analyze_media_recorder(body);
-    assert!(!issues.iter().any(|i| *i == MediaRecorderIssue::UnboundedRecording));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::UnboundedRecording)
+    );
 }
 
 #[test]
@@ -103,19 +136,40 @@ fn all_issues_detected() {
 #[test]
 fn severity_values_correct() {
     assert!((media_recorder_severity(&MediaRecorderIssue::ApiDetected) - 2.0).abs() < f64::EPSILON);
-    assert!((media_recorder_severity(&MediaRecorderIssue::SurveillanceRisk) - 8.0).abs() < f64::EPSILON);
-    assert!((media_recorder_severity(&MediaRecorderIssue::SilentRecording) - 7.5).abs() < f64::EPSILON);
-    assert!((media_recorder_severity(&MediaRecorderIssue::DataExfiltration) - 7.0).abs() < f64::EPSILON);
-    assert!((media_recorder_severity(&MediaRecorderIssue::UnboundedRecording) - 5.5).abs() < f64::EPSILON);
+    assert!(
+        (media_recorder_severity(&MediaRecorderIssue::SurveillanceRisk) - 8.0).abs() < f64::EPSILON
+    );
+    assert!(
+        (media_recorder_severity(&MediaRecorderIssue::SilentRecording) - 7.5).abs() < f64::EPSILON
+    );
+    assert!(
+        (media_recorder_severity(&MediaRecorderIssue::DataExfiltration) - 7.0).abs() < f64::EPSILON
+    );
+    assert!(
+        (media_recorder_severity(&MediaRecorderIssue::UnboundedRecording) - 5.5).abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn display_impl_works() {
     assert_eq!(MediaRecorderIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(MediaRecorderIssue::SurveillanceRisk.to_string(), "surveillance_risk");
-    assert_eq!(MediaRecorderIssue::SilentRecording.to_string(), "silent_recording");
-    assert_eq!(MediaRecorderIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(MediaRecorderIssue::UnboundedRecording.to_string(), "unbounded_recording");
+    assert_eq!(
+        MediaRecorderIssue::SurveillanceRisk.to_string(),
+        "surveillance_risk"
+    );
+    assert_eq!(
+        MediaRecorderIssue::SilentRecording.to_string(),
+        "silent_recording"
+    );
+    assert_eq!(
+        MediaRecorderIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        MediaRecorderIssue::UnboundedRecording.to_string(),
+        "unbounded_recording"
+    );
 }
 
 #[test]
@@ -142,7 +196,12 @@ fn operations_increment_sequence() {
 
 #[test]
 fn detects_get_display_media() {
-    let body = "new MediaRecorder(stream); navigator.mediaDevices.getDisplayMedia(c); fetch('/save');";
+    let body =
+        "new MediaRecorder(stream); navigator.mediaDevices.getDisplayMedia(c); fetch('/save');";
     let issues = analyze_media_recorder(body);
-    assert!(issues.iter().any(|i| *i == MediaRecorderIssue::SurveillanceRisk));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == MediaRecorderIssue::SurveillanceRisk)
+    );
 }

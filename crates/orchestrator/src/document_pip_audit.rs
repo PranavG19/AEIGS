@@ -39,8 +39,8 @@ pub fn audit_document_pip(target: &str) -> Vec<DocumentPipIssue> {
 }
 
 pub fn analyze_document_pip(body: &str) -> Vec<DocumentPipIssue> {
-    let has_api = body.contains("documentPictureInPicture")
-        || body.contains("DocumentPictureInPicture");
+    let has_api =
+        body.contains("documentPictureInPicture") || body.contains("DocumentPictureInPicture");
 
     if !has_api {
         return Vec::new();
@@ -64,14 +64,18 @@ pub fn analyze_document_pip(body: &str) -> Vec<DocumentPipIssue> {
     }
 
     if has_api
-        && (body.contains("innerHTML") || body.contains("document.write") || body.contains("insertAdjacentHTML"))
+        && (body.contains("innerHTML")
+            || body.contains("document.write")
+            || body.contains("insertAdjacentHTML"))
         && !body.contains("sanitize")
     {
         issues.push(DocumentPipIssue::ContentInjection);
     }
 
     if body.contains("requestWindow")
-        && (body.contains("setInterval") || body.contains("beforeunload") || body.contains("visibilitychange"))
+        && (body.contains("setInterval")
+            || body.contains("beforeunload")
+            || body.contains("visibilitychange"))
         && !body.contains("close(")
     {
         issues.push(DocumentPipIssue::PersistentWindow);

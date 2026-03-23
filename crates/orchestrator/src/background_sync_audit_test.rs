@@ -86,12 +86,18 @@ fn no_permission_issue_when_checked() {
 
 #[test]
 fn severity_periodic_highest() {
-    assert_eq!(background_sync_severity(&BackgroundSyncIssue::PeriodicSyncDetected), 6.0);
+    assert_eq!(
+        background_sync_severity(&BackgroundSyncIssue::PeriodicSyncDetected),
+        6.0
+    );
 }
 
 #[test]
 fn severity_register_lowest() {
-    assert_eq!(background_sync_severity(&BackgroundSyncIssue::SyncRegisterDetected), 3.5);
+    assert_eq!(
+        background_sync_severity(&BackgroundSyncIssue::SyncRegisterDetected),
+        3.5
+    );
 }
 
 #[test]
@@ -108,12 +114,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(BackgroundSyncIssue::SyncRegisterDetected.to_string(), "sync_register_detected");
-    assert_eq!(BackgroundSyncIssue::PeriodicSyncDetected.to_string(), "periodic_sync_detected");
-    assert_eq!(BackgroundSyncIssue::ShortMinInterval.to_string(), "short_min_interval");
-    assert_eq!(BackgroundSyncIssue::ExcessiveSyncTags.to_string(), "excessive_sync_tags");
-    assert_eq!(BackgroundSyncIssue::SyncWithFetch.to_string(), "sync_with_fetch");
-    assert_eq!(BackgroundSyncIssue::NoPermissionCheck.to_string(), "no_permission_check");
+    assert_eq!(
+        BackgroundSyncIssue::SyncRegisterDetected.to_string(),
+        "sync_register_detected"
+    );
+    assert_eq!(
+        BackgroundSyncIssue::PeriodicSyncDetected.to_string(),
+        "periodic_sync_detected"
+    );
+    assert_eq!(
+        BackgroundSyncIssue::ShortMinInterval.to_string(),
+        "short_min_interval"
+    );
+    assert_eq!(
+        BackgroundSyncIssue::ExcessiveSyncTags.to_string(),
+        "excessive_sync_tags"
+    );
+    assert_eq!(
+        BackgroundSyncIssue::SyncWithFetch.to_string(),
+        "sync_with_fetch"
+    );
+    assert_eq!(
+        BackgroundSyncIssue::NoPermissionCheck.to_string(),
+        "no_permission_check"
+    );
 }
 
 #[test]

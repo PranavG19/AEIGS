@@ -134,10 +134,19 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebShareIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebShareIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebShareIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        WebShareIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebShareIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(WebShareIssue::FileSharing.to_string(), "file_sharing");
-    assert_eq!(WebShareIssue::SensitiveContent.to_string(), "sensitive_content");
+    assert_eq!(
+        WebShareIssue::SensitiveContent.to_string(),
+        "sensitive_content"
+    );
     assert_eq!(WebShareIssue::UnvalidatedUrl.to_string(), "unvalidated_url");
 }
 

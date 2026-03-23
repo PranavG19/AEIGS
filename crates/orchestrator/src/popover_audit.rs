@@ -63,13 +63,17 @@ pub fn analyze_popover(body: &str) -> Vec<PopoverIssue> {
 
     if (has_attr || has_api)
         && body.contains("pointer-events")
-        && (body.contains("opacity: 0") || body.contains("opacity:0") || body.contains("visibility: hidden"))
+        && (body.contains("opacity: 0")
+            || body.contains("opacity:0")
+            || body.contains("visibility: hidden"))
     {
         issues.push(PopoverIssue::ClickjackingOverlay);
     }
 
     if has_api
-        && (body.contains("DOMContentLoaded") || body.contains("window.onload") || body.contains("addEventListener(\"load\""))
+        && (body.contains("DOMContentLoaded")
+            || body.contains("window.onload")
+            || body.contains("addEventListener(\"load\""))
         && body.contains("showPopover(")
     {
         issues.push(PopoverIssue::AutoShowOnLoad);
@@ -105,10 +109,7 @@ pub fn popover_severity(issue: &PopoverIssue) -> f64 {
     }
 }
 
-pub fn popover_to_operations(
-    issues: &[PopoverIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn popover_to_operations(issues: &[PopoverIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

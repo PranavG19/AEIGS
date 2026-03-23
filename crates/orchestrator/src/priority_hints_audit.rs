@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PriorityHintsIssue {
@@ -50,30 +50,39 @@ pub fn analyze_priority_hints(body: &str) -> Vec<PriorityHintsIssue> {
     }
 
     // HighPriorityTracker: tracking scripts given high priority
-    if (body.contains("fetchpriority=\"high\"") || body.contains("fetchPriority")) &&
-       (body.contains("analytics") || body.contains("tracking") ||
-        body.contains("beacon") || body.contains("pixel")) {
+    if (body.contains("fetchpriority=\"high\"") || body.contains("fetchPriority"))
+        && (body.contains("analytics")
+            || body.contains("tracking")
+            || body.contains("beacon")
+            || body.contains("pixel"))
+    {
         issues.push(PriorityHintsIssue::HighPriorityTracker);
     }
 
     // LowPriorityCSP: security resources deprioritized
-    if body.contains("fetchpriority=\"low\"") &&
-       (body.contains("csp-report") || body.contains("security") ||
-        body.contains("integrity") || body.contains("nonce")) {
+    if body.contains("fetchpriority=\"low\"")
+        && (body.contains("csp-report")
+            || body.contains("security")
+            || body.contains("integrity")
+            || body.contains("nonce"))
+    {
         issues.push(PriorityHintsIssue::LowPriorityCSP);
     }
 
     // ResourcePrioritySpoofing: dynamic priority manipulation
-    if body.contains("fetchPriority") &&
-       (body.contains("setAttribute") || body.contains("createElement")) &&
-       !body.contains("static") && !body.contains("readonly") {
+    if body.contains("fetchPriority")
+        && (body.contains("setAttribute") || body.contains("createElement"))
+        && !body.contains("static")
+        && !body.contains("readonly")
+    {
         issues.push(PriorityHintsIssue::ResourcePrioritySpoofing);
     }
 
     // PreloadAbuse: preload combined with priority to force resource loading
-    if body.contains("fetchpriority") &&
-       (body.contains("preload") || body.contains("prefetch") || body.contains("prerender")) &&
-       (body.contains("script") || body.contains("style")) {
+    if body.contains("fetchpriority")
+        && (body.contains("preload") || body.contains("prefetch") || body.contains("prerender"))
+        && (body.contains("script") || body.contains("style"))
+    {
         issues.push(PriorityHintsIssue::PreloadAbuse);
     }
 

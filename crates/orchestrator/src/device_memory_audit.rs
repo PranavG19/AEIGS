@@ -58,7 +58,9 @@ pub fn analyze_device_memory(body: &str) -> Vec<DeviceMemoryIssue> {
     }
 
     if has_api
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(DeviceMemoryIssue::DataExfiltration);
     }

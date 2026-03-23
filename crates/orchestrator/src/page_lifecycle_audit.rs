@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum PageLifecycleIssue {
@@ -34,29 +34,44 @@ pub fn page_lifecycle_severity(issue: &PageLifecycleIssue) -> f64 {
 }
 
 pub fn audit_page_lifecycle(target: &str) -> Vec<PageLifecycleIssue> {
-    if recon_client::validated_domain(target).is_none() { return Vec::new(); }
-    let Some(client) = recon_client::default_client() else { return Vec::new(); };
-    let body = match client.get(target).send() { Ok(r) => r.text().unwrap_or_default(), Err(_) => return Vec::new() };
+    if recon_client::validated_domain(target).is_none() {
+        return Vec::new();
+    }
+    let Some(client) = recon_client::default_client() else {
+        return Vec::new();
+    };
+    let body = match client.get(target).send() {
+        Ok(r) => r.text().unwrap_or_default(),
+        Err(_) => return Vec::new(),
+    };
     analyze_page_lifecycle(&body)
 }
 
 pub fn analyze_page_lifecycle(body: &str) -> Vec<PageLifecycleIssue> {
     let mut issues = Vec::new();
 
-    if body.contains("freeze") || body.contains("resume") || body.contains("visibilitychange")
-        || body.contains("document.wasDiscarded") || body.contains("pagehide") || body.contains("pageshow")
+    if body.contains("freeze")
+        || body.contains("resume")
+        || body.contains("visibilitychange")
+        || body.contains("document.wasDiscarded")
+        || body.contains("pagehide")
+        || body.contains("pageshow")
     {
         issues.push(PageLifecycleIssue::ApiDetected);
     }
 
     if (body.contains("freeze") || body.contains("pagehide") || body.contains("visibilitychange"))
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(PageLifecycleIssue::DataLeakOnFreeze);
     }
 
     if (body.contains("pageshow") || body.contains("resume") || body.contains("wasDiscarded"))
-        && (body.contains("sessionStorage") || body.contains("localStorage") || body.contains("indexedDB"))
+        && (body.contains("sessionStorage")
+            || body.contains("localStorage")
+            || body.contains("indexedDB"))
         && !(body.contains("validate") || body.contains("verify") || body.contains("check"))
     {
         issues.push(PageLifecycleIssue::StateRestorationRisk);
@@ -70,7 +85,10 @@ pub fn analyze_page_lifecycle(body: &str) -> Vec<PageLifecycleIssue> {
     }
 
     if (body.contains("beforeunload") || body.contains("unload") || body.contains("pagehide"))
-        && (body.contains("unsaved") || body.contains("dirty") || body.contains("modified") || body.contains("pending"))
+        && (body.contains("unsaved")
+            || body.contains("dirty")
+            || body.contains("modified")
+            || body.contains("pending"))
         && !(body.contains("save") || body.contains("persist") || body.contains("flush"))
     {
         issues.push(PageLifecycleIssue::UnloadDataLoss);

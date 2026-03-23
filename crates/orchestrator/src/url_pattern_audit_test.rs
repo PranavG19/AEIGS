@@ -83,7 +83,10 @@ fn test_severity_values() {
     assert_eq!(url_pattern_severity(&UrlPatternIssue::RedosRisk), 7.5);
     assert_eq!(url_pattern_severity(&UrlPatternIssue::RoutingBypass), 7.0);
     assert_eq!(url_pattern_severity(&UrlPatternIssue::OpenRedirect), 6.5);
-    assert_eq!(url_pattern_severity(&UrlPatternIssue::PatternInjection), 6.0);
+    assert_eq!(
+        url_pattern_severity(&UrlPatternIssue::PatternInjection),
+        6.0
+    );
 }
 
 #[test]
@@ -101,12 +104,16 @@ fn test_display_impl() {
     assert_eq!(UrlPatternIssue::RedosRisk.to_string(), "redos_risk");
     assert_eq!(UrlPatternIssue::RoutingBypass.to_string(), "routing_bypass");
     assert_eq!(UrlPatternIssue::OpenRedirect.to_string(), "open_redirect");
-    assert_eq!(UrlPatternIssue::PatternInjection.to_string(), "pattern_injection");
+    assert_eq!(
+        UrlPatternIssue::PatternInjection.to_string(),
+        "pattern_injection"
+    );
 }
 
 #[test]
 fn test_multiple_issues() {
-    let body = "new URLPattern({ pathname: userInput + '*', search: '?auth=*' }); pattern.test(admin);";
+    let body =
+        "new URLPattern({ pathname: userInput + '*', search: '?auth=*' }); pattern.test(admin);";
     let issues = analyze_url_pattern(body);
     assert!(issues.len() >= 3);
 }

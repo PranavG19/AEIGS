@@ -100,9 +100,18 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(BadgingIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(BadgingIssue::MisleadingBadge.to_string(), "misleading_badge");
-    assert_eq!(BadgingIssue::ContinuousUpdate.to_string(), "continuous_update");
-    assert_eq!(BadgingIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        BadgingIssue::MisleadingBadge.to_string(),
+        "misleading_badge"
+    );
+    assert_eq!(
+        BadgingIssue::ContinuousUpdate.to_string(),
+        "continuous_update"
+    );
+    assert_eq!(
+        BadgingIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(BadgingIssue::SpoofedUrgency.to_string(), "spoofed_urgency");
 }
 

@@ -108,7 +108,10 @@ fn no_unbounded_with_abort() {
 
 #[test]
 fn severity_priority_highest() {
-    assert_eq!(scheduler_api_severity(&SchedulerApiIssue::PriorityManipulation), 6.5);
+    assert_eq!(
+        scheduler_api_severity(&SchedulerApiIssue::PriorityManipulation),
+        6.5
+    );
 }
 
 #[test]
@@ -118,7 +121,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![SchedulerApiIssue::ApiDetected, SchedulerApiIssue::TimingAttack];
+    let issues = vec![
+        SchedulerApiIssue::ApiDetected,
+        SchedulerApiIssue::TimingAttack,
+    ];
     let mut seq = 0;
     let ops = scheduler_api_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -128,10 +134,19 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(SchedulerApiIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(SchedulerApiIssue::PriorityManipulation.to_string(), "priority_manipulation");
-    assert_eq!(SchedulerApiIssue::TaskStarvation.to_string(), "task_starvation");
+    assert_eq!(
+        SchedulerApiIssue::PriorityManipulation.to_string(),
+        "priority_manipulation"
+    );
+    assert_eq!(
+        SchedulerApiIssue::TaskStarvation.to_string(),
+        "task_starvation"
+    );
     assert_eq!(SchedulerApiIssue::TimingAttack.to_string(), "timing_attack");
-    assert_eq!(SchedulerApiIssue::UnboundedTasks.to_string(), "unbounded_tasks");
+    assert_eq!(
+        SchedulerApiIssue::UnboundedTasks.to_string(),
+        "unbounded_tasks"
+    );
 }
 
 #[test]

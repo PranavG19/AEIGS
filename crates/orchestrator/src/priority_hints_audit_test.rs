@@ -128,11 +128,26 @@ fn test_multiple_issues() {
 
 #[test]
 fn test_severity_values() {
-    assert_eq!(priority_hints_severity(&PriorityHintsIssue::ApiDetected), 2.0);
-    assert_eq!(priority_hints_severity(&PriorityHintsIssue::HighPriorityTracker), 6.5);
-    assert_eq!(priority_hints_severity(&PriorityHintsIssue::LowPriorityCSP), 7.0);
-    assert_eq!(priority_hints_severity(&PriorityHintsIssue::ResourcePrioritySpoofing), 5.5);
-    assert_eq!(priority_hints_severity(&PriorityHintsIssue::PreloadAbuse), 6.0);
+    assert_eq!(
+        priority_hints_severity(&PriorityHintsIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        priority_hints_severity(&PriorityHintsIssue::HighPriorityTracker),
+        6.5
+    );
+    assert_eq!(
+        priority_hints_severity(&PriorityHintsIssue::LowPriorityCSP),
+        7.0
+    );
+    assert_eq!(
+        priority_hints_severity(&PriorityHintsIssue::ResourcePrioritySpoofing),
+        5.5
+    );
+    assert_eq!(
+        priority_hints_severity(&PriorityHintsIssue::PreloadAbuse),
+        6.0
+    );
 }
 
 #[test]
@@ -150,8 +165,20 @@ fn test_to_operations() {
 #[test]
 fn test_display_trait() {
     assert_eq!(PriorityHintsIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PriorityHintsIssue::HighPriorityTracker.to_string(), "high_priority_tracker");
-    assert_eq!(PriorityHintsIssue::LowPriorityCSP.to_string(), "low_priority_csp");
-    assert_eq!(PriorityHintsIssue::ResourcePrioritySpoofing.to_string(), "resource_priority_spoofing");
-    assert_eq!(PriorityHintsIssue::PreloadAbuse.to_string(), "preload_abuse");
+    assert_eq!(
+        PriorityHintsIssue::HighPriorityTracker.to_string(),
+        "high_priority_tracker"
+    );
+    assert_eq!(
+        PriorityHintsIssue::LowPriorityCSP.to_string(),
+        "low_priority_csp"
+    );
+    assert_eq!(
+        PriorityHintsIssue::ResourcePrioritySpoofing.to_string(),
+        "resource_priority_spoofing"
+    );
+    assert_eq!(
+        PriorityHintsIssue::PreloadAbuse.to_string(),
+        "preload_abuse"
+    );
 }

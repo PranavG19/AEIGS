@@ -118,12 +118,18 @@ fn no_excessive_with_few_types() {
 
 #[test]
 fn severity_http_highest() {
-    assert_eq!(reporting_api_severity(&ReportingApiIssue::HttpEndpoint), 6.5);
+    assert_eq!(
+        reporting_api_severity(&ReportingApiIssue::HttpEndpoint),
+        6.5
+    );
 }
 
 #[test]
 fn severity_no_endpoints_lowest() {
-    assert_eq!(reporting_api_severity(&ReportingApiIssue::NoReportingEndpoints), 3.0);
+    assert_eq!(
+        reporting_api_severity(&ReportingApiIssue::NoReportingEndpoints),
+        3.0
+    );
 }
 
 #[test]
@@ -140,13 +146,31 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ReportingApiIssue::ThirdPartyEndpoint.to_string(), "third_party_endpoint");
+    assert_eq!(
+        ReportingApiIssue::ThirdPartyEndpoint.to_string(),
+        "third_party_endpoint"
+    );
     assert_eq!(ReportingApiIssue::HttpEndpoint.to_string(), "http_endpoint");
-    assert_eq!(ReportingApiIssue::ReportToDeprecated.to_string(), "report_to_deprecated");
-    assert_eq!(ReportingApiIssue::ObserverDetected.to_string(), "observer_detected");
-    assert_eq!(ReportingApiIssue::ObserverBuffered.to_string(), "observer_buffered");
-    assert_eq!(ReportingApiIssue::NoReportingEndpoints.to_string(), "no_reporting_endpoints");
-    assert_eq!(ReportingApiIssue::ExcessiveReportTypes.to_string(), "excessive_report_types");
+    assert_eq!(
+        ReportingApiIssue::ReportToDeprecated.to_string(),
+        "report_to_deprecated"
+    );
+    assert_eq!(
+        ReportingApiIssue::ObserverDetected.to_string(),
+        "observer_detected"
+    );
+    assert_eq!(
+        ReportingApiIssue::ObserverBuffered.to_string(),
+        "observer_buffered"
+    );
+    assert_eq!(
+        ReportingApiIssue::NoReportingEndpoints.to_string(),
+        "no_reporting_endpoints"
+    );
+    assert_eq!(
+        ReportingApiIssue::ExcessiveReportTypes.to_string(),
+        "excessive_report_types"
+    );
 }
 
 #[test]

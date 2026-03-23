@@ -3,25 +3,31 @@ use crate::clickjack_audit::*;
 #[test]
 fn no_protection_at_all() {
     let issues = analyze_frame_protection(None, None);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::NoFrameProtection));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::NoFrameProtection)
+    );
 }
 
 #[test]
 fn xfo_only_flagged() {
     let issues = analyze_frame_protection(Some("DENY"), None);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::XfoOnlyNoFrameAncestors));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::XfoOnlyNoFrameAncestors)
+    );
 }
 
 #[test]
 fn xfo_sameorigin_only_flagged() {
     let issues = analyze_frame_protection(Some("SAMEORIGIN"), None);
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::XfoOnlyNoFrameAncestors));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::XfoOnlyNoFrameAncestors)
+    );
 }
 
 #[test]
@@ -33,70 +39,84 @@ fn frame_ancestors_self_ok() {
 #[test]
 fn frame_ancestors_none_detected() {
     let issues = analyze_frame_protection(None, Some("frame-ancestors 'none'"));
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::FrameAncestorsNone));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::FrameAncestorsNone)
+    );
 }
 
 #[test]
 fn frame_ancestors_wildcard_detected() {
     let issues = analyze_frame_protection(None, Some("frame-ancestors *"));
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::FrameAncestorsWildcard));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::FrameAncestorsWildcard)
+    );
 }
 
 #[test]
 fn conflicting_deny_with_allow() {
-    let issues = analyze_frame_protection(
-        Some("DENY"),
-        Some("frame-ancestors https://example.com"),
+    let issues =
+        analyze_frame_protection(Some("DENY"), Some("frame-ancestors https://example.com"));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. }))
     );
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. })));
 }
 
 #[test]
 fn conflicting_sameorigin_with_none() {
     let issues = analyze_frame_protection(Some("SAMEORIGIN"), Some("frame-ancestors 'none'"));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. }))
+    );
 }
 
 #[test]
 fn consistent_deny_and_none() {
     let issues = analyze_frame_protection(Some("DENY"), Some("frame-ancestors 'none'"));
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. }))
+    );
 }
 
 #[test]
 fn consistent_sameorigin_and_self() {
     let issues = analyze_frame_protection(Some("SAMEORIGIN"), Some("frame-ancestors 'self'"));
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ClickjackIssue::ConflictingPolicies { .. }))
+    );
 }
 
 #[test]
 fn csp_with_multiple_directives() {
     let csp = "default-src 'self'; frame-ancestors 'none'; script-src 'unsafe-inline'";
     let issues = analyze_frame_protection(None, Some(csp));
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::FrameAncestorsNone));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::FrameAncestorsNone)
+    );
 }
 
 #[test]
 fn csp_without_frame_ancestors() {
     let csp = "default-src 'self'; script-src 'unsafe-inline'";
     let issues = analyze_frame_protection(None, Some(csp));
-    assert!(issues
-        .iter()
-        .any(|i| *i == ClickjackIssue::NoFrameProtection));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == ClickjackIssue::NoFrameProtection)
+    );
 }
 
 #[test]

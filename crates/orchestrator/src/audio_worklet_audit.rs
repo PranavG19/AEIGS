@@ -65,18 +65,17 @@ pub fn analyze_audio_worklet(body: &str) -> Vec<AudioWorkletIssue> {
         issues.push(AudioWorkletIssue::SideChannelTiming);
     }
 
-    let has_loop = body.contains("while(true)")
-        || body.contains("for(;;)")
-        || body.contains("setInterval");
-    let has_control = body.contains("cancel") || body.contains("close") || body.contains("terminate");
+    let has_loop =
+        body.contains("while(true)") || body.contains("for(;;)") || body.contains("setInterval");
+    let has_control =
+        body.contains("cancel") || body.contains("close") || body.contains("terminate");
     if has_loop && !has_control {
         issues.push(AudioWorkletIssue::ResourceExhaustion);
     }
 
     let has_message = body.contains("port.postMessage") || body.contains("MessagePort");
-    let has_network = body.contains("fetch(")
-        || body.contains("sendBeacon")
-        || body.contains("XMLHttpRequest");
+    let has_network =
+        body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
     if has_message && has_network {
         issues.push(AudioWorkletIssue::DataExfiltration);
     }

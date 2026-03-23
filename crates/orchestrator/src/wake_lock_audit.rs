@@ -78,10 +78,7 @@ pub fn wake_lock_severity(issue: &WakeLockIssue) -> f64 {
     }
 }
 
-pub fn wake_lock_to_operations(
-    issues: &[WakeLockIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn wake_lock_to_operations(issues: &[WakeLockIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

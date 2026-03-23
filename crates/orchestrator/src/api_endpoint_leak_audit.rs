@@ -99,24 +99,18 @@ pub fn analyze_api_endpoint_leaks(body: &str) -> Vec<ApiEndpointLeak> {
 
         for &prefix in INTERNAL_PREFIXES {
             if lower.starts_with(prefix) && seen.insert(("internal", path.clone())) {
-                issues.push(ApiEndpointLeak::InternalApiPath {
-                    path: path.clone(),
-                });
+                issues.push(ApiEndpointLeak::InternalApiPath { path: path.clone() });
                 break;
             }
         }
 
         if is_versioned_api(&lower) && seen.insert(("versioned", path.clone())) {
-            issues.push(ApiEndpointLeak::VersionedEndpoint {
-                path: path.clone(),
-            });
+            issues.push(ApiEndpointLeak::VersionedEndpoint { path: path.clone() });
         }
 
         for &pattern in ADMIN_PATTERNS {
             if lower.contains(pattern) && seen.insert(("admin", path.clone())) {
-                issues.push(ApiEndpointLeak::AdminEndpoint {
-                    path: path.clone(),
-                });
+                issues.push(ApiEndpointLeak::AdminEndpoint { path: path.clone() });
                 break;
             }
         }
@@ -124,9 +118,7 @@ pub fn analyze_api_endpoint_leaks(body: &str) -> Vec<ApiEndpointLeak> {
         for &pattern in DEBUG_PATTERNS {
             if lower.starts_with(pattern) || lower.contains(pattern) {
                 if seen.insert(("debug", path.clone())) {
-                    issues.push(ApiEndpointLeak::DebugEndpoint {
-                        path: path.clone(),
-                    });
+                    issues.push(ApiEndpointLeak::DebugEndpoint { path: path.clone() });
                 }
                 break;
             }
@@ -135,9 +127,7 @@ pub fn analyze_api_endpoint_leaks(body: &str) -> Vec<ApiEndpointLeak> {
         for &pattern in GRAPHQL_PATTERNS {
             if lower == pattern || lower.starts_with(&format!("{pattern}/")) {
                 if seen.insert(("graphql", path.clone())) {
-                    issues.push(ApiEndpointLeak::GraphqlEndpoint {
-                        path: path.clone(),
-                    });
+                    issues.push(ApiEndpointLeak::GraphqlEndpoint { path: path.clone() });
                 }
                 break;
             }
@@ -185,8 +175,18 @@ fn is_likely_api_path(path: &str) -> bool {
         let ext = &path[pos..];
         if matches!(
             ext,
-            ".js" | ".css" | ".png" | ".jpg" | ".gif" | ".svg" | ".ico" | ".woff" | ".woff2"
-                | ".ttf" | ".eot" | ".map"
+            ".js"
+                | ".css"
+                | ".png"
+                | ".jpg"
+                | ".gif"
+                | ".svg"
+                | ".ico"
+                | ".woff"
+                | ".woff2"
+                | ".ttf"
+                | ".eot"
+                | ".map"
         ) {
             return false;
         }
@@ -199,9 +199,7 @@ fn is_versioned_api(path: &str) -> bool {
     if !lower.contains("/api/") && !lower.starts_with("/api") {
         return false;
     }
-    let version_patterns = [
-        "/v1/", "/v2/", "/v3/", "/v4/", "/v1", "/v2", "/v3", "/v4",
-    ];
+    let version_patterns = ["/v1/", "/v2/", "/v3/", "/v4/", "/v1", "/v2", "/v3", "/v4"];
     version_patterns.iter().any(|p| lower.contains(p))
 }
 

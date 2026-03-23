@@ -116,10 +116,7 @@ pub(crate) fn clickjack_severity(issue: &ClickjackIssue) -> f64 {
     }
 }
 
-pub fn clickjack_to_operations(
-    issues: &[ClickjackIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn clickjack_to_operations(issues: &[ClickjackIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .filter(|i| clickjack_severity(i) >= 3.0)

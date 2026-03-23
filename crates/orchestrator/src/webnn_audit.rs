@@ -59,8 +59,7 @@ pub fn analyze_webnn(body: &str) -> Vec<WebnnIssue> {
         issues.push(WebnnIssue::ModelExfiltration);
     }
 
-    let has_loop =
-        body.contains("while") || body.contains("for(") || body.contains("for (");
+    let has_loop = body.contains("while") || body.contains("for(") || body.contains("for (");
     if has_loop && !body.contains("break") && !body.contains("limit") {
         issues.push(WebnnIssue::ResourceExhaustion);
     }
@@ -93,10 +92,7 @@ pub fn webnn_severity(issue: &WebnnIssue) -> f64 {
     }
 }
 
-pub fn webnn_to_operations(
-    issues: &[WebnnIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn webnn_to_operations(issues: &[WebnnIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

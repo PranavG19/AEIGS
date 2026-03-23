@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum StructuredCloneIssue {
@@ -34,9 +34,16 @@ pub fn structured_clone_severity(issue: &StructuredCloneIssue) -> f64 {
 }
 
 pub fn audit_structured_clone(target: &str) -> Vec<StructuredCloneIssue> {
-    if recon_client::validated_domain(target).is_none() { return Vec::new(); }
-    let Some(client) = recon_client::default_client() else { return Vec::new(); };
-    let body = match client.get(target).send() { Ok(r) => r.text().unwrap_or_default(), Err(_) => return Vec::new() };
+    if recon_client::validated_domain(target).is_none() {
+        return Vec::new();
+    }
+    let Some(client) = recon_client::default_client() else {
+        return Vec::new();
+    };
+    let body = match client.get(target).send() {
+        Ok(r) => r.text().unwrap_or_default(),
+        Err(_) => return Vec::new(),
+    };
     analyze_structured_clone(&body)
 }
 
@@ -53,14 +60,19 @@ pub fn analyze_structured_clone(body: &str) -> Vec<StructuredCloneIssue> {
     }
 
     if has_any_api
-        && (body.contains("__proto__") || body.contains("constructor.prototype") || body.contains("Object.assign"))
+        && (body.contains("__proto__")
+            || body.contains("constructor.prototype")
+            || body.contains("Object.assign"))
     {
         issues.push(StructuredCloneIssue::PrototypePollution);
     }
 
     if has_any_api
-        && (body.contains("password") || body.contains("token") || body.contains("secret")
-            || body.contains("credential") || body.contains("apiKey"))
+        && (body.contains("password")
+            || body.contains("token")
+            || body.contains("secret")
+            || body.contains("credential")
+            || body.contains("apiKey"))
     {
         issues.push(StructuredCloneIssue::SensitiveDataClone);
     }
@@ -74,7 +86,10 @@ pub fn analyze_structured_clone(body: &str) -> Vec<StructuredCloneIssue> {
     }
 
     if has_structured_clone
-        && (body.contains("while") || body.contains("for") || body.contains("map") || body.contains("Array"))
+        && (body.contains("while")
+            || body.contains("for")
+            || body.contains("map")
+            || body.contains("Array"))
         && !(body.contains("limit") || body.contains("maxSize") || body.contains("slice"))
     {
         issues.push(StructuredCloneIssue::LargeObjectDos);

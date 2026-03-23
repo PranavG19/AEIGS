@@ -5,9 +5,14 @@ use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ApiVersionIssue {
-    DeprecatedVersionInPath { version: String },
+    DeprecatedVersionInPath {
+        version: String,
+    },
     NoVersionHeader,
-    VersionMismatch { path_version: String, header_version: String },
+    VersionMismatch {
+        path_version: String,
+        header_version: String,
+    },
     UnversionedApi,
     MultipleVersionSchemes,
 }
@@ -123,7 +128,13 @@ pub(crate) fn analyze_api_versioning(
 fn extract_path_version(path: &str) -> Option<String> {
     for segment in path.split('/') {
         let lower = segment.to_ascii_lowercase();
-        if lower.starts_with('v') && lower.len() >= 2 && lower[1..].chars().next().is_some_and(|c| c.is_ascii_digit()) {
+        if lower.starts_with('v')
+            && lower.len() >= 2
+            && lower[1..]
+                .chars()
+                .next()
+                .is_some_and(|c| c.is_ascii_digit())
+        {
             return Some(segment.to_string());
         }
     }

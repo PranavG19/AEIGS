@@ -130,12 +130,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(IntersectionObserverIssue::ObserverDetected.to_string(), "observer_detected");
-    assert_eq!(IntersectionObserverIssue::VisibilityTracking.to_string(), "visibility_tracking");
-    assert_eq!(IntersectionObserverIssue::MultipleThresholds.to_string(), "multiple_thresholds");
-    assert_eq!(IntersectionObserverIssue::CrossOriginTarget.to_string(), "cross_origin_target");
-    assert_eq!(IntersectionObserverIssue::ScrollJacking.to_string(), "scroll_jacking");
-    assert_eq!(IntersectionObserverIssue::AdVisibilityCheck.to_string(), "ad_visibility_check");
+    assert_eq!(
+        IntersectionObserverIssue::ObserverDetected.to_string(),
+        "observer_detected"
+    );
+    assert_eq!(
+        IntersectionObserverIssue::VisibilityTracking.to_string(),
+        "visibility_tracking"
+    );
+    assert_eq!(
+        IntersectionObserverIssue::MultipleThresholds.to_string(),
+        "multiple_thresholds"
+    );
+    assert_eq!(
+        IntersectionObserverIssue::CrossOriginTarget.to_string(),
+        "cross_origin_target"
+    );
+    assert_eq!(
+        IntersectionObserverIssue::ScrollJacking.to_string(),
+        "scroll_jacking"
+    );
+    assert_eq!(
+        IntersectionObserverIssue::AdVisibilityCheck.to_string(),
+        "ad_visibility_check"
+    );
 }
 
 #[test]

@@ -36,9 +36,11 @@ fn host_prefix_correct_usage() {
 fn host_prefix_missing_secure() {
     let cookies = vec!["__Host-session=abc; Path=/; HttpOnly".to_string()];
     let issues = analyze_cookie_prefixes(&cookies);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutSecureFlag { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutSecureFlag { .. }))
+    );
 }
 
 #[test]
@@ -46,27 +48,33 @@ fn host_prefix_has_domain() {
     let cookies =
         vec!["__Host-session=abc; Secure; Path=/; Domain=example.com; HttpOnly".to_string()];
     let issues = analyze_cookie_prefixes(&cookies);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithDomain { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithDomain { .. }))
+    );
 }
 
 #[test]
 fn host_prefix_missing_root_path() {
     let cookies = vec!["__Host-session=abc; Secure; Path=/admin; HttpOnly".to_string()];
     let issues = analyze_cookie_prefixes(&cookies);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutRootPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutRootPath { .. }))
+    );
 }
 
 #[test]
 fn host_prefix_no_path_at_all() {
     let cookies = vec!["__Host-session=abc; Secure; HttpOnly".to_string()];
     let issues = analyze_cookie_prefixes(&cookies);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutRootPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CookiePrefixIssue::HostPrefixWithoutRootPath { .. }))
+    );
 }
 
 #[test]

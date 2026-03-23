@@ -5,10 +5,21 @@ use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentTypeConfusionIssue {
-    AcceptsXmlWhenExpectingJson { endpoint: String },
-    XxeIndicator { endpoint: String, indicator: String },
-    AcceptsMultipleContentTypes { endpoint: String, accepted: Vec<String> },
-    MismatchedResponseType { request_ct: String, response_ct: String },
+    AcceptsXmlWhenExpectingJson {
+        endpoint: String,
+    },
+    XxeIndicator {
+        endpoint: String,
+        indicator: String,
+    },
+    AcceptsMultipleContentTypes {
+        endpoint: String,
+        accepted: Vec<String>,
+    },
+    MismatchedResponseType {
+        request_ct: String,
+        response_ct: String,
+    },
 }
 
 impl std::fmt::Display for ContentTypeConfusionIssue {
@@ -17,7 +28,10 @@ impl std::fmt::Display for ContentTypeConfusionIssue {
             Self::AcceptsXmlWhenExpectingJson { endpoint } => {
                 write!(f, "accepts_xml_for_json:{endpoint}")
             }
-            Self::XxeIndicator { endpoint, indicator } => {
+            Self::XxeIndicator {
+                endpoint,
+                indicator,
+            } => {
                 write!(f, "xxe_indicator:{endpoint}:{indicator}")
             }
             Self::AcceptsMultipleContentTypes { endpoint, accepted } => {

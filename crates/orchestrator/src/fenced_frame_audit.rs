@@ -59,13 +59,17 @@ pub fn analyze_fenced_frame(body: &str) -> Vec<FencedFrameIssue> {
 
     if (has_element || has_config)
         && (body.contains("reportEvent") || body.contains("fence.reportEvent"))
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(FencedFrameIssue::DataExfiltration);
     }
 
     if has_config
-        && (body.contains("window.location") || body.contains("document.referrer") || body.contains("top.location"))
+        && (body.contains("window.location")
+            || body.contains("document.referrer")
+            || body.contains("top.location"))
     {
         issues.push(FencedFrameIssue::OpaqueUrlBypass);
     }

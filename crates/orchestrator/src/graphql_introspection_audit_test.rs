@@ -4,54 +4,66 @@ use crate::graphql_introspection_audit::*;
 fn introspection_enabled_detected() {
     let body = r#"{"data":{"__schema":{"types":[{"name":"Query"}]}}}"#;
     let issues = analyze_graphql_response("/graphql", body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. }))
+    );
 }
 
 #[test]
 fn introspection_disabled_clean() {
     let body = r#"{"errors":[{"message":"Introspection is disabled"}]}"#;
     let issues = analyze_graphql_response("/graphql", body, "");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. }))
+    );
 }
 
 #[test]
 fn suggestions_enabled_detected() {
     let err = r#"{"errors":[{"message":"Cannot query field 'xyz'. Did you mean 'abc'?"}]}"#;
     let issues = analyze_graphql_response("/graphql", "", err);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. }))
+    );
 }
 
 #[test]
 fn no_suggestions_clean() {
     let err = r#"{"errors":[{"message":"Unknown field"}]}"#;
     let issues = analyze_graphql_response("/graphql", "", err);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. }))
+    );
 }
 
 #[test]
 fn debug_mode_stack_trace() {
     let err = r#"{"errors":[{"extensions":{"stack":"Error at resolver..."}}]}"#;
     let issues = analyze_graphql_response("/graphql", "", err);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::DebugModeEnabled { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::DebugModeEnabled { .. }))
+    );
 }
 
 #[test]
 fn debug_mode_debug_field() {
     let err = r#"{"errors":[{"message":"error"}],"debug":true}"#;
     let issues = analyze_graphql_response("/graphql", "", err);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::DebugModeEnabled { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::DebugModeEnabled { .. }))
+    );
 }
 
 #[test]
@@ -74,11 +86,14 @@ fn sensitive_type_internal() {
 
 #[test]
 fn no_sensitive_types_clean() {
-    let body = r#"{"data":{"__schema":{"types":[{"name":"Query"},{"name":"User"},{"name":"Post"}]}}}"#;
+    let body =
+        r#"{"data":{"__schema":{"types":[{"name":"Query"},{"name":"User"},{"name":"Post"}]}}}"#;
     let issues = analyze_graphql_response("/graphql", body, "");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::SensitiveTypesExposed { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::SensitiveTypesExposed { .. }))
+    );
 }
 
 #[test]
@@ -184,10 +199,14 @@ fn combined_introspection_and_suggestions() {
     let intro = r#"{"data":{"__schema":{"types":[{"name":"Query"}]}}}"#;
     let err = r#"{"errors":[{"message":"Did you mean 'user'?"}]}"#;
     let issues = analyze_graphql_response("/graphql", intro, err);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. })));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::IntrospectionEnabled { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, GraphqlIntroIssue::SuggestionsEnabled { .. }))
+    );
 }

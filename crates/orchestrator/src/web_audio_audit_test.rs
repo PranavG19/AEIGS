@@ -167,7 +167,10 @@ fn severity_values_correct() {
 #[test]
 fn display_impl_works() {
     assert_eq!(WebAudioIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebAudioIssue::AudioFingerprinting.to_string(), "audio_fingerprinting");
+    assert_eq!(
+        WebAudioIssue::AudioFingerprinting.to_string(),
+        "audio_fingerprinting"
+    );
     assert_eq!(WebAudioIssue::CryptoMining.to_string(), "crypto_mining");
 }
 
@@ -182,7 +185,11 @@ fn operations_generated_correctly() {
 
 #[test]
 fn operations_increment_sequence() {
-    let issues = vec![WebAudioIssue::ApiDetected, WebAudioIssue::AudioFingerprinting, WebAudioIssue::ResourceExhaustion];
+    let issues = vec![
+        WebAudioIssue::ApiDetected,
+        WebAudioIssue::AudioFingerprinting,
+        WebAudioIssue::ResourceExhaustion,
+    ];
     let mut seq = 10;
     let ops = web_audio_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 3);

@@ -40,8 +40,7 @@ pub fn audit_window_controls_overlay(target: &str) -> Vec<WindowControlsOverlayI
 
 pub fn analyze_window_controls_overlay(body: &str) -> Vec<WindowControlsOverlayIssue> {
     let has_manifest = body.contains("window-controls-overlay");
-    let has_api =
-        body.contains("windowControlsOverlay") || body.contains("titlebarAreaRect");
+    let has_api = body.contains("windowControlsOverlay") || body.contains("titlebarAreaRect");
 
     if !has_manifest && !has_api {
         return Vec::new();

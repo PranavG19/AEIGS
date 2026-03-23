@@ -190,12 +190,30 @@ fn prototype_pollution_constructor() {
 
 #[test]
 fn severity_ordering() {
-    assert!(postmessage_severity(&PostMessageIssue::DomInjectionViaMessage) > postmessage_severity(&PostMessageIssue::PrototypePollutionRisk));
-    assert!(postmessage_severity(&PostMessageIssue::PrototypePollutionRisk) > postmessage_severity(&PostMessageIssue::SensitiveDataInMessage));
-    assert!(postmessage_severity(&PostMessageIssue::SensitiveDataInMessage) > postmessage_severity(&PostMessageIssue::MessageHandlerNoOriginCheck));
-    assert!(postmessage_severity(&PostMessageIssue::MessageHandlerNoOriginCheck) > postmessage_severity(&PostMessageIssue::CrossFrameNoValidation));
-    assert!(postmessage_severity(&PostMessageIssue::CrossFrameNoValidation) > postmessage_severity(&PostMessageIssue::WildcardTargetOrigin));
-    assert!(postmessage_severity(&PostMessageIssue::WildcardTargetOrigin) > postmessage_severity(&PostMessageIssue::ApiDetected));
+    assert!(
+        postmessage_severity(&PostMessageIssue::DomInjectionViaMessage)
+            > postmessage_severity(&PostMessageIssue::PrototypePollutionRisk)
+    );
+    assert!(
+        postmessage_severity(&PostMessageIssue::PrototypePollutionRisk)
+            > postmessage_severity(&PostMessageIssue::SensitiveDataInMessage)
+    );
+    assert!(
+        postmessage_severity(&PostMessageIssue::SensitiveDataInMessage)
+            > postmessage_severity(&PostMessageIssue::MessageHandlerNoOriginCheck)
+    );
+    assert!(
+        postmessage_severity(&PostMessageIssue::MessageHandlerNoOriginCheck)
+            > postmessage_severity(&PostMessageIssue::CrossFrameNoValidation)
+    );
+    assert!(
+        postmessage_severity(&PostMessageIssue::CrossFrameNoValidation)
+            > postmessage_severity(&PostMessageIssue::WildcardTargetOrigin)
+    );
+    assert!(
+        postmessage_severity(&PostMessageIssue::WildcardTargetOrigin)
+            > postmessage_severity(&PostMessageIssue::ApiDetected)
+    );
 }
 
 #[test]
@@ -222,37 +240,58 @@ fn to_operations_empty_input() {
 
 #[test]
 fn display_api_detected() {
-    assert_eq!(PostMessageIssue::ApiDetected.to_string(), "postmessage_api_detected");
+    assert_eq!(
+        PostMessageIssue::ApiDetected.to_string(),
+        "postmessage_api_detected"
+    );
 }
 
 #[test]
 fn display_wildcard_origin() {
-    assert_eq!(PostMessageIssue::WildcardTargetOrigin.to_string(), "postmessage_wildcard_origin");
+    assert_eq!(
+        PostMessageIssue::WildcardTargetOrigin.to_string(),
+        "postmessage_wildcard_origin"
+    );
 }
 
 #[test]
 fn display_no_origin_check() {
-    assert_eq!(PostMessageIssue::MessageHandlerNoOriginCheck.to_string(), "message_handler_no_origin");
+    assert_eq!(
+        PostMessageIssue::MessageHandlerNoOriginCheck.to_string(),
+        "message_handler_no_origin"
+    );
 }
 
 #[test]
 fn display_dom_injection() {
-    assert_eq!(PostMessageIssue::DomInjectionViaMessage.to_string(), "dom_injection_via_message");
+    assert_eq!(
+        PostMessageIssue::DomInjectionViaMessage.to_string(),
+        "dom_injection_via_message"
+    );
 }
 
 #[test]
 fn display_sensitive_data() {
-    assert_eq!(PostMessageIssue::SensitiveDataInMessage.to_string(), "sensitive_data_in_message");
+    assert_eq!(
+        PostMessageIssue::SensitiveDataInMessage.to_string(),
+        "sensitive_data_in_message"
+    );
 }
 
 #[test]
 fn display_cross_frame() {
-    assert_eq!(PostMessageIssue::CrossFrameNoValidation.to_string(), "cross_frame_no_validation");
+    assert_eq!(
+        PostMessageIssue::CrossFrameNoValidation.to_string(),
+        "cross_frame_no_validation"
+    );
 }
 
 #[test]
 fn display_prototype_pollution() {
-    assert_eq!(PostMessageIssue::PrototypePollutionRisk.to_string(), "prototype_pollution_risk");
+    assert_eq!(
+        PostMessageIssue::PrototypePollutionRisk.to_string(),
+        "prototype_pollution_risk"
+    );
 }
 
 #[test]

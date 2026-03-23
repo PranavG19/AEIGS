@@ -122,12 +122,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(FileSystemAccessIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(FileSystemAccessIssue::FileExfiltration.to_string(), "file_exfiltration");
-    assert_eq!(FileSystemAccessIssue::SilentWrite.to_string(), "silent_write");
-    assert_eq!(FileSystemAccessIssue::DirectoryAccess.to_string(), "directory_access");
-    assert_eq!(FileSystemAccessIssue::NoUserActivation.to_string(), "no_user_activation");
-    assert_eq!(FileSystemAccessIssue::PersistentHandle.to_string(), "persistent_handle");
+    assert_eq!(
+        FileSystemAccessIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        FileSystemAccessIssue::FileExfiltration.to_string(),
+        "file_exfiltration"
+    );
+    assert_eq!(
+        FileSystemAccessIssue::SilentWrite.to_string(),
+        "silent_write"
+    );
+    assert_eq!(
+        FileSystemAccessIssue::DirectoryAccess.to_string(),
+        "directory_access"
+    );
+    assert_eq!(
+        FileSystemAccessIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
+    assert_eq!(
+        FileSystemAccessIssue::PersistentHandle.to_string(),
+        "persistent_handle"
+    );
 }
 
 #[test]

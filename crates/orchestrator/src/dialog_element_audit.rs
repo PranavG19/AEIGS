@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DialogElementIssue {
@@ -54,9 +54,8 @@ pub fn analyze_dialog_element(body: &str) -> Vec<DialogElementIssue> {
     let has_unsafe_content = body.contains("innerHTML")
         || body.contains("insertAdjacentHTML")
         || body.contains("document.write");
-    let has_sanitization = body.contains("sanitize")
-        || body.contains("DOMPurify")
-        || body.contains("escape");
+    let has_sanitization =
+        body.contains("sanitize") || body.contains("DOMPurify") || body.contains("escape");
 
     if has_unsafe_content && !has_sanitization {
         issues.push(DialogElementIssue::XssInDialog);
@@ -81,9 +80,8 @@ pub fn analyze_dialog_element(body: &str) -> Vec<DialogElementIssue> {
     }
 
     let has_focus = body.contains("focus") || body.contains("autofocus");
-    let has_close = body.contains("close")
-        || body.contains("returnValue")
-        || body.contains("Escape");
+    let has_close =
+        body.contains("close") || body.contains("returnValue") || body.contains("Escape");
 
     if has_show_modal && has_focus && !has_close {
         issues.push(DialogElementIssue::FocusTrap);

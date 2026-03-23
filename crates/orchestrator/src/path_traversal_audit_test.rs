@@ -11,7 +11,9 @@ fn traversal_detected_on_success() {
     );
     assert!(result.is_some());
     let issue = result.unwrap();
-    assert!(matches!(issue, PathTraversalIssue::TraversalSucceeded { param, .. } if param == "file"));
+    assert!(
+        matches!(issue, PathTraversalIssue::TraversalSucceeded { param, .. } if param == "file")
+    );
 }
 
 #[test]
@@ -56,10 +58,7 @@ fn encoded_traversal_display() {
         param: "path".to_string(),
         encoding: "url_encoded".to_string(),
     };
-    assert_eq!(
-        issue.to_string(),
-        "encoded_path_traversal:path:url_encoded"
-    );
+    assert_eq!(issue.to_string(), "encoded_path_traversal:path:url_encoded");
 }
 
 #[test]
@@ -136,36 +135,18 @@ fn audit_skips_loopback() {
 
 #[test]
 fn status_201_is_success() {
-    let result = analyze_traversal_response(
-        "file",
-        "../etc/passwd",
-        "root:",
-        201,
-        "root:x:0:0:",
-    );
+    let result = analyze_traversal_response("file", "../etc/passwd", "root:", 201, "root:x:0:0:");
     assert!(result.is_some());
 }
 
 #[test]
 fn status_299_is_success() {
-    let result = analyze_traversal_response(
-        "file",
-        "../etc/passwd",
-        "root:",
-        299,
-        "root:x:0:0:",
-    );
+    let result = analyze_traversal_response("file", "../etc/passwd", "root:", 299, "root:x:0:0:");
     assert!(result.is_some());
 }
 
 #[test]
 fn status_300_is_not_success() {
-    let result = analyze_traversal_response(
-        "file",
-        "../etc/passwd",
-        "root:",
-        300,
-        "root:x:0:0:",
-    );
+    let result = analyze_traversal_response("file", "../etc/passwd", "root:", 300, "root:x:0:0:");
     assert!(result.is_none());
 }

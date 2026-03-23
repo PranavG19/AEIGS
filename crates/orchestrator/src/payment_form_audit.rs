@@ -151,18 +151,8 @@ fn check_hidden_card_data(lower: &str, issues: &mut Vec<PaymentFormIssue>) {
 }
 
 fn check_inline_processing(body: &str, issues: &mut Vec<PaymentFormIssue>) {
-    let inline_indicators = [
-        "XMLHttpRequest",
-        "fetch(",
-        "$.ajax",
-        "axios.post",
-    ];
-    let card_js_patterns = [
-        "cardNumber",
-        "card_number",
-        "ccNumber",
-        "creditCard",
-    ];
+    let inline_indicators = ["XMLHttpRequest", "fetch(", "$.ajax", "axios.post"];
+    let card_js_patterns = ["cardNumber", "card_number", "ccNumber", "creditCard"];
     let has_inline = inline_indicators.iter().any(|i| body.contains(i));
     let has_card_js = card_js_patterns.iter().any(|p| body.contains(p));
     if has_inline && has_card_js {
@@ -202,9 +192,7 @@ fn check_payment_iframe(lower: &str, issues: &mut Vec<PaymentFormIssue>) {
             if let Some(si) = src_start {
                 let src_rest = &tag[si + 4..];
                 let src_val = src_rest.trim_start_matches(['"', '\'']);
-                let end = src_val
-                    .find(['"', '\'', '>', ' '])
-                    .unwrap_or(src_val.len());
+                let end = src_val.find(['"', '\'', '>', ' ']).unwrap_or(src_val.len());
                 let domain = &src_val[..end];
                 if domain.starts_with("http") {
                     issues.push(PaymentFormIssue::ExternalPaymentScript {

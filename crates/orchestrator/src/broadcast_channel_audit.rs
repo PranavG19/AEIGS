@@ -55,7 +55,8 @@ pub fn analyze_broadcast_channel(body: &str) -> Vec<BroadcastChannelIssue> {
     if body.contains(".postMessage(") {
         issues.push(BroadcastChannelIssue::PostMessageUsed);
 
-        if body.contains("fetch(") || body.contains("XMLHttpRequest") || body.contains("sendBeacon") {
+        if body.contains("fetch(") || body.contains("XMLHttpRequest") || body.contains("sendBeacon")
+        {
             issues.push(BroadcastChannelIssue::DataExfiltration);
         }
     }
@@ -74,8 +75,15 @@ pub fn analyze_broadcast_channel(body: &str) -> Vec<BroadcastChannelIssue> {
 
 fn has_sensitive_channel_name(body: &str) -> bool {
     let sensitive = [
-        "auth", "token", "session", "login", "password", "secret",
-        "credential", "payment", "admin",
+        "auth",
+        "token",
+        "session",
+        "login",
+        "password",
+        "secret",
+        "credential",
+        "payment",
+        "admin",
     ];
     let marker = "BroadcastChannel(";
     let mut search_from = 0;

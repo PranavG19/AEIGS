@@ -31,7 +31,10 @@ const SSRF_TARGETS: &[(&str, SsrfTargetKind)] = &[
     ("http://127.0.0.1/", SsrfTargetKind::Localhost),
     ("http://localhost/", SsrfTargetKind::Localhost),
     ("http://[::1]/", SsrfTargetKind::Localhost),
-    ("http://169.254.169.254/latest/meta-data/", SsrfTargetKind::Metadata),
+    (
+        "http://169.254.169.254/latest/meta-data/",
+        SsrfTargetKind::Metadata,
+    ),
     ("http://metadata.google.internal/", SsrfTargetKind::Metadata),
     ("http://10.0.0.1/", SsrfTargetKind::PrivateIp),
     ("http://192.168.1.1/", SsrfTargetKind::PrivateIp),
@@ -66,10 +69,7 @@ pub fn audit_ssrf_redirect(target: &str) -> Vec<SsrfRedirectIssue> {
                 if !(300..400).contains(&status) {
                     continue;
                 }
-                if let Some(location) = resp
-                    .headers()
-                    .get("location")
-                    .and_then(|v| v.to_str().ok())
+                if let Some(location) = resp.headers().get("location").and_then(|v| v.to_str().ok())
                     && let Some(issue) = classify_redirect(location, *kind)
                 {
                     issues.push(issue);
@@ -90,9 +90,7 @@ fn classify_redirect(location: &str, kind: SsrfTargetKind) -> Option<SsrfRedirec
     match kind {
         SsrfTargetKind::Localhost => Some(SsrfRedirectIssue::RedirectToLocalhost { location: loc }),
         SsrfTargetKind::Metadata => Some(SsrfRedirectIssue::RedirectToMetadata { location: loc }),
-        SsrfTargetKind::PrivateIp => {
-            Some(SsrfRedirectIssue::RedirectToPrivateIp { location: loc })
-        }
+        SsrfTargetKind::PrivateIp => Some(SsrfRedirectIssue::RedirectToPrivateIp { location: loc }),
     }
 }
 

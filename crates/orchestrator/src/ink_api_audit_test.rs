@@ -111,9 +111,18 @@ fn to_operations_creates_entries() {
 fn display_variants() {
     assert_eq!(InkApiIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(InkApiIssue::InputTracking.to_string(), "input_tracking");
-    assert_eq!(InkApiIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(InkApiIssue::ContinuousCapture.to_string(), "continuous_capture");
-    assert_eq!(InkApiIssue::CanvasFingerprinting.to_string(), "canvas_fingerprinting");
+    assert_eq!(
+        InkApiIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        InkApiIssue::ContinuousCapture.to_string(),
+        "continuous_capture"
+    );
+    assert_eq!(
+        InkApiIssue::CanvasFingerprinting.to_string(),
+        "canvas_fingerprinting"
+    );
 }
 
 #[test]

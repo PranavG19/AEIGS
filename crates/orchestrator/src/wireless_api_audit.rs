@@ -67,8 +67,7 @@ pub fn analyze_wireless_api(body: &str) -> Vec<WirelessApiIssue> {
         issues.push(WirelessApiIssue::NfcWriteOperation);
     }
 
-    let has_wireless = body.contains("navigator.bluetooth")
-        || body.contains("NDEFReader");
+    let has_wireless = body.contains("navigator.bluetooth") || body.contains("NDEFReader");
     let sends = body.contains("fetch(")
         || body.contains("XMLHttpRequest")
         || body.contains(".send(")

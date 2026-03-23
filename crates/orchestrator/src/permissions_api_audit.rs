@@ -111,8 +111,7 @@ fn count_permission_queries(body: &str) -> usize {
 
 fn has_sensitive_permission_request(body: &str) -> bool {
     let sensitive = ["camera", "microphone", "geolocation"];
-    body.contains("permissions.query")
-        && sensitive.iter().any(|s| body.contains(s))
+    body.contains("permissions.query") && sensitive.iter().any(|s| body.contains(s))
 }
 
 pub fn permissions_api_severity(issue: &PermissionsApiIssue) -> f64 {

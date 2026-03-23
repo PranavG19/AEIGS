@@ -85,9 +85,7 @@ pub fn analyze_device_motion(body: &str) -> Vec<DeviceMotionIssue> {
         issues.push(DeviceMotionIssue::HighFrequencySampling);
     }
 
-    if body.contains("AbsoluteOrientationSensor")
-        || body.contains("RelativeOrientationSensor")
-    {
+    if body.contains("AbsoluteOrientationSensor") || body.contains("RelativeOrientationSensor") {
         issues.push(DeviceMotionIssue::AbsoluteOrientationSensor);
     }
 

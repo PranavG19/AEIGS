@@ -51,14 +51,14 @@ pub fn analyze_speech_api(body: &str) -> Vec<SpeechApiIssue> {
         issues.push(SpeechApiIssue::SpeechRecognitionUsage);
     }
 
-    if body.contains("continuous") && body.contains("true")
+    if body.contains("continuous")
+        && body.contains("true")
         && (body.contains("SpeechRecognition") || body.contains("webkitSpeechRecognition"))
     {
         issues.push(SpeechApiIssue::ContinuousListening);
     }
 
-    let has_speech = body.contains("SpeechRecognition")
-        || body.contains("webkitSpeechRecognition");
+    let has_speech = body.contains("SpeechRecognition") || body.contains("webkitSpeechRecognition");
     let sends = body.contains("fetch(")
         || body.contains("XMLHttpRequest")
         || body.contains(".send(")

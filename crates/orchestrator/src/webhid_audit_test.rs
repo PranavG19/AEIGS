@@ -113,11 +113,23 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebHidIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebHidIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebHidIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        WebHidIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebHidIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(WebHidIssue::RawDataAccess.to_string(), "raw_data_access");
-    assert_eq!(WebHidIssue::DeviceEnumeration.to_string(), "device_enumeration");
-    assert_eq!(WebHidIssue::PersistentConnection.to_string(), "persistent_connection");
+    assert_eq!(
+        WebHidIssue::DeviceEnumeration.to_string(),
+        "device_enumeration"
+    );
+    assert_eq!(
+        WebHidIssue::PersistentConnection.to_string(),
+        "persistent_connection"
+    );
 }
 
 #[test]

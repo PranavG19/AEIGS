@@ -71,7 +71,10 @@ fn detects_lowercase_header() {
 
 #[test]
 fn severity_combined_highest() {
-    assert_eq!(device_memory_severity(&DeviceMemoryIssue::CombinedFingerprint), 7.0);
+    assert_eq!(
+        device_memory_severity(&DeviceMemoryIssue::CombinedFingerprint),
+        7.0
+    );
 }
 
 #[test]
@@ -81,7 +84,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![DeviceMemoryIssue::ApiDetected, DeviceMemoryIssue::FingerprintingVector];
+    let issues = vec![
+        DeviceMemoryIssue::ApiDetected,
+        DeviceMemoryIssue::FingerprintingVector,
+    ];
     let mut seq = 0;
     let ops = device_memory_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -91,10 +97,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(DeviceMemoryIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(DeviceMemoryIssue::FingerprintingVector.to_string(), "fingerprinting_vector");
-    assert_eq!(DeviceMemoryIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(DeviceMemoryIssue::CombinedFingerprint.to_string(), "combined_fingerprint");
-    assert_eq!(DeviceMemoryIssue::ClientHintHeader.to_string(), "client_hint_header");
+    assert_eq!(
+        DeviceMemoryIssue::FingerprintingVector.to_string(),
+        "fingerprinting_vector"
+    );
+    assert_eq!(
+        DeviceMemoryIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        DeviceMemoryIssue::CombinedFingerprint.to_string(),
+        "combined_fingerprint"
+    );
+    assert_eq!(
+        DeviceMemoryIssue::ClientHintHeader.to_string(),
+        "client_hint_header"
+    );
 }
 
 #[test]

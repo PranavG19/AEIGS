@@ -158,7 +158,10 @@ fn no_bypass_when_using_set_html() {
 
 #[test]
 fn severity_script_highest() {
-    assert_eq!(sanitizer_api_severity(&SanitizerApiIssue::ScriptAllowed), 9.0);
+    assert_eq!(
+        sanitizer_api_severity(&SanitizerApiIssue::ScriptAllowed),
+        9.0
+    );
 }
 
 #[test]
@@ -168,7 +171,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![SanitizerApiIssue::ApiDetected, SanitizerApiIssue::ScriptAllowed];
+    let issues = vec![
+        SanitizerApiIssue::ApiDetected,
+        SanitizerApiIssue::ScriptAllowed,
+    ];
     let mut seq = 0;
     let ops = sanitizer_api_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -178,11 +184,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(SanitizerApiIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(SanitizerApiIssue::PermissiveConfig.to_string(), "permissive_config");
-    assert_eq!(SanitizerApiIssue::ScriptAllowed.to_string(), "script_allowed");
-    assert_eq!(SanitizerApiIssue::EventHandlerAllowed.to_string(), "event_handler_allowed");
-    assert_eq!(SanitizerApiIssue::CustomElementRisk.to_string(), "custom_element_risk");
-    assert_eq!(SanitizerApiIssue::SanitizationBypassed.to_string(), "sanitization_bypassed");
+    assert_eq!(
+        SanitizerApiIssue::PermissiveConfig.to_string(),
+        "permissive_config"
+    );
+    assert_eq!(
+        SanitizerApiIssue::ScriptAllowed.to_string(),
+        "script_allowed"
+    );
+    assert_eq!(
+        SanitizerApiIssue::EventHandlerAllowed.to_string(),
+        "event_handler_allowed"
+    );
+    assert_eq!(
+        SanitizerApiIssue::CustomElementRisk.to_string(),
+        "custom_element_risk"
+    );
+    assert_eq!(
+        SanitizerApiIssue::SanitizationBypassed.to_string(),
+        "sanitization_bypassed"
+    );
 }
 
 #[test]

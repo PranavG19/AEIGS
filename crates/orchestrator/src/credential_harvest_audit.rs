@@ -90,11 +90,7 @@ fn extract_action(tag: &str) -> Option<&str> {
     Some(&value[..end])
 }
 
-fn check_form_action(
-    tag: &str,
-    site_domain: &str,
-    issues: &mut Vec<CredentialHarvestIssue>,
-) {
+fn check_form_action(tag: &str, site_domain: &str, issues: &mut Vec<CredentialHarvestIssue>) {
     let Some(action) = extract_action(tag) else {
         return;
     };
@@ -125,11 +121,7 @@ fn check_form_target(tag: &str, issues: &mut Vec<CredentialHarvestIssue>) {
     }
 }
 
-fn check_hidden_login(
-    tag: &str,
-    form_body: &str,
-    issues: &mut Vec<CredentialHarvestIssue>,
-) {
+fn check_hidden_login(tag: &str, form_body: &str, issues: &mut Vec<CredentialHarvestIssue>) {
     let is_hidden = tag.contains("display:none")
         || tag.contains("display: none")
         || tag.contains("visibility:hidden")
@@ -180,7 +172,10 @@ fn check_suspicious_inputs(form_body: &str, issues: &mut Vec<CredentialHarvestIs
         "name=\"cvv",
         "name=\"bank_account",
     ];
-    let count = suspicious.iter().filter(|s| form_body.contains(**s)).count();
+    let count = suspicious
+        .iter()
+        .filter(|s| form_body.contains(**s))
+        .count();
     if count >= 2 {
         issues.push(CredentialHarvestIssue::SuspiciousFormInputNames);
     }

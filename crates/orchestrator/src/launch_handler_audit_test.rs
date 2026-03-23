@@ -111,17 +111,26 @@ fn no_validation_issue_with_sanitize() {
 
 #[test]
 fn severity_injection_highest() {
-    assert_eq!(launch_handler_severity(&LaunchHandlerIssue::UrlInjection), 7.5);
+    assert_eq!(
+        launch_handler_severity(&LaunchHandlerIssue::UrlInjection),
+        7.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(launch_handler_severity(&LaunchHandlerIssue::ApiDetected), 2.5);
+    assert_eq!(
+        launch_handler_severity(&LaunchHandlerIssue::ApiDetected),
+        2.5
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![LaunchHandlerIssue::ApiDetected, LaunchHandlerIssue::FileHandling];
+    let issues = vec![
+        LaunchHandlerIssue::ApiDetected,
+        LaunchHandlerIssue::FileHandling,
+    ];
     let mut seq = 0;
     let ops = launch_handler_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -131,10 +140,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(LaunchHandlerIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(LaunchHandlerIssue::UrlInjection.to_string(), "url_injection");
-    assert_eq!(LaunchHandlerIssue::FileHandling.to_string(), "file_handling");
-    assert_eq!(LaunchHandlerIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(LaunchHandlerIssue::NoInputValidation.to_string(), "no_input_validation");
+    assert_eq!(
+        LaunchHandlerIssue::UrlInjection.to_string(),
+        "url_injection"
+    );
+    assert_eq!(
+        LaunchHandlerIssue::FileHandling.to_string(),
+        "file_handling"
+    );
+    assert_eq!(
+        LaunchHandlerIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        LaunchHandlerIssue::NoInputValidation.to_string(),
+        "no_input_validation"
+    );
 }
 
 #[test]

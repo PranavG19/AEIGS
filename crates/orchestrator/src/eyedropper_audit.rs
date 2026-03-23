@@ -57,7 +57,12 @@ pub fn analyze_eyedropper(body: &str) -> Vec<EyeDropperIssue> {
             issues.push(EyeDropperIssue::ColorExfiltration);
         }
 
-        if body.contains("while(") || body.contains("while ") || body.contains("setInterval") || body.contains("for(") || body.contains("for ") {
+        if body.contains("while(")
+            || body.contains("while ")
+            || body.contains("setInterval")
+            || body.contains("for(")
+            || body.contains("for ")
+        {
             issues.push(EyeDropperIssue::LoopedPicking);
         }
     }

@@ -5,9 +5,18 @@ use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MethodOverrideIssue {
-    HeaderOverrideAccepted { header: String, method: String },
-    QueryParamOverrideAccepted { param: String, method: String },
-    MethodChangeAltersResponse { override_type: String, method: String },
+    HeaderOverrideAccepted {
+        header: String,
+        method: String,
+    },
+    QueryParamOverrideAccepted {
+        param: String,
+        method: String,
+    },
+    MethodChangeAltersResponse {
+        override_type: String,
+        method: String,
+    },
 }
 
 impl std::fmt::Display for MethodOverrideIssue {
@@ -98,13 +107,17 @@ pub fn analyze_method_override(
 
     if baseline_status != override_status {
         if override_type.starts_with("header:") {
-            let header = override_type.strip_prefix("header:").unwrap_or(override_type);
+            let header = override_type
+                .strip_prefix("header:")
+                .unwrap_or(override_type);
             issues.push(MethodOverrideIssue::HeaderOverrideAccepted {
                 header: header.to_string(),
                 method: method.to_string(),
             });
         } else if override_type.starts_with("param:") {
-            let param = override_type.strip_prefix("param:").unwrap_or(override_type);
+            let param = override_type
+                .strip_prefix("param:")
+                .unwrap_or(override_type);
             issues.push(MethodOverrideIssue::QueryParamOverrideAccepted {
                 param: param.to_string(),
                 method: method.to_string(),

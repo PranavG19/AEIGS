@@ -66,7 +66,11 @@ pub fn analyze_content_index(body: &str) -> Vec<ContentIndexIssue> {
             issues.push(ContentIndexIssue::PhishingContent);
         }
 
-        if body.contains("for(") || body.contains("for ") || body.contains("forEach") || body.contains("map(") {
+        if body.contains("for(")
+            || body.contains("for ")
+            || body.contains("forEach")
+            || body.contains("map(")
+        {
             issues.push(ContentIndexIssue::ExcessiveEntries);
         }
     }

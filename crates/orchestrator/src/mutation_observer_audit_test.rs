@@ -79,12 +79,18 @@ fn detects_data_exfiltration() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(mutation_observer_severity(&MutationObserverIssue::DataExfiltration), 6.0);
+    assert_eq!(
+        mutation_observer_severity(&MutationObserverIssue::DataExfiltration),
+        6.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(mutation_observer_severity(&MutationObserverIssue::ObserverDetected), 3.0);
+    assert_eq!(
+        mutation_observer_severity(&MutationObserverIssue::ObserverDetected),
+        3.0
+    );
 }
 
 #[test]
@@ -101,12 +107,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(MutationObserverIssue::ObserverDetected.to_string(), "observer_detected");
-    assert_eq!(MutationObserverIssue::SubtreeWatch.to_string(), "subtree_watch");
-    assert_eq!(MutationObserverIssue::CharacterDataWatch.to_string(), "character_data_watch");
-    assert_eq!(MutationObserverIssue::AttributeFilterSensitive.to_string(), "attribute_filter_sensitive");
-    assert_eq!(MutationObserverIssue::FormInputMonitoring.to_string(), "form_input_monitoring");
-    assert_eq!(MutationObserverIssue::DataExfiltration.to_string(), "data_exfiltration");
+    assert_eq!(
+        MutationObserverIssue::ObserverDetected.to_string(),
+        "observer_detected"
+    );
+    assert_eq!(
+        MutationObserverIssue::SubtreeWatch.to_string(),
+        "subtree_watch"
+    );
+    assert_eq!(
+        MutationObserverIssue::CharacterDataWatch.to_string(),
+        "character_data_watch"
+    );
+    assert_eq!(
+        MutationObserverIssue::AttributeFilterSensitive.to_string(),
+        "attribute_filter_sensitive"
+    );
+    assert_eq!(
+        MutationObserverIssue::FormInputMonitoring.to_string(),
+        "form_input_monitoring"
+    );
+    assert_eq!(
+        MutationObserverIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
 }
 
 #[test]

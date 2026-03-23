@@ -115,7 +115,10 @@ fn no_shared_storage_without_read() {
 
 #[test]
 fn severity_exfil_highest() {
-    assert_eq!(fenced_frame_severity(&FencedFrameIssue::DataExfiltration), 7.5);
+    assert_eq!(
+        fenced_frame_severity(&FencedFrameIssue::DataExfiltration),
+        7.5
+    );
 }
 
 #[test]
@@ -125,7 +128,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![FencedFrameIssue::ApiDetected, FencedFrameIssue::AdAuctionAbuse];
+    let issues = vec![
+        FencedFrameIssue::ApiDetected,
+        FencedFrameIssue::AdAuctionAbuse,
+    ];
     let mut seq = 0;
     let ops = fenced_frame_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -135,10 +141,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(FencedFrameIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(FencedFrameIssue::AdAuctionAbuse.to_string(), "ad_auction_abuse");
-    assert_eq!(FencedFrameIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(FencedFrameIssue::OpaqueUrlBypass.to_string(), "opaque_url_bypass");
-    assert_eq!(FencedFrameIssue::SharedStorageLeak.to_string(), "shared_storage_leak");
+    assert_eq!(
+        FencedFrameIssue::AdAuctionAbuse.to_string(),
+        "ad_auction_abuse"
+    );
+    assert_eq!(
+        FencedFrameIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        FencedFrameIssue::OpaqueUrlBypass.to_string(),
+        "opaque_url_bypass"
+    );
+    assert_eq!(
+        FencedFrameIssue::SharedStorageLeak.to_string(),
+        "shared_storage_leak"
+    );
 }
 
 #[test]

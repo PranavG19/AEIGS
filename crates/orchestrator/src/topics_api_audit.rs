@@ -54,7 +54,9 @@ pub fn analyze_topics_api(body: &str) -> Vec<TopicsApiIssue> {
 
     let has_topics_call = body.contains("browsingTopics(");
     if has_topics_call
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(TopicsApiIssue::CrossSiteCorrelation);
     }

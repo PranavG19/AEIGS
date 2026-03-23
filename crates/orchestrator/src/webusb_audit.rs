@@ -84,10 +84,7 @@ pub fn webusb_severity(issue: &WebUsbIssue) -> f64 {
     }
 }
 
-pub fn webusb_to_operations(
-    issues: &[WebUsbIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn webusb_to_operations(issues: &[WebUsbIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

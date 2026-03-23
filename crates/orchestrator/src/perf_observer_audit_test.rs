@@ -81,12 +81,18 @@ fn no_excessive_with_few_types() {
 
 #[test]
 fn severity_resource_highest() {
-    assert_eq!(perf_observer_severity(&PerfObserverIssue::ResourceTimingObserved), 5.5);
+    assert_eq!(
+        perf_observer_severity(&PerfObserverIssue::ResourceTimingObserved),
+        5.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(perf_observer_severity(&PerfObserverIssue::ObserverDetected), 3.0);
+    assert_eq!(
+        perf_observer_severity(&PerfObserverIssue::ObserverDetected),
+        3.0
+    );
 }
 
 #[test]
@@ -103,13 +109,31 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(PerfObserverIssue::ObserverDetected.to_string(), "observer_detected");
-    assert_eq!(PerfObserverIssue::ResourceTimingObserved.to_string(), "resource_timing_observed");
-    assert_eq!(PerfObserverIssue::NavigationTimingObserved.to_string(), "navigation_timing_observed");
-    assert_eq!(PerfObserverIssue::LongTaskObserved.to_string(), "long_task_observed");
-    assert_eq!(PerfObserverIssue::GetEntriesByType.to_string(), "get_entries_by_type");
+    assert_eq!(
+        PerfObserverIssue::ObserverDetected.to_string(),
+        "observer_detected"
+    );
+    assert_eq!(
+        PerfObserverIssue::ResourceTimingObserved.to_string(),
+        "resource_timing_observed"
+    );
+    assert_eq!(
+        PerfObserverIssue::NavigationTimingObserved.to_string(),
+        "navigation_timing_observed"
+    );
+    assert_eq!(
+        PerfObserverIssue::LongTaskObserved.to_string(),
+        "long_task_observed"
+    );
+    assert_eq!(
+        PerfObserverIssue::GetEntriesByType.to_string(),
+        "get_entries_by_type"
+    );
     assert_eq!(PerfObserverIssue::BufferedFlag.to_string(), "buffered_flag");
-    assert_eq!(PerfObserverIssue::ExcessiveEntryTypes.to_string(), "excessive_entry_types");
+    assert_eq!(
+        PerfObserverIssue::ExcessiveEntryTypes.to_string(),
+        "excessive_entry_types"
+    );
 }
 
 #[test]

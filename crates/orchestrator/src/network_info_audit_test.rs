@@ -87,7 +87,10 @@ fn no_combined_without_other_apis() {
 
 #[test]
 fn severity_combined_highest() {
-    assert_eq!(network_info_severity(&NetworkInfoIssue::CombinedFingerprint), 7.0);
+    assert_eq!(
+        network_info_severity(&NetworkInfoIssue::CombinedFingerprint),
+        7.0
+    );
 }
 
 #[test]
@@ -97,7 +100,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![NetworkInfoIssue::ApiDetected, NetworkInfoIssue::FingerprintingVector];
+    let issues = vec![
+        NetworkInfoIssue::ApiDetected,
+        NetworkInfoIssue::FingerprintingVector,
+    ];
     let mut seq = 0;
     let ops = network_info_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -107,10 +113,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(NetworkInfoIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(NetworkInfoIssue::FingerprintingVector.to_string(), "fingerprinting_vector");
-    assert_eq!(NetworkInfoIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(NetworkInfoIssue::ConnectionMonitoring.to_string(), "connection_monitoring");
-    assert_eq!(NetworkInfoIssue::CombinedFingerprint.to_string(), "combined_fingerprint");
+    assert_eq!(
+        NetworkInfoIssue::FingerprintingVector.to_string(),
+        "fingerprinting_vector"
+    );
+    assert_eq!(
+        NetworkInfoIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        NetworkInfoIssue::ConnectionMonitoring.to_string(),
+        "connection_monitoring"
+    );
+    assert_eq!(
+        NetworkInfoIssue::CombinedFingerprint.to_string(),
+        "combined_fingerprint"
+    );
 }
 
 #[test]

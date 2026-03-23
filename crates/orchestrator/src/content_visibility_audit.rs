@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ContentVisibilityIssue {
@@ -49,7 +49,8 @@ pub fn analyze_content_visibility(body: &str) -> Vec<ContentVisibilityIssue> {
         issues.push(ContentVisibilityIssue::ApiDetected);
     }
 
-    let has_hidden = body.contains("content-visibility: hidden") || body.contains("content-visibility:hidden");
+    let has_hidden =
+        body.contains("content-visibility: hidden") || body.contains("content-visibility:hidden");
     let has_xss_vectors = body.contains("innerHTML")
         || body.contains("insertAdjacentHTML")
         || body.contains("document.write");
@@ -57,8 +58,8 @@ pub fn analyze_content_visibility(body: &str) -> Vec<ContentVisibilityIssue> {
         issues.push(ContentVisibilityIssue::HiddenContentXss);
     }
 
-    let has_observers = body.contains("IntersectionObserver")
-        || body.contains("contentvisibilityautostatechange");
+    let has_observers =
+        body.contains("IntersectionObserver") || body.contains("contentvisibilityautostatechange");
     let has_timing = body.contains("performance.now") || body.contains("Date.now");
     if has_content_visibility && has_observers && has_timing {
         issues.push(ContentVisibilityIssue::RenderingTimingLeak);

@@ -82,12 +82,7 @@ fn has_window_name_read(body: &str) -> bool {
 }
 
 fn has_window_name_write(body: &str) -> bool {
-    let write_patterns = [
-        "window.name =",
-        "window.name=",
-        "self.name =",
-        "self.name=",
-    ];
+    let write_patterns = ["window.name =", "window.name=", "self.name =", "self.name="];
     write_patterns.iter().any(|p| body.contains(p))
 }
 
@@ -120,8 +115,7 @@ fn has_data_parsing(body: &str) -> bool {
 }
 
 fn has_cross_origin_pattern(body: &str) -> bool {
-    let has_name_usage =
-        body.contains("window.name") || body.contains("self.name");
+    let has_name_usage = body.contains("window.name") || body.contains("self.name");
     let has_navigation = body.contains("location.href")
         || body.contains("location.replace")
         || body.contains("window.open")

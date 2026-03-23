@@ -15,81 +15,99 @@ fn no_api_paths_no_issues() {
 fn internal_api_path_detected() {
     let body = r#"fetch("/api/internal/users")"#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. }))
+    );
 }
 
 #[test]
 fn private_api_path_detected() {
     let body = r#"url: "/api/private/config""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. }))
+    );
 }
 
 #[test]
 fn admin_endpoint_detected() {
     let body = r#"href="/admin/settings""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::AdminEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::AdminEndpoint { .. }))
+    );
 }
 
 #[test]
 fn debug_endpoint_detected() {
     let body = r#"fetch("/actuator/health")"#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. }))
+    );
 }
 
 #[test]
 fn healthcheck_detected() {
     let body = r#"url = "/healthcheck""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. }))
+    );
 }
 
 #[test]
 fn metrics_detected() {
     let body = r#""/metrics""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. }))
+    );
 }
 
 #[test]
 fn graphql_endpoint_detected() {
     let body = r#"fetch("/graphql", { method: "POST" })"#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::GraphqlEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::GraphqlEndpoint { .. }))
+    );
 }
 
 #[test]
 fn graphiql_detected() {
     let body = r#"window.location = "/graphiql""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::GraphqlEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::GraphqlEndpoint { .. }))
+    );
 }
 
 #[test]
 fn versioned_api_detected() {
     let body = r#""/api/v2/users""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::VersionedEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::VersionedEndpoint { .. }))
+    );
 }
 
 #[test]
@@ -108,18 +126,22 @@ fn normal_paths_not_flagged() {
 fn single_quote_paths() {
     let body = "fetch('/api/internal/data')";
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::InternalApiPath { .. }))
+    );
 }
 
 #[test]
 fn backtick_paths() {
     let body = "url = `/admin/users`";
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::AdminEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::AdminEndpoint { .. }))
+    );
 }
 
 #[test]
@@ -143,18 +165,12 @@ fn dedup_same_path() {
 #[test]
 fn severity_ordering() {
     assert!(
-        api_endpoint_leak_severity(&ApiEndpointLeak::AdminEndpoint {
-            path: "x".into()
-        }) > api_endpoint_leak_severity(&ApiEndpointLeak::DebugEndpoint {
-            path: "x".into()
-        })
+        api_endpoint_leak_severity(&ApiEndpointLeak::AdminEndpoint { path: "x".into() })
+            > api_endpoint_leak_severity(&ApiEndpointLeak::DebugEndpoint { path: "x".into() })
     );
     assert!(
-        api_endpoint_leak_severity(&ApiEndpointLeak::DebugEndpoint {
-            path: "x".into()
-        }) > api_endpoint_leak_severity(&ApiEndpointLeak::VersionedEndpoint {
-            path: "x".into()
-        })
+        api_endpoint_leak_severity(&ApiEndpointLeak::DebugEndpoint { path: "x".into() })
+            > api_endpoint_leak_severity(&ApiEndpointLeak::VersionedEndpoint { path: "x".into() })
     );
 }
 
@@ -191,7 +207,9 @@ fn to_operations_count() {
 fn phpinfo_detected() {
     let body = r#"href="/phpinfo""#;
     let issues = analyze_api_endpoint_leaks(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, ApiEndpointLeak::DebugEndpoint { .. }))
+    );
 }

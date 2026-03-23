@@ -137,7 +137,10 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(AttributionReportingIssue::ApiDetected.to_string(), "api_detected");
+    assert_eq!(
+        AttributionReportingIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
     assert_eq!(
         AttributionReportingIssue::CrossSiteTracking.to_string(),
         "cross_site_tracking"
@@ -150,7 +153,10 @@ fn display_variants() {
         AttributionReportingIssue::EventLevelFingerprint.to_string(),
         "event_level_fingerprint"
     );
-    assert_eq!(AttributionReportingIssue::DebugKeyLeak.to_string(), "debug_key_leak");
+    assert_eq!(
+        AttributionReportingIssue::DebugKeyLeak.to_string(),
+        "debug_key_leak"
+    );
 }
 
 #[test]

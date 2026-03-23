@@ -80,8 +80,7 @@ pub fn analyze_canvas_fingerprint(body: &str) -> Vec<CanvasFingerprintIssue> {
         issues.push(CanvasFingerprintIssue::FontEnumeration);
     }
 
-    let has_canvas_data =
-        body.contains("toDataURL") || body.contains("getImageData");
+    let has_canvas_data = body.contains("toDataURL") || body.contains("getImageData");
     let sends_data = body.contains("fetch(")
         || body.contains("XMLHttpRequest")
         || body.contains("sendBeacon")

@@ -70,12 +70,18 @@ fn detects_forward() {
 
 #[test]
 fn severity_intercept_highest() {
-    assert_eq!(navigation_api_severity(&NavigationApiIssue::NavigateIntercepted), 6.0);
+    assert_eq!(
+        navigation_api_severity(&NavigationApiIssue::NavigateIntercepted),
+        6.0
+    );
 }
 
 #[test]
 fn severity_current_entry_lowest() {
-    assert_eq!(navigation_api_severity(&NavigationApiIssue::CurrentEntryAccess), 3.5);
+    assert_eq!(
+        navigation_api_severity(&NavigationApiIssue::CurrentEntryAccess),
+        3.5
+    );
 }
 
 #[test]
@@ -92,12 +98,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(NavigationApiIssue::NavigateIntercepted.to_string(), "navigate_intercepted");
-    assert_eq!(NavigationApiIssue::NavigateEventUsed.to_string(), "navigate_event_used");
-    assert_eq!(NavigationApiIssue::CurrentEntryAccess.to_string(), "current_entry_access");
-    assert_eq!(NavigationApiIssue::EntriesEnumerated.to_string(), "entries_enumerated");
-    assert_eq!(NavigationApiIssue::TransitionWhileUsed.to_string(), "transition_while_used");
-    assert_eq!(NavigationApiIssue::BackForwardIntercept.to_string(), "back_forward_intercept");
+    assert_eq!(
+        NavigationApiIssue::NavigateIntercepted.to_string(),
+        "navigate_intercepted"
+    );
+    assert_eq!(
+        NavigationApiIssue::NavigateEventUsed.to_string(),
+        "navigate_event_used"
+    );
+    assert_eq!(
+        NavigationApiIssue::CurrentEntryAccess.to_string(),
+        "current_entry_access"
+    );
+    assert_eq!(
+        NavigationApiIssue::EntriesEnumerated.to_string(),
+        "entries_enumerated"
+    );
+    assert_eq!(
+        NavigationApiIssue::TransitionWhileUsed.to_string(),
+        "transition_while_used"
+    );
+    assert_eq!(
+        NavigationApiIssue::BackForwardIntercept.to_string(),
+        "back_forward_intercept"
+    );
 }
 
 #[test]

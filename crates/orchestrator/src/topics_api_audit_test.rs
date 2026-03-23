@@ -93,7 +93,10 @@ fn no_silent_without_observe() {
 
 #[test]
 fn severity_correlation_highest() {
-    assert_eq!(topics_api_severity(&TopicsApiIssue::CrossSiteCorrelation), 7.0);
+    assert_eq!(
+        topics_api_severity(&TopicsApiIssue::CrossSiteCorrelation),
+        7.0
+    );
 }
 
 #[test]
@@ -103,7 +106,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![TopicsApiIssue::ApiDetected, TopicsApiIssue::InterestTracking];
+    let issues = vec![
+        TopicsApiIssue::ApiDetected,
+        TopicsApiIssue::InterestTracking,
+    ];
     let mut seq = 0;
     let ops = topics_api_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -113,11 +119,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(TopicsApiIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(TopicsApiIssue::InterestTracking.to_string(), "interest_tracking");
-    assert_eq!(TopicsApiIssue::CrossSiteCorrelation.to_string(), "cross_site_correlation");
-    assert_eq!(TopicsApiIssue::NoPermissionPolicy.to_string(), "no_permission_policy");
-    assert_eq!(TopicsApiIssue::ThirdPartyAccess.to_string(), "third_party_access");
-    assert_eq!(TopicsApiIssue::SilentObservation.to_string(), "silent_observation");
+    assert_eq!(
+        TopicsApiIssue::InterestTracking.to_string(),
+        "interest_tracking"
+    );
+    assert_eq!(
+        TopicsApiIssue::CrossSiteCorrelation.to_string(),
+        "cross_site_correlation"
+    );
+    assert_eq!(
+        TopicsApiIssue::NoPermissionPolicy.to_string(),
+        "no_permission_policy"
+    );
+    assert_eq!(
+        TopicsApiIssue::ThirdPartyAccess.to_string(),
+        "third_party_access"
+    );
+    assert_eq!(
+        TopicsApiIssue::SilentObservation.to_string(),
+        "silent_observation"
+    );
 }
 
 #[test]

@@ -159,7 +159,10 @@ fn test_multiple_issues() {
 
 #[test]
 fn test_severity_values() {
-    assert_eq!(navigator_login_severity(&NavigatorLoginIssue::ApiDetected), 2.0);
+    assert_eq!(
+        navigator_login_severity(&NavigatorLoginIssue::ApiDetected),
+        2.0
+    );
     assert_eq!(
         navigator_login_severity(&NavigatorLoginIssue::LoginStatusLeak),
         7.0
@@ -180,10 +183,7 @@ fn test_severity_values() {
 
 #[test]
 fn test_display_format() {
-    assert_eq!(
-        NavigatorLoginIssue::ApiDetected.to_string(),
-        "api_detected"
-    );
+    assert_eq!(NavigatorLoginIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(
         NavigatorLoginIssue::LoginStatusLeak.to_string(),
         "login_status_leak"

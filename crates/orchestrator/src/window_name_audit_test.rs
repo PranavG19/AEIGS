@@ -158,8 +158,14 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(WindowNameIssue::WindowNameRead.to_string(), "window_name_read");
-    assert_eq!(WindowNameIssue::WindowNameWrite.to_string(), "window_name_write");
+    assert_eq!(
+        WindowNameIssue::WindowNameRead.to_string(),
+        "window_name_read"
+    );
+    assert_eq!(
+        WindowNameIssue::WindowNameWrite.to_string(),
+        "window_name_write"
+    );
     assert_eq!(
         WindowNameIssue::WindowNameInConditional.to_string(),
         "window_name_conditional"

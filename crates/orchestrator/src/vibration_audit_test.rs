@@ -99,9 +99,18 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(VibrationIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(VibrationIssue::NoUserActivation.to_string(), "no_user_activation");
-    assert_eq!(VibrationIssue::ExcessiveDuration.to_string(), "excessive_duration");
-    assert_eq!(VibrationIssue::ContinuousVibration.to_string(), "continuous_vibration");
+    assert_eq!(
+        VibrationIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
+    assert_eq!(
+        VibrationIssue::ExcessiveDuration.to_string(),
+        "excessive_duration"
+    );
+    assert_eq!(
+        VibrationIssue::ContinuousVibration.to_string(),
+        "continuous_vibration"
+    );
     assert_eq!(VibrationIssue::CovertChannel.to_string(), "covert_channel");
 }
 

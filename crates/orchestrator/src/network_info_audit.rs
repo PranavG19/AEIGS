@@ -55,7 +55,9 @@ pub fn analyze_network_info(body: &str) -> Vec<NetworkInfoIssue> {
     }
 
     if body.contains("navigator.connection")
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(NetworkInfoIssue::DataExfiltration);
     }

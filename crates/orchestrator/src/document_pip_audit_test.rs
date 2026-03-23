@@ -109,7 +109,10 @@ fn no_persistent_with_close() {
 
 #[test]
 fn severity_injection_highest() {
-    assert_eq!(document_pip_severity(&DocumentPipIssue::ContentInjection), 7.5);
+    assert_eq!(
+        document_pip_severity(&DocumentPipIssue::ContentInjection),
+        7.5
+    );
 }
 
 #[test]
@@ -130,9 +133,18 @@ fn to_operations_creates_entries() {
 fn display_variants() {
     assert_eq!(DocumentPipIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(DocumentPipIssue::UiSpoofing.to_string(), "ui_spoofing");
-    assert_eq!(DocumentPipIssue::OverlayAttack.to_string(), "overlay_attack");
-    assert_eq!(DocumentPipIssue::ContentInjection.to_string(), "content_injection");
-    assert_eq!(DocumentPipIssue::PersistentWindow.to_string(), "persistent_window");
+    assert_eq!(
+        DocumentPipIssue::OverlayAttack.to_string(),
+        "overlay_attack"
+    );
+    assert_eq!(
+        DocumentPipIssue::ContentInjection.to_string(),
+        "content_injection"
+    );
+    assert_eq!(
+        DocumentPipIssue::PersistentWindow.to_string(),
+        "persistent_window"
+    );
 }
 
 #[test]

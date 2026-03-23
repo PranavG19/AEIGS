@@ -65,9 +65,8 @@ pub fn analyze_beacon_api(body: &str) -> Vec<BeaconApiIssue> {
         issues.push(BeaconApiIssue::CrossOriginBeacon);
     }
 
-    let has_serialization = body.contains("JSON.stringify")
-        || body.contains("FormData")
-        || body.contains("Blob");
+    let has_serialization =
+        body.contains("JSON.stringify") || body.contains("FormData") || body.contains("Blob");
     let has_limit = body.contains("slice")
         || body.contains("substring")
         || body.contains("maxLength")

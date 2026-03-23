@@ -60,7 +60,9 @@ pub fn analyze_ambient_light(body: &str) -> Vec<AmbientLightIssue> {
         issues.push(AmbientLightIssue::CrossOriginLeak);
     }
 
-    if body.contains("illuminance") && (body.contains("threshold") || body.contains("Array") || body.contains("history")) {
+    if body.contains("illuminance")
+        && (body.contains("threshold") || body.contains("Array") || body.contains("history"))
+    {
         issues.push(AmbientLightIssue::ScreenContentInference);
     }
 

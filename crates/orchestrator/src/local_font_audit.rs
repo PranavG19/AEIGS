@@ -52,7 +52,9 @@ pub fn analyze_local_font(body: &str) -> Vec<LocalFontIssue> {
         issues.push(LocalFontIssue::FontExfiltration);
     }
 
-    if body.contains("queryLocalFonts()") || (body.contains("queryLocalFonts") && !body.contains("postScriptName")) {
+    if body.contains("queryLocalFonts()")
+        || (body.contains("queryLocalFonts") && !body.contains("postScriptName"))
+    {
         issues.push(LocalFontIssue::FullEnumeration);
     }
 

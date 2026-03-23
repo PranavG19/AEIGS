@@ -181,11 +181,26 @@ fn test_multiple_issues_detected() {
 
 #[test]
 fn test_severity_scores() {
-    assert_eq!(content_visibility_severity(&ContentVisibilityIssue::ApiDetected), 2.0);
-    assert_eq!(content_visibility_severity(&ContentVisibilityIssue::HiddenContentXss), 7.5);
-    assert_eq!(content_visibility_severity(&ContentVisibilityIssue::RenderingTimingLeak), 6.5);
-    assert_eq!(content_visibility_severity(&ContentVisibilityIssue::ContentExfiltration), 7.0);
-    assert_eq!(content_visibility_severity(&ContentVisibilityIssue::SecurityControlBypass), 6.0);
+    assert_eq!(
+        content_visibility_severity(&ContentVisibilityIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        content_visibility_severity(&ContentVisibilityIssue::HiddenContentXss),
+        7.5
+    );
+    assert_eq!(
+        content_visibility_severity(&ContentVisibilityIssue::RenderingTimingLeak),
+        6.5
+    );
+    assert_eq!(
+        content_visibility_severity(&ContentVisibilityIssue::ContentExfiltration),
+        7.0
+    );
+    assert_eq!(
+        content_visibility_severity(&ContentVisibilityIssue::SecurityControlBypass),
+        6.0
+    );
 }
 
 #[test]
@@ -202,9 +217,24 @@ fn test_to_operations() {
 
 #[test]
 fn test_display_trait() {
-    assert_eq!(ContentVisibilityIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ContentVisibilityIssue::HiddenContentXss.to_string(), "hidden_content_xss");
-    assert_eq!(ContentVisibilityIssue::RenderingTimingLeak.to_string(), "rendering_timing_leak");
-    assert_eq!(ContentVisibilityIssue::ContentExfiltration.to_string(), "content_exfiltration");
-    assert_eq!(ContentVisibilityIssue::SecurityControlBypass.to_string(), "security_control_bypass");
+    assert_eq!(
+        ContentVisibilityIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        ContentVisibilityIssue::HiddenContentXss.to_string(),
+        "hidden_content_xss"
+    );
+    assert_eq!(
+        ContentVisibilityIssue::RenderingTimingLeak.to_string(),
+        "rendering_timing_leak"
+    );
+    assert_eq!(
+        ContentVisibilityIssue::ContentExfiltration.to_string(),
+        "content_exfiltration"
+    );
+    assert_eq!(
+        ContentVisibilityIssue::SecurityControlBypass.to_string(),
+        "security_control_bypass"
+    );
 }

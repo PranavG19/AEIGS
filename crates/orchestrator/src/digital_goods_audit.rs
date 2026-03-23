@@ -64,16 +64,21 @@ pub fn analyze_digital_goods(body: &str) -> Vec<DigitalGoodsIssue> {
         issues.push(DigitalGoodsIssue::PurchaseWithoutConfirmation);
     }
 
-    let has_purchase_data = body.contains("purchaseToken")
-        || body.contains("itemId")
-        || body.contains("getDetails(");
+    let has_purchase_data =
+        body.contains("purchaseToken") || body.contains("itemId") || body.contains("getDetails(");
     if has_purchase_data
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(DigitalGoodsIssue::ReceiptExfiltration);
     }
 
-    if has_purchase_data && !body.contains("/api/") && !body.contains("/verify") && !body.contains("server") {
+    if has_purchase_data
+        && !body.contains("/api/")
+        && !body.contains("/verify")
+        && !body.contains("server")
+    {
         issues.push(DigitalGoodsIssue::NoServerValidation);
     }
 

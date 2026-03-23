@@ -51,32 +51,28 @@ fn xxe_metadata_detected() {
 
 #[test]
 fn no_xxe_in_normal_xml_response() {
-    let issues =
-        analyze_content_type_confusion(200, 200, "<response>ok</response>", "/api/data");
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        ContentTypeConfusionIssue::XxeIndicator { .. }
-    )));
+    let issues = analyze_content_type_confusion(200, 200, "<response>ok</response>", "/api/data");
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ContentTypeConfusionIssue::XxeIndicator { .. }))
+    );
 }
 
 #[test]
 fn xxe_not_checked_when_xml_rejected() {
-    let issues = analyze_content_type_confusion(
-        200,
-        415,
-        "root:x:0:0:root:/root:/bin/bash",
-        "/api/data",
+    let issues =
+        analyze_content_type_confusion(200, 415, "root:x:0:0:root:/root:/bin/bash", "/api/data");
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, ContentTypeConfusionIssue::XxeIndicator { .. }))
     );
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        ContentTypeConfusionIssue::XxeIndicator { .. }
-    )));
 }
 
 #[test]
 fn json_to_xml_response_mismatch() {
-    let result =
-        analyze_response_type_mismatch("application/json", "application/xml");
+    let result = analyze_response_type_mismatch("application/json", "application/xml");
     assert!(result.is_some());
     assert!(matches!(
         result.unwrap(),
@@ -86,15 +82,13 @@ fn json_to_xml_response_mismatch() {
 
 #[test]
 fn xml_to_json_response_mismatch() {
-    let result =
-        analyze_response_type_mismatch("text/xml", "application/json; charset=utf-8");
+    let result = analyze_response_type_mismatch("text/xml", "application/json; charset=utf-8");
     assert!(result.is_some());
 }
 
 #[test]
 fn same_type_no_mismatch() {
-    let result =
-        analyze_response_type_mismatch("application/json", "application/json");
+    let result = analyze_response_type_mismatch("application/json", "application/json");
     assert!(result.is_none());
 }
 
@@ -117,16 +111,12 @@ fn severity_ordering() {
         )
     );
     assert!(
-        content_type_confusion_severity(
-            &ContentTypeConfusionIssue::AcceptsXmlWhenExpectingJson {
-                endpoint: "/api".into()
-            }
-        ) > content_type_confusion_severity(
-            &ContentTypeConfusionIssue::MismatchedResponseType {
-                request_ct: "json".into(),
-                response_ct: "xml".into()
-            }
-        )
+        content_type_confusion_severity(&ContentTypeConfusionIssue::AcceptsXmlWhenExpectingJson {
+            endpoint: "/api".into()
+        }) > content_type_confusion_severity(&ContentTypeConfusionIssue::MismatchedResponseType {
+            request_ct: "json".into(),
+            response_ct: "xml".into()
+        })
     );
 }
 

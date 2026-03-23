@@ -52,7 +52,9 @@ pub fn analyze_pointer_lock(body: &str) -> Vec<PointerLockIssue> {
 
     if has_request
         && (body.contains("fullscreen") || body.contains("requestFullscreen"))
-        && (body.contains("innerHTML") || body.contains("document.write") || body.contains("location"))
+        && (body.contains("innerHTML")
+            || body.contains("document.write")
+            || body.contains("location"))
     {
         issues.push(PointerLockIssue::ClickjackingRisk);
     }
@@ -65,17 +67,11 @@ pub fn analyze_pointer_lock(body: &str) -> Vec<PointerLockIssue> {
         issues.push(PointerLockIssue::UiSpoofing);
     }
 
-    if has_element
-        && (body.contains("mousemove") || body.contains("onmousemove"))
-        && !has_exit
-    {
+    if has_element && (body.contains("mousemove") || body.contains("onmousemove")) && !has_exit {
         issues.push(PointerLockIssue::InputHijacking);
     }
 
-    if has_request
-        && body.contains("unadjustedMovement")
-        && !body.contains("pointerlockerror")
-    {
+    if has_request && body.contains("unadjustedMovement") && !body.contains("pointerlockerror") {
         issues.push(PointerLockIssue::EscapeBypass);
     }
 

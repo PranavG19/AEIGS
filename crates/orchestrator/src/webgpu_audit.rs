@@ -39,7 +39,8 @@ pub fn audit_webgpu(target: &str) -> Vec<WebGpuIssue> {
 }
 
 pub fn analyze_webgpu(body: &str) -> Vec<WebGpuIssue> {
-    let has_gpu = body.contains("navigator.gpu") || body.contains("GPUAdapter") || body.contains("GPUDevice");
+    let has_gpu =
+        body.contains("navigator.gpu") || body.contains("GPUAdapter") || body.contains("GPUDevice");
 
     if !has_gpu {
         return Vec::new();
@@ -49,22 +50,29 @@ pub fn analyze_webgpu(body: &str) -> Vec<WebGpuIssue> {
     issues.push(WebGpuIssue::ApiDetected);
 
     if has_gpu
-        && (body.contains("requestAdapterInfo") || body.contains("adapterInfo")
-            || body.contains(".features") || body.contains(".limits"))
+        && (body.contains("requestAdapterInfo")
+            || body.contains("adapterInfo")
+            || body.contains(".features")
+            || body.contains(".limits"))
     {
         issues.push(WebGpuIssue::GpuFingerprinting);
     }
 
     if has_gpu
         && body.contains("createShaderModule")
-        && (body.contains("performance.now") || body.contains("Date.now") || body.contains("timestamp"))
+        && (body.contains("performance.now")
+            || body.contains("Date.now")
+            || body.contains("timestamp"))
     {
         issues.push(WebGpuIssue::TimingSideChannel);
     }
 
     if has_gpu
         && (body.contains("createComputePipeline") || body.contains("computePass"))
-        && (body.contains("hash") || body.contains("nonce") || body.contains("mining") || body.contains("coin"))
+        && (body.contains("hash")
+            || body.contains("nonce")
+            || body.contains("mining")
+            || body.contains("coin"))
     {
         issues.push(WebGpuIssue::CryptoMining);
     }
@@ -90,10 +98,7 @@ pub fn webgpu_severity(issue: &WebGpuIssue) -> f64 {
     }
 }
 
-pub fn webgpu_to_operations(
-    issues: &[WebGpuIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn webgpu_to_operations(issues: &[WebGpuIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

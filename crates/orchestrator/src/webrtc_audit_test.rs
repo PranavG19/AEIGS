@@ -148,9 +148,11 @@ fn detects_third_party_stun_server() {
         });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. }))
+    );
 }
 
 #[test]
@@ -165,9 +167,11 @@ fn detects_third_party_turn_server() {
         });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. }))
+    );
 }
 
 #[test]
@@ -178,9 +182,11 @@ fn ignores_localhost_ice_servers() {
         });
     "#;
     let issues = analyze_webrtc(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, WebRtcIssue::ThirdPartyIceServer { .. }))
+    );
 }
 
 #[test]

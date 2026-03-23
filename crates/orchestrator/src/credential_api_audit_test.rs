@@ -56,7 +56,8 @@ fn detects_password_credential() {
 
 #[test]
 fn detects_federated_credential() {
-    let body = r#"<script>new FederatedCredential({id: "u", provider: "https://idp.com"})</script>"#;
+    let body =
+        r#"<script>new FederatedCredential({id: "u", provider: "https://idp.com"})</script>"#;
     let issues = analyze_credential_api(body);
     assert!(issues.contains(&CredentialApiIssue::FederatedCredential));
 }
@@ -80,12 +81,18 @@ fn no_prevent_issue_when_present() {
 
 #[test]
 fn severity_silent_highest() {
-    assert_eq!(credential_api_severity(&CredentialApiIssue::MediationSilent), 6.5);
+    assert_eq!(
+        credential_api_severity(&CredentialApiIssue::MediationSilent),
+        6.5
+    );
 }
 
 #[test]
 fn severity_get_lowest() {
-    assert_eq!(credential_api_severity(&CredentialApiIssue::GetDetected), 3.5);
+    assert_eq!(
+        credential_api_severity(&CredentialApiIssue::GetDetected),
+        3.5
+    );
 }
 
 #[test]
@@ -103,12 +110,30 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(CredentialApiIssue::GetDetected.to_string(), "get_detected");
-    assert_eq!(CredentialApiIssue::StoreDetected.to_string(), "store_detected");
-    assert_eq!(CredentialApiIssue::CreateDetected.to_string(), "create_detected");
-    assert_eq!(CredentialApiIssue::MediationSilent.to_string(), "mediation_silent");
-    assert_eq!(CredentialApiIssue::NoPreventSilentAccess.to_string(), "no_prevent_silent_access");
-    assert_eq!(CredentialApiIssue::FederatedCredential.to_string(), "federated_credential");
-    assert_eq!(CredentialApiIssue::PasswordCredential.to_string(), "password_credential");
+    assert_eq!(
+        CredentialApiIssue::StoreDetected.to_string(),
+        "store_detected"
+    );
+    assert_eq!(
+        CredentialApiIssue::CreateDetected.to_string(),
+        "create_detected"
+    );
+    assert_eq!(
+        CredentialApiIssue::MediationSilent.to_string(),
+        "mediation_silent"
+    );
+    assert_eq!(
+        CredentialApiIssue::NoPreventSilentAccess.to_string(),
+        "no_prevent_silent_access"
+    );
+    assert_eq!(
+        CredentialApiIssue::FederatedCredential.to_string(),
+        "federated_credential"
+    );
+    assert_eq!(
+        CredentialApiIssue::PasswordCredential.to_string(),
+        "password_credential"
+    );
 }
 
 #[test]

@@ -22,25 +22,33 @@ fn valid_long_nonce_no_issues_except_strict_dynamic() {
 fn short_nonce_detected() {
     let csp = "script-src 'nonce-abc123'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues.iter().any(|i| matches!(i, CspNonceIssue::ShortNonce { length, .. } if *length == 6)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::ShortNonce { length, .. } if *length == 6))
+    );
 }
 
 #[test]
 fn duplicate_nonce_detected() {
     let csp = "script-src 'nonce-abcdef1234567890'; style-src 'nonce-abcdef1234567890'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::DuplicateNonce { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::DuplicateNonce { .. }))
+    );
 }
 
 #[test]
 fn nonce_with_unsafe_inline_detected() {
     let csp = "script-src 'nonce-abcdef1234567890' 'unsafe-inline'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::NonceWithUnsafeInline)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::NonceWithUnsafeInline))
+    );
 }
 
 #[test]
@@ -65,45 +73,55 @@ fn weak_md5_hash_detected() {
 fn sha256_hash_not_flagged_as_weak() {
     let csp = "script-src 'sha256-abcdef1234567890abcdef1234567890'";
     let issues = analyze_csp_nonces(csp);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::WeakHashAlgorithm { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::WeakHashAlgorithm { .. }))
+    );
 }
 
 #[test]
 fn missing_strict_dynamic_detected() {
     let csp = "script-src 'nonce-abcdef1234567890'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic))
+    );
 }
 
 #[test]
 fn strict_dynamic_present_no_issue() {
     let csp = "script-src 'nonce-abcdef1234567890' 'strict-dynamic'";
     let issues = analyze_csp_nonces(csp);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic)));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic))
+    );
 }
 
 #[test]
 fn nonce_in_default_src_detected() {
     let csp = "default-src 'nonce-ab' 'strict-dynamic'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. }))
+    );
 }
 
 #[test]
 fn nonce_in_style_src_detected() {
     let csp = "style-src 'nonce-xy' 'strict-dynamic'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. }))
+    );
 }
 
 #[test]
@@ -117,25 +135,34 @@ fn nonce_in_img_src_ignored() {
 fn multiple_issues_combined() {
     let csp = "script-src 'nonce-abc' 'unsafe-inline' 'sha1-xyz123'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. })));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::NonceWithUnsafeInline)));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::WeakHashAlgorithm { .. })));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::ShortNonce { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::NonceWithUnsafeInline))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::WeakHashAlgorithm { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::MissingStrictDynamic))
+    );
 }
 
 #[test]
 fn severity_ordering() {
-    assert!(csp_nonce_severity(&CspNonceIssue::DuplicateNonce {
-        nonce: "x".into()
-    }) > csp_nonce_severity(&CspNonceIssue::NonceWithUnsafeInline));
+    assert!(
+        csp_nonce_severity(&CspNonceIssue::DuplicateNonce { nonce: "x".into() })
+            > csp_nonce_severity(&CspNonceIssue::NonceWithUnsafeInline)
+    );
     assert!(
         csp_nonce_severity(&CspNonceIssue::NonceWithUnsafeInline)
             > csp_nonce_severity(&CspNonceIssue::MissingStrictDynamic)
@@ -173,16 +200,20 @@ fn to_operations_count() {
 fn static_base64_nonce_detected() {
     let csp = "script-src 'nonce-aaaaaaaabbbbbbbb' 'strict-dynamic'";
     let issues = analyze_csp_nonces(csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::Base64Nonce { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::Base64Nonce { .. }))
+    );
 }
 
 #[test]
 fn high_entropy_nonce_not_flagged_as_base64() {
     let csp = "script-src 'nonce-x7Kf9mPqR2sLwN3v' 'strict-dynamic'";
     let issues = analyze_csp_nonces(csp);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CspNonceIssue::Base64Nonce { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CspNonceIssue::Base64Nonce { .. }))
+    );
 }

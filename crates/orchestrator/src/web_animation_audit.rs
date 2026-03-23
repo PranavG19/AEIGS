@@ -80,9 +80,8 @@ pub fn analyze_web_animation(body: &str) -> Vec<WebAnimationIssue> {
     }
 
     let has_visibility = body.contains("opacity") || body.contains("visibility");
-    let has_click = body.contains("click")
-        || body.contains("onclick")
-        || body.contains("addEventListener");
+    let has_click =
+        body.contains("click") || body.contains("onclick") || body.contains("addEventListener");
     let has_pointer = body.contains("pointer-events") || body.contains("pointerEvents");
     if has_visibility && has_click && has_pointer {
         issues.push(WebAnimationIssue::ClickjackingViaAnimation);

@@ -51,7 +51,8 @@ pub fn analyze_selection(body: &str) -> Vec<SelectionIssue> {
     let mut issues = Vec::new();
     issues.push(SelectionIssue::ApiDetected);
 
-    let has_exfil = body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
+    let has_exfil =
+        body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
     if has_exfil {
         issues.push(SelectionIssue::SelectionExfiltration);
     }
@@ -75,7 +76,10 @@ pub fn analyze_selection(body: &str) -> Vec<SelectionIssue> {
         issues.push(SelectionIssue::ContinuousMonitoring);
     }
 
-    if body.contains("createRange") || body.contains("addRange") || body.contains("selectAllChildren") {
+    if body.contains("createRange")
+        || body.contains("addRange")
+        || body.contains("selectAllChildren")
+    {
         issues.push(SelectionIssue::RangeManipulation);
     }
 
@@ -93,10 +97,7 @@ pub fn selection_severity(issue: &SelectionIssue) -> f64 {
     }
 }
 
-pub fn selection_to_operations(
-    issues: &[SelectionIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn selection_to_operations(issues: &[SelectionIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

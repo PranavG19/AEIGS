@@ -15,9 +15,11 @@ fn no_packages_no_issues() {
 fn public_scope_not_flagged() {
     let body = r#"import "@angular/core""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. }))
+    );
 }
 
 #[test]
@@ -48,27 +50,33 @@ fn multiple_scopes_deduped() {
 fn private_registry_detected() {
     let body = r#"registry: "https://npm.pkg.github.com""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. }))
+    );
 }
 
 #[test]
 fn artifactory_detected() {
     let body = r#"url = "https://mycompany.jfrog.io/npm/""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. }))
+    );
 }
 
 #[test]
 fn public_npm_registry_not_flagged() {
     let body = r#"registry = "https://registry.npmjs.org""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::PrivateRegistryUrl { .. }))
+    );
 }
 
 #[test]
@@ -85,62 +93,66 @@ fn lockfile_reference_detected() {
 fn yarn_lock_detected() {
     let body = r#"<a href="yarn.lock">download</a>"#;
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::LockfileExposed { path } if path == "yarn.lock")));
+    assert!(
+        issues.iter().any(
+            |i| matches!(i, DepConfusionIssue::LockfileExposed { path } if path == "yarn.lock")
+        )
+    );
 }
 
 #[test]
 fn cargo_lock_detected() {
     let body = "See cargo.lock for details";
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::LockfileExposed { path } if path == "cargo.lock")));
+    assert!(
+        issues.iter().any(
+            |i| matches!(i, DepConfusionIssue::LockfileExposed { path } if path == "cargo.lock")
+        )
+    );
 }
 
 #[test]
 fn internal_package_name_detected() {
     let body = r#"package: "my-company-internal""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalPackageName { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalPackageName { .. }))
+    );
 }
 
 #[test]
 fn private_lib_name_detected() {
     let body = r#"import "auth-private""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalPackageName { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalPackageName { .. }))
+    );
 }
 
 #[test]
 fn email_at_sign_not_flagged() {
     let body = "Contact us at user@example.com";
     let issues = analyze_dependency_confusion(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. }))
+    );
 }
 
 #[test]
 fn severity_ordering() {
     assert!(
-        dep_confusion_severity(&DepConfusionIssue::InternalScopedPackage {
-            scope: "x".into()
-        }) > dep_confusion_severity(&DepConfusionIssue::PrivateRegistryUrl {
-            url: "x".into()
-        })
+        dep_confusion_severity(&DepConfusionIssue::InternalScopedPackage { scope: "x".into() })
+            > dep_confusion_severity(&DepConfusionIssue::PrivateRegistryUrl { url: "x".into() })
     );
     assert!(
-        dep_confusion_severity(&DepConfusionIssue::LockfileExposed {
-            path: "x".into()
-        }) > dep_confusion_severity(&DepConfusionIssue::InternalPackageName {
-            name: "x".into()
-        })
+        dep_confusion_severity(&DepConfusionIssue::LockfileExposed { path: "x".into() })
+            > dep_confusion_severity(&DepConfusionIssue::InternalPackageName { name: "x".into() })
     );
 }
 
@@ -160,12 +172,8 @@ fn display_format() {
 #[test]
 fn to_operations_count() {
     let issues = vec![
-        DepConfusionIssue::InternalScopedPackage {
-            scope: "@x".into(),
-        },
-        DepConfusionIssue::LockfileExposed {
-            path: "y".into(),
-        },
+        DepConfusionIssue::InternalScopedPackage { scope: "@x".into() },
+        DepConfusionIssue::LockfileExposed { path: "y".into() },
     ];
     let mut seq = 0;
     let ops = dep_confusion_to_operations(&issues, &mut seq);
@@ -177,16 +185,20 @@ fn to_operations_count() {
 fn react_scope_not_flagged() {
     let body = r#"from "@react/scheduler""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. }))
+    );
 }
 
 #[test]
 fn types_scope_not_flagged() {
     let body = r#"from "@types/node""#;
     let issues = analyze_dependency_confusion(body);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DepConfusionIssue::InternalScopedPackage { .. }))
+    );
 }

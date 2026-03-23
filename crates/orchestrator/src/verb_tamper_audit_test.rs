@@ -13,20 +13,14 @@ fn no_issues_when_all_denied() {
 
 #[test]
 fn no_issues_when_all_match_baseline() {
-    let results = vec![
-        ("HEAD".to_string(), 200u16),
-        ("PATCH".to_string(), 200),
-    ];
+    let results = vec![("HEAD".to_string(), 200u16), ("PATCH".to_string(), 200)];
     let issues = analyze_verb_tamper(200, &results);
     assert!(issues.is_empty());
 }
 
 #[test]
 fn auth_bypass_detected() {
-    let results = vec![
-        ("HEAD".to_string(), 403u16),
-        ("PATCH".to_string(), 200),
-    ];
+    let results = vec![("HEAD".to_string(), 403u16), ("PATCH".to_string(), 200)];
     let issues = analyze_verb_tamper(403, &results);
     assert_eq!(issues.len(), 1);
     assert!(matches!(
@@ -55,17 +49,16 @@ fn unexpected_success_nonstandard_method() {
     ];
     let issues = analyze_verb_tamper(200, &results);
     assert_eq!(issues.len(), 2);
-    assert!(issues
-        .iter()
-        .all(|i| matches!(i, VerbTamperIssue::UnexpectedSuccess { .. })));
+    assert!(
+        issues
+            .iter()
+            .all(|i| matches!(i, VerbTamperIssue::UnexpectedSuccess { .. }))
+    );
 }
 
 #[test]
 fn standard_methods_not_flagged_as_unexpected() {
-    let results = vec![
-        ("HEAD".to_string(), 200u16),
-        ("PATCH".to_string(), 200),
-    ];
+    let results = vec![("HEAD".to_string(), 200u16), ("PATCH".to_string(), 200)];
     let issues = analyze_verb_tamper(200, &results);
     assert!(issues.is_empty());
 }
@@ -130,10 +123,7 @@ fn display_auth_bypass() {
         expected_status: 403,
         actual_status: 200,
     };
-    assert_eq!(
-        issue.to_string(),
-        "verb_tamper_auth_bypass:PATCH:403->200"
-    );
+    assert_eq!(issue.to_string(), "verb_tamper_auth_bypass:PATCH:403->200");
 }
 
 #[test]

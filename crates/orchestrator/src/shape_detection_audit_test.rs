@@ -96,17 +96,26 @@ fn detects_raf_loop() {
 
 #[test]
 fn severity_face_highest() {
-    assert_eq!(shape_detection_severity(&ShapeDetectionIssue::FaceDetection), 7.5);
+    assert_eq!(
+        shape_detection_severity(&ShapeDetectionIssue::FaceDetection),
+        7.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(shape_detection_severity(&ShapeDetectionIssue::ApiDetected), 2.5);
+    assert_eq!(
+        shape_detection_severity(&ShapeDetectionIssue::ApiDetected),
+        2.5
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ShapeDetectionIssue::ApiDetected, ShapeDetectionIssue::FaceDetection];
+    let issues = vec![
+        ShapeDetectionIssue::ApiDetected,
+        ShapeDetectionIssue::FaceDetection,
+    ];
     let mut seq = 0;
     let ops = shape_detection_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -116,11 +125,23 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(ShapeDetectionIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ShapeDetectionIssue::FaceDetection.to_string(), "face_detection");
+    assert_eq!(
+        ShapeDetectionIssue::FaceDetection.to_string(),
+        "face_detection"
+    );
     assert_eq!(ShapeDetectionIssue::TextOcr.to_string(), "text_ocr");
-    assert_eq!(ShapeDetectionIssue::CameraAccess.to_string(), "camera_access");
-    assert_eq!(ShapeDetectionIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(ShapeDetectionIssue::ContinuousDetection.to_string(), "continuous_detection");
+    assert_eq!(
+        ShapeDetectionIssue::CameraAccess.to_string(),
+        "camera_access"
+    );
+    assert_eq!(
+        ShapeDetectionIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        ShapeDetectionIssue::ContinuousDetection.to_string(),
+        "continuous_detection"
+    );
 }
 
 #[test]

@@ -63,8 +63,7 @@ pub fn analyze_file_access(body: &str) -> Vec<FileAccessIssue> {
         issues.push(FileAccessIssue::FileHandleWrite);
     }
 
-    let has_file = body.contains("showOpenFilePicker")
-        || body.contains("showDirectoryPicker");
+    let has_file = body.contains("showOpenFilePicker") || body.contains("showDirectoryPicker");
     let sends = body.contains("fetch(")
         || body.contains("XMLHttpRequest")
         || body.contains(".send(")
@@ -73,9 +72,7 @@ pub fn analyze_file_access(body: &str) -> Vec<FileAccessIssue> {
         issues.push(FileAccessIssue::FileDataExfiltration);
     }
 
-    if body.contains("navigator.storage.getDirectory")
-        || body.contains("StorageManager")
-    {
+    if body.contains("navigator.storage.getDirectory") || body.contains("StorageManager") {
         issues.push(FileAccessIssue::OpaqueFileSystem);
     }
 

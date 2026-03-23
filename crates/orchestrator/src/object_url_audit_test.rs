@@ -142,12 +142,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ObjectUrlIssue::CreateObjectUrl.to_string(), "create_object_url");
-    assert_eq!(ObjectUrlIssue::BlobUrlInScript.to_string(), "blob_url_script");
-    assert_eq!(ObjectUrlIssue::BlobUrlInIframe.to_string(), "blob_url_iframe");
-    assert_eq!(ObjectUrlIssue::DataUrlInScript.to_string(), "data_url_script");
-    assert_eq!(ObjectUrlIssue::DataUrlInIframe.to_string(), "data_url_iframe");
-    assert_eq!(ObjectUrlIssue::RevokeNotCalled.to_string(), "revoke_not_called");
+    assert_eq!(
+        ObjectUrlIssue::CreateObjectUrl.to_string(),
+        "create_object_url"
+    );
+    assert_eq!(
+        ObjectUrlIssue::BlobUrlInScript.to_string(),
+        "blob_url_script"
+    );
+    assert_eq!(
+        ObjectUrlIssue::BlobUrlInIframe.to_string(),
+        "blob_url_iframe"
+    );
+    assert_eq!(
+        ObjectUrlIssue::DataUrlInScript.to_string(),
+        "data_url_script"
+    );
+    assert_eq!(
+        ObjectUrlIssue::DataUrlInIframe.to_string(),
+        "data_url_iframe"
+    );
+    assert_eq!(
+        ObjectUrlIssue::RevokeNotCalled.to_string(),
+        "revoke_not_called"
+    );
 }
 
 #[test]

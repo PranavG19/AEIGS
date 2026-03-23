@@ -52,13 +52,22 @@ pub fn analyze_window_management(body: &str) -> Vec<WindowManagementIssue> {
         issues.push(WindowManagementIssue::ScreenEnumeration);
     }
 
-    if body.contains("window.open") && (body.contains("screenX") || body.contains("screenY") || body.contains("left=") || body.contains("top=")) {
+    if body.contains("window.open")
+        && (body.contains("screenX")
+            || body.contains("screenY")
+            || body.contains("left=")
+            || body.contains("top="))
+    {
         issues.push(WindowManagementIssue::CrossScreenPopup);
     }
 
     let has_exfil =
         body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
-    if has_exfil && (body.contains("availWidth") || body.contains("availHeight") || body.contains("devicePixelRatio")) {
+    if has_exfil
+        && (body.contains("availWidth")
+            || body.contains("availHeight")
+            || body.contains("devicePixelRatio"))
+    {
         issues.push(WindowManagementIssue::ScreenDetailExfiltration);
     }
 

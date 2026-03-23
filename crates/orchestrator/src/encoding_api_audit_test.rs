@@ -195,24 +195,51 @@ fn all_issues_detected() {
 #[test]
 fn severity_values() {
     assert_eq!(encoding_api_severity(&EncodingApiIssue::ApiDetected), 2.0);
-    assert_eq!(encoding_api_severity(&EncodingApiIssue::DataExfiltration), 7.0);
-    assert_eq!(encoding_api_severity(&EncodingApiIssue::BufferOverflow), 6.5);
-    assert_eq!(encoding_api_severity(&EncodingApiIssue::EncodingBypass), 7.5);
-    assert_eq!(encoding_api_severity(&EncodingApiIssue::ResourceExhaustion), 5.5);
+    assert_eq!(
+        encoding_api_severity(&EncodingApiIssue::DataExfiltration),
+        7.0
+    );
+    assert_eq!(
+        encoding_api_severity(&EncodingApiIssue::BufferOverflow),
+        6.5
+    );
+    assert_eq!(
+        encoding_api_severity(&EncodingApiIssue::EncodingBypass),
+        7.5
+    );
+    assert_eq!(
+        encoding_api_severity(&EncodingApiIssue::ResourceExhaustion),
+        5.5
+    );
 }
 
 #[test]
 fn display_variants() {
     assert_eq!(EncodingApiIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(EncodingApiIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(EncodingApiIssue::BufferOverflow.to_string(), "buffer_overflow");
-    assert_eq!(EncodingApiIssue::EncodingBypass.to_string(), "encoding_bypass");
-    assert_eq!(EncodingApiIssue::ResourceExhaustion.to_string(), "resource_exhaustion");
+    assert_eq!(
+        EncodingApiIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        EncodingApiIssue::BufferOverflow.to_string(),
+        "buffer_overflow"
+    );
+    assert_eq!(
+        EncodingApiIssue::EncodingBypass.to_string(),
+        "encoding_bypass"
+    );
+    assert_eq!(
+        EncodingApiIssue::ResourceExhaustion.to_string(),
+        "resource_exhaustion"
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![EncodingApiIssue::ApiDetected, EncodingApiIssue::EncodingBypass];
+    let issues = vec![
+        EncodingApiIssue::ApiDetected,
+        EncodingApiIssue::EncodingBypass,
+    ];
     let mut seq = 0;
     let ops = encoding_api_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);

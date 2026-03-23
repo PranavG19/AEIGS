@@ -95,7 +95,10 @@ fn detects_persistent_connection() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(web_bluetooth_severity(&WebBluetoothIssue::DataExfiltration), 7.5);
+    assert_eq!(
+        web_bluetooth_severity(&WebBluetoothIssue::DataExfiltration),
+        7.5
+    );
 }
 
 #[test]
@@ -105,7 +108,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![WebBluetoothIssue::ApiDetected, WebBluetoothIssue::DeviceScan];
+    let issues = vec![
+        WebBluetoothIssue::ApiDetected,
+        WebBluetoothIssue::DeviceScan,
+    ];
     let mut seq = 0;
     let ops = web_bluetooth_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -115,11 +121,23 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebBluetoothIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebBluetoothIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebBluetoothIssue::NoUserActivation.to_string(), "no_user_activation");
-    assert_eq!(WebBluetoothIssue::CharacteristicAccess.to_string(), "characteristic_access");
+    assert_eq!(
+        WebBluetoothIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebBluetoothIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
+    assert_eq!(
+        WebBluetoothIssue::CharacteristicAccess.to_string(),
+        "characteristic_access"
+    );
     assert_eq!(WebBluetoothIssue::DeviceScan.to_string(), "device_scan");
-    assert_eq!(WebBluetoothIssue::PersistentConnection.to_string(), "persistent_connection");
+    assert_eq!(
+        WebBluetoothIssue::PersistentConnection.to_string(),
+        "persistent_connection"
+    );
 }
 
 #[test]

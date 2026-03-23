@@ -207,8 +207,14 @@ fn test_display_impl() {
     assert_eq!(WebOtpIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(WebOtpIssue::OtpInterception.to_string(), "otp_interception");
     assert_eq!(WebOtpIssue::NoRateLimiting.to_string(), "no_rate_limiting");
-    assert_eq!(WebOtpIssue::InsecureTransport.to_string(), "insecure_transport");
-    assert_eq!(WebOtpIssue::CrossOriginRisk.to_string(), "cross_origin_risk");
+    assert_eq!(
+        WebOtpIssue::InsecureTransport.to_string(),
+        "insecure_transport"
+    );
+    assert_eq!(
+        WebOtpIssue::CrossOriginRisk.to_string(),
+        "cross_origin_risk"
+    );
 }
 
 #[test]
@@ -222,10 +228,7 @@ fn test_severity_values() {
 
 #[test]
 fn test_to_operations() {
-    let issues = vec![
-        WebOtpIssue::ApiDetected,
-        WebOtpIssue::OtpInterception,
-    ];
+    let issues = vec![WebOtpIssue::ApiDetected, WebOtpIssue::OtpInterception];
     let mut seq = 100;
     let ops = web_otp_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);

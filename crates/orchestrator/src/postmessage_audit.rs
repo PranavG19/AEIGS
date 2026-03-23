@@ -77,14 +77,21 @@ pub fn analyze_postmessage(body: &str) -> Vec<PostMessageIssue> {
         || body.contains("onmessage=");
 
     if has_message_handler {
-        let has_origin_check = (body.contains("event.origin") || body.contains("e.origin") || body.contains("evt.origin"))
-            && (body.contains("!==") || body.contains("!=") || body.contains("===") || body.contains("=="));
+        let has_origin_check = (body.contains("event.origin")
+            || body.contains("e.origin")
+            || body.contains("evt.origin"))
+            && (body.contains("!==")
+                || body.contains("!=")
+                || body.contains("===")
+                || body.contains("=="));
 
         if !has_origin_check {
             issues.push(PostMessageIssue::MessageHandlerNoOriginCheck);
         }
 
-        if (body.contains("innerHTML") || body.contains("eval(") || body.contains("document.write("))
+        if (body.contains("innerHTML")
+            || body.contains("eval(")
+            || body.contains("document.write("))
             && (body.contains("event.data") || body.contains("e.data") || body.contains("evt.data"))
         {
             issues.push(PostMessageIssue::DomInjectionViaMessage);
@@ -97,11 +104,17 @@ pub fn analyze_postmessage(body: &str) -> Vec<PostMessageIssue> {
         }
     }
 
-    if (body.contains("password") || body.contains("token") || body.contains("secret") || body.contains("credential")) && body.contains(".postMessage(") {
+    if (body.contains("password")
+        || body.contains("token")
+        || body.contains("secret")
+        || body.contains("credential"))
+        && body.contains(".postMessage(")
+    {
         issues.push(PostMessageIssue::SensitiveDataInMessage);
     }
 
-    if (body.contains("parent.postMessage") || body.contains("frames[") && body.contains(".postMessage"))
+    if (body.contains("parent.postMessage")
+        || body.contains("frames[") && body.contains(".postMessage"))
         && !body.contains("event.origin")
         && !body.contains("e.origin")
     {

@@ -101,10 +101,7 @@ fn severity_exfiltration_highest() {
 
 #[test]
 fn severity_no_error_lowest() {
-    assert_eq!(
-        geolocation_severity(&GeolocationIssue::NoErrorHandler),
-        2.5
-    );
+    assert_eq!(geolocation_severity(&GeolocationIssue::NoErrorHandler), 2.5);
 }
 
 #[test]
@@ -121,15 +118,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(GeolocationIssue::GeolocationApiUsed.to_string(), "geolocation_used");
-    assert_eq!(GeolocationIssue::WatchPositionUsed.to_string(), "watch_position");
-    assert_eq!(GeolocationIssue::HighAccuracyEnabled.to_string(), "high_accuracy");
-    assert_eq!(GeolocationIssue::PositionDataSent.to_string(), "position_data_sent");
+    assert_eq!(
+        GeolocationIssue::GeolocationApiUsed.to_string(),
+        "geolocation_used"
+    );
+    assert_eq!(
+        GeolocationIssue::WatchPositionUsed.to_string(),
+        "watch_position"
+    );
+    assert_eq!(
+        GeolocationIssue::HighAccuracyEnabled.to_string(),
+        "high_accuracy"
+    );
+    assert_eq!(
+        GeolocationIssue::PositionDataSent.to_string(),
+        "position_data_sent"
+    );
     assert_eq!(
         GeolocationIssue::GeolocationOverHttp.to_string(),
         "geolocation_over_http"
     );
-    assert_eq!(GeolocationIssue::NoErrorHandler.to_string(), "no_error_handler");
+    assert_eq!(
+        GeolocationIssue::NoErrorHandler.to_string(),
+        "no_error_handler"
+    );
 }
 
 #[test]

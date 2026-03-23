@@ -15,54 +15,66 @@ fn no_wasm_no_issues() {
 fn wasm_module_url_detected() {
     let body = r#"fetch("/app.wasm").then(r => WebAssembly.instantiate(r))"#;
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmModuleLoaded { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmModuleLoaded { .. }))
+    );
 }
 
 #[test]
 fn wasm_over_http_detected() {
     let body = r#"fetch("http://cdn.example.com/app.wasm")"#;
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmOverHttp { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmOverHttp { .. }))
+    );
 }
 
 #[test]
 fn https_wasm_not_flagged_http() {
     let body = r#"fetch("https://cdn.example.com/app.wasm")"#;
     let issues = analyze_wasm_usage(body, "");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmOverHttp { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmOverHttp { .. }))
+    );
 }
 
 #[test]
 fn instantiate_streaming_detected() {
     let body = "WebAssembly.instantiateStreaming(fetch('/app.wasm'))";
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmInstantiateStreaming)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmInstantiateStreaming))
+    );
 }
 
 #[test]
 fn compile_from_buffer_detected() {
     let body = "const bytes = new Uint8Array(data); WebAssembly.compile(bytes)";
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmCompileFromBuffer)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmCompileFromBuffer))
+    );
 }
 
 #[test]
 fn instantiate_from_arraybuffer_detected() {
     let body = "var buf = new ArrayBuffer(data); WebAssembly.instantiate(buf)";
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmCompileFromBuffer)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmCompileFromBuffer))
+    );
 }
 
 #[test]
@@ -72,9 +84,11 @@ fn import_object_detected() {
         WebAssembly.instantiate(wasmBytes, importObject);
     "#;
     let issues = analyze_wasm_usage(body, "");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmImportObject)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmImportObject))
+    );
 }
 
 #[test]
@@ -82,9 +96,11 @@ fn wasm_without_csp_detected() {
     let body = "WebAssembly.instantiateStreaming(fetch('/app.wasm'))";
     let csp = "script-src 'self'";
     let issues = analyze_wasm_usage(body, csp);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmWithoutCsp)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmWithoutCsp))
+    );
 }
 
 #[test]
@@ -92,9 +108,11 @@ fn wasm_with_unsafe_eval_not_flagged() {
     let body = "WebAssembly.instantiateStreaming(fetch('/app.wasm'))";
     let csp = "script-src 'self' 'unsafe-eval'";
     let issues = analyze_wasm_usage(body, csp);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmWithoutCsp)));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmWithoutCsp))
+    );
 }
 
 #[test]
@@ -102,32 +120,33 @@ fn wasm_with_wasm_unsafe_eval_ok() {
     let body = "WebAssembly.instantiateStreaming(fetch('/app.wasm'))";
     let csp = "script-src 'self' 'wasm-unsafe-eval'";
     let issues = analyze_wasm_usage(body, csp);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmWithoutCsp)));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmWithoutCsp))
+    );
 }
 
 #[test]
 fn no_csp_header_no_wasm_csp_issue() {
     let body = "WebAssembly.instantiateStreaming(fetch('/app.wasm'))";
     let issues = analyze_wasm_usage(body, "");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, WasmIssue::WasmWithoutCsp)));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, WasmIssue::WasmWithoutCsp))
+    );
 }
 
 #[test]
 fn severity_ordering() {
     assert!(
-        wasm_severity(&WasmIssue::WasmOverHttp {
-            url: "x".into()
-        }) > wasm_severity(&WasmIssue::WasmCompileFromBuffer)
+        wasm_severity(&WasmIssue::WasmOverHttp { url: "x".into() })
+            > wasm_severity(&WasmIssue::WasmCompileFromBuffer)
     );
     assert!(
         wasm_severity(&WasmIssue::WasmCompileFromBuffer)
-            > wasm_severity(&WasmIssue::WasmModuleLoaded {
-                url: "x".into()
-            })
+            > wasm_severity(&WasmIssue::WasmModuleLoaded { url: "x".into() })
     );
 }
 

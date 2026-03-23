@@ -84,10 +84,7 @@ pub fn web_nfc_severity(issue: &WebNfcIssue) -> f64 {
     }
 }
 
-pub fn web_nfc_to_operations(
-    issues: &[WebNfcIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn web_nfc_to_operations(issues: &[WebNfcIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

@@ -99,7 +99,10 @@ fn no_position_without_call() {
 
 #[test]
 fn severity_hijacking_highest() {
-    assert_eq!(media_session_severity(&MediaSessionIssue::ActionHijacking), 6.5);
+    assert_eq!(
+        media_session_severity(&MediaSessionIssue::ActionHijacking),
+        6.5
+    );
 }
 
 #[test]
@@ -109,7 +112,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![MediaSessionIssue::ApiDetected, MediaSessionIssue::ActionHijacking];
+    let issues = vec![
+        MediaSessionIssue::ApiDetected,
+        MediaSessionIssue::ActionHijacking,
+    ];
     let mut seq = 0;
     let ops = media_session_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -119,11 +125,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(MediaSessionIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(MediaSessionIssue::MetadataSpoofing.to_string(), "metadata_spoofing");
-    assert_eq!(MediaSessionIssue::ActionHijacking.to_string(), "action_hijacking");
-    assert_eq!(MediaSessionIssue::ExternalArtwork.to_string(), "external_artwork");
-    assert_eq!(MediaSessionIssue::SilentPlayback.to_string(), "silent_playback");
-    assert_eq!(MediaSessionIssue::PositionTracking.to_string(), "position_tracking");
+    assert_eq!(
+        MediaSessionIssue::MetadataSpoofing.to_string(),
+        "metadata_spoofing"
+    );
+    assert_eq!(
+        MediaSessionIssue::ActionHijacking.to_string(),
+        "action_hijacking"
+    );
+    assert_eq!(
+        MediaSessionIssue::ExternalArtwork.to_string(),
+        "external_artwork"
+    );
+    assert_eq!(
+        MediaSessionIssue::SilentPlayback.to_string(),
+        "silent_playback"
+    );
+    assert_eq!(
+        MediaSessionIssue::PositionTracking.to_string(),
+        "position_tracking"
+    );
 }
 
 #[test]

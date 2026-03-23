@@ -109,14 +109,8 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(
-        HardwareApiIssue::WebUsbAccess.to_string(),
-        "web_usb_access"
-    );
-    assert_eq!(
-        HardwareApiIssue::WebHidAccess.to_string(),
-        "web_hid_access"
-    );
+    assert_eq!(HardwareApiIssue::WebUsbAccess.to_string(), "web_usb_access");
+    assert_eq!(HardwareApiIssue::WebHidAccess.to_string(), "web_hid_access");
     assert_eq!(
         HardwareApiIssue::WebSerialAccess.to_string(),
         "web_serial_access"

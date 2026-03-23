@@ -91,12 +91,12 @@ fn extract_viewport_content(lower: &str) -> Option<String> {
         let abs = pos + idx;
         let end = lower[abs..].find('>')?;
         let tag = &lower[abs..abs + end + 1];
-        if tag.contains("viewport") && let Some(ci) = tag.find("content=") {
+        if tag.contains("viewport")
+            && let Some(ci) = tag.find("content=")
+        {
             let rest = &tag[ci + 8..];
             let rest = rest.trim_start_matches(['"', '\'']);
-            let end_q = rest
-                .find(['"', '\'', '>'])
-                .unwrap_or(rest.len());
+            let end_q = rest.find(['"', '\'', '>']).unwrap_or(rest.len());
             return Some(rest[..end_q].to_string());
         }
         pos = abs + 5;
@@ -110,11 +110,7 @@ fn extract_value<'a>(content: &'a str, key: &str) -> Option<&'a str> {
     let rest = rest.trim_start_matches([' ', '=']);
     let end = rest.find([',', ';', ' ']).unwrap_or(rest.len());
     let val = rest[..end].trim();
-    if val.is_empty() {
-        None
-    } else {
-        Some(val)
-    }
+    if val.is_empty() { None } else { Some(val) }
 }
 
 pub fn viewport_severity(issue: &ViewportIssue) -> f64 {
@@ -128,10 +124,7 @@ pub fn viewport_severity(issue: &ViewportIssue) -> f64 {
     }
 }
 
-pub fn viewport_to_operations(
-    issues: &[ViewportIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn viewport_to_operations(issues: &[ViewportIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

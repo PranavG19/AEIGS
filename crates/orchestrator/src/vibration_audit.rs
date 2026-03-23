@@ -59,7 +59,9 @@ pub fn analyze_vibration(body: &str) -> Vec<VibrationIssue> {
     }
 
     if body.contains("vibrate(")
-        && (body.contains("WebSocket") || body.contains("BroadcastChannel") || body.contains("postMessage"))
+        && (body.contains("WebSocket")
+            || body.contains("BroadcastChannel")
+            || body.contains("postMessage"))
     {
         issues.push(VibrationIssue::CovertChannel);
     }
@@ -77,10 +79,7 @@ pub fn vibration_severity(issue: &VibrationIssue) -> f64 {
     }
 }
 
-pub fn vibration_to_operations(
-    issues: &[VibrationIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn vibration_to_operations(issues: &[VibrationIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

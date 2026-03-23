@@ -76,7 +76,10 @@ fn detects_screen_content_inference() {
 
 #[test]
 fn severity_inference_highest() {
-    assert_eq!(ambient_light_severity(&AmbientLightIssue::ScreenContentInference), 7.0);
+    assert_eq!(
+        ambient_light_severity(&AmbientLightIssue::ScreenContentInference),
+        7.0
+    );
 }
 
 #[test]
@@ -86,7 +89,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![AmbientLightIssue::ApiDetected, AmbientLightIssue::CrossOriginLeak];
+    let issues = vec![
+        AmbientLightIssue::ApiDetected,
+        AmbientLightIssue::CrossOriginLeak,
+    ];
     let mut seq = 0;
     let ops = ambient_light_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -96,10 +102,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(AmbientLightIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(AmbientLightIssue::LightExfiltration.to_string(), "light_exfiltration");
-    assert_eq!(AmbientLightIssue::HighFrequencyReading.to_string(), "high_frequency_reading");
-    assert_eq!(AmbientLightIssue::CrossOriginLeak.to_string(), "cross_origin_leak");
-    assert_eq!(AmbientLightIssue::ScreenContentInference.to_string(), "screen_content_inference");
+    assert_eq!(
+        AmbientLightIssue::LightExfiltration.to_string(),
+        "light_exfiltration"
+    );
+    assert_eq!(
+        AmbientLightIssue::HighFrequencyReading.to_string(),
+        "high_frequency_reading"
+    );
+    assert_eq!(
+        AmbientLightIssue::CrossOriginLeak.to_string(),
+        "cross_origin_leak"
+    );
+    assert_eq!(
+        AmbientLightIssue::ScreenContentInference.to_string(),
+        "screen_content_inference"
+    );
 }
 
 #[test]

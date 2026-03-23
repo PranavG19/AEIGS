@@ -52,7 +52,10 @@ pub fn analyze_scheduler_api(body: &str) -> Vec<SchedulerApiIssue> {
 
     if body.contains("priority")
         && (body.contains("\"user-blocking\"") || body.contains("'user-blocking'"))
-        && (body.contains("while") || body.contains("setInterval") || body.contains("for(") || body.contains("for ("))
+        && (body.contains("while")
+            || body.contains("setInterval")
+            || body.contains("for(")
+            || body.contains("for ("))
     {
         issues.push(SchedulerApiIssue::PriorityManipulation);
     }
@@ -73,7 +76,9 @@ pub fn analyze_scheduler_api(body: &str) -> Vec<SchedulerApiIssue> {
 
     if body.contains("postTask")
         && (body.contains("while") || body.contains("for(") || body.contains("for ("))
-        && !body.contains("abort") && !body.contains("AbortController") && !body.contains("limit")
+        && !body.contains("abort")
+        && !body.contains("AbortController")
+        && !body.contains("limit")
     {
         issues.push(SchedulerApiIssue::UnboundedTasks);
     }

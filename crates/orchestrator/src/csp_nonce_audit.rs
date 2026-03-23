@@ -151,10 +151,7 @@ pub fn csp_nonce_severity(issue: &CspNonceIssue) -> f64 {
     }
 }
 
-pub fn csp_nonce_to_operations(
-    issues: &[CspNonceIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn csp_nonce_to_operations(issues: &[CspNonceIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DeclarativeShadowDomIssue {
@@ -49,15 +49,15 @@ pub fn analyze_declarative_shadow_dom(body: &str) -> Vec<DeclarativeShadowDomIss
 
         // XssViaTemplate: unsanitized content in shadow template
         let has_inner_html = body.contains("innerHTML") || body.contains("insertAdjacentHTML");
-        let has_sanitize = body.contains("sanitize")
-            || body.contains("DOMPurify")
-            || body.contains("escape");
+        let has_sanitize =
+            body.contains("sanitize") || body.contains("DOMPurify") || body.contains("escape");
         if has_inner_html && !has_sanitize {
             issues.push(DeclarativeShadowDomIssue::XssViaTemplate);
         }
 
         // StyleExfiltration: CSS-based data exfiltration from shadow
-        let has_style = body.contains("<style") || body.contains("@import") || body.contains("url(");
+        let has_style =
+            body.contains("<style") || body.contains("@import") || body.contains("url(");
         let has_exfil = body.contains("fetch(")
             || body.contains("sendBeacon")
             || body.contains("XMLHttpRequest");

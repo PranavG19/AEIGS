@@ -142,7 +142,10 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ResourceTimingIssue::TimingApiUsed.to_string(), "timing_api_used");
+    assert_eq!(
+        ResourceTimingIssue::TimingApiUsed.to_string(),
+        "timing_api_used"
+    );
     assert_eq!(
         ResourceTimingIssue::CrossOriginSizeLeak.to_string(),
         "cross_origin_size_leak"

@@ -148,8 +148,14 @@ fn severity_values_correct() {
 #[test]
 fn display_impl_works() {
     assert_eq!(WebnnIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebnnIssue::ModelExfiltration.to_string(), "model_exfiltration");
-    assert_eq!(WebnnIssue::GpuFingerprinting.to_string(), "gpu_fingerprinting");
+    assert_eq!(
+        WebnnIssue::ModelExfiltration.to_string(),
+        "model_exfiltration"
+    );
+    assert_eq!(
+        WebnnIssue::GpuFingerprinting.to_string(),
+        "gpu_fingerprinting"
+    );
 }
 
 #[test]
@@ -163,7 +169,11 @@ fn operations_generated_correctly() {
 
 #[test]
 fn operations_increment_sequence() {
-    let issues = vec![WebnnIssue::ApiDetected, WebnnIssue::ResourceExhaustion, WebnnIssue::SideChannelTiming];
+    let issues = vec![
+        WebnnIssue::ApiDetected,
+        WebnnIssue::ResourceExhaustion,
+        WebnnIssue::SideChannelTiming,
+    ];
     let mut seq = 10;
     let ops = webnn_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 3);

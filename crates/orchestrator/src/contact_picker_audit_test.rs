@@ -93,17 +93,26 @@ fn detects_email_harvesting() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(contact_picker_severity(&ContactPickerIssue::ContactExfiltration), 7.0);
+    assert_eq!(
+        contact_picker_severity(&ContactPickerIssue::ContactExfiltration),
+        7.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(contact_picker_severity(&ContactPickerIssue::ApiDetected), 3.0);
+    assert_eq!(
+        contact_picker_severity(&ContactPickerIssue::ApiDetected),
+        3.0
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ContactPickerIssue::ApiDetected, ContactPickerIssue::EmailHarvesting];
+    let issues = vec![
+        ContactPickerIssue::ApiDetected,
+        ContactPickerIssue::EmailHarvesting,
+    ];
     let mut seq = 0;
     let ops = contact_picker_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -113,11 +122,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(ContactPickerIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ContactPickerIssue::ContactExfiltration.to_string(), "contact_exfiltration");
-    assert_eq!(ContactPickerIssue::ExcessiveProperties.to_string(), "excessive_properties");
-    assert_eq!(ContactPickerIssue::NoUserActivation.to_string(), "no_user_activation");
-    assert_eq!(ContactPickerIssue::MultipleSelect.to_string(), "multiple_select");
-    assert_eq!(ContactPickerIssue::EmailHarvesting.to_string(), "email_harvesting");
+    assert_eq!(
+        ContactPickerIssue::ContactExfiltration.to_string(),
+        "contact_exfiltration"
+    );
+    assert_eq!(
+        ContactPickerIssue::ExcessiveProperties.to_string(),
+        "excessive_properties"
+    );
+    assert_eq!(
+        ContactPickerIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
+    assert_eq!(
+        ContactPickerIssue::MultipleSelect.to_string(),
+        "multiple_select"
+    );
+    assert_eq!(
+        ContactPickerIssue::EmailHarvesting.to_string(),
+        "email_harvesting"
+    );
 }
 
 #[test]

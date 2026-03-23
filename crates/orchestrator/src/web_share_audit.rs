@@ -54,7 +54,9 @@ pub fn analyze_web_share(body: &str) -> Vec<WebShareIssue> {
 
     let has_share = body.contains("navigator.share(");
     if has_share
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(WebShareIssue::DataExfiltration);
     }
@@ -64,14 +66,19 @@ pub fn analyze_web_share(body: &str) -> Vec<WebShareIssue> {
     }
 
     if has_share
-        && (body.contains("password") || body.contains("token") || body.contains("cookie")
-            || body.contains("localStorage") || body.contains("sessionStorage"))
+        && (body.contains("password")
+            || body.contains("token")
+            || body.contains("cookie")
+            || body.contains("localStorage")
+            || body.contains("sessionStorage"))
     {
         issues.push(WebShareIssue::SensitiveContent);
     }
 
-    if has_share && (body.contains("url:") || body.contains("text:"))
-        && !body.contains("encodeURI") && !body.contains("new URL(")
+    if has_share
+        && (body.contains("url:") || body.contains("text:"))
+        && !body.contains("encodeURI")
+        && !body.contains("new URL(")
     {
         issues.push(WebShareIssue::UnvalidatedUrl);
     }
@@ -90,10 +97,7 @@ pub fn web_share_severity(issue: &WebShareIssue) -> f64 {
     }
 }
 
-pub fn web_share_to_operations(
-    issues: &[WebShareIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn web_share_to_operations(issues: &[WebShareIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

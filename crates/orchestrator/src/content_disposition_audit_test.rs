@@ -26,10 +26,7 @@ fn pdf_missing_disposition() {
 
 #[test]
 fn binary_inline_flagged() {
-    let issues = analyze_content_disposition(
-        "application/octet-stream",
-        "inline",
-    );
+    let issues = analyze_content_disposition("application/octet-stream", "inline");
     assert!(issues.contains(&ContentDispositionIssue::InlineForBinary));
 }
 
@@ -45,64 +42,45 @@ fn binary_attachment_ok() {
 
 #[test]
 fn filename_injection_dotdot() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"../../etc/passwd\"",
-    );
+    let issues =
+        analyze_content_disposition("text/plain", "attachment; filename=\"../../etc/passwd\"");
     assert!(issues.contains(&ContentDispositionIssue::FilenameInjection));
 }
 
 #[test]
 fn filename_injection_slash() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"/tmp/evil.txt\"",
-    );
+    let issues =
+        analyze_content_disposition("text/plain", "attachment; filename=\"/tmp/evil.txt\"");
     assert!(issues.contains(&ContentDispositionIssue::FilenameInjection));
 }
 
 #[test]
 fn filename_injection_backslash() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"C:\\evil.exe\"",
-    );
+    let issues = analyze_content_disposition("text/plain", "attachment; filename=\"C:\\evil.exe\"");
     assert!(issues.contains(&ContentDispositionIssue::FilenameInjection));
 }
 
 #[test]
 fn missing_filename_in_attachment() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment",
-    );
+    let issues = analyze_content_disposition("text/plain", "attachment");
     assert!(issues.contains(&ContentDispositionIssue::MissingFilename));
 }
 
 #[test]
 fn unsanitized_exe_filename() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"update.exe\"",
-    );
+    let issues = analyze_content_disposition("text/plain", "attachment; filename=\"update.exe\"");
     assert!(issues.contains(&ContentDispositionIssue::UnsanitizedFilename));
 }
 
 #[test]
 fn unsanitized_bat_filename() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"script.bat\"",
-    );
+    let issues = analyze_content_disposition("text/plain", "attachment; filename=\"script.bat\"");
     assert!(issues.contains(&ContentDispositionIssue::UnsanitizedFilename));
 }
 
 #[test]
 fn safe_pdf_filename() {
-    let issues = analyze_content_disposition(
-        "text/plain",
-        "attachment; filename=\"report.pdf\"",
-    );
+    let issues = analyze_content_disposition("text/plain", "attachment; filename=\"report.pdf\"");
     assert!(!issues.contains(&ContentDispositionIssue::UnsanitizedFilename));
 }
 

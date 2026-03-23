@@ -2,14 +2,10 @@ use crate::open_redirect_param_audit::*;
 
 #[test]
 fn redirect_to_external_detected() {
-    let issues = analyze_redirect_response(
-        "url",
-        302,
-        Some("https://evil.example.com/phish"),
-    );
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::RedirectToExternal { param, .. } if param == "url")));
+    let issues = analyze_redirect_response("url", 302, Some("https://evil.example.com/phish"));
+    assert!(issues.iter().any(
+        |i| matches!(i, OpenRedirectIssue::RedirectToExternal { param, .. } if param == "url")
+    ));
 }
 
 #[test]
@@ -40,46 +36,42 @@ fn relative_redirect_clean() {
 
 #[test]
 fn redirect_to_same_domain() {
-    let issues = analyze_redirect_response(
-        "next",
-        302,
-        Some("https://example.com/dashboard"),
+    let issues = analyze_redirect_response("next", 302, Some("https://example.com/dashboard"));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, OpenRedirectIssue::RedirectNoValidation { .. }))
     );
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::RedirectNoValidation { .. })));
 }
 
 #[test]
 fn protocol_relative_redirect() {
     let issues = analyze_redirect_response("goto", 301, Some("//other.com/path"));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::RedirectNoValidation { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, OpenRedirectIssue::RedirectNoValidation { .. }))
+    );
 }
 
 #[test]
 fn status_301_redirect() {
-    let issues = analyze_redirect_response(
-        "url",
-        301,
-        Some("https://evil.example.com"),
+    let issues = analyze_redirect_response("url", 301, Some("https://evil.example.com"));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, OpenRedirectIssue::RedirectToExternal { .. }))
     );
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::RedirectToExternal { .. })));
 }
 
 #[test]
 fn status_307_redirect() {
-    let issues = analyze_redirect_response(
-        "url",
-        307,
-        Some("https://evil.example.com"),
+    let issues = analyze_redirect_response("url", 307, Some("https://evil.example.com"));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, OpenRedirectIssue::RedirectToExternal { .. }))
     );
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::RedirectToExternal { .. })));
 }
 
 #[test]
@@ -168,7 +160,9 @@ fn audit_skips_loopback() {
 #[test]
 fn case_insensitive_javascript() {
     let issues = analyze_redirect_response("r", 302, Some("JavaScript:void(0)"));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, OpenRedirectIssue::JavascriptSchemeRedirect { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, OpenRedirectIssue::JavascriptSchemeRedirect { .. }))
+    );
 }

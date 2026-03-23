@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EventSourceIssue {
@@ -90,9 +90,7 @@ pub fn analyze_event_source(body: &str) -> Vec<EventSourceIssue> {
 
     if has_api
         && (body.contains("onmessage") || body.contains("addEventListener"))
-        && (body.contains("innerHTML")
-            || body.contains("document.write")
-            || body.contains("eval"))
+        && (body.contains("innerHTML") || body.contains("document.write") || body.contains("eval"))
     {
         issues.push(EventSourceIssue::InjectionViaMessage);
     }

@@ -43,8 +43,8 @@ pub fn analyze_speculation_rules(body: &str) -> Vec<SpeculationRulesIssue> {
         return Vec::new();
     }
 
-    let has_spec = body.contains("type=\"speculationrules\"")
-        || body.contains("type='speculationrules'");
+    let has_spec =
+        body.contains("type=\"speculationrules\"") || body.contains("type='speculationrules'");
 
     if !has_spec {
         return Vec::new();
@@ -53,22 +53,25 @@ pub fn analyze_speculation_rules(body: &str) -> Vec<SpeculationRulesIssue> {
     let mut issues = Vec::new();
     issues.push(SpeculationRulesIssue::ApiDetected);
 
-    if body.contains("\"prefetch\"")
-        && (body.contains("http://") || body.contains("https://"))
-    {
+    if body.contains("\"prefetch\"") && (body.contains("http://") || body.contains("https://")) {
         let has_external = body.contains("://") && !body.contains("localhost");
         if has_external {
             issues.push(SpeculationRulesIssue::ExternalPrefetch);
         }
     }
 
-    if body.contains("\"prerender\"") && body.contains("\"eagerness\"") && body.contains("\"eager\"")
+    if body.contains("\"prerender\"")
+        && body.contains("\"eagerness\"")
+        && body.contains("\"eager\"")
     {
         issues.push(SpeculationRulesIssue::AggressivePrerender);
     }
 
     if (body.contains("\"prefetch\"") || body.contains("\"prerender\""))
-        && (body.contains("utm_") || body.contains("tracking") || body.contains("analytics") || body.contains("pixel"))
+        && (body.contains("utm_")
+            || body.contains("tracking")
+            || body.contains("analytics")
+            || body.contains("pixel"))
     {
         issues.push(SpeculationRulesIssue::TrackingViaPrefetch);
     }

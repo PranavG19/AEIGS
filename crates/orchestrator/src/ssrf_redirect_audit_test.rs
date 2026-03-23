@@ -47,8 +47,10 @@ fn aws_metadata_detected() {
 
 #[test]
 fn gcp_metadata_detected() {
-    let result =
-        analyze_redirect_location("http://metadata.google.internal/computeMetadata", "metadata");
+    let result = analyze_redirect_location(
+        "http://metadata.google.internal/computeMetadata",
+        "metadata",
+    );
     assert!(matches!(
         result,
         Some(SsrfRedirectIssue::RedirectToMetadata { .. })

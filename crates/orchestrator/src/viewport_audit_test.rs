@@ -22,48 +22,42 @@ fn proper_viewport_no_issues() {
 
 #[test]
 fn detects_zoom_disabled() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, user-scalable=no">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, user-scalable=no">"#;
     let issues = analyze_viewport(body);
     assert!(issues.contains(&ViewportIssue::ZoomDisabled));
 }
 
 #[test]
 fn detects_zoom_disabled_zero() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, user-scalable=0">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, user-scalable=0">"#;
     let issues = analyze_viewport(body);
     assert!(issues.contains(&ViewportIssue::ZoomDisabled));
 }
 
 #[test]
 fn detects_maximum_scale_one() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, maximum-scale=1.0">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, maximum-scale=1.0">"#;
     let issues = analyze_viewport(body);
     assert!(issues.contains(&ViewportIssue::MaximumScaleOne));
 }
 
 #[test]
 fn maximum_scale_two_ok() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, maximum-scale=2.0">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, maximum-scale=2.0">"#;
     let issues = analyze_viewport(body);
     assert!(!issues.contains(&ViewportIssue::MaximumScaleOne));
 }
 
 #[test]
 fn detects_minimal_initial_scale() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, initial-scale=0.1">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, initial-scale=0.1">"#;
     let issues = analyze_viewport(body);
     assert!(issues.contains(&ViewportIssue::MinimalInitialScale));
 }
 
 #[test]
 fn initial_scale_one_ok() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width, initial-scale=1.0">"#;
+    let body = r#"<meta name="viewport" content="width=device-width, initial-scale=1.0">"#;
     let issues = analyze_viewport(body);
     assert!(!issues.contains(&ViewportIssue::MinimalInitialScale));
 }
@@ -77,8 +71,7 @@ fn detects_fixed_width_viewport() {
 
 #[test]
 fn device_width_not_fixed() {
-    let body =
-        r#"<meta name="viewport" content="width=device-width">"#;
+    let body = r#"<meta name="viewport" content="width=device-width">"#;
     let issues = analyze_viewport(body);
     assert!(!issues.contains(&ViewportIssue::FixedWidthViewport));
 }
@@ -102,10 +95,7 @@ fn severity_viewport_missing_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![
-        ViewportIssue::ZoomDisabled,
-        ViewportIssue::ViewportMissing,
-    ];
+    let issues = vec![ViewportIssue::ZoomDisabled, ViewportIssue::ViewportMissing];
     let mut seq = 0;
     let ops = viewport_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);

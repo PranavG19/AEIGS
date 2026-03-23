@@ -58,7 +58,10 @@ pub fn analyze_webhid(body: &str) -> Vec<WebHidIssue> {
         issues.push(WebHidIssue::NoUserActivation);
     }
 
-    if body.contains("sendReport") || body.contains("sendFeatureReport") || body.contains("receiveFeatureReport") {
+    if body.contains("sendReport")
+        || body.contains("sendFeatureReport")
+        || body.contains("receiveFeatureReport")
+    {
         issues.push(WebHidIssue::RawDataAccess);
     }
 
@@ -84,10 +87,7 @@ pub fn webhid_severity(issue: &WebHidIssue) -> f64 {
     }
 }
 
-pub fn webhid_to_operations(
-    issues: &[WebHidIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn webhid_to_operations(issues: &[WebHidIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

@@ -97,8 +97,10 @@ fn has_persistent_connection(body: &str) -> bool {
 }
 
 fn has_crypto_mining(body: &str) -> bool {
-    let has_crypto_hint =
-        body.contains("crypto") || body.contains("hash") || body.contains("mine") || body.contains("wasm");
+    let has_crypto_hint = body.contains("crypto")
+        || body.contains("hash")
+        || body.contains("mine")
+        || body.contains("wasm");
     let has_loop = body.contains("while")
         || body.contains("for(")
         || body.contains("for (")

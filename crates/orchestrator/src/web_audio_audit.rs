@@ -64,7 +64,9 @@ pub fn analyze_web_audio(body: &str) -> Vec<WebAudioIssue> {
 
     if (body.contains("AudioWorklet") || body.contains("audioWorklet"))
         && (body.contains("addModule") || body.contains("AudioWorkletProcessor"))
-        && (body.contains("SharedArrayBuffer") || body.contains("Atomics") || body.contains("while"))
+        && (body.contains("SharedArrayBuffer")
+            || body.contains("Atomics")
+            || body.contains("while"))
     {
         issues.push(WebAudioIssue::CryptoMining);
     }
@@ -95,10 +97,7 @@ pub fn web_audio_severity(issue: &WebAudioIssue) -> f64 {
     }
 }
 
-pub fn web_audio_to_operations(
-    issues: &[WebAudioIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn web_audio_to_operations(issues: &[WebAudioIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

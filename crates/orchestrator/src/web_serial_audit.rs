@@ -58,7 +58,11 @@ pub fn analyze_web_serial(body: &str) -> Vec<WebSerialIssue> {
         issues.push(WebSerialIssue::NoUserActivation);
     }
 
-    if body.contains(".readable") || body.contains(".writable") || body.contains("getReader") || body.contains("getWriter") {
+    if body.contains(".readable")
+        || body.contains(".writable")
+        || body.contains("getReader")
+        || body.contains("getWriter")
+    {
         issues.push(WebSerialIssue::RawReadWrite);
     }
 

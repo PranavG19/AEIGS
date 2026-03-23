@@ -101,7 +101,10 @@ fn detects_auto_reconnect() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(presentation_severity(&PresentationIssue::DataExfiltration), 6.5);
+    assert_eq!(
+        presentation_severity(&PresentationIssue::DataExfiltration),
+        6.5
+    );
 }
 
 #[test]
@@ -111,7 +114,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![PresentationIssue::ApiDetected, PresentationIssue::MessageChannel];
+    let issues = vec![
+        PresentationIssue::ApiDetected,
+        PresentationIssue::MessageChannel,
+    ];
     let mut seq = 0;
     let ops = presentation_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -121,11 +127,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(PresentationIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PresentationIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(PresentationIssue::CrossOriginUrl.to_string(), "cross_origin_url");
-    assert_eq!(PresentationIssue::NoAvailabilityCheck.to_string(), "no_availability_check");
-    assert_eq!(PresentationIssue::MessageChannel.to_string(), "message_channel");
-    assert_eq!(PresentationIssue::AutoReconnect.to_string(), "auto_reconnect");
+    assert_eq!(
+        PresentationIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        PresentationIssue::CrossOriginUrl.to_string(),
+        "cross_origin_url"
+    );
+    assert_eq!(
+        PresentationIssue::NoAvailabilityCheck.to_string(),
+        "no_availability_check"
+    );
+    assert_eq!(
+        PresentationIssue::MessageChannel.to_string(),
+        "message_channel"
+    );
+    assert_eq!(
+        PresentationIssue::AutoReconnect.to_string(),
+        "auto_reconnect"
+    );
 }
 
 #[test]

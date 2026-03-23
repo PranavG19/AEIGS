@@ -253,10 +253,7 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_api_detected() {
-    assert_eq!(
-        StorageAccessIssue::ApiDetected.to_string(),
-        "api_detected"
-    );
+    assert_eq!(StorageAccessIssue::ApiDetected.to_string(), "api_detected");
 }
 
 #[test]

@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum UrlPatternIssue {
@@ -40,7 +40,8 @@ pub fn audit_url_pattern(target: &str) -> Vec<UrlPatternIssue> {
 pub fn analyze_url_pattern(body: &str) -> Vec<UrlPatternIssue> {
     let mut issues = Vec::new();
 
-    if body.contains("URLPattern") || body.contains("urlPattern") || body.contains("new URLPattern") {
+    if body.contains("URLPattern") || body.contains("urlPattern") || body.contains("new URLPattern")
+    {
         issues.push(UrlPatternIssue::ApiDetected);
 
         if (body.contains("*") || body.contains("+") || body.contains("{") || body.contains("}"))
@@ -50,19 +51,28 @@ pub fn analyze_url_pattern(body: &str) -> Vec<UrlPatternIssue> {
         }
 
         if (body.contains("test(") || body.contains("exec("))
-            && (body.contains("auth") || body.contains("admin") || body.contains("private") || body.contains("secure"))
+            && (body.contains("auth")
+                || body.contains("admin")
+                || body.contains("private")
+                || body.contains("secure"))
         {
             issues.push(UrlPatternIssue::RoutingBypass);
         }
 
-        if (body.contains("location") || body.contains("redirect") || body.contains("window.location"))
+        if (body.contains("location")
+            || body.contains("redirect")
+            || body.contains("window.location"))
             && (body.contains("protocol") || body.contains("hostname") || body.contains("origin"))
         {
             issues.push(UrlPatternIssue::OpenRedirect);
         }
 
         if (body.contains("URLPattern(") || body.contains("new URLPattern"))
-            && (body.contains("input") || body.contains("param") || body.contains("query") || body.contains("user") || body.contains("request"))
+            && (body.contains("input")
+                || body.contains("param")
+                || body.contains("query")
+                || body.contains("user")
+                || body.contains("request"))
         {
             issues.push(UrlPatternIssue::PatternInjection);
         }
@@ -81,7 +91,10 @@ pub fn url_pattern_severity(issue: &UrlPatternIssue) -> f64 {
     }
 }
 
-pub fn url_pattern_to_operations(issues: &[UrlPatternIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
+pub fn url_pattern_to_operations(
+    issues: &[UrlPatternIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

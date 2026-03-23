@@ -64,11 +64,11 @@ pub fn analyze_storage_bucket(body: &str) -> Vec<StorageBucketIssue> {
         issues.push(StorageBucketIssue::UnboundedQuota);
     }
 
-    let has_storage_access = body.contains("indexedDB")
-        || body.contains("caches")
-        || body.contains("getDirectory");
-    let has_cross_origin =
-        body.contains("postMessage") || body.contains("SharedWorker") || body.contains("BroadcastChannel");
+    let has_storage_access =
+        body.contains("indexedDB") || body.contains("caches") || body.contains("getDirectory");
+    let has_cross_origin = body.contains("postMessage")
+        || body.contains("SharedWorker")
+        || body.contains("BroadcastChannel");
     if has_storage_access && has_cross_origin {
         issues.push(StorageBucketIssue::CrossOriginLeak);
     }

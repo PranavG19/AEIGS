@@ -92,7 +92,10 @@ fn no_close_issue_with_close() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(web_transport_severity(&WebTransportIssue::DataExfiltration), 7.0);
+    assert_eq!(
+        web_transport_severity(&WebTransportIssue::DataExfiltration),
+        7.0
+    );
 }
 
 #[test]
@@ -102,7 +105,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![WebTransportIssue::ApiDetected, WebTransportIssue::DatagramAbuse];
+    let issues = vec![
+        WebTransportIssue::ApiDetected,
+        WebTransportIssue::DatagramAbuse,
+    ];
     let mut seq = 0;
     let ops = web_transport_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -112,11 +118,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebTransportIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebTransportIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebTransportIssue::UnencryptedEndpoint.to_string(), "unencrypted_endpoint");
-    assert_eq!(WebTransportIssue::BidirectionalStream.to_string(), "bidirectional_stream");
-    assert_eq!(WebTransportIssue::DatagramAbuse.to_string(), "datagram_abuse");
-    assert_eq!(WebTransportIssue::NoCloseHandling.to_string(), "no_close_handling");
+    assert_eq!(
+        WebTransportIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebTransportIssue::UnencryptedEndpoint.to_string(),
+        "unencrypted_endpoint"
+    );
+    assert_eq!(
+        WebTransportIssue::BidirectionalStream.to_string(),
+        "bidirectional_stream"
+    );
+    assert_eq!(
+        WebTransportIssue::DatagramAbuse.to_string(),
+        "datagram_abuse"
+    );
+    assert_eq!(
+        WebTransportIssue::NoCloseHandling.to_string(),
+        "no_close_handling"
+    );
 }
 
 #[test]

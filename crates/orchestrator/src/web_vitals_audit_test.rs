@@ -333,19 +333,43 @@ fn test_all_issues_combined() {
 #[test]
 fn test_display_impl() {
     assert_eq!(WebVitalsIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebVitalsIssue::MetricExfiltration.to_string(), "metric_exfiltration");
-    assert_eq!(WebVitalsIssue::TimingFingerprinting.to_string(), "timing_fingerprinting");
-    assert_eq!(WebVitalsIssue::UserBehaviorTracking.to_string(), "user_behavior_tracking");
-    assert_eq!(WebVitalsIssue::ResourceTimingLeak.to_string(), "resource_timing_leak");
+    assert_eq!(
+        WebVitalsIssue::MetricExfiltration.to_string(),
+        "metric_exfiltration"
+    );
+    assert_eq!(
+        WebVitalsIssue::TimingFingerprinting.to_string(),
+        "timing_fingerprinting"
+    );
+    assert_eq!(
+        WebVitalsIssue::UserBehaviorTracking.to_string(),
+        "user_behavior_tracking"
+    );
+    assert_eq!(
+        WebVitalsIssue::ResourceTimingLeak.to_string(),
+        "resource_timing_leak"
+    );
 }
 
 #[test]
 fn test_severity_values() {
     assert_eq!(web_vitals_severity(&WebVitalsIssue::ApiDetected), 2.0);
-    assert_eq!(web_vitals_severity(&WebVitalsIssue::MetricExfiltration), 7.0);
-    assert_eq!(web_vitals_severity(&WebVitalsIssue::TimingFingerprinting), 6.5);
-    assert_eq!(web_vitals_severity(&WebVitalsIssue::UserBehaviorTracking), 6.0);
-    assert_eq!(web_vitals_severity(&WebVitalsIssue::ResourceTimingLeak), 5.5);
+    assert_eq!(
+        web_vitals_severity(&WebVitalsIssue::MetricExfiltration),
+        7.0
+    );
+    assert_eq!(
+        web_vitals_severity(&WebVitalsIssue::TimingFingerprinting),
+        6.5
+    );
+    assert_eq!(
+        web_vitals_severity(&WebVitalsIssue::UserBehaviorTracking),
+        6.0
+    );
+    assert_eq!(
+        web_vitals_severity(&WebVitalsIssue::ResourceTimingLeak),
+        5.5
+    );
 }
 
 #[test]

@@ -116,10 +116,7 @@ fn severity_api_used_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![
-        BatteryIssue::BatteryApiUsed,
-        BatteryIssue::BatteryLevelRead,
-    ];
+    let issues = vec![BatteryIssue::BatteryApiUsed, BatteryIssue::BatteryLevelRead];
     let mut seq = 0;
     let ops = battery_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -129,8 +126,20 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(BatteryIssue::BatteryApiUsed.to_string(), "battery_api");
-    assert_eq!(BatteryIssue::BatteryLevelRead.to_string(), "battery_level_read");
-    assert_eq!(BatteryIssue::ChargingStateRead.to_string(), "charging_state_read");
-    assert_eq!(BatteryIssue::BatteryEventListener.to_string(), "battery_event_listener");
-    assert_eq!(BatteryIssue::BatteryDataSent.to_string(), "battery_data_sent");
+    assert_eq!(
+        BatteryIssue::BatteryLevelRead.to_string(),
+        "battery_level_read"
+    );
+    assert_eq!(
+        BatteryIssue::ChargingStateRead.to_string(),
+        "charging_state_read"
+    );
+    assert_eq!(
+        BatteryIssue::BatteryEventListener.to_string(),
+        "battery_event_listener"
+    );
+    assert_eq!(
+        BatteryIssue::BatteryDataSent.to_string(),
+        "battery_data_sent"
+    );
 }

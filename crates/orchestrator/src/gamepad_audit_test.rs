@@ -100,11 +100,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(GamepadIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(GamepadIssue::GetGamepadsPolling.to_string(), "get_gamepads_polling");
-    assert_eq!(GamepadIssue::GamepadIdAccess.to_string(), "gamepad_id_access");
-    assert_eq!(GamepadIssue::VibrationActuator.to_string(), "vibration_actuator");
-    assert_eq!(GamepadIssue::MultipleGamepads.to_string(), "multiple_gamepads");
-    assert_eq!(GamepadIssue::ContinuousPolling.to_string(), "continuous_polling");
+    assert_eq!(
+        GamepadIssue::GetGamepadsPolling.to_string(),
+        "get_gamepads_polling"
+    );
+    assert_eq!(
+        GamepadIssue::GamepadIdAccess.to_string(),
+        "gamepad_id_access"
+    );
+    assert_eq!(
+        GamepadIssue::VibrationActuator.to_string(),
+        "vibration_actuator"
+    );
+    assert_eq!(
+        GamepadIssue::MultipleGamepads.to_string(),
+        "multiple_gamepads"
+    );
+    assert_eq!(
+        GamepadIssue::ContinuousPolling.to_string(),
+        "continuous_polling"
+    );
 }
 
 #[test]

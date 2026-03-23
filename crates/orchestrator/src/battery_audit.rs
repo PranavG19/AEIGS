@@ -51,7 +51,10 @@ pub fn analyze_battery(body: &str) -> Vec<BatteryIssue> {
         issues.push(BatteryIssue::BatteryLevelRead);
     }
 
-    if body.contains(".charging") || body.contains(".chargingTime") || body.contains(".dischargingTime") {
+    if body.contains(".charging")
+        || body.contains(".chargingTime")
+        || body.contains(".dischargingTime")
+    {
         issues.push(BatteryIssue::ChargingStateRead);
     }
 
@@ -70,9 +73,7 @@ pub fn analyze_battery(body: &str) -> Vec<BatteryIssue> {
         || body.contains("sendBeacon")
         || body.contains(".send(")
         || body.contains("$.ajax");
-    if sends_data
-        && (body.contains(".level") || body.contains(".charging"))
-    {
+    if sends_data && (body.contains(".level") || body.contains(".charging")) {
         issues.push(BatteryIssue::BatteryDataSent);
     }
 
@@ -89,10 +90,7 @@ pub fn battery_severity(issue: &BatteryIssue) -> f64 {
     }
 }
 
-pub fn battery_to_operations(
-    issues: &[BatteryIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn battery_to_operations(issues: &[BatteryIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

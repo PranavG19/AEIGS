@@ -140,11 +140,26 @@ fn test_no_issues_without_api() {
 
 #[test]
 fn test_severity_mapping() {
-    assert_eq!(abort_controller_severity(&AbortControllerIssue::ApiDetected), 2.0);
-    assert_eq!(abort_controller_severity(&AbortControllerIssue::DenialOfService), 7.0);
-    assert_eq!(abort_controller_severity(&AbortControllerIssue::SecurityBypass), 7.5);
-    assert_eq!(abort_controller_severity(&AbortControllerIssue::RaceCondition), 6.5);
-    assert_eq!(abort_controller_severity(&AbortControllerIssue::ResourceLeak), 5.5);
+    assert_eq!(
+        abort_controller_severity(&AbortControllerIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        abort_controller_severity(&AbortControllerIssue::DenialOfService),
+        7.0
+    );
+    assert_eq!(
+        abort_controller_severity(&AbortControllerIssue::SecurityBypass),
+        7.5
+    );
+    assert_eq!(
+        abort_controller_severity(&AbortControllerIssue::RaceCondition),
+        6.5
+    );
+    assert_eq!(
+        abort_controller_severity(&AbortControllerIssue::ResourceLeak),
+        5.5
+    );
 }
 
 #[test]
@@ -161,9 +176,24 @@ fn test_to_operations() {
 
 #[test]
 fn test_display_trait() {
-    assert_eq!(AbortControllerIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(AbortControllerIssue::DenialOfService.to_string(), "denial_of_service");
-    assert_eq!(AbortControllerIssue::SecurityBypass.to_string(), "security_bypass");
-    assert_eq!(AbortControllerIssue::RaceCondition.to_string(), "race_condition");
-    assert_eq!(AbortControllerIssue::ResourceLeak.to_string(), "resource_leak");
+    assert_eq!(
+        AbortControllerIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        AbortControllerIssue::DenialOfService.to_string(),
+        "denial_of_service"
+    );
+    assert_eq!(
+        AbortControllerIssue::SecurityBypass.to_string(),
+        "security_bypass"
+    );
+    assert_eq!(
+        AbortControllerIssue::RaceCondition.to_string(),
+        "race_condition"
+    );
+    assert_eq!(
+        AbortControllerIssue::ResourceLeak.to_string(),
+        "resource_leak"
+    );
 }

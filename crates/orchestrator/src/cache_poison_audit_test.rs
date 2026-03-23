@@ -9,9 +9,11 @@ fn no_issues_when_not_cached() {
 #[test]
 fn cached_without_vary() {
     let issues = analyze_cache_headers(true, "", "", false);
-    assert!(issues
-        .iter()
-        .any(|i| *i == CachePoisonIssue::CachedWithoutVary));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == CachePoisonIssue::CachedWithoutVary)
+    );
 }
 
 #[test]
@@ -35,36 +37,46 @@ fn vary_missing_cookie() {
 #[test]
 fn vary_has_all_sensitive() {
     let issues = analyze_cache_headers(true, "Origin, Cookie, Authorization", "", false);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CachePoisonIssue::VaryMissingSensitiveHeader { .. })));
-    assert!(!issues
-        .iter()
-        .any(|i| *i == CachePoisonIssue::CachedWithoutVary));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CachePoisonIssue::VaryMissingSensitiveHeader { .. }))
+    );
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == CachePoisonIssue::CachedWithoutVary)
+    );
 }
 
 #[test]
 fn public_cache_with_auth() {
     let issues = analyze_cache_headers(true, "Origin", "public, max-age=3600", true);
-    assert!(issues
-        .iter()
-        .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth)
+    );
 }
 
 #[test]
 fn public_cache_without_auth_ok() {
     let issues = analyze_cache_headers(true, "Origin", "public, max-age=3600", false);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth)
+    );
 }
 
 #[test]
 fn private_cache_with_auth_ok() {
     let issues = analyze_cache_headers(true, "Origin", "private, no-store", true);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == CachePoisonIssue::CacheControlPublicWithAuth)
+    );
 }
 
 #[test]
@@ -147,9 +159,11 @@ fn audit_skips_loopback() {
 #[test]
 fn vary_case_insensitive() {
     let issues = analyze_cache_headers(true, "ORIGIN, COOKIE, AUTHORIZATION", "", false);
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CachePoisonIssue::VaryMissingSensitiveHeader { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CachePoisonIssue::VaryMissingSensitiveHeader { .. }))
+    );
 }
 
 #[test]

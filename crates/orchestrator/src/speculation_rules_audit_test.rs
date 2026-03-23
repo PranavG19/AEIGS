@@ -141,8 +141,14 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(SpeculationRulesIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(SpeculationRulesIssue::ExternalPrefetch.to_string(), "external_prefetch");
+    assert_eq!(
+        SpeculationRulesIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        SpeculationRulesIssue::ExternalPrefetch.to_string(),
+        "external_prefetch"
+    );
     assert_eq!(
         SpeculationRulesIssue::AggressivePrerender.to_string(),
         "aggressive_prerender"
@@ -151,7 +157,10 @@ fn display_variants() {
         SpeculationRulesIssue::TrackingViaPrefetch.to_string(),
         "tracking_via_prefetch"
     );
-    assert_eq!(SpeculationRulesIssue::WildcardRules.to_string(), "wildcard_rules");
+    assert_eq!(
+        SpeculationRulesIssue::WildcardRules.to_string(),
+        "wildcard_rules"
+    );
 }
 
 #[test]

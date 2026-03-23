@@ -102,7 +102,10 @@ fn no_escalation_without_parent_traversal() {
 
 #[test]
 fn severity_hijacking_highest() {
-    assert_eq!(import_map_severity(&ImportMapIssue::DependencyHijacking), 8.0);
+    assert_eq!(
+        import_map_severity(&ImportMapIssue::DependencyHijacking),
+        8.0
+    );
 }
 
 #[test]
@@ -112,7 +115,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ImportMapIssue::ApiDetected, ImportMapIssue::ExternalSpecifier];
+    let issues = vec![
+        ImportMapIssue::ApiDetected,
+        ImportMapIssue::ExternalSpecifier,
+    ];
     let mut seq = 0;
     let ops = import_map_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -122,10 +128,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(ImportMapIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ImportMapIssue::ExternalSpecifier.to_string(), "external_specifier");
-    assert_eq!(ImportMapIssue::PrototypePollution.to_string(), "prototype_pollution");
-    assert_eq!(ImportMapIssue::DependencyHijacking.to_string(), "dependency_hijacking");
-    assert_eq!(ImportMapIssue::ScopeEscalation.to_string(), "scope_escalation");
+    assert_eq!(
+        ImportMapIssue::ExternalSpecifier.to_string(),
+        "external_specifier"
+    );
+    assert_eq!(
+        ImportMapIssue::PrototypePollution.to_string(),
+        "prototype_pollution"
+    );
+    assert_eq!(
+        ImportMapIssue::DependencyHijacking.to_string(),
+        "dependency_hijacking"
+    );
+    assert_eq!(
+        ImportMapIssue::ScopeEscalation.to_string(),
+        "scope_escalation"
+    );
 }
 
 #[test]

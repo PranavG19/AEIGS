@@ -27,7 +27,12 @@ impl std::fmt::Display for JwtIssue {
 }
 
 const SENSITIVE_FIELDS: &[&str] = &[
-    "password", "passwd", "secret", "credit_card", "ssn", "social_security",
+    "password",
+    "passwd",
+    "secret",
+    "credit_card",
+    "ssn",
+    "social_security",
 ];
 
 pub fn audit_jwt_headers(target: &str) -> Vec<JwtIssue> {
@@ -66,7 +71,9 @@ pub fn audit_jwt_headers(target: &str) -> Vec<JwtIssue> {
         .headers()
         .get("authorization")
         .and_then(|v| v.to_str().ok())
-        && let Some(token) = auth.strip_prefix("Bearer ").or_else(|| auth.strip_prefix("bearer "))
+        && let Some(token) = auth
+            .strip_prefix("Bearer ")
+            .or_else(|| auth.strip_prefix("bearer "))
     {
         issues.extend(analyze_jwt_token(token.trim()));
     }
@@ -91,7 +98,10 @@ pub(crate) fn is_jwt_format(s: &str) -> bool {
     parts.len() == 3
         && parts[0].len() >= 4
         && parts[1].len() >= 4
-        && parts.iter().all(|p| p.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '='))
+        && parts.iter().all(|p| {
+            p.chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '=')
+        })
 }
 
 pub(crate) fn analyze_jwt_token(token: &str) -> Vec<JwtIssue> {
@@ -195,10 +205,7 @@ pub(crate) fn jwt_severity(issue: &JwtIssue) -> f64 {
     }
 }
 
-pub fn jwt_header_to_operations(
-    issues: &[JwtIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn jwt_header_to_operations(issues: &[JwtIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

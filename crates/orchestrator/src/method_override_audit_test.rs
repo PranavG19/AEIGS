@@ -29,37 +29,41 @@ fn param_override_detected() {
 #[test]
 fn response_alteration_detected_success_to_error() {
     let issues = analyze_method_override(200, 405, "header:X-Method-Override", "DELETE");
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        MethodOverrideIssue::MethodChangeAltersResponse { .. }
-    )));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, MethodOverrideIssue::MethodChangeAltersResponse { .. }))
+    );
 }
 
 #[test]
 fn response_alteration_detected_error_to_success() {
     let issues = analyze_method_override(404, 200, "header:X-HTTP-Method", "PUT");
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        MethodOverrideIssue::MethodChangeAltersResponse { .. }
-    )));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, MethodOverrideIssue::MethodChangeAltersResponse { .. }))
+    );
 }
 
 #[test]
 fn no_alteration_when_both_success() {
     let issues = analyze_method_override(200, 201, "header:X-HTTP-Method-Override", "PUT");
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        MethodOverrideIssue::MethodChangeAltersResponse { .. }
-    )));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, MethodOverrideIssue::MethodChangeAltersResponse { .. }))
+    );
 }
 
 #[test]
 fn no_alteration_when_both_error() {
     let issues = analyze_method_override(404, 405, "header:X-HTTP-Method-Override", "DELETE");
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        MethodOverrideIssue::MethodChangeAltersResponse { .. }
-    )));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, MethodOverrideIssue::MethodChangeAltersResponse { .. }))
+    );
 }
 
 #[test]
@@ -86,12 +90,10 @@ fn severity_ordering() {
 
 #[test]
 fn to_operations_produces_entries() {
-    let issues = vec![
-        MethodOverrideIssue::HeaderOverrideAccepted {
-            header: "X-HTTP-Method-Override".into(),
-            method: "DELETE".into(),
-        },
-    ];
+    let issues = vec![MethodOverrideIssue::HeaderOverrideAccepted {
+        header: "X-HTTP-Method-Override".into(),
+        method: "DELETE".into(),
+    }];
     let mut seq = 30;
     let ops = method_override_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 1);

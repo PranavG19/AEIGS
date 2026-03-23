@@ -43,7 +43,8 @@ pub fn audit_credential_api(target: &str) -> Vec<CredentialApiIssue> {
 }
 
 pub fn analyze_credential_api(body: &str) -> Vec<CredentialApiIssue> {
-    if !body.contains("navigator.credentials") && !body.contains("PasswordCredential")
+    if !body.contains("navigator.credentials")
+        && !body.contains("PasswordCredential")
         && !body.contains("FederatedCredential")
     {
         return Vec::new();
@@ -75,8 +76,8 @@ pub fn analyze_credential_api(body: &str) -> Vec<CredentialApiIssue> {
         issues.push(CredentialApiIssue::FederatedCredential);
     }
 
-    let has_get_or_store = body.contains("navigator.credentials.get")
-        || body.contains("navigator.credentials.store");
+    let has_get_or_store =
+        body.contains("navigator.credentials.get") || body.contains("navigator.credentials.store");
     if has_get_or_store && !body.contains("preventSilentAccess") {
         issues.push(CredentialApiIssue::NoPreventSilentAccess);
     }

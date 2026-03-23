@@ -114,11 +114,23 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebSerialIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebSerialIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebSerialIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        WebSerialIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebSerialIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(WebSerialIssue::RawReadWrite.to_string(), "raw_read_write");
-    assert_eq!(WebSerialIssue::DeviceEnumeration.to_string(), "device_enumeration");
-    assert_eq!(WebSerialIssue::PersistentStream.to_string(), "persistent_stream");
+    assert_eq!(
+        WebSerialIssue::DeviceEnumeration.to_string(),
+        "device_enumeration"
+    );
+    assert_eq!(
+        WebSerialIssue::PersistentStream.to_string(),
+        "persistent_stream"
+    );
 }
 
 #[test]

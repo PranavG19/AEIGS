@@ -93,17 +93,26 @@ fn detects_fullscreen_on_external() {
 
 #[test]
 fn severity_exfiltration_highest() {
-    assert_eq!(window_management_severity(&WindowManagementIssue::ScreenDetailExfiltration), 6.5);
+    assert_eq!(
+        window_management_severity(&WindowManagementIssue::ScreenDetailExfiltration),
+        6.5
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(window_management_severity(&WindowManagementIssue::ApiDetected), 3.0);
+    assert_eq!(
+        window_management_severity(&WindowManagementIssue::ApiDetected),
+        3.0
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![WindowManagementIssue::ApiDetected, WindowManagementIssue::ScreenEnumeration];
+    let issues = vec![
+        WindowManagementIssue::ApiDetected,
+        WindowManagementIssue::ScreenEnumeration,
+    ];
     let mut seq = 0;
     let ops = window_management_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -112,12 +121,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(WindowManagementIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WindowManagementIssue::ScreenEnumeration.to_string(), "screen_enumeration");
-    assert_eq!(WindowManagementIssue::CrossScreenPopup.to_string(), "cross_screen_popup");
-    assert_eq!(WindowManagementIssue::ScreenDetailExfiltration.to_string(), "screen_detail_exfiltration");
-    assert_eq!(WindowManagementIssue::NoPermissionCheck.to_string(), "no_permission_check");
-    assert_eq!(WindowManagementIssue::FullscreenOnExternal.to_string(), "fullscreen_on_external");
+    assert_eq!(
+        WindowManagementIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        WindowManagementIssue::ScreenEnumeration.to_string(),
+        "screen_enumeration"
+    );
+    assert_eq!(
+        WindowManagementIssue::CrossScreenPopup.to_string(),
+        "cross_screen_popup"
+    );
+    assert_eq!(
+        WindowManagementIssue::ScreenDetailExfiltration.to_string(),
+        "screen_detail_exfiltration"
+    );
+    assert_eq!(
+        WindowManagementIssue::NoPermissionCheck.to_string(),
+        "no_permission_check"
+    );
+    assert_eq!(
+        WindowManagementIssue::FullscreenOnExternal.to_string(),
+        "fullscreen_on_external"
+    );
 }
 
 #[test]

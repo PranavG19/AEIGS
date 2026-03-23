@@ -136,25 +136,55 @@ fn all_issues() {
 
 #[test]
 fn severity_values() {
-    assert_eq!(custom_element_severity(&CustomElementIssue::ApiDetected), 2.0);
-    assert_eq!(custom_element_severity(&CustomElementIssue::UnsanitizedContent), 7.5);
-    assert_eq!(custom_element_severity(&CustomElementIssue::PrototypePollution), 7.0);
-    assert_eq!(custom_element_severity(&CustomElementIssue::EventHijacking), 6.0);
-    assert_eq!(custom_element_severity(&CustomElementIssue::NameCollision), 5.0);
+    assert_eq!(
+        custom_element_severity(&CustomElementIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        custom_element_severity(&CustomElementIssue::UnsanitizedContent),
+        7.5
+    );
+    assert_eq!(
+        custom_element_severity(&CustomElementIssue::PrototypePollution),
+        7.0
+    );
+    assert_eq!(
+        custom_element_severity(&CustomElementIssue::EventHijacking),
+        6.0
+    );
+    assert_eq!(
+        custom_element_severity(&CustomElementIssue::NameCollision),
+        5.0
+    );
 }
 
 #[test]
 fn display_impl() {
     assert_eq!(CustomElementIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(CustomElementIssue::UnsanitizedContent.to_string(), "unsanitized_content");
-    assert_eq!(CustomElementIssue::PrototypePollution.to_string(), "prototype_pollution");
-    assert_eq!(CustomElementIssue::EventHijacking.to_string(), "event_hijacking");
-    assert_eq!(CustomElementIssue::NameCollision.to_string(), "name_collision");
+    assert_eq!(
+        CustomElementIssue::UnsanitizedContent.to_string(),
+        "unsanitized_content"
+    );
+    assert_eq!(
+        CustomElementIssue::PrototypePollution.to_string(),
+        "prototype_pollution"
+    );
+    assert_eq!(
+        CustomElementIssue::EventHijacking.to_string(),
+        "event_hijacking"
+    );
+    assert_eq!(
+        CustomElementIssue::NameCollision.to_string(),
+        "name_collision"
+    );
 }
 
 #[test]
 fn ops_generated() {
-    let issues = vec![CustomElementIssue::ApiDetected, CustomElementIssue::UnsanitizedContent];
+    let issues = vec![
+        CustomElementIssue::ApiDetected,
+        CustomElementIssue::UnsanitizedContent,
+    ];
     let mut seq = 0;
     let ops = custom_element_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);

@@ -107,7 +107,10 @@ fn has_short_interval(body: &str) -> bool {
         let rest = &body[pos..];
         if let Some(colon) = rest.find(':') {
             let after_colon = rest[colon + 1..].trim_start();
-            let num_str: String = after_colon.chars().take_while(|c| c.is_ascii_digit()).collect();
+            let num_str: String = after_colon
+                .chars()
+                .take_while(|c| c.is_ascii_digit())
+                .collect();
             if let Ok(val) = num_str.parse::<u64>() {
                 return val < 60_000;
             }

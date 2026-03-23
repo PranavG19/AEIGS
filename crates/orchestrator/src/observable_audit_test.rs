@@ -117,16 +117,16 @@ fn test_observable_severity_values() {
     assert_eq!(observable_severity(&ObservableIssue::ApiDetected), 2.0);
     assert_eq!(observable_severity(&ObservableIssue::MemoryLeak), 6.5);
     assert_eq!(observable_severity(&ObservableIssue::InfiniteStream), 6.0);
-    assert_eq!(observable_severity(&ObservableIssue::SideEffectExfiltration), 7.0);
+    assert_eq!(
+        observable_severity(&ObservableIssue::SideEffectExfiltration),
+        7.0
+    );
     assert_eq!(observable_severity(&ObservableIssue::ErrorSuppression), 5.5);
 }
 
 #[test]
 fn test_observable_to_operations() {
-    let issues = vec![
-        ObservableIssue::ApiDetected,
-        ObservableIssue::MemoryLeak,
-    ];
+    let issues = vec![ObservableIssue::ApiDetected, ObservableIssue::MemoryLeak];
     let mut seq = 100;
     let ops = observable_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -135,9 +135,24 @@ fn test_observable_to_operations() {
 
 #[test]
 fn test_observable_display() {
-    assert_eq!(format!("{}", ObservableIssue::ApiDetected), "observable_api_detected");
-    assert_eq!(format!("{}", ObservableIssue::MemoryLeak), "observable_memory_leak");
-    assert_eq!(format!("{}", ObservableIssue::InfiniteStream), "observable_infinite_stream");
-    assert_eq!(format!("{}", ObservableIssue::SideEffectExfiltration), "observable_side_effect_exfiltration");
-    assert_eq!(format!("{}", ObservableIssue::ErrorSuppression), "observable_error_suppression");
+    assert_eq!(
+        format!("{}", ObservableIssue::ApiDetected),
+        "observable_api_detected"
+    );
+    assert_eq!(
+        format!("{}", ObservableIssue::MemoryLeak),
+        "observable_memory_leak"
+    );
+    assert_eq!(
+        format!("{}", ObservableIssue::InfiniteStream),
+        "observable_infinite_stream"
+    );
+    assert_eq!(
+        format!("{}", ObservableIssue::SideEffectExfiltration),
+        "observable_side_effect_exfiltration"
+    );
+    assert_eq!(
+        format!("{}", ObservableIssue::ErrorSuppression),
+        "observable_error_suppression"
+    );
 }

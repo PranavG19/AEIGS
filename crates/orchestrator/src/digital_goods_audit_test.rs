@@ -117,7 +117,10 @@ fn no_validation_issue_with_api() {
 
 #[test]
 fn severity_price_highest() {
-    assert_eq!(digital_goods_severity(&DigitalGoodsIssue::PriceManipulation), 8.0);
+    assert_eq!(
+        digital_goods_severity(&DigitalGoodsIssue::PriceManipulation),
+        8.0
+    );
 }
 
 #[test]
@@ -127,7 +130,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![DigitalGoodsIssue::ApiDetected, DigitalGoodsIssue::ItemEnumeration];
+    let issues = vec![
+        DigitalGoodsIssue::ApiDetected,
+        DigitalGoodsIssue::ItemEnumeration,
+    ];
     let mut seq = 0;
     let ops = digital_goods_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -137,11 +143,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(DigitalGoodsIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(DigitalGoodsIssue::PriceManipulation.to_string(), "price_manipulation");
-    assert_eq!(DigitalGoodsIssue::PurchaseWithoutConfirmation.to_string(), "purchase_without_confirmation");
-    assert_eq!(DigitalGoodsIssue::ItemEnumeration.to_string(), "item_enumeration");
-    assert_eq!(DigitalGoodsIssue::ReceiptExfiltration.to_string(), "receipt_exfiltration");
-    assert_eq!(DigitalGoodsIssue::NoServerValidation.to_string(), "no_server_validation");
+    assert_eq!(
+        DigitalGoodsIssue::PriceManipulation.to_string(),
+        "price_manipulation"
+    );
+    assert_eq!(
+        DigitalGoodsIssue::PurchaseWithoutConfirmation.to_string(),
+        "purchase_without_confirmation"
+    );
+    assert_eq!(
+        DigitalGoodsIssue::ItemEnumeration.to_string(),
+        "item_enumeration"
+    );
+    assert_eq!(
+        DigitalGoodsIssue::ReceiptExfiltration.to_string(),
+        "receipt_exfiltration"
+    );
+    assert_eq!(
+        DigitalGoodsIssue::NoServerValidation.to_string(),
+        "no_server_validation"
+    );
 }
 
 #[test]

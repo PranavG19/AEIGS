@@ -78,7 +78,10 @@ pub fn analyze_background_fetch(body: &str) -> Vec<BackgroundFetchIssue> {
         issues.push(BackgroundFetchIssue::TrackingViaBgFetch);
     }
 
-    if (body.contains("while") || body.contains("setInterval") || body.contains("for(") || body.contains("for ("))
+    if (body.contains("while")
+        || body.contains("setInterval")
+        || body.contains("for(")
+        || body.contains("for ("))
         && body.contains("fetch(")
         && !body.contains("limit")
         && !body.contains("abort")

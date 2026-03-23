@@ -4,54 +4,66 @@ use crate::csp_report_leak_audit::*;
 fn internal_report_uri_detected() {
     let csp = "default-src 'self'; report-uri http://192.168.1.1/csp-report";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. }))
+    );
 }
 
 #[test]
 fn localhost_report_uri() {
     let csp = "default-src 'self'; report-uri http://localhost:3000/report";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. }))
+    );
 }
 
 #[test]
 fn deprecated_report_uri_flagged() {
     let csp = "default-src 'self'; report-uri https://example.com/csp";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| *i == CspReportLeakIssue::DeprecatedReportUri));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == CspReportLeakIssue::DeprecatedReportUri)
+    );
 }
 
 #[test]
 fn http_report_endpoint_flagged() {
     let csp = "default-src 'self'; report-uri http://example.com/csp";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::HttpReportEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::HttpReportEndpoint { .. }))
+    );
 }
 
 #[test]
 fn third_party_endpoint_flagged() {
     let csp = "default-src 'self'; report-uri https://reporting.thirdparty.com/csp";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::ThirdPartyReportEndpoint { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::ThirdPartyReportEndpoint { .. }))
+    );
 }
 
 #[test]
 fn same_domain_not_third_party() {
     let csp = "default-src 'self'; report-uri https://example.com/csp-report";
     let issues = analyze_csp_report_directives(csp, "", "example.com");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::ThirdPartyReportEndpoint { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::ThirdPartyReportEndpoint { .. }))
+    );
 }
 
 #[test]
@@ -72,9 +84,11 @@ fn report_to_with_header() {
     let csp = "default-src 'self'; report-to csp-endpoint";
     let header = r#"{"group":"csp-endpoint","max_age":10886400,"endpoints":[{"url":"https://internal.corp/report"}]}"#;
     let issues = analyze_csp_report_directives(csp, header, "example.com");
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CspReportLeakIssue::InternalReportUri { .. }))
+    );
 }
 
 #[test]

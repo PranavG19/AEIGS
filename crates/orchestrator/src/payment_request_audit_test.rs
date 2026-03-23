@@ -100,12 +100,18 @@ fn no_multiple_with_one_method() {
 
 #[test]
 fn severity_insecure_highest() {
-    assert_eq!(payment_request_severity(&PaymentRequestIssue::InsecureContext), 7.0);
+    assert_eq!(
+        payment_request_severity(&PaymentRequestIssue::InsecureContext),
+        7.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(payment_request_severity(&PaymentRequestIssue::ApiDetected), 3.0);
+    assert_eq!(
+        payment_request_severity(&PaymentRequestIssue::ApiDetected),
+        3.0
+    );
 }
 
 #[test]
@@ -123,11 +129,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(PaymentRequestIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PaymentRequestIssue::CanMakePaymentFingerprint.to_string(), "can_make_payment_fingerprint");
-    assert_eq!(PaymentRequestIssue::InsecureContext.to_string(), "insecure_context");
-    assert_eq!(PaymentRequestIssue::ThirdPartyPaymentMethod.to_string(), "third_party_payment_method");
-    assert_eq!(PaymentRequestIssue::NoInputValidation.to_string(), "no_input_validation");
-    assert_eq!(PaymentRequestIssue::MultiplePaymentMethods.to_string(), "multiple_payment_methods");
+    assert_eq!(
+        PaymentRequestIssue::CanMakePaymentFingerprint.to_string(),
+        "can_make_payment_fingerprint"
+    );
+    assert_eq!(
+        PaymentRequestIssue::InsecureContext.to_string(),
+        "insecure_context"
+    );
+    assert_eq!(
+        PaymentRequestIssue::ThirdPartyPaymentMethod.to_string(),
+        "third_party_payment_method"
+    );
+    assert_eq!(
+        PaymentRequestIssue::NoInputValidation.to_string(),
+        "no_input_validation"
+    );
+    assert_eq!(
+        PaymentRequestIssue::MultiplePaymentMethods.to_string(),
+        "multiple_payment_methods"
+    );
 }
 
 #[test]

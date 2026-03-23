@@ -146,9 +146,7 @@ fn extract_report_uris(csp: &str) -> Vec<&str> {
 fn extract_report_to_endpoints<'a>(csp: &str, report_to_header: &'a str) -> Vec<&'a str> {
     let mut endpoints = Vec::new();
 
-    let has_report_to_directive = csp
-        .split(';')
-        .any(|d| d.trim().starts_with("report-to"));
+    let has_report_to_directive = csp.split(';').any(|d| d.trim().starts_with("report-to"));
 
     if has_report_to_directive && !report_to_header.is_empty() {
         for token in report_to_header.split('"') {

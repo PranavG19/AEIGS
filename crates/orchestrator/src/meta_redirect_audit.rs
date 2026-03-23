@@ -97,14 +97,14 @@ fn check_meta_refresh(lower: &str, issues: &mut Vec<MetaRedirectIssue>) {
         let ctx_end = (abs + 200).min(lower.len());
         let ctx = &lower[ctx_start..ctx_end];
 
-        if ctx.contains("refresh") && let Some(content_idx) = ctx.find("content=") {
+        if ctx.contains("refresh")
+            && let Some(content_idx) = ctx.find("content=")
+        {
             let rest = &ctx[content_idx + 8..];
             let rest = rest.trim_start_matches(['"', '\'']);
             if let Some(url_idx) = rest.find("url=") {
                 let url_rest = &rest[url_idx + 4..];
-                let end = url_rest
-                    .find(['"', '\'', '>'])
-                    .unwrap_or(url_rest.len());
+                let end = url_rest.find(['"', '\'', '>']).unwrap_or(url_rest.len());
                 let url = url_rest[..end].trim();
                 if !url.is_empty() {
                     issues.push(MetaRedirectIssue::MetaRefreshRedirect {
@@ -117,7 +117,9 @@ fn check_meta_refresh(lower: &str, issues: &mut Vec<MetaRedirectIssue>) {
                 .chars()
                 .take_while(|c| c.is_ascii_digit())
                 .collect::<String>();
-            if let Ok(d) = delay.parse::<u32>() && d <= 1 {
+            if let Ok(d) = delay.parse::<u32>()
+                && d <= 1
+            {
                 issues.push(MetaRedirectIssue::MetaRefreshShortDelay);
             }
         }

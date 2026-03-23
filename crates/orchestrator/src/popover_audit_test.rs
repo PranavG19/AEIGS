@@ -145,10 +145,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(PopoverIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PopoverIssue::ContentSpoofing.to_string(), "content_spoofing");
-    assert_eq!(PopoverIssue::ClickjackingOverlay.to_string(), "clickjacking_overlay");
-    assert_eq!(PopoverIssue::AutoShowOnLoad.to_string(), "auto_show_on_load");
-    assert_eq!(PopoverIssue::UnsanitizedContent.to_string(), "unsanitized_content");
+    assert_eq!(
+        PopoverIssue::ContentSpoofing.to_string(),
+        "content_spoofing"
+    );
+    assert_eq!(
+        PopoverIssue::ClickjackingOverlay.to_string(),
+        "clickjacking_overlay"
+    );
+    assert_eq!(
+        PopoverIssue::AutoShowOnLoad.to_string(),
+        "auto_show_on_load"
+    );
+    assert_eq!(
+        PopoverIssue::UnsanitizedContent.to_string(),
+        "unsanitized_content"
+    );
     assert_eq!(PopoverIssue::NestedPopover.to_string(), "nested_popover");
 }
 

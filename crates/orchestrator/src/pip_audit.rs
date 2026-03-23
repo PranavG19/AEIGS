@@ -54,8 +54,7 @@ pub fn analyze_pip(body: &str) -> Vec<PipIssue> {
     if body.contains("requestPictureInPicture") {
         issues.push(PipIssue::PipRequested);
 
-        if !body.contains("click") && !body.contains("pointerdown")
-            && !body.contains("touchstart")
+        if !body.contains("click") && !body.contains("pointerdown") && !body.contains("touchstart")
         {
             issues.push(PipIssue::NoUserActivation);
         }
@@ -91,10 +90,7 @@ pub fn pip_severity(issue: &PipIssue) -> f64 {
     }
 }
 
-pub fn pip_to_operations(
-    issues: &[PipIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn pip_to_operations(issues: &[PipIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

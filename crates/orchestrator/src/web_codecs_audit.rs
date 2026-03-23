@@ -60,7 +60,11 @@ pub fn analyze_web_codecs(body: &str) -> Vec<WebCodecsIssue> {
         issues.push(WebCodecsIssue::AudioCapture);
     }
 
-    if has_frame && (body.contains("copyTo") || body.contains("createImageBitmap") || body.contains("clone()")) {
+    if has_frame
+        && (body.contains("copyTo")
+            || body.contains("createImageBitmap")
+            || body.contains("clone()"))
+    {
         issues.push(WebCodecsIssue::RawFrameAccess);
     }
 

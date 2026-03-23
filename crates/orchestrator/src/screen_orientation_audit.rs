@@ -50,11 +50,8 @@ pub fn analyze_screen_orientation(body: &str) -> Vec<ScreenOrientationIssue> {
     let mut issues = Vec::new();
     issues.push(ScreenOrientationIssue::ApiDetected);
 
-    let has_lock =
-        body.contains("orientation.lock") || body.contains("screen.orientation.lock");
-    if has_lock
-        && (body.contains("fullscreen") || body.contains("requestFullscreen"))
-    {
+    let has_lock = body.contains("orientation.lock") || body.contains("screen.orientation.lock");
+    if has_lock && (body.contains("fullscreen") || body.contains("requestFullscreen")) {
         issues.push(ScreenOrientationIssue::OrientationLockAbuse);
     }
 
@@ -70,7 +67,9 @@ pub fn analyze_screen_orientation(body: &str) -> Vec<ScreenOrientationIssue> {
 
     if has_lock
         && (body.contains("requestFullscreen") || body.contains("webkitRequestFullscreen"))
-        && (body.contains("innerHTML") || body.contains("document.write") || body.contains("location.href"))
+        && (body.contains("innerHTML")
+            || body.contains("document.write")
+            || body.contains("location.href"))
     {
         issues.push(ScreenOrientationIssue::PhishingFullscreen);
     }

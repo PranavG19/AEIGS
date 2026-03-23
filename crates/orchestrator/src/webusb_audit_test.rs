@@ -114,10 +114,19 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebUsbIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebUsbIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebUsbIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        WebUsbIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebUsbIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(WebUsbIssue::BulkTransfer.to_string(), "bulk_transfer");
-    assert_eq!(WebUsbIssue::DeviceEnumeration.to_string(), "device_enumeration");
+    assert_eq!(
+        WebUsbIssue::DeviceEnumeration.to_string(),
+        "device_enumeration"
+    );
     assert_eq!(WebUsbIssue::ClaimInterface.to_string(), "claim_interface");
 }
 

@@ -117,11 +117,23 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebNfcIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebNfcIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(WebNfcIssue::NoUserActivation.to_string(), "no_user_activation");
+    assert_eq!(
+        WebNfcIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        WebNfcIssue::NoUserActivation.to_string(),
+        "no_user_activation"
+    );
     assert_eq!(WebNfcIssue::WriteCapability.to_string(), "write_capability");
-    assert_eq!(WebNfcIssue::ContinuousScanning.to_string(), "continuous_scanning");
-    assert_eq!(WebNfcIssue::UrlRecordInjection.to_string(), "url_record_injection");
+    assert_eq!(
+        WebNfcIssue::ContinuousScanning.to_string(),
+        "continuous_scanning"
+    );
+    assert_eq!(
+        WebNfcIssue::UrlRecordInjection.to_string(),
+        "url_record_injection"
+    );
 }
 
 #[test]

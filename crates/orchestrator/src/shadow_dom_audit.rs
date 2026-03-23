@@ -54,12 +54,17 @@ pub fn analyze_shadow_dom(body: &str) -> Vec<ShadowDomIssue> {
         issues.push(ShadowDomIssue::DeclarativeShadowDom);
     }
 
-    if body.contains("mode: \"open\"") || body.contains("mode: 'open'") || body.contains("mode:\"open\"") {
+    if body.contains("mode: \"open\"")
+        || body.contains("mode: 'open'")
+        || body.contains("mode:\"open\"")
+    {
         issues.push(ShadowDomIssue::OpenShadowRoot);
     }
 
     if (has_declarative || has_imperative)
-        && (body.contains("innerHTML") || body.contains("insertAdjacentHTML") || body.contains("outerHTML"))
+        && (body.contains("innerHTML")
+            || body.contains("insertAdjacentHTML")
+            || body.contains("outerHTML"))
     {
         issues.push(ShadowDomIssue::InnerHtmlInjection);
     }

@@ -145,8 +145,5 @@ fn display_variants() {
         SharedBufferIssue::WasmSharedMemory.to_string(),
         "wasm_shared_memory"
     );
-    assert_eq!(
-        SharedBufferIssue::AtomicsUsage.to_string(),
-        "atomics_usage"
-    );
+    assert_eq!(SharedBufferIssue::AtomicsUsage.to_string(), "atomics_usage");
 }

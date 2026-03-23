@@ -60,8 +60,7 @@ pub fn analyze_webrtc(body: &str) -> Vec<WebRtcIssue> {
         || body.contains("webkitRTCPeerConnection")
         || body.contains("mozRTCPeerConnection");
 
-    let has_get_user_media =
-        body.contains("getUserMedia") || body.contains("webkitGetUserMedia");
+    let has_get_user_media = body.contains("getUserMedia") || body.contains("webkitGetUserMedia");
 
     let has_rtc_data_channel =
         body.contains("RTCDataChannel") || body.contains("createDataChannel");
@@ -110,10 +109,7 @@ pub fn analyze_webrtc(body: &str) -> Vec<WebRtcIssue> {
     issues
 }
 
-pub fn webrtc_to_operations(
-    issues: &[WebRtcIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn webrtc_to_operations(issues: &[WebRtcIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

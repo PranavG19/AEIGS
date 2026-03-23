@@ -187,7 +187,10 @@ fn test_display_formatting() {
 
 #[test]
 fn test_severity_scores() {
-    assert_eq!(storage_bucket_severity(&StorageBucketIssue::ApiDetected), 2.0);
+    assert_eq!(
+        storage_bucket_severity(&StorageBucketIssue::ApiDetected),
+        2.0
+    );
     assert_eq!(
         storage_bucket_severity(&StorageBucketIssue::PersistentStorage),
         6.5

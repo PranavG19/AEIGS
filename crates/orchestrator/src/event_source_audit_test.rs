@@ -132,7 +132,8 @@ fn test_injection_via_message_document_write() {
 
 #[test]
 fn test_injection_via_message_eval() {
-    let body = "new EventSource('/events'); es.addEventListener('message', (e) => { eval(e.data); });";
+    let body =
+        "new EventSource('/events'); es.addEventListener('message', (e) => { eval(e.data); });";
     let issues = analyze_event_source(body);
     assert!(issues.contains(&EventSourceIssue::InjectionViaMessage));
 }
@@ -172,8 +173,20 @@ fn test_operations_generation() {
 #[test]
 fn test_severity_values() {
     assert_eq!(event_source_severity(&EventSourceIssue::ApiDetected), 2.0);
-    assert_eq!(event_source_severity(&EventSourceIssue::SensitiveDataStream), 7.5);
-    assert_eq!(event_source_severity(&EventSourceIssue::CrossOriginStream), 6.5);
-    assert_eq!(event_source_severity(&EventSourceIssue::NoReconnectLimit), 5.5);
-    assert_eq!(event_source_severity(&EventSourceIssue::InjectionViaMessage), 7.0);
+    assert_eq!(
+        event_source_severity(&EventSourceIssue::SensitiveDataStream),
+        7.5
+    );
+    assert_eq!(
+        event_source_severity(&EventSourceIssue::CrossOriginStream),
+        6.5
+    );
+    assert_eq!(
+        event_source_severity(&EventSourceIssue::NoReconnectLimit),
+        5.5
+    );
+    assert_eq!(
+        event_source_severity(&EventSourceIssue::InjectionViaMessage),
+        7.0
+    );
 }

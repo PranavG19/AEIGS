@@ -1,6 +1,6 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
-use crate::recon_client;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum WebVitalsIssue {
@@ -51,7 +51,9 @@ pub fn analyze_web_vitals(body: &str) -> Vec<WebVitalsIssue> {
     if has_web_vitals_api {
         issues.push(WebVitalsIssue::ApiDetected);
 
-        let has_exfiltration = (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        let has_exfiltration = (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
             && (body.contains("http://") || body.contains("https://"))
             && !body.contains("location.origin")
             && !body.contains("same-origin");
@@ -60,14 +62,22 @@ pub fn analyze_web_vitals(body: &str) -> Vec<WebVitalsIssue> {
             issues.push(WebVitalsIssue::MetricExfiltration);
         }
 
-        let has_timing_fingerprinting = (body.contains("PerformanceObserver") || body.contains("performance.getEntries") || body.contains("performance.now"))
-            && (body.contains("fingerprint") || body.contains("unique") || body.contains("hash") || body.contains("identity"));
+        let has_timing_fingerprinting = (body.contains("PerformanceObserver")
+            || body.contains("performance.getEntries")
+            || body.contains("performance.now"))
+            && (body.contains("fingerprint")
+                || body.contains("unique")
+                || body.contains("hash")
+                || body.contains("identity"));
 
         if has_timing_fingerprinting {
             issues.push(WebVitalsIssue::TimingFingerprinting);
         }
 
-        let has_behavior_tracking = (body.contains("click") || body.contains("scroll") || body.contains("input") || body.contains("mousemove"))
+        let has_behavior_tracking = (body.contains("click")
+            || body.contains("scroll")
+            || body.contains("input")
+            || body.contains("mousemove"))
             && (body.contains("track") || body.contains("analytics") || body.contains("monitor"));
 
         if has_behavior_tracking {

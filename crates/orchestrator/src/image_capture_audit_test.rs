@@ -163,18 +163,39 @@ fn all_issues_detected() {
 #[test]
 fn severity_values() {
     assert_eq!(image_capture_severity(&ImageCaptureIssue::ApiDetected), 2.0);
-    assert_eq!(image_capture_severity(&ImageCaptureIssue::SilentCapture), 8.0);
-    assert_eq!(image_capture_severity(&ImageCaptureIssue::DataExfiltration), 7.5);
-    assert_eq!(image_capture_severity(&ImageCaptureIssue::ContinuousCapture), 6.5);
-    assert_eq!(image_capture_severity(&ImageCaptureIssue::MetadataLeak), 5.5);
+    assert_eq!(
+        image_capture_severity(&ImageCaptureIssue::SilentCapture),
+        8.0
+    );
+    assert_eq!(
+        image_capture_severity(&ImageCaptureIssue::DataExfiltration),
+        7.5
+    );
+    assert_eq!(
+        image_capture_severity(&ImageCaptureIssue::ContinuousCapture),
+        6.5
+    );
+    assert_eq!(
+        image_capture_severity(&ImageCaptureIssue::MetadataLeak),
+        5.5
+    );
 }
 
 #[test]
 fn display_variants() {
     assert_eq!(ImageCaptureIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ImageCaptureIssue::SilentCapture.to_string(), "silent_capture");
-    assert_eq!(ImageCaptureIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(ImageCaptureIssue::ContinuousCapture.to_string(), "continuous_capture");
+    assert_eq!(
+        ImageCaptureIssue::SilentCapture.to_string(),
+        "silent_capture"
+    );
+    assert_eq!(
+        ImageCaptureIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        ImageCaptureIssue::ContinuousCapture.to_string(),
+        "continuous_capture"
+    );
     assert_eq!(ImageCaptureIssue::MetadataLeak.to_string(), "metadata_leak");
 }
 

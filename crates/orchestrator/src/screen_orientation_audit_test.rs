@@ -142,23 +142,50 @@ fn all_issues_detected() {
 
 #[test]
 fn severity_values_correct() {
-    assert_eq!(screen_orientation_severity(&ScreenOrientationIssue::PhishingFullscreen), 7.0);
-    assert_eq!(screen_orientation_severity(&ScreenOrientationIssue::OrientationLockAbuse), 6.5);
-    assert_eq!(screen_orientation_severity(&ScreenOrientationIssue::FingerprintingViaOrientation), 5.5);
-    assert_eq!(screen_orientation_severity(&ScreenOrientationIssue::ChangeEventTracking), 4.5);
-    assert_eq!(screen_orientation_severity(&ScreenOrientationIssue::ApiDetected), 2.0);
+    assert_eq!(
+        screen_orientation_severity(&ScreenOrientationIssue::PhishingFullscreen),
+        7.0
+    );
+    assert_eq!(
+        screen_orientation_severity(&ScreenOrientationIssue::OrientationLockAbuse),
+        6.5
+    );
+    assert_eq!(
+        screen_orientation_severity(&ScreenOrientationIssue::FingerprintingViaOrientation),
+        5.5
+    );
+    assert_eq!(
+        screen_orientation_severity(&ScreenOrientationIssue::ChangeEventTracking),
+        4.5
+    );
+    assert_eq!(
+        screen_orientation_severity(&ScreenOrientationIssue::ApiDetected),
+        2.0
+    );
 }
 
 #[test]
 fn display_impl_works() {
-    assert_eq!(ScreenOrientationIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ScreenOrientationIssue::OrientationLockAbuse.to_string(), "orientation_lock_abuse");
-    assert_eq!(ScreenOrientationIssue::PhishingFullscreen.to_string(), "phishing_fullscreen");
+    assert_eq!(
+        ScreenOrientationIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        ScreenOrientationIssue::OrientationLockAbuse.to_string(),
+        "orientation_lock_abuse"
+    );
+    assert_eq!(
+        ScreenOrientationIssue::PhishingFullscreen.to_string(),
+        "phishing_fullscreen"
+    );
 }
 
 #[test]
 fn operations_generated_correctly() {
-    let issues = vec![ScreenOrientationIssue::ApiDetected, ScreenOrientationIssue::PhishingFullscreen];
+    let issues = vec![
+        ScreenOrientationIssue::ApiDetected,
+        ScreenOrientationIssue::PhishingFullscreen,
+    ];
     let mut seq = 0;
     let ops = screen_orientation_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);

@@ -49,7 +49,9 @@ pub fn analyze_media_capabilities(body: &str) -> Vec<MediaCapabilitiesIssue> {
 
     let mut issues = vec![MediaCapabilitiesIssue::ApiDetected];
 
-    let has_codec_terms = body.contains("codec") || body.contains("codecs") || body.contains("MediaDecodingConfiguration");
+    let has_codec_terms = body.contains("codec")
+        || body.contains("codecs")
+        || body.contains("MediaDecodingConfiguration");
     let has_context_terms = body.contains("navigator.") || body.contains("screen.");
     let codec_count = body.matches("codec").count() + body.matches("codecs").count();
     if has_codec_terms && (has_context_terms || codec_count > 1) {
@@ -63,13 +65,16 @@ pub fn analyze_media_capabilities(body: &str) -> Vec<MediaCapabilitiesIssue> {
         issues.push(MediaCapabilitiesIssue::HardwareFingerprinting);
     }
 
-    let has_perf_support = body.contains("smooth") || body.contains("supported") || body.contains("performance");
-    let has_perf_measure = body.contains("measure") || body.contains("timing") || body.contains("benchmark");
+    let has_perf_support =
+        body.contains("smooth") || body.contains("supported") || body.contains("performance");
+    let has_perf_measure =
+        body.contains("measure") || body.contains("timing") || body.contains("benchmark");
     if has_perf_support && has_perf_measure {
         issues.push(MediaCapabilitiesIssue::PerformanceProbing);
     }
 
-    let has_exfil = body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
+    let has_exfil =
+        body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest");
     if has_exfil {
         issues.push(MediaCapabilitiesIssue::DataExfiltration);
     }

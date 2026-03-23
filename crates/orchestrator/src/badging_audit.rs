@@ -65,7 +65,9 @@ pub fn analyze_badging(body: &str) -> Vec<BadgingIssue> {
     }
 
     if body.contains("setAppBadge(")
-        && (body.contains("urgent") || body.contains("alert") || body.contains("warning")
+        && (body.contains("urgent")
+            || body.contains("alert")
+            || body.contains("warning")
             || body.contains("security"))
     {
         issues.push(BadgingIssue::SpoofedUrgency);
@@ -84,10 +86,7 @@ pub fn badging_severity(issue: &BadgingIssue) -> f64 {
     }
 }
 
-pub fn badging_to_operations(
-    issues: &[BadgingIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+pub fn badging_to_operations(issues: &[BadgingIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {

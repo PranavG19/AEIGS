@@ -50,7 +50,10 @@ pub fn audit_content_disposition(target: &str) -> Vec<ContentDispositionIssue> {
     analyze_content_disposition(&ct, &cd)
 }
 
-pub fn analyze_content_disposition(content_type: &str, disposition: &str) -> Vec<ContentDispositionIssue> {
+pub fn analyze_content_disposition(
+    content_type: &str,
+    disposition: &str,
+) -> Vec<ContentDispositionIssue> {
     let mut issues = Vec::new();
     let ct_lower = content_type.to_ascii_lowercase();
     let is_binary = ct_lower.contains("octet-stream")

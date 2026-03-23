@@ -61,9 +61,7 @@ pub fn audit_cache_poison(target: &str) -> Vec<CachePoisonIssue> {
         .unwrap_or("");
     let has_auth_header = headers.get("www-authenticate").is_some();
 
-    let is_cached = CACHE_INDICATORS
-        .iter()
-        .any(|h| headers.get(*h).is_some());
+    let is_cached = CACHE_INDICATORS.iter().any(|h| headers.get(*h).is_some());
 
     let mut issues = analyze_cache_headers(is_cached, vary, cache_control, has_auth_header);
 

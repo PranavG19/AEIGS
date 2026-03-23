@@ -51,12 +51,18 @@ pub fn analyze_barcode_detection(body: &str) -> Vec<BarcodeDetectionIssue> {
     }
 
     if body.contains(".detect(")
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(BarcodeDetectionIssue::DataExfiltration);
     }
 
-    if body.contains("setInterval") || body.contains("requestAnimationFrame") || body.contains("while(") || body.contains("while ") {
+    if body.contains("setInterval")
+        || body.contains("requestAnimationFrame")
+        || body.contains("while(")
+        || body.contains("while ")
+    {
         issues.push(BarcodeDetectionIssue::ContinuousScanning);
     }
 

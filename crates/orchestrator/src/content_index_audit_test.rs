@@ -103,7 +103,10 @@ fn no_enumeration_without_getall() {
 
 #[test]
 fn severity_phishing_highest() {
-    assert_eq!(content_index_severity(&ContentIndexIssue::PhishingContent), 7.5);
+    assert_eq!(
+        content_index_severity(&ContentIndexIssue::PhishingContent),
+        7.5
+    );
 }
 
 #[test]
@@ -113,7 +116,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ContentIndexIssue::ApiDetected, ContentIndexIssue::IndexEnumeration];
+    let issues = vec![
+        ContentIndexIssue::ApiDetected,
+        ContentIndexIssue::IndexEnumeration,
+    ];
     let mut seq = 0;
     let ops = content_index_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -123,11 +129,26 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(ContentIndexIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(ContentIndexIssue::OfflineContentInjection.to_string(), "offline_content_injection");
-    assert_eq!(ContentIndexIssue::IndexEnumeration.to_string(), "index_enumeration");
-    assert_eq!(ContentIndexIssue::PhishingContent.to_string(), "phishing_content");
-    assert_eq!(ContentIndexIssue::SilentRegistration.to_string(), "silent_registration");
-    assert_eq!(ContentIndexIssue::ExcessiveEntries.to_string(), "excessive_entries");
+    assert_eq!(
+        ContentIndexIssue::OfflineContentInjection.to_string(),
+        "offline_content_injection"
+    );
+    assert_eq!(
+        ContentIndexIssue::IndexEnumeration.to_string(),
+        "index_enumeration"
+    );
+    assert_eq!(
+        ContentIndexIssue::PhishingContent.to_string(),
+        "phishing_content"
+    );
+    assert_eq!(
+        ContentIndexIssue::SilentRegistration.to_string(),
+        "silent_registration"
+    );
+    assert_eq!(
+        ContentIndexIssue::ExcessiveEntries.to_string(),
+        "excessive_entries"
+    );
 }
 
 #[test]

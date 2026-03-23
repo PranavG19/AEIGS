@@ -191,7 +191,10 @@ fn test_data_exfiltration_not_detected_without_network() {
 #[test]
 fn test_severity_values() {
     assert_eq!(audio_worklet_severity(&AudioWorkletIssue::ApiDetected), 2.0);
-    assert_eq!(audio_worklet_severity(&AudioWorkletIssue::CryptoMining), 8.0);
+    assert_eq!(
+        audio_worklet_severity(&AudioWorkletIssue::CryptoMining),
+        8.0
+    );
     assert_eq!(
         audio_worklet_severity(&AudioWorkletIssue::SideChannelTiming),
         7.0

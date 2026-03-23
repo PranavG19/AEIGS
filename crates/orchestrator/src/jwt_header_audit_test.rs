@@ -13,7 +13,9 @@ fn is_jwt_format_rejects_short_parts() {
 
 #[test]
 fn is_jwt_format_rejects_two_parts() {
-    assert!(!is_jwt_format("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"));
+    assert!(!is_jwt_format(
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0"
+    ));
 }
 
 #[test]
@@ -36,7 +38,11 @@ fn analyze_weak_hmac_hs256() {
     // {"alg":"HS256","typ":"JWT"} base64url = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
     let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U";
     let issues = analyze_jwt_token(token);
-    assert!(issues.iter().any(|i| matches!(i, JwtIssue::WeakHmac { algorithm } if algorithm == "HS256")));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, JwtIssue::WeakHmac { algorithm } if algorithm == "HS256"))
+    );
 }
 
 #[test]
@@ -60,7 +66,11 @@ fn analyze_sensitive_field_password() {
     // payload: {"password":"secret123"} = eyJwYXNzd29yZCI6InNlY3JldDEyMyJ9
     let token = "eyJhbGciOiJSUzI1NiJ9.eyJwYXNzd29yZCI6InNlY3JldDEyMyJ9.sig";
     let issues = analyze_jwt_token(token);
-    assert!(issues.iter().any(|i| matches!(i, JwtIssue::SensitivePayloadData { field } if field == "password")));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, JwtIssue::SensitivePayloadData { field } if field == "password"))
+    );
 }
 
 #[test]
@@ -86,10 +96,24 @@ fn extract_jwt_from_cookie_not_jwt() {
 
 #[test]
 fn severity_ordering() {
-    assert!(jwt_severity(&JwtIssue::AlgNone) > jwt_severity(&JwtIssue::WeakHmac { algorithm: "HS256".to_string() }));
-    assert!(jwt_severity(&JwtIssue::WeakHmac { algorithm: "HS256".to_string() }) > jwt_severity(&JwtIssue::ExposedInUrl));
+    assert!(
+        jwt_severity(&JwtIssue::AlgNone)
+            > jwt_severity(&JwtIssue::WeakHmac {
+                algorithm: "HS256".to_string()
+            })
+    );
+    assert!(
+        jwt_severity(&JwtIssue::WeakHmac {
+            algorithm: "HS256".to_string()
+        }) > jwt_severity(&JwtIssue::ExposedInUrl)
+    );
     assert!(jwt_severity(&JwtIssue::ExposedInUrl) > jwt_severity(&JwtIssue::MissingExpClaim));
-    assert!(jwt_severity(&JwtIssue::MissingExpClaim) > jwt_severity(&JwtIssue::ExposedInCookie { cookie_name: "x".to_string() }));
+    assert!(
+        jwt_severity(&JwtIssue::MissingExpClaim)
+            > jwt_severity(&JwtIssue::ExposedInCookie {
+                cookie_name: "x".to_string()
+            })
+    );
 }
 
 #[test]
@@ -112,17 +136,26 @@ fn operations_empty_for_no_issues() {
 fn display_variants() {
     assert_eq!(JwtIssue::AlgNone.to_string(), "jwt_alg_none");
     assert_eq!(
-        JwtIssue::WeakHmac { algorithm: "HS256".to_string() }.to_string(),
+        JwtIssue::WeakHmac {
+            algorithm: "HS256".to_string()
+        }
+        .to_string(),
         "jwt_weak_hmac:HS256"
     );
     assert_eq!(JwtIssue::MissingExpClaim.to_string(), "jwt_missing_exp");
     assert_eq!(JwtIssue::ExposedInUrl.to_string(), "jwt_exposed_in_url");
     assert_eq!(
-        JwtIssue::ExposedInCookie { cookie_name: "tok".to_string() }.to_string(),
+        JwtIssue::ExposedInCookie {
+            cookie_name: "tok".to_string()
+        }
+        .to_string(),
         "jwt_in_cookie:tok"
     );
     assert_eq!(
-        JwtIssue::SensitivePayloadData { field: "ssn".to_string() }.to_string(),
+        JwtIssue::SensitivePayloadData {
+            field: "ssn".to_string()
+        }
+        .to_string(),
         "jwt_sensitive_data:ssn"
     );
 }

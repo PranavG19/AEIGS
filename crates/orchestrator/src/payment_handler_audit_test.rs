@@ -94,17 +94,26 @@ fn no_origin_issue_with_check() {
 
 #[test]
 fn severity_interception_highest() {
-    assert_eq!(payment_handler_severity(&PaymentHandlerIssue::DataInterception), 8.0);
+    assert_eq!(
+        payment_handler_severity(&PaymentHandlerIssue::DataInterception),
+        8.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(payment_handler_severity(&PaymentHandlerIssue::ApiDetected), 3.0);
+    assert_eq!(
+        payment_handler_severity(&PaymentHandlerIssue::ApiDetected),
+        3.0
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![PaymentHandlerIssue::ApiDetected, PaymentHandlerIssue::CustomHandler];
+    let issues = vec![
+        PaymentHandlerIssue::ApiDetected,
+        PaymentHandlerIssue::CustomHandler,
+    ];
     let mut seq = 0;
     let ops = payment_handler_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -114,10 +123,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(PaymentHandlerIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PaymentHandlerIssue::CustomHandler.to_string(), "custom_handler");
-    assert_eq!(PaymentHandlerIssue::DataInterception.to_string(), "data_interception");
-    assert_eq!(PaymentHandlerIssue::InstrumentEnumeration.to_string(), "instrument_enumeration");
-    assert_eq!(PaymentHandlerIssue::NoOriginValidation.to_string(), "no_origin_validation");
+    assert_eq!(
+        PaymentHandlerIssue::CustomHandler.to_string(),
+        "custom_handler"
+    );
+    assert_eq!(
+        PaymentHandlerIssue::DataInterception.to_string(),
+        "data_interception"
+    );
+    assert_eq!(
+        PaymentHandlerIssue::InstrumentEnumeration.to_string(),
+        "instrument_enumeration"
+    );
+    assert_eq!(
+        PaymentHandlerIssue::NoOriginValidation.to_string(),
+        "no_origin_validation"
+    );
 }
 
 #[test]

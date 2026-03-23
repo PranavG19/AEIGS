@@ -178,9 +178,24 @@ fn test_structured_clone_to_operations() {
 
 #[test]
 fn test_severity_values() {
-    assert_eq!(structured_clone_severity(&StructuredCloneIssue::ApiDetected), 2.0);
-    assert_eq!(structured_clone_severity(&StructuredCloneIssue::PrototypePollution), 7.5);
-    assert_eq!(structured_clone_severity(&StructuredCloneIssue::SensitiveDataClone), 7.0);
-    assert_eq!(structured_clone_severity(&StructuredCloneIssue::CrossOriginLeak), 6.5);
-    assert_eq!(structured_clone_severity(&StructuredCloneIssue::LargeObjectDos), 5.5);
+    assert_eq!(
+        structured_clone_severity(&StructuredCloneIssue::ApiDetected),
+        2.0
+    );
+    assert_eq!(
+        structured_clone_severity(&StructuredCloneIssue::PrototypePollution),
+        7.5
+    );
+    assert_eq!(
+        structured_clone_severity(&StructuredCloneIssue::SensitiveDataClone),
+        7.0
+    );
+    assert_eq!(
+        structured_clone_severity(&StructuredCloneIssue::CrossOriginLeak),
+        6.5
+    );
+    assert_eq!(
+        structured_clone_severity(&StructuredCloneIssue::LargeObjectDos),
+        5.5
+    );
 }

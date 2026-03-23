@@ -27,9 +27,11 @@ fn cross_tab_data_leak_detected() {
         sw.port.postMessage(localStorage.getItem('token'));
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak)
+    );
 }
 
 #[test]
@@ -39,9 +41,11 @@ fn cross_tab_data_leak_with_onmessage_and_cookie() {
         sw.port.onmessage = function(e) { document.cookie = e.data; };
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak)
+    );
 }
 
 #[test]
@@ -51,27 +55,33 @@ fn cross_tab_data_leak_not_flagged_without_storage() {
         sw.port.postMessage('hello');
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak)
+    );
 }
 
 #[test]
 fn external_worker_script_detected() {
     let body = r#"var sw = new SharedWorker("https://cdn.example.com/worker.js");"#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript)
+    );
 }
 
 #[test]
 fn external_worker_script_not_flagged_for_local() {
     let body = r#"var sw = new SharedWorker("/workers/shared.js");"#;
     let issues = analyze_shared_worker(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript)
+    );
 }
 
 #[test]
@@ -81,9 +91,11 @@ fn persistent_connection_detected() {
         var ws = new WebSocket('wss://example.com/stream');
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::PersistentConnection));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::PersistentConnection)
+    );
 }
 
 #[test]
@@ -94,9 +106,11 @@ fn persistent_connection_not_flagged_with_close() {
         ws.close();
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::PersistentConnection));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::PersistentConnection)
+    );
 }
 
 #[test]
@@ -107,9 +121,11 @@ fn persistent_connection_not_flagged_with_terminate() {
         sw.terminate;
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::PersistentConnection));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::PersistentConnection)
+    );
 }
 
 #[test]
@@ -119,9 +135,7 @@ fn crypto_mining_detected() {
         while(true) { crypto.subtle.digest('SHA-256', data); }
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CryptoMining));
+    assert!(issues.iter().any(|i| *i == SharedWorkerIssue::CryptoMining));
 }
 
 #[test]
@@ -131,9 +145,7 @@ fn crypto_mining_with_set_interval_and_wasm() {
         setInterval(function() { wasm.mine(); }, 100);
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CryptoMining));
+    assert!(issues.iter().any(|i| *i == SharedWorkerIssue::CryptoMining));
 }
 
 #[test]
@@ -143,9 +155,7 @@ fn crypto_mining_not_flagged_without_loop() {
         crypto.subtle.digest('SHA-256', data);
     "#;
     let issues = analyze_shared_worker(body);
-    assert!(!issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CryptoMining));
+    assert!(!issues.iter().any(|i| *i == SharedWorkerIssue::CryptoMining));
 }
 
 #[test]
@@ -159,18 +169,22 @@ fn all_issues_detected() {
     let issues = analyze_shared_worker(body);
     assert_eq!(issues.len(), 5);
     assert!(issues.iter().any(|i| *i == SharedWorkerIssue::ApiDetected));
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak));
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript));
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::PersistentConnection));
-    assert!(issues
-        .iter()
-        .any(|i| *i == SharedWorkerIssue::CryptoMining));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::CrossTabDataLeak)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::ExternalWorkerScript)
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == SharedWorkerIssue::PersistentConnection)
+    );
+    assert!(issues.iter().any(|i| *i == SharedWorkerIssue::CryptoMining));
 }
 
 #[test]
@@ -208,10 +222,7 @@ fn display_variants() {
         SharedWorkerIssue::PersistentConnection.to_string(),
         "persistent_connection"
     );
-    assert_eq!(
-        SharedWorkerIssue::CryptoMining.to_string(),
-        "crypto_mining"
-    );
+    assert_eq!(SharedWorkerIssue::CryptoMining.to_string(), "crypto_mining");
 }
 
 #[test]

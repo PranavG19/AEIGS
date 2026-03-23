@@ -141,17 +141,26 @@ fn no_unsanitized_with_sanitize() {
 
 #[test]
 fn severity_injection_highest() {
-    assert_eq!(shadow_dom_severity(&ShadowDomIssue::InnerHtmlInjection), 8.0);
+    assert_eq!(
+        shadow_dom_severity(&ShadowDomIssue::InnerHtmlInjection),
+        8.0
+    );
 }
 
 #[test]
 fn severity_detected_lowest() {
-    assert_eq!(shadow_dom_severity(&ShadowDomIssue::DeclarativeShadowDom), 2.5);
+    assert_eq!(
+        shadow_dom_severity(&ShadowDomIssue::DeclarativeShadowDom),
+        2.5
+    );
 }
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![ShadowDomIssue::DeclarativeShadowDom, ShadowDomIssue::OpenShadowRoot];
+    let issues = vec![
+        ShadowDomIssue::DeclarativeShadowDom,
+        ShadowDomIssue::OpenShadowRoot,
+    ];
     let mut seq = 0;
     let ops = shadow_dom_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -160,12 +169,30 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(ShadowDomIssue::DeclarativeShadowDom.to_string(), "declarative_shadow_dom");
-    assert_eq!(ShadowDomIssue::OpenShadowRoot.to_string(), "open_shadow_root");
-    assert_eq!(ShadowDomIssue::InnerHtmlInjection.to_string(), "inner_html_injection");
-    assert_eq!(ShadowDomIssue::StyleInjection.to_string(), "style_injection");
-    assert_eq!(ShadowDomIssue::EventRetargetBypass.to_string(), "event_retarget_bypass");
-    assert_eq!(ShadowDomIssue::UnsanitizedSlotContent.to_string(), "unsanitized_slot_content");
+    assert_eq!(
+        ShadowDomIssue::DeclarativeShadowDom.to_string(),
+        "declarative_shadow_dom"
+    );
+    assert_eq!(
+        ShadowDomIssue::OpenShadowRoot.to_string(),
+        "open_shadow_root"
+    );
+    assert_eq!(
+        ShadowDomIssue::InnerHtmlInjection.to_string(),
+        "inner_html_injection"
+    );
+    assert_eq!(
+        ShadowDomIssue::StyleInjection.to_string(),
+        "style_injection"
+    );
+    assert_eq!(
+        ShadowDomIssue::EventRetargetBypass.to_string(),
+        "event_retarget_bypass"
+    );
+    assert_eq!(
+        ShadowDomIssue::UnsanitizedSlotContent.to_string(),
+        "unsanitized_slot_content"
+    );
 }
 
 #[test]

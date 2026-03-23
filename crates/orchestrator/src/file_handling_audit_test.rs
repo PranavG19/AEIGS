@@ -87,7 +87,8 @@ fn no_validation_issue_with_type_check() {
 
 #[test]
 fn detects_executable_handling() {
-    let body = r#"{"file_handlers": [{"action": "/run", "accept": {"application/x-exe": [".exe"]}}]}"#;
+    let body =
+        r#"{"file_handlers": [{"action": "/run", "accept": {"application/x-exe": [".exe"]}}]}"#;
     let issues = analyze_file_handling(body);
     assert!(issues.contains(&FileHandlingIssue::ExecutableHandling));
 }
@@ -101,7 +102,10 @@ fn no_executable_with_safe_types() {
 
 #[test]
 fn severity_executable_highest() {
-    assert_eq!(file_handling_severity(&FileHandlingIssue::ExecutableHandling), 8.0);
+    assert_eq!(
+        file_handling_severity(&FileHandlingIssue::ExecutableHandling),
+        8.0
+    );
 }
 
 #[test]
@@ -111,7 +115,10 @@ fn severity_detected_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![FileHandlingIssue::ApiDetected, FileHandlingIssue::BroadFileTypes];
+    let issues = vec![
+        FileHandlingIssue::ApiDetected,
+        FileHandlingIssue::BroadFileTypes,
+    ];
     let mut seq = 0;
     let ops = file_handling_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -121,10 +128,22 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(FileHandlingIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(FileHandlingIssue::BroadFileTypes.to_string(), "broad_file_types");
-    assert_eq!(FileHandlingIssue::DataExfiltration.to_string(), "data_exfiltration");
-    assert_eq!(FileHandlingIssue::NoContentValidation.to_string(), "no_content_validation");
-    assert_eq!(FileHandlingIssue::ExecutableHandling.to_string(), "executable_handling");
+    assert_eq!(
+        FileHandlingIssue::BroadFileTypes.to_string(),
+        "broad_file_types"
+    );
+    assert_eq!(
+        FileHandlingIssue::DataExfiltration.to_string(),
+        "data_exfiltration"
+    );
+    assert_eq!(
+        FileHandlingIssue::NoContentValidation.to_string(),
+        "no_content_validation"
+    );
+    assert_eq!(
+        FileHandlingIssue::ExecutableHandling.to_string(),
+        "executable_handling"
+    );
 }
 
 #[test]

@@ -89,10 +89,7 @@ fn severity_requested_lowest() {
 
 #[test]
 fn to_operations_creates_entries() {
-    let issues = vec![
-        WakeLockIssue::WakeLockRequested,
-        WakeLockIssue::NoRelease,
-    ];
+    let issues = vec![WakeLockIssue::WakeLockRequested, WakeLockIssue::NoRelease];
     let mut seq = 0;
     let ops = wake_lock_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
@@ -101,10 +98,19 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(WakeLockIssue::WakeLockRequested.to_string(), "wake_lock_requested");
-    assert_eq!(WakeLockIssue::ScreenWakeLock.to_string(), "screen_wake_lock");
+    assert_eq!(
+        WakeLockIssue::WakeLockRequested.to_string(),
+        "wake_lock_requested"
+    );
+    assert_eq!(
+        WakeLockIssue::ScreenWakeLock.to_string(),
+        "screen_wake_lock"
+    );
     assert_eq!(WakeLockIssue::NoRelease.to_string(), "no_release");
-    assert_eq!(WakeLockIssue::NoVisibilityCheck.to_string(), "no_visibility_check");
+    assert_eq!(
+        WakeLockIssue::NoVisibilityCheck.to_string(),
+        "no_visibility_check"
+    );
     assert_eq!(WakeLockIssue::PersistentLock.to_string(), "persistent_lock");
 }
 

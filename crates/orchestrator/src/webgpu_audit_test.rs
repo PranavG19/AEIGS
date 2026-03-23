@@ -153,10 +153,19 @@ fn to_operations_creates_entries() {
 #[test]
 fn display_variants() {
     assert_eq!(WebGpuIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WebGpuIssue::GpuFingerprinting.to_string(), "gpu_fingerprinting");
-    assert_eq!(WebGpuIssue::TimingSideChannel.to_string(), "timing_side_channel");
+    assert_eq!(
+        WebGpuIssue::GpuFingerprinting.to_string(),
+        "gpu_fingerprinting"
+    );
+    assert_eq!(
+        WebGpuIssue::TimingSideChannel.to_string(),
+        "timing_side_channel"
+    );
     assert_eq!(WebGpuIssue::CryptoMining.to_string(), "crypto_mining");
-    assert_eq!(WebGpuIssue::MemoryExhaustion.to_string(), "memory_exhaustion");
+    assert_eq!(
+        WebGpuIssue::MemoryExhaustion.to_string(),
+        "memory_exhaustion"
+    );
 }
 
 #[test]

@@ -75,7 +75,18 @@ pub fn analyze_contact_picker(body: &str) -> Vec<ContactPickerIssue> {
 }
 
 fn count_contact_properties(body: &str) -> usize {
-    let props = ["\"name\"", "'name'", "\"email\"", "'email'", "\"tel\"", "'tel'", "\"address\"", "'address'", "\"icon\"", "'icon'"];
+    let props = [
+        "\"name\"",
+        "'name'",
+        "\"email\"",
+        "'email'",
+        "\"tel\"",
+        "'tel'",
+        "\"address\"",
+        "'address'",
+        "\"icon\"",
+        "'icon'",
+    ];
     props.iter().filter(|p| body.contains(*p)).count()
 }
 

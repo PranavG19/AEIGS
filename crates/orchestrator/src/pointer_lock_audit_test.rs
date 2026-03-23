@@ -37,7 +37,11 @@ fn detects_clickjacking() {
         "</script>",
     );
     let issues = analyze_pointer_lock(body);
-    assert!(issues.iter().any(|i| *i == PointerLockIssue::ClickjackingRisk));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == PointerLockIssue::ClickjackingRisk)
+    );
 }
 
 #[test]
@@ -50,7 +54,11 @@ fn no_clickjacking_without_injection() {
         "</script>",
     );
     let issues = analyze_pointer_lock(body);
-    assert!(!issues.iter().any(|i| *i == PointerLockIssue::ClickjackingRisk));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == PointerLockIssue::ClickjackingRisk)
+    );
 }
 
 #[test]
@@ -83,7 +91,11 @@ fn detects_input_hijacking() {
         "</script>",
     );
     let issues = analyze_pointer_lock(body);
-    assert!(issues.iter().any(|i| *i == PointerLockIssue::InputHijacking));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == PointerLockIssue::InputHijacking)
+    );
 }
 
 #[test]
@@ -97,7 +109,11 @@ fn no_hijacking_with_exit() {
         "</script>",
     );
     let issues = analyze_pointer_lock(body);
-    assert!(!issues.iter().any(|i| *i == PointerLockIssue::InputHijacking));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| *i == PointerLockIssue::InputHijacking)
+    );
 }
 
 #[test]
@@ -138,7 +154,11 @@ fn all_issues_detected() {
     );
     let issues = analyze_pointer_lock(body);
     assert!(issues.iter().any(|i| *i == PointerLockIssue::ApiDetected));
-    assert!(issues.iter().any(|i| *i == PointerLockIssue::ClickjackingRisk));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == PointerLockIssue::ClickjackingRisk)
+    );
     assert!(issues.iter().any(|i| *i == PointerLockIssue::UiSpoofing));
     assert!(issues.iter().any(|i| *i == PointerLockIssue::EscapeBypass));
 }
@@ -146,7 +166,9 @@ fn all_issues_detected() {
 #[test]
 fn severity_values_correct() {
     assert!((pointer_lock_severity(&PointerLockIssue::ApiDetected) - 2.0).abs() < f64::EPSILON);
-    assert!((pointer_lock_severity(&PointerLockIssue::ClickjackingRisk) - 7.0).abs() < f64::EPSILON);
+    assert!(
+        (pointer_lock_severity(&PointerLockIssue::ClickjackingRisk) - 7.0).abs() < f64::EPSILON
+    );
     assert!((pointer_lock_severity(&PointerLockIssue::UiSpoofing) - 6.5).abs() < f64::EPSILON);
     assert!((pointer_lock_severity(&PointerLockIssue::InputHijacking) - 6.0).abs() < f64::EPSILON);
     assert!((pointer_lock_severity(&PointerLockIssue::EscapeBypass) - 5.5).abs() < f64::EPSILON);
@@ -155,9 +177,15 @@ fn severity_values_correct() {
 #[test]
 fn display_impl_works() {
     assert_eq!(PointerLockIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(PointerLockIssue::ClickjackingRisk.to_string(), "clickjacking_risk");
+    assert_eq!(
+        PointerLockIssue::ClickjackingRisk.to_string(),
+        "clickjacking_risk"
+    );
     assert_eq!(PointerLockIssue::UiSpoofing.to_string(), "ui_spoofing");
-    assert_eq!(PointerLockIssue::InputHijacking.to_string(), "input_hijacking");
+    assert_eq!(
+        PointerLockIssue::InputHijacking.to_string(),
+        "input_hijacking"
+    );
     assert_eq!(PointerLockIssue::EscapeBypass.to_string(), "escape_bypass");
 }
 

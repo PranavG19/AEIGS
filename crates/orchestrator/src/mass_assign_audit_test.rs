@@ -4,27 +4,29 @@ use crate::mass_assign_audit::*;
 fn admin_field_reflected() {
     let body = r#"{"id":1,"name":"user","is_admin":true}"#;
     let issues = analyze_mass_assignment("/api/users/1", &["is_admin"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::ReflectedAdminField { field, .. } if field == "is_admin")));
+    assert!(issues.iter().any(
+        |i| matches!(i, MassAssignIssue::ReflectedAdminField { field, .. } if field == "is_admin")
+    ));
 }
 
 #[test]
 fn role_field_reflected() {
     let body = r#"{"id":1,"role":"admin"}"#;
     let issues = analyze_mass_assignment("/api/users/1", &["role"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::ReflectedRoleField { field, .. } if field == "role")));
+    assert!(issues.iter().any(
+        |i| matches!(i, MassAssignIssue::ReflectedRoleField { field, .. } if field == "role")
+    ));
 }
 
 #[test]
 fn unknown_fields_accepted() {
     let body = r#"{"id":1,"__test_field_aegis":"injected"}"#;
     let issues = analyze_mass_assignment("/api/users/1", &["__test_field_aegis"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::AcceptsUnknownFields { count, .. } if *count == 1)));
+    assert!(
+        issues.iter().any(
+            |i| matches!(i, MassAssignIssue::AcceptsUnknownFields { count, .. } if *count == 1)
+        )
+    );
 }
 
 #[test]
@@ -49,18 +51,22 @@ fn multiple_admin_fields() {
 fn case_insensitive_matching() {
     let body = r#"{"ID":1,"ISADMIN":true}"#;
     let issues = analyze_mass_assignment("/api/users/1", &["isAdmin"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::ReflectedAdminField { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, MassAssignIssue::ReflectedAdminField { .. }))
+    );
 }
 
 #[test]
 fn permission_field_is_role_category() {
     let body = r#"{"permission":"write"}"#;
     let issues = analyze_mass_assignment("/api/users/1", &["permission"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::ReflectedRoleField { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, MassAssignIssue::ReflectedRoleField { .. }))
+    );
 }
 
 #[test]
@@ -148,9 +154,14 @@ fn display_variants() {
 #[test]
 fn both_canaries_reflected() {
     let body = r#"{"__test_field_aegis":"a","__canary_param":"b"}"#;
-    let issues =
-        analyze_mass_assignment("/api/users", &["__test_field_aegis", "__canary_param"], body);
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, MassAssignIssue::AcceptsUnknownFields { count, .. } if *count == 2)));
+    let issues = analyze_mass_assignment(
+        "/api/users",
+        &["__test_field_aegis", "__canary_param"],
+        body,
+    );
+    assert!(
+        issues.iter().any(
+            |i| matches!(i, MassAssignIssue::AcceptsUnknownFields { count, .. } if *count == 2)
+        )
+    );
 }

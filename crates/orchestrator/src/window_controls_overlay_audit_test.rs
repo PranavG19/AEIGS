@@ -149,14 +149,26 @@ fn to_operations_creates_entries() {
 
 #[test]
 fn display_variants() {
-    assert_eq!(WindowControlsOverlayIssue::ApiDetected.to_string(), "api_detected");
-    assert_eq!(WindowControlsOverlayIssue::UiSpoofing.to_string(), "ui_spoofing");
-    assert_eq!(WindowControlsOverlayIssue::ClickjackingRisk.to_string(), "clickjacking_risk");
+    assert_eq!(
+        WindowControlsOverlayIssue::ApiDetected.to_string(),
+        "api_detected"
+    );
+    assert_eq!(
+        WindowControlsOverlayIssue::UiSpoofing.to_string(),
+        "ui_spoofing"
+    );
+    assert_eq!(
+        WindowControlsOverlayIssue::ClickjackingRisk.to_string(),
+        "clickjacking_risk"
+    );
     assert_eq!(
         WindowControlsOverlayIssue::GeometryTracking.to_string(),
         "geometry_tracking"
     );
-    assert_eq!(WindowControlsOverlayIssue::DynamicTitlebar.to_string(), "dynamic_titlebar");
+    assert_eq!(
+        WindowControlsOverlayIssue::DynamicTitlebar.to_string(),
+        "dynamic_titlebar"
+    );
 }
 
 #[test]

@@ -56,7 +56,9 @@ pub fn analyze_payment_handler(body: &str) -> Vec<PaymentHandlerIssue> {
     }
 
     if (body.contains("paymentrequest") || body.contains("PaymentRequestEvent"))
-        && (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("fetch(")
+            || body.contains("sendBeacon")
+            || body.contains("XMLHttpRequest"))
     {
         issues.push(PaymentHandlerIssue::DataInterception);
     }

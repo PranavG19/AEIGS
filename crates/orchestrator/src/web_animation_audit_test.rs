@@ -156,10 +156,22 @@ fn all_issues_detected() {
 
 #[test]
 fn severity_values_correct() {
-    assert_eq!(web_animation_severity(&WebAnimationIssue::ClickjackingViaAnimation), 7.0);
-    assert_eq!(web_animation_severity(&WebAnimationIssue::UiRedressing), 6.5);
-    assert_eq!(web_animation_severity(&WebAnimationIssue::ResourceExhaustion), 6.0);
-    assert_eq!(web_animation_severity(&WebAnimationIssue::TimingSideChannel), 5.5);
+    assert_eq!(
+        web_animation_severity(&WebAnimationIssue::ClickjackingViaAnimation),
+        7.0
+    );
+    assert_eq!(
+        web_animation_severity(&WebAnimationIssue::UiRedressing),
+        6.5
+    );
+    assert_eq!(
+        web_animation_severity(&WebAnimationIssue::ResourceExhaustion),
+        6.0
+    );
+    assert_eq!(
+        web_animation_severity(&WebAnimationIssue::TimingSideChannel),
+        5.5
+    );
     assert_eq!(web_animation_severity(&WebAnimationIssue::ApiDetected), 2.0);
 }
 
@@ -167,14 +179,26 @@ fn severity_values_correct() {
 fn display_impl_works() {
     assert_eq!(WebAnimationIssue::ApiDetected.to_string(), "api_detected");
     assert_eq!(WebAnimationIssue::UiRedressing.to_string(), "ui_redressing");
-    assert_eq!(WebAnimationIssue::ResourceExhaustion.to_string(), "resource_exhaustion");
-    assert_eq!(WebAnimationIssue::TimingSideChannel.to_string(), "timing_side_channel");
-    assert_eq!(WebAnimationIssue::ClickjackingViaAnimation.to_string(), "clickjacking_via_animation");
+    assert_eq!(
+        WebAnimationIssue::ResourceExhaustion.to_string(),
+        "resource_exhaustion"
+    );
+    assert_eq!(
+        WebAnimationIssue::TimingSideChannel.to_string(),
+        "timing_side_channel"
+    );
+    assert_eq!(
+        WebAnimationIssue::ClickjackingViaAnimation.to_string(),
+        "clickjacking_via_animation"
+    );
 }
 
 #[test]
 fn operations_generated_correctly() {
-    let issues = vec![WebAnimationIssue::ApiDetected, WebAnimationIssue::ClickjackingViaAnimation];
+    let issues = vec![
+        WebAnimationIssue::ApiDetected,
+        WebAnimationIssue::ClickjackingViaAnimation,
+    ];
     let mut seq = 0;
     let ops = web_animation_to_operations(&issues, &mut seq);
     assert_eq!(ops.len(), 2);
