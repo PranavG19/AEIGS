@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // window.name leak detection
+    let wn_issues = crate::window_name_audit::analyze_window_name(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wn_issues,
+        crate::window_name_audit::window_name_to_operations
+    );
+
     // Payment form security audit
     let payment_issues =
         crate::payment_form_audit::analyze_payment_forms(body, resp.is_https);
