@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Ink API audit
+    let ink_issues = crate::ink_api_audit::analyze_ink_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ink_issues,
+        crate::ink_api_audit::ink_api_to_operations
+    );
+
     // Web Codecs API audit
     let wc_issues = crate::web_codecs_audit::analyze_web_codecs(body);
     collect_ops!(
