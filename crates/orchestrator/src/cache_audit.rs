@@ -1,19 +1,58 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
-use crate::recon_client;
-
-#[derive(Debug, Clone)]
-pub struct CacheIssue {
-    pub kind: CacheIssueKind,
-    pub detail: String,
-}
-
-#[derive(Debug, Clone)]
-pub enum CacheIssueKind {
+#[derive(Debug, Clone, PartialEq)]
+pub enum CacheIssue {
     MissingCacheControl,
     PublicWithoutRevalidation,
     NoNoStore,
+    LongMaxAge { seconds: u64 },
+    StaleWhileRevalidate { seconds: u64 },
+    NoPragmaNoCache,
+    VaryMissing,
+    VaryWildcard,
+    EtagWeakHash { etag: String },
+    CacheControlConflict { directives: String },
+    SensitiveHeaderCached,
+}
+
+impl std::fmt::Display for CacheIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MissingCacheControl => write!(f, "missing_cache_control"),
+            Self::PublicWithoutRevalidation => write!(f, "public_without_revalidation"),
+            Self::NoNoStore => write!(f, "no_no_store"),
+            Self::LongMaxAge { seconds } => write!(f, "long_max_age_{seconds}"),
+            Self::StaleWhileRevalidate { seconds } => {
+                write!(f, "stale_while_revalidate_{seconds}")
+            }
+            Self::NoPragmaNoCache => write!(f, "no_pragma_no_cache"),
+            Self::VaryMissing => write!(f, "vary_missing"),
+            Self::VaryWildcard => write!(f, "vary_wildcard"),
+            Self::EtagWeakHash { etag } => write!(f, "etag_weak_hash_{etag}"),
+            Self::CacheControlConflict { directives } => {
+                write!(f, "cache_control_conflict_{directives}")
+            }
+            Self::SensitiveHeaderCached => write!(f, "sensitive_header_cached"),
+        }
+    }
+}
+
+pub fn cache_severity(issue: &CacheIssue) -> f64 {
+    match issue {
+        CacheIssue::MissingCacheControl => 3.0,
+        CacheIssue::PublicWithoutRevalidation => 4.0,
+        CacheIssue::NoNoStore => 2.5,
+        CacheIssue::LongMaxAge { .. } => 2.0,
+        CacheIssue::StaleWhileRevalidate { .. } => 1.5,
+        CacheIssue::NoPragmaNoCache => 1.5,
+        CacheIssue::VaryMissing => 2.0,
+        CacheIssue::VaryWildcard => 2.5,
+        CacheIssue::EtagWeakHash { .. } => 1.5,
+        CacheIssue::CacheControlConflict { .. } => 3.0,
+        CacheIssue::SensitiveHeaderCached => 5.0,
+    }
 }
 
 pub fn audit_cache_headers(target: &str) -> Vec<CacheIssue> {
@@ -29,86 +68,124 @@ pub fn audit_cache_headers(target: &str) -> Vec<CacheIssue> {
         Err(_) => return Vec::new(),
     };
 
-    let cache_control = resp
+    let header_pairs: Vec<(&str, String)> = resp
         .headers()
-        .get("cache-control")
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_ascii_lowercase());
+        .iter()
+        .filter_map(|(name, value)| {
+            let val = value.to_str().ok()?;
+            Some((name.as_str(), val.to_ascii_lowercase()))
+        })
+        .collect();
 
-    let pragma = resp
-        .headers()
-        .get("pragma")
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_ascii_lowercase());
+    let borrowed: Vec<(&str, &str)> = header_pairs.iter().map(|(k, v)| (*k, v.as_str())).collect();
 
-    analyze_cache_headers(cache_control.as_deref(), pragma.as_deref())
+    analyze_cache_security(&borrowed)
 }
 
-pub(crate) fn analyze_cache_headers(
-    cache_control: Option<&str>,
-    pragma: Option<&str>,
-) -> Vec<CacheIssue> {
+pub fn analyze_cache_security(headers: &[(&str, &str)]) -> Vec<CacheIssue> {
     let mut issues = Vec::new();
+
+    let cache_control = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("cache-control"))
+        .map(|(_, val)| val.to_ascii_lowercase());
+
+    let pragma = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("pragma"))
+        .map(|(_, val)| val.to_ascii_lowercase());
+
+    let vary = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("vary"))
+        .map(|(_, val)| val.to_ascii_lowercase());
+
+    let etag = headers
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case("etag"))
+        .map(|(_, val)| val.to_string());
+
+    let has_set_cookie = headers
+        .iter()
+        .any(|(name, _)| name.eq_ignore_ascii_case("set-cookie"));
 
     let Some(cc) = cache_control else {
         if pragma.is_none() {
-            issues.push(CacheIssue {
-                kind: CacheIssueKind::MissingCacheControl,
-                detail: "No Cache-Control or Pragma header present".to_string(),
-            });
+            issues.push(CacheIssue::MissingCacheControl);
         }
         return issues;
     };
 
     if cc.contains("public") && !cc.contains("no-cache") && !cc.contains("must-revalidate") {
-        issues.push(CacheIssue {
-            kind: CacheIssueKind::PublicWithoutRevalidation,
-            detail: "Cache-Control: public without no-cache or must-revalidate".to_string(),
-        });
+        issues.push(CacheIssue::PublicWithoutRevalidation);
     }
 
     if !cc.contains("no-store") && !cc.contains("private") {
-        issues.push(CacheIssue {
-            kind: CacheIssueKind::NoNoStore,
-            detail: "Cache-Control missing no-store and private directives".to_string(),
+        issues.push(CacheIssue::NoNoStore);
+    }
+
+    if let Some(seconds) = extract_directive_seconds(&cc, "max-age")
+        && seconds > 31_536_000
+    {
+        issues.push(CacheIssue::LongMaxAge { seconds });
+    }
+
+    if let Some(seconds) = extract_directive_seconds(&cc, "stale-while-revalidate")
+        && seconds > 86_400
+    {
+        issues.push(CacheIssue::StaleWhileRevalidate { seconds });
+    }
+
+    if (cc.contains("public") && cc.contains("private"))
+        || (cc.contains("no-cache") && extract_directive_seconds(&cc, "max-age").is_some())
+    {
+        issues.push(CacheIssue::CacheControlConflict {
+            directives: cc.clone(),
+        });
+    }
+
+    if has_set_cookie && cc.contains("public") {
+        issues.push(CacheIssue::SensitiveHeaderCached);
+    }
+
+    if pragma.is_none() && !cc.contains("no-cache") && !cc.contains("no-store") {
+        issues.push(CacheIssue::NoPragmaNoCache);
+    }
+
+    match vary.as_deref() {
+        None => issues.push(CacheIssue::VaryMissing),
+        Some(v) if v.trim() == "*" => issues.push(CacheIssue::VaryWildcard),
+        _ => {}
+    }
+
+    if let Some(etag_val) = etag
+        && (etag_val.starts_with("W/") || etag_val.starts_with("w/"))
+    {
+        issues.push(CacheIssue::EtagWeakHash {
+            etag: etag_val.to_string(),
         });
     }
 
     issues
 }
 
-fn issue_severity(issue: &CacheIssue) -> f64 {
-    match issue.kind {
-        CacheIssueKind::MissingCacheControl => 2.5,
-        CacheIssueKind::PublicWithoutRevalidation => 3.5,
-        CacheIssueKind::NoNoStore => 2.0,
-    }
+pub fn cache_to_operations(issues: &[CacheIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            let vuln_class = match issue {
+                CacheIssue::MissingCacheControl => VulnerabilityClass::MissingSecurityHeader,
+                _ => VulnerabilityClass::SecurityMisconfiguration,
+            };
+            recon_client::finding_entry(seq, vuln_class, cache_severity(issue), 0.5)
+        })
+        .collect()
 }
 
-pub fn cache_findings_to_operations(
-    issues: &[CacheIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
-    if issues.is_empty() {
-        return Vec::new();
-    }
-
-    let is_missing = issues
-        .iter()
-        .any(|i| matches!(i.kind, CacheIssueKind::MissingCacheControl));
-
-    let vuln_class = if is_missing {
-        VulnerabilityClass::MissingSecurityHeader
-    } else {
-        VulnerabilityClass::SecurityMisconfiguration
-    };
-
-    let max_severity = issues.iter().map(issue_severity).fold(0.0_f64, f64::max);
-
-    vec![recon_client::finding_entry(
-        seq,
-        vuln_class,
-        max_severity,
-        0.85,
-    )]
+fn extract_directive_seconds(cc: &str, directive: &str) -> Option<u64> {
+    cc.split(',')
+        .map(|part| part.trim())
+        .find(|part| part.starts_with(directive))
+        .and_then(|part| part.split('=').nth(1))
+        .and_then(|val| val.trim().parse::<u64>().ok())
 }

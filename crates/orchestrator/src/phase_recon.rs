@@ -127,16 +127,25 @@ fn run_header_analyzers(
     }
 
     // Cache headers
-    let cc_val = hdr(resp, "cache-control");
-    let pragma_val = hdr(resp, "pragma");
-    let cache_issues =
-        crate::cache_audit::analyze_cache_headers(cc_val.as_deref(), pragma_val.as_deref());
+    let cache_header_pairs: Vec<(String, String)> = resp
+        .headers
+        .iter()
+        .filter_map(|(name, value)| {
+            let val = value.to_str().ok()?;
+            Some((name.as_str().to_string(), val.to_string()))
+        })
+        .collect();
+    let cache_borrowed: Vec<(&str, &str)> = cache_header_pairs
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    let cache_issues = crate::cache_audit::analyze_cache_security(&cache_borrowed);
     collect_ops!(
         seq,
         fc,
         entries,
         cache_issues,
-        crate::cache_audit::cache_findings_to_operations
+        crate::cache_audit::cache_to_operations
     );
 
     // X-Frame-Options
@@ -163,9 +172,18 @@ fn run_header_analyzers(
         crate::coop_coep_audit::coop_coep_to_operations
     );
 
-    // CORP
-    let corp_val = hdr(resp, "cross-origin-resource-policy");
-    let corp_issues = crate::corp_audit::analyze_corp(corp_val.as_deref());
+    // CORP + COEP + COOP cross-origin isolation audit
+    let corp_headers: Vec<(&str, String)> = [
+        "cross-origin-resource-policy",
+        "cross-origin-embedder-policy",
+        "cross-origin-opener-policy",
+    ]
+    .iter()
+    .filter_map(|name| hdr(resp, name).map(|v| (*name, v)))
+    .collect();
+    let corp_header_refs: Vec<(&str, &str)> =
+        corp_headers.iter().map(|(k, v)| (*k, v.as_str())).collect();
+    let corp_issues = crate::corp_audit::analyze_corp(&corp_header_refs);
     collect_ops!(
         seq,
         fc,
@@ -341,19 +359,21 @@ fn run_header_analyzers(
     );
 
     // Proxy headers
-    let via_values = hdr_all(resp, "via");
-    let has_age = resp.headers.get("age").is_some();
-    let extra_proxy: Vec<(String, String)> = ["x-cache", "x-forwarded-for"]
+    let proxy_header_pairs: Vec<(String, String)> = resp
+        .headers
         .iter()
-        .filter_map(|name| {
-            resp.headers
-                .get(*name)
-                .and_then(|v| v.to_str().ok())
-                .map(|v| (name.to_string(), v.to_string()))
+        .filter_map(|(name, value)| {
+            value
+                .to_str()
+                .ok()
+                .map(|v| (name.as_str().to_string(), v.to_string()))
         })
         .collect();
-    let proxyhdr_issues =
-        crate::proxy_header_audit::analyze_proxy_headers(&via_values, has_age, &extra_proxy);
+    let proxy_refs: Vec<(&str, &str)> = proxy_header_pairs
+        .iter()
+        .map(|(n, v)| (n.as_str(), v.as_str()))
+        .collect();
+    let proxyhdr_issues = crate::proxy_header_audit::analyze_proxy_headers(&proxy_refs);
     collect_ops!(
         seq,
         fc,
