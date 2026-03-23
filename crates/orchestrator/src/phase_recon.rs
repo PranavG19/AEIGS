@@ -662,6 +662,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let openredir_handle = std::thread::spawn(move || {
         crate::open_redirect_param_audit::audit_open_redirect_params(&openredir_target)
     });
+    let pathtraversal_target = ctx.config.target.clone();
+    let pathtraversal_handle = std::thread::spawn(move || {
+        crate::path_traversal_audit::audit_path_traversal(&pathtraversal_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -946,6 +950,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += openredir_ops.len() as u64;
     entries.extend(openredir_ops);
+
+    let pathtraversal_issues = pathtraversal_handle.join().unwrap_or_default();
+    let pathtraversal_ops = crate::path_traversal_audit::path_traversal_to_operations(
+        &pathtraversal_issues,
+        &mut sequence,
+    );
+    findings_count += pathtraversal_ops.len() as u64;
+    entries.extend(pathtraversal_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
