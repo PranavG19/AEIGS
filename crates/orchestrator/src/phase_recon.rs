@@ -604,6 +604,16 @@ fn run_body_analyzers(
         crate::websocket_audit::websocket_to_operations
     );
 
+    // DOM clobbering
+    let domclob_issues = crate::dom_clobbering_audit::analyze_dom_clobbering(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        domclob_issues,
+        crate::dom_clobbering_audit::dom_clobber_to_operations
+    );
+
     // Deserialization indicators in response body
     let ct = hdr(resp, "content-type").unwrap_or_default();
     let deser_issues =

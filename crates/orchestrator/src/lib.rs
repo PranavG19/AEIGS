@@ -31,6 +31,7 @@ pub mod deserialization_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
+pub mod dom_clobbering_audit;
 pub mod dns_prefetch_control_audit;
 pub mod doctor;
 pub mod document_domain_audit;
@@ -147,6 +148,7 @@ pub use deserialization_audit::*;
 pub use distributed::*;
 pub use distributed_transport::*;
 pub use dns_enumerator::*;
+pub use dom_clobbering_audit::*;
 pub use dns_prefetch_control_audit::*;
 pub use document_domain_audit::*;
 pub use email_security::*;
@@ -553,6 +555,10 @@ mod dangerous_js_audit_test;
 #[cfg(test)]
 #[path = "document_domain_audit_test.rs"]
 mod document_domain_audit_test;
+
+#[cfg(test)]
+#[path = "dom_clobbering_audit_test.rs"]
+mod dom_clobbering_audit_test;
 
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]
