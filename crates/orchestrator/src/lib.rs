@@ -80,6 +80,7 @@ pub mod proxy_header_audit;
 pub mod rate_limit_detector;
 pub mod recon_client;
 pub mod redirect_scanner;
+pub mod request_smuggling_audit;
 pub mod referrer_audit;
 pub mod reporting_endpoints_audit;
 pub mod robots_parser;
@@ -182,6 +183,7 @@ pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
 pub use recon_client::*;
 pub use redirect_scanner::*;
+pub use request_smuggling_audit::*;
 pub use referrer_audit::*;
 pub use reporting_endpoints_audit::*;
 pub use robots_parser::*;
@@ -399,6 +401,10 @@ mod path_traversal_audit_test;
 #[cfg(test)]
 #[path = "redirect_scanner_test.rs"]
 mod redirect_scanner_test;
+
+#[cfg(test)]
+#[path = "request_smuggling_audit_test.rs"]
+mod request_smuggling_audit_test;
 
 #[cfg(test)]
 #[path = "iframe_audit_test.rs"]

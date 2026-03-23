@@ -666,6 +666,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let pathtraversal_handle = std::thread::spawn(move || {
         crate::path_traversal_audit::audit_path_traversal(&pathtraversal_target)
     });
+    let smuggling_target = ctx.config.target.clone();
+    let smuggling_handle = std::thread::spawn(move || {
+        crate::request_smuggling_audit::audit_request_smuggling(&smuggling_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -958,6 +962,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += pathtraversal_ops.len() as u64;
     entries.extend(pathtraversal_ops);
+
+    let smuggling_issues = smuggling_handle.join().unwrap_or_default();
+    let smuggling_ops = crate::request_smuggling_audit::smuggling_to_operations(
+        &smuggling_issues,
+        &mut sequence,
+    );
+    findings_count += smuggling_ops.len() as u64;
+    entries.extend(smuggling_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

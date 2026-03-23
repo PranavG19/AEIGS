@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2062 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2079 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 63 features shipped
+- P8: 64 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -33,9 +33,10 @@ status: in-progress
 14. feat(recon): Add GraphQL introspection leak scanner (+17)
 15. feat(recon): Add open redirect parameter scanner (+17)
 16. feat(recon): Add path traversal parameter scanner (+15)
+17. feat(recon): Add HTTP request smuggling detection scanner (+17)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: storage header audit (cross-origin-embedder), unsafe deserialization pattern scan, HPKP deprecation audit, or HTTP request smuggling detection.
+Continue P8. Next ideas: unsafe deserialization pattern scan, session fixation detection, TRACE method audit, or response splitting detection.
