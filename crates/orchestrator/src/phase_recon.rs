@@ -1570,6 +1570,36 @@ fn run_body_analyzers(
         crate::reporting_api_audit::reporting_api_to_operations
     );
 
+    // WebNN API security audit
+    let webnn_issues = crate::webnn_audit::analyze_webnn(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        webnn_issues,
+        crate::webnn_audit::webnn_to_operations
+    );
+
+    // Web Audio API security audit
+    let wa_issues = crate::web_audio_audit::analyze_web_audio(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wa_issues,
+        crate::web_audio_audit::web_audio_to_operations
+    );
+
+    // Screen Orientation API security audit
+    let so_issues = crate::screen_orientation_audit::analyze_screen_orientation(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        so_issues,
+        crate::screen_orientation_audit::screen_orientation_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers

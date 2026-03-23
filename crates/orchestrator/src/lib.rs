@@ -154,6 +154,7 @@ pub mod scan_history;
 pub mod scan_strategy;
 pub mod scheduler_api_audit;
 pub mod screen_capture_audit;
+pub mod screen_orientation_audit;
 pub mod security_txt;
 pub mod selection_audit;
 pub mod sensitive_file_audit;
@@ -191,6 +192,7 @@ pub mod viewport_audit;
 pub mod waf_detector;
 pub mod wake_lock_audit;
 pub mod wasm_audit;
+pub mod web_audio_audit;
 pub mod web_bluetooth_audit;
 pub mod web_codecs_audit;
 pub mod web_locks_audit;
@@ -199,6 +201,7 @@ pub mod web_serial_audit;
 pub mod web_share_audit;
 pub mod web_transport_audit;
 pub mod webcrypto_audit;
+pub mod webnn_audit;
 pub mod webhid_audit;
 pub mod webgpu_audit;
 pub mod webrtc_audit;
@@ -360,6 +363,7 @@ pub use scan_history::*;
 pub use scan_strategy::*;
 pub use scheduler_api_audit::*;
 pub use screen_capture_audit::*;
+pub use screen_orientation_audit::*;
 pub use security_txt::*;
 pub use selection_audit::*;
 pub use sensitive_file_audit::*;
@@ -396,6 +400,7 @@ pub use viewport_audit::*;
 pub use waf_detector::*;
 pub use wake_lock_audit::*;
 pub use wasm_audit::*;
+pub use web_audio_audit::*;
 pub use web_bluetooth_audit::*;
 pub use web_codecs_audit::*;
 pub use web_locks_audit::*;
@@ -404,6 +409,7 @@ pub use web_serial_audit::*;
 pub use web_share_audit::*;
 pub use web_transport_audit::*;
 pub use webcrypto_audit::*;
+pub use webnn_audit::*;
 pub use webhid_audit::*;
 pub use webgpu_audit::*;
 pub use webrtc_audit::*;
@@ -739,6 +745,10 @@ mod scheduler_api_audit_test;
 #[cfg(test)]
 #[path = "screen_capture_audit_test.rs"]
 mod screen_capture_audit_test;
+
+#[cfg(test)]
+#[path = "screen_orientation_audit_test.rs"]
+mod screen_orientation_audit_test;
 
 #[cfg(test)]
 #[path = "security_txt_test.rs"]
@@ -1185,6 +1195,10 @@ mod canvas_fingerprint_audit_test;
 mod websocket_audit_test;
 
 #[cfg(test)]
+#[path = "webnn_audit_test.rs"]
+mod webnn_audit_test;
+
+#[cfg(test)]
 #[path = "xfo_audit_test.rs"]
 mod xfo_audit_test;
 
@@ -1239,6 +1253,10 @@ mod expose_headers_audit_test;
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
 mod integration_validation_test;
+
+#[cfg(test)]
+#[path = "web_audio_audit_test.rs"]
+mod web_audio_audit_test;
 
 #[cfg(test)]
 #[path = "util_test.rs"]
