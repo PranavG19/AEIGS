@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1457 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1472 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -43,6 +43,7 @@ status: in-progress
 - [x] Dangerous JS pattern detection (eval, innerHTML, document.write)
 - [x] Link preconnect/dns-prefetch audit
 - [x] Error page info leak scanner (stack traces, debug info, SQL errors)
+- [x] Referrer-Policy value audit (unsafe-url, downgrade, invalid)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -51,6 +52,6 @@ status: in-progress
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8: content-type mismatch detection, CORS preflight audit,
-   referrer-policy audit.
+1. Continue P8: CORS preflight audit, feature-policy deprecation check,
+   X-Frame-Options value audit.
 2. G14 body-fetch consolidation (L-sized, next dedicated session).

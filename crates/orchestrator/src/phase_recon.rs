@@ -135,6 +135,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let errpage_handle = std::thread::spawn(move || {
         crate::error_page_audit::audit_error_pages(&errpage_target)
     });
+    let referrer_target = ctx.config.target.clone();
+    let referrer_handle = std::thread::spawn(move || {
+        crate::referrer_audit::audit_referrer_policy(&referrer_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -433,6 +437,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::error_page_audit::error_page_to_operations(&errpage_leaks, &mut sequence);
     findings_count += errpage_ops.len() as u64;
     entries.extend(errpage_ops);
+
+    let referrer_issues = referrer_handle.join().unwrap_or_default();
+    let referrer_ops =
+        crate::referrer_audit::referrer_to_operations(&referrer_issues, &mut sequence);
+    findings_count += referrer_ops.len() as u64;
+    entries.extend(referrer_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
