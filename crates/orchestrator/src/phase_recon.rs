@@ -866,6 +866,16 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Ambient Light Sensor audit
+    let als_issues = crate::ambient_light_audit::analyze_ambient_light(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        als_issues,
+        crate::ambient_light_audit::ambient_light_to_operations
+    );
+
     // Presentation API audit
     let pres_issues = crate::presentation_audit::analyze_presentation(body);
     collect_ops!(

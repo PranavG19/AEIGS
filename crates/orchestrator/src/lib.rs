@@ -1,4 +1,5 @@
 pub mod actor;
+pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
 pub mod attest;
@@ -178,6 +179,7 @@ pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
 pub use actor::*;
+pub use ambient_light_audit::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use auth_session::*;
@@ -679,6 +681,10 @@ mod permissions_api_audit_test;
 #[cfg(test)]
 #[path = "permissions_policy_test.rs"]
 mod permissions_policy_test;
+
+#[cfg(test)]
+#[path = "ambient_light_audit_test.rs"]
+mod ambient_light_audit_test;
 
 #[cfg(test)]
 #[path = "cache_audit_test.rs"]
