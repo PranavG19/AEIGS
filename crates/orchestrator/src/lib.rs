@@ -73,6 +73,7 @@ pub mod object_url_audit;
 pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod path_traversal_audit;
+pub mod payment_form_audit;
 pub mod permissions_policy;
 mod phase_analyze;
 mod phase_crawl;
@@ -197,6 +198,7 @@ pub use object_url_audit::*;
 pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use path_traversal_audit::*;
+pub use payment_form_audit::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
@@ -699,6 +701,10 @@ mod resource_timing_audit_test;
 #[cfg(test)]
 #[path = "credential_harvest_audit_test.rs"]
 mod credential_harvest_audit_test;
+
+#[cfg(test)]
+#[path = "payment_form_audit_test.rs"]
+mod payment_form_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

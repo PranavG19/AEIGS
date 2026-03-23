@@ -699,6 +699,17 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Payment form security audit
+    let payment_issues =
+        crate::payment_form_audit::analyze_payment_forms(body, resp.is_https);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        payment_issues,
+        crate::payment_form_audit::payment_form_to_operations
+    );
+
     // Credential harvesting form detection
     let cred_issues =
         crate::credential_harvest_audit::analyze_credential_harvest(body, domain);
