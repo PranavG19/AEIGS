@@ -71,7 +71,7 @@ pub(crate) fn analyze_proxy_headers(
     for via in via_values {
         issues.push(ProxyHeaderIssue {
             kind: ProxyHeaderIssueKind::ViaProxyLeak,
-            detail: format!("Via header reveals proxy chain: {}", truncate(via, 80)),
+            detail: format!("Via header reveals proxy chain: {}", recon_client::truncate(via, 80)),
             severity: 3.0,
         });
     }
@@ -97,20 +97,12 @@ pub(crate) fn analyze_proxy_headers(
             .unwrap_or(2.0);
         issues.push(ProxyHeaderIssue {
             kind,
-            detail: format!("{name}: {}", truncate(value, 60)),
+            detail: format!("{name}: {}", recon_client::truncate(value, 60)),
             severity,
         });
     }
 
     issues
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max.saturating_sub(3)])
-    } else {
-        s.to_string()
-    }
 }
 
 pub fn proxy_header_to_operations(

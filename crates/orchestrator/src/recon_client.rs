@@ -59,6 +59,41 @@ pub fn build_client_limited_redirect(
         .ok()
 }
 
+/// Truncates a string to `max` characters, appending "..." if truncated.
+pub(crate) fn truncate(s: &str, max: usize) -> String {
+    if s.len() > max {
+        format!("{}...", &s[..max.saturating_sub(3)])
+    } else {
+        s.to_string()
+    }
+}
+
+/// Checks whether a URL points to an external domain (not a subdomain of `target_domain`).
+pub(crate) fn is_external(url: &str, target_domain: &str) -> bool {
+    let rest = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"));
+    let Some(rest) = rest else {
+        return false;
+    };
+    let host = rest.split('/').next().unwrap_or("");
+    let host = host.split(':').next().unwrap_or("");
+    !host.is_empty() && !host.ends_with(target_domain) && host != target_domain
+}
+
+/// Extracts the hostname from a URL, stripping scheme, port, and path.
+pub(crate) fn extract_host(url: &str) -> Option<String> {
+    let without_scheme = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))?;
+    let host = without_scheme.split('/').next()?;
+    let host = host.split(':').next()?;
+    if host.is_empty() {
+        return None;
+    }
+    Some(host.to_string())
+}
+
 /// Creates an `AddFinding` operation entry for passive recon.
 pub fn finding_entry(
     seq: &mut u64,

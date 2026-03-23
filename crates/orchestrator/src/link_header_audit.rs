@@ -58,7 +58,7 @@ pub(crate) fn analyze_link_headers(
             if url.starts_with("http://") {
                 issues.push(LinkHeaderIssue {
                     kind: LinkIssueKind::HttpResource,
-                    url: truncate_url(&url),
+                    url: recon_client::truncate(&url, 80),
                     severity: 4.5,
                 });
             }
@@ -71,7 +71,7 @@ pub(crate) fn analyze_link_headers(
 
             if let Some(domain) = target_domain
                 && (is_preload || is_dns)
-                && is_external(&url, domain)
+                && recon_client::is_external(&url, domain)
             {
                 let kind = if is_dns {
                     LinkIssueKind::DnsPrefetchExternal
@@ -81,7 +81,7 @@ pub(crate) fn analyze_link_headers(
                 let severity = if is_preload { 5.0 } else { 3.0 };
                 issues.push(LinkHeaderIssue {
                     kind,
-                    url: truncate_url(&url),
+                    url: recon_client::truncate(&url, 80),
                     severity,
                 });
             }
@@ -110,26 +110,6 @@ fn extract_rel(entry: &str) -> Option<String> {
         .find(['"', '\'', ';', ','])
         .unwrap_or(after.len());
     Some(after[..end].trim().to_string())
-}
-
-fn is_external(url: &str, target_domain: &str) -> bool {
-    let without_scheme = url
-        .strip_prefix("https://")
-        .or_else(|| url.strip_prefix("http://"));
-    let Some(rest) = without_scheme else {
-        return false;
-    };
-    let host = rest.split('/').next().unwrap_or("");
-    let host = host.split(':').next().unwrap_or("");
-    !host.is_empty() && !host.ends_with(target_domain) && host != target_domain
-}
-
-fn truncate_url(url: &str) -> String {
-    if url.len() > 80 {
-        format!("{}...", &url[..77])
-    } else {
-        url.to_string()
-    }
 }
 
 pub fn link_header_to_operations(

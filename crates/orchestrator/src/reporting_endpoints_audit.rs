@@ -62,17 +62,17 @@ pub(crate) fn analyze_reporting_endpoints(
         if url.starts_with("http://") {
             issues.push(ReportingEndpointIssue {
                 kind: ReportingEndpointIssueKind::HttpEndpoint,
-                detail: format!("Report endpoint uses HTTP: {}", truncate(&url, 60)),
+                detail: format!("Report endpoint uses HTTP: {}", recon_client::truncate(&url, 60)),
                 severity: 5.0,
             });
         }
 
         if let Some(domain) = target_domain
-            && is_external(&url, domain)
+            && recon_client::is_external(&url, domain)
         {
             issues.push(ReportingEndpointIssue {
                 kind: ReportingEndpointIssueKind::ExternalCollector,
-                detail: format!("Reports sent to external collector: {}", truncate(&url, 60)),
+                detail: format!("Reports sent to external collector: {}", recon_client::truncate(&url, 60)),
                 severity: 3.5,
             });
         }
@@ -89,26 +89,6 @@ fn extract_endpoint_url(entry: &str) -> Option<String> {
         return None;
     }
     Some(url.to_string())
-}
-
-fn is_external(url: &str, target_domain: &str) -> bool {
-    let rest = url
-        .strip_prefix("https://")
-        .or_else(|| url.strip_prefix("http://"));
-    let Some(rest) = rest else {
-        return false;
-    };
-    let host = rest.split('/').next().unwrap_or("");
-    let host = host.split(':').next().unwrap_or("");
-    !host.is_empty() && !host.ends_with(target_domain) && host != target_domain
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max.saturating_sub(3)])
-    } else {
-        s.to_string()
-    }
 }
 
 pub fn reporting_endpoints_to_operations(

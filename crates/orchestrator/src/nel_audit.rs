@@ -98,13 +98,13 @@ fn check_report_to(value: &str, target_domain: Option<&str>) -> Vec<NelIssue> {
         if url.starts_with("http://") {
             issues.push(NelIssue {
                 kind: NelIssueKind::HttpReportEndpoint,
-                detail: format!("Report endpoint uses HTTP (not HTTPS): {}", truncate(&url, 80)),
+                detail: format!("Report endpoint uses HTTP (not HTTPS): {}", recon_client::truncate(&url, 80)),
                 severity: 5.0,
             });
         }
 
         if let Some(domain) = target_domain
-            && let Some(host) = extract_host(&url)
+            && let Some(host) = recon_client::extract_host(&url)
             && !host.ends_with(domain)
             && host != domain
         {
@@ -112,7 +112,7 @@ fn check_report_to(value: &str, target_domain: Option<&str>) -> Vec<NelIssue> {
                 kind: NelIssueKind::ExternalReportEndpoint,
                 detail: format!(
                     "Reports sent to external domain: {}",
-                    truncate(&host, 60)
+                    recon_client::truncate(&host, 60)
                 ),
                 severity: 4.0,
             });
@@ -140,16 +140,6 @@ fn extract_urls(json_like: &str) -> Vec<String> {
     urls
 }
 
-fn extract_host(url: &str) -> Option<String> {
-    let without_scheme = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://"))?;
-    let host = without_scheme.split('/').next()?;
-    let host = host.split(':').next()?;
-    if host.is_empty() {
-        return None;
-    }
-    Some(host.to_string())
-}
-
 fn extract_json_f64(json_like: &str, key: &str) -> Option<f64> {
     let lower = json_like.to_ascii_lowercase();
     let pat = format!("\"{key}\"");
@@ -161,14 +151,6 @@ fn extract_json_f64(json_like: &str, key: &str) -> Option<f64> {
         .find(|c: char| !c.is_ascii_digit() && c != '.' && c != '-')
         .unwrap_or(after_colon.len());
     after_colon[..end].parse().ok()
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max.saturating_sub(3)])
-    } else {
-        s.to_string()
-    }
 }
 
 pub fn nel_to_operations(

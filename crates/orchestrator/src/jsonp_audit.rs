@@ -48,36 +48,29 @@ pub(crate) fn find_jsonp_endpoints(html: &str) -> Vec<JsonpIssue> {
             continue;
         };
         let src_lower = src.to_ascii_lowercase();
+        let truncated = recon_client::truncate(&src, 100);
         for param in CALLBACK_PARAMS {
             if src_lower.contains(param) {
                 issues.push(JsonpIssue {
                     kind: JsonpIssueKind::CallbackParam,
-                    url: truncate(&src, 100),
+                    url: truncated.clone(),
                     severity: 5.5,
                 });
                 break;
             }
         }
         if (src_lower.contains("jsonp") || src_lower.ends_with(".jsonp"))
-            && !issues.iter().any(|i| i.url == truncate(&src, 100))
+            && !issues.iter().any(|i| i.url == truncated)
         {
             issues.push(JsonpIssue {
                 kind: JsonpIssueKind::JsonpEndpoint,
-                url: truncate(&src, 100),
+                url: truncated,
                 severity: 4.5,
             });
         }
     }
 
     issues
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max.saturating_sub(3)])
-    } else {
-        s.to_string()
-    }
 }
 
 pub fn jsonp_to_operations(
