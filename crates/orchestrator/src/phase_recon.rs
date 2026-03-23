@@ -856,6 +856,16 @@ fn run_body_analyzers(
         crate::web_serial_audit::web_serial_to_operations
     );
 
+    // Web Bluetooth API audit
+    let bt_issues = crate::web_bluetooth_audit::analyze_web_bluetooth(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bt_issues,
+        crate::web_bluetooth_audit::web_bluetooth_to_operations
+    );
+
     // File System Access API audit
     let fsa_issues = crate::file_system_access_audit::analyze_file_system_access(body);
     collect_ops!(
