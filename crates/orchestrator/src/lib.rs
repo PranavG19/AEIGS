@@ -169,6 +169,7 @@ pub mod tls_scanner;
 pub mod topics_api_audit;
 pub mod update_db;
 mod util;
+pub mod vibration_audit;
 pub mod viewport_audit;
 pub mod waf_detector;
 pub mod wake_lock_audit;
@@ -353,6 +354,7 @@ pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
 pub use topics_api_audit::*;
 pub use update_db::*;
+pub use vibration_audit::*;
 pub use viewport_audit::*;
 pub use waf_detector::*;
 pub use wake_lock_audit::*;
@@ -653,6 +655,10 @@ mod http_version_test;
 #[cfg(test)]
 #[path = "viewport_audit_test.rs"]
 mod viewport_audit_test;
+
+#[cfg(test)]
+#[path = "vibration_audit_test.rs"]
+mod vibration_audit_test;
 
 #[cfg(test)]
 #[path = "waf_detector_test.rs"]

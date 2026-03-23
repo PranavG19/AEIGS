@@ -6,61 +6,24 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3393 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3408 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 99 features shipped
+- P8: 100 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
 
 ## session-commits
-68 total recon scanners shipped (1-59 in prior sessions, 60-68 this session):
-60. Content-Disposition header (+17)
-61. Web Locks API (+16)
-62. Reporting API (+17)
-63. Payment Request API (+16)
-64. Credential Management API (+16)
-65. Background Sync API (+15)
-66. Performance Observer leak (+17)
-67. Broadcast Channel API (+16)
-68. Gamepad API fingerprinting (+14)
-69. Navigation API (+13)
-70. Intersection Observer timing (+15)
-71. Storage Access API (+14)
-72. Picture-in-Picture API (+13)
-73. Wake Lock API (+14)
-74. Resize Observer fingerprinting (+14)
-75. Mutation Observer surveillance (+13)
-76. EyeDropper API audit (+13)
-77. Fullscreen API abuse audit (+15)
-78. Selection API data leak audit (+14)
-79. Contact Picker API audit (+16)
-80. File System Access API audit (+15)
-81. WebHID API audit (+15)
-82. Web Serial API audit (+15)
-83. Web Bluetooth API audit (+15)
-84. WebTransport API audit (+15)
-85. WebNFC API audit (+15)
-86. Presentation API audit (+16)
-87. Ambient Light Sensor audit (+13)
-88. Window Management API audit (+15)
-89. Compute Pressure API audit (+13)
-90. Local Font Access API audit (+15)
-91. WebUSB API audit (+15)
-92. Web Share API audit (+17)
-93. Topics API audit (+17)
-94. Digital Goods API audit (+17)
-95. Content Index API audit (+16)
-96. Device Memory API audit (+14)
-97. Barcode Detection API audit (+15)
-98. Network Information API audit (+16)
-99. Shape Detection API audit (+15)
+100 recon scanners shipped (1-59 prior, 60-91 prev sessions, 92-100 this session):
+92. Web Share API (+17), 93. Topics API (+17), 94. Digital Goods API (+17)
+95. Content Index API (+16), 96. Device Memory API (+14), 97. Barcode Detection (+15)
+98. Network Information API (+16), 99. Shape Detection API (+15), 100. Vibration API (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Vibration API audit, Media Session API audit, Payment Handler API audit, or Launch Handler API audit.
+Continue P8. Next ideas: Media Session API audit, Payment Handler API audit, Launch Handler API audit, or Encoding API audit.

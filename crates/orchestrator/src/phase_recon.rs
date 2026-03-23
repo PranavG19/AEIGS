@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Vibration API audit
+    let vib_issues = crate::vibration_audit::analyze_vibration(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        vib_issues,
+        crate::vibration_audit::vibration_to_operations
+    );
+
     // Shape Detection API audit
     let sd_issues = crate::shape_detection_audit::analyze_shape_detection(body);
     collect_ops!(
