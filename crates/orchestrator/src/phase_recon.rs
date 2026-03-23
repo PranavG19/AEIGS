@@ -588,6 +588,16 @@ fn run_body_analyzers(
         crate::service_worker_audit::service_worker_to_operations
     );
 
+    // Popover API audit
+    let pop_issues = crate::popover_audit::analyze_popover(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pop_issues,
+        crate::popover_audit::popover_to_operations
+    );
+
     // postMessage security
     let pm_issues = crate::postmessage_audit::analyze_postmessage_usage(body);
     collect_ops!(
