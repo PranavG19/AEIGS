@@ -540,6 +540,19 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // Service worker security
+    let sw_issues = crate::service_worker_audit::analyze_service_worker_usage(
+        body,
+        !resp.is_https,
+    );
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sw_issues,
+        crate::service_worker_audit::service_worker_to_operations
+    );
+
     // postMessage security
     let pm_issues = crate::postmessage_audit::analyze_postmessage_usage(body);
     collect_ops!(
