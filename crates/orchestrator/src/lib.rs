@@ -68,6 +68,7 @@ pub mod tls_scanner;
 pub mod update_db;
 mod util;
 pub mod waf_detector;
+pub mod xfo_audit;
 
 pub use actor::*;
 pub use auth_session::*;
@@ -134,6 +135,7 @@ pub use telemetry::*;
 pub use tls_scanner::*;
 pub use update_db::*;
 pub use waf_detector::*;
+pub use xfo_audit::*;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]
@@ -390,6 +392,10 @@ mod error_page_audit_test;
 #[cfg(test)]
 #[path = "referrer_audit_test.rs"]
 mod referrer_audit_test;
+
+#[cfg(test)]
+#[path = "xfo_audit_test.rs"]
+mod xfo_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
