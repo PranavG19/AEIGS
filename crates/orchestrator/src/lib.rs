@@ -133,6 +133,7 @@ pub mod verb_tamper_audit;
 pub mod tls_scanner;
 pub mod update_db;
 mod util;
+pub mod viewport_audit;
 pub mod waf_detector;
 pub mod wasm_audit;
 pub mod webcrypto_audit;
@@ -269,6 +270,7 @@ pub use trusted_types_audit::*;
 pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
 pub use update_db::*;
+pub use viewport_audit::*;
 pub use waf_detector::*;
 pub use wasm_audit::*;
 pub use webcrypto_audit::*;
@@ -533,6 +535,10 @@ mod hsts_preload_test;
 #[cfg(test)]
 #[path = "http_version_test.rs"]
 mod http_version_test;
+
+#[cfg(test)]
+#[path = "viewport_audit_test.rs"]
+mod viewport_audit_test;
 
 #[cfg(test)]
 #[path = "waf_detector_test.rs"]

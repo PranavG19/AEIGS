@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Viewport meta audit
+    let vp_issues = crate::viewport_audit::analyze_viewport(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        vp_issues,
+        crate::viewport_audit::viewport_to_operations
+    );
+
     // SharedArrayBuffer / COEP audit
     let coep_val = hdr(resp, "cross-origin-embedder-policy").unwrap_or_default();
     let coop_val = hdr(resp, "cross-origin-opener-policy").unwrap_or_default();
