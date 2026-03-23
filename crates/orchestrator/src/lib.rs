@@ -164,6 +164,7 @@ pub mod wake_lock_audit;
 pub mod wasm_audit;
 pub mod web_bluetooth_audit;
 pub mod web_locks_audit;
+pub mod web_nfc_audit;
 pub mod web_serial_audit;
 pub mod web_transport_audit;
 pub mod webcrypto_audit;
@@ -333,6 +334,7 @@ pub use wake_lock_audit::*;
 pub use wasm_audit::*;
 pub use web_bluetooth_audit::*;
 pub use web_locks_audit::*;
+pub use web_nfc_audit::*;
 pub use web_serial_audit::*;
 pub use web_transport_audit::*;
 pub use webcrypto_audit::*;
@@ -655,6 +657,10 @@ mod web_bluetooth_audit_test;
 #[cfg(test)]
 #[path = "web_transport_audit_test.rs"]
 mod web_transport_audit_test;
+
+#[cfg(test)]
+#[path = "web_nfc_audit_test.rs"]
+mod web_nfc_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]
