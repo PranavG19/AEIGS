@@ -52,6 +52,7 @@ pub mod endpoint_similarity;
 pub mod error_page_audit;
 pub mod etag_audit;
 pub mod expose_headers_audit;
+pub mod eyedropper_audit;
 pub mod fetch_credential_audit;
 pub mod file_access_audit;
 pub mod form_audit;
@@ -215,6 +216,7 @@ pub use endpoint_similarity::*;
 pub use error_page_audit::*;
 pub use etag_audit::*;
 pub use expose_headers_audit::*;
+pub use eyedropper_audit::*;
 pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
 pub use form_audit::*;
@@ -713,6 +715,10 @@ mod dom_clobbering_audit_test;
 #[cfg(test)]
 #[path = "drag_drop_audit_test.rs"]
 mod drag_drop_audit_test;
+
+#[cfg(test)]
+#[path = "eyedropper_audit_test.rs"]
+mod eyedropper_audit_test;
 
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]

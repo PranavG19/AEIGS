@@ -816,6 +816,16 @@ fn run_body_analyzers(
         crate::drag_drop_audit::drag_drop_to_operations
     );
 
+    // EyeDropper API audit
+    let ed_issues = crate::eyedropper_audit::analyze_eyedropper(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ed_issues,
+        crate::eyedropper_audit::eyedropper_to_operations
+    );
+
     // Permissions API abuse
     let perm_issues = crate::permissions_api_audit::analyze_permissions_api(body);
     collect_ops!(
