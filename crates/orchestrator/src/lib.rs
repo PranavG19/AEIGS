@@ -71,6 +71,7 @@ pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod nel_audit;
+pub mod notification_audit;
 pub mod object_url_audit;
 pub mod open_redirect_param_audit;
 pub mod opener_audit;
@@ -201,6 +202,7 @@ pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
 pub use nel_audit::*;
+pub use notification_audit::*;
 pub use object_url_audit::*;
 pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
@@ -735,6 +737,10 @@ mod geolocation_audit_test;
 #[cfg(test)]
 #[path = "webrtc_audit_test.rs"]
 mod webrtc_audit_test;
+
+#[cfg(test)]
+#[path = "notification_audit_test.rs"]
+mod notification_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

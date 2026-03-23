@@ -699,6 +699,17 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Notification API audit
+    let notif_issues =
+        crate::notification_audit::analyze_notifications(body, resp.is_https);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        notif_issues,
+        crate::notification_audit::notification_to_operations
+    );
+
     // WebRTC leak detection
     let rtc_issues = crate::webrtc_audit::analyze_webrtc(body);
     collect_ops!(
