@@ -699,6 +699,17 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Geolocation API audit
+    let geo_issues =
+        crate::geolocation_audit::analyze_geolocation(body, resp.is_https);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        geo_issues,
+        crate::geolocation_audit::geolocation_to_operations
+    );
+
     // Clipboard API audit
     let clip_issues = crate::clipboard_audit::analyze_clipboard(body);
     collect_ops!(

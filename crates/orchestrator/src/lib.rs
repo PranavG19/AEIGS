@@ -46,6 +46,7 @@ pub mod etag_audit;
 pub mod expose_headers_audit;
 pub mod fetch_credential_audit;
 pub mod form_audit;
+pub mod geolocation_audit;
 pub mod graphql_introspection_audit;
 mod graph_persistence;
 pub mod header_audit;
@@ -176,6 +177,7 @@ pub use etag_audit::*;
 pub use expose_headers_audit::*;
 pub use fetch_credential_audit::*;
 pub use form_audit::*;
+pub use geolocation_audit::*;
 pub use graphql_introspection_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
@@ -723,6 +725,10 @@ mod webcrypto_audit_test;
 #[cfg(test)]
 #[path = "clipboard_audit_test.rs"]
 mod clipboard_audit_test;
+
+#[cfg(test)]
+#[path = "geolocation_audit_test.rs"]
+mod geolocation_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]
