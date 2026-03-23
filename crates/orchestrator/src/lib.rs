@@ -59,6 +59,7 @@ pub mod pipeline_composer;
 pub mod rate_limit_detector;
 pub mod recon_client;
 pub mod redirect_scanner;
+pub mod reporting_endpoints_audit;
 pub mod referrer_audit;
 pub mod robots_parser;
 pub mod s3_scanner;
@@ -136,6 +137,7 @@ pub use pipeline_composer::*;
 pub use rate_limit_detector::*;
 pub use recon_client::*;
 pub use redirect_scanner::*;
+pub use reporting_endpoints_audit::*;
 pub use referrer_audit::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
@@ -410,6 +412,10 @@ mod nel_audit_test;
 #[cfg(test)]
 #[path = "link_header_audit_test.rs"]
 mod link_header_audit_test;
+
+#[cfg(test)]
+#[path = "reporting_endpoints_audit_test.rs"]
+mod reporting_endpoints_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
