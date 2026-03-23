@@ -176,6 +176,7 @@ pub mod sse_audit;
 pub mod ssrf_redirect_audit;
 pub mod storage_access_audit;
 pub mod storage_audit;
+pub mod storage_bucket_audit;
 pub mod server_timing_audit;
 pub mod shared_buffer_audit;
 pub mod shared_worker_audit;
@@ -208,7 +209,9 @@ pub mod web_audio_audit;
 pub mod web_bluetooth_audit;
 pub mod web_codecs_audit;
 pub mod web_locks_audit;
+pub mod web_midi_audit;
 pub mod web_nfc_audit;
+pub mod web_otp_audit;
 pub mod web_serial_audit;
 pub mod web_share_audit;
 pub mod web_transport_audit;
@@ -397,6 +400,7 @@ pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
 pub use storage_access_audit::*;
 pub use storage_audit::*;
+pub use storage_bucket_audit::*;
 pub use server_timing_audit::*;
 pub use shared_buffer_audit::*;
 pub use shared_worker_audit::*;
@@ -428,7 +432,9 @@ pub use web_audio_audit::*;
 pub use web_bluetooth_audit::*;
 pub use web_codecs_audit::*;
 pub use web_locks_audit::*;
+pub use web_midi_audit::*;
 pub use web_nfc_audit::*;
+pub use web_otp_audit::*;
 pub use web_serial_audit::*;
 pub use web_share_audit::*;
 pub use web_transport_audit::*;
@@ -1333,3 +1339,15 @@ mod beacon_api_audit_test;
 #[cfg(test)]
 #[path = "media_capabilities_audit_test.rs"]
 mod media_capabilities_audit_test;
+
+#[cfg(test)]
+#[path = "web_midi_audit_test.rs"]
+mod web_midi_audit_test;
+
+#[cfg(test)]
+#[path = "web_otp_audit_test.rs"]
+mod web_otp_audit_test;
+
+#[cfg(test)]
+#[path = "storage_bucket_audit_test.rs"]
+mod storage_bucket_audit_test;

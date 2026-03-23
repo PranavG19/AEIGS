@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 4043 lib, 0 failed
+- cargo test -p aegis-orchestrator: 4100 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 136 features shipped
+- P8: 139 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -28,9 +28,10 @@ status: in-progress
 127. Image Capture (+19), 128. Background Fetch (+18), 129. Shared Worker (+19)
 130. Custom Element (+18), 131. Web Animation (+20), 132. Encoding API (+20), 133. WebUSB
 134. Audio Worklet (+18), 135. Media Capabilities (+20), 136. Beacon API (+23)
+137. Web MIDI (+18), 138. Web OTP (+17), 139. Storage Buckets (+16)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next: Reporting API, Contact Picker deep-dive, EyeDropper deep-dive, or Credential Management scanners.
+Continue P8. Next: Web Vitals, Priority Hints, Content Visibility, or AbortController scanners.

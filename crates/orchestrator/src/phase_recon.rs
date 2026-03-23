@@ -1146,6 +1146,36 @@ fn run_body_analyzers(
         crate::beacon_api_audit::beacon_api_to_operations
     );
 
+    // Web MIDI API audit
+    let midi_issues = crate::web_midi_audit::analyze_web_midi(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        midi_issues,
+        crate::web_midi_audit::web_midi_to_operations
+    );
+
+    // Web OTP API audit
+    let otp_issues = crate::web_otp_audit::analyze_web_otp(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        otp_issues,
+        crate::web_otp_audit::web_otp_to_operations
+    );
+
+    // Storage Buckets API audit
+    let sb_issues = crate::storage_bucket_audit::analyze_storage_bucket(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sb_issues,
+        crate::storage_bucket_audit::storage_bucket_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
