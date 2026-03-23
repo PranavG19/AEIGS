@@ -20,6 +20,7 @@ pub mod clickjack_audit;
 pub mod comment_leak;
 pub mod compute_pressure_audit;
 pub mod content_disposition_audit;
+pub mod content_index_audit;
 pub mod content_type_audit;
 pub mod content_type_confusion_audit;
 pub mod contact_picker_audit;
@@ -204,6 +205,7 @@ pub use clipboard_audit::*;
 pub use comment_leak::*;
 pub use compute_pressure_audit::*;
 pub use content_disposition_audit::*;
+pub use content_index_audit::*;
 pub use content_type_audit::*;
 pub use content_type_confusion_audit::*;
 pub use contact_picker_audit::*;
@@ -727,6 +729,10 @@ mod comment_leak_test;
 #[cfg(test)]
 #[path = "content_disposition_audit_test.rs"]
 mod content_disposition_audit_test;
+
+#[cfg(test)]
+#[path = "content_index_audit_test.rs"]
+mod content_index_audit_test;
 
 #[cfg(test)]
 #[path = "contact_picker_audit_test.rs"]

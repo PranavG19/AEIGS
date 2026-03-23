@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Content Index API audit
+    let ci_issues = crate::content_index_audit::analyze_content_index(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ci_issues,
+        crate::content_index_audit::content_index_to_operations
+    );
+
     // Digital Goods API audit
     let dg_issues = crate::digital_goods_audit::analyze_digital_goods(body);
     collect_ops!(
