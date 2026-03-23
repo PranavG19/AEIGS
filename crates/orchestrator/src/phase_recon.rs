@@ -204,6 +204,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let dnspf_handle = std::thread::spawn(move || {
         crate::dns_prefetch_control_audit::audit_dns_prefetch_control(&dnspf_target)
     });
+    let jsonp_target = ctx.config.target.clone();
+    let jsonp_handle =
+        std::thread::spawn(move || crate::jsonp_audit::audit_jsonp(&jsonp_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -628,6 +631,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += dnspf_ops.len() as u64;
     entries.extend(dnspf_ops);
+
+    let jsonp_issues = jsonp_handle.join().unwrap_or_default();
+    let jsonp_ops = crate::jsonp_audit::jsonp_to_operations(&jsonp_issues, &mut sequence);
+    findings_count += jsonp_ops.len() as u64;
+    entries.extend(jsonp_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
