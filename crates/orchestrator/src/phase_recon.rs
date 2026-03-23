@@ -699,6 +699,19 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // SharedArrayBuffer / COEP audit
+    let coep_val = hdr(resp, "cross-origin-embedder-policy").unwrap_or_default();
+    let coop_val = hdr(resp, "cross-origin-opener-policy").unwrap_or_default();
+    let sb_issues =
+        crate::shared_buffer_audit::analyze_shared_buffer(body, &coep_val, &coop_val);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sb_issues,
+        crate::shared_buffer_audit::shared_buffer_to_operations
+    );
+
     // Drag-drop data leak audit
     let dd_issues = crate::drag_drop_audit::analyze_drag_drop(body);
     collect_ops!(

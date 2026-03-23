@@ -117,6 +117,7 @@ pub mod sse_audit;
 pub mod ssrf_redirect_audit;
 pub mod storage_audit;
 pub mod server_timing_audit;
+pub mod shared_buffer_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
 pub mod sourcemap_header_audit;
@@ -253,6 +254,7 @@ pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
 pub use storage_audit::*;
 pub use server_timing_audit::*;
+pub use shared_buffer_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
 pub use sourcemap_header_audit::*;
@@ -403,6 +405,10 @@ mod scan_strategy_test;
 #[cfg(test)]
 #[path = "s3_scanner_test.rs"]
 mod s3_scanner_test;
+
+#[cfg(test)]
+#[path = "shared_buffer_audit_test.rs"]
+mod shared_buffer_audit_test;
 
 #[cfg(test)]
 #[path = "shodan_lookup_test.rs"]
