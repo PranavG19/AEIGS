@@ -1,30 +1,38 @@
+use crate::recon_client;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
-use crate::recon_client;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClipboardIssue {
-    ClipboardReadAccess,
-    ClipboardWriteAccess,
-    PasteEventIntercepted,
-    CopyEventIntercepted,
-    ExecCommandCopy,
-    ExecCommandPaste,
-    ClipboardDataExfiltration,
+    ApiDetected,
+    SilentClipboardRead,
+    ClipboardHijacking,
+    SensitiveDataClipboard,
+    MissingPermissionCheck,
+    CrossOriginClipboardAccess,
 }
 
 impl std::fmt::Display for ClipboardIssue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ClipboardReadAccess => write!(f, "clipboard_read"),
-            Self::ClipboardWriteAccess => write!(f, "clipboard_write"),
-            Self::PasteEventIntercepted => write!(f, "paste_intercepted"),
-            Self::CopyEventIntercepted => write!(f, "copy_intercepted"),
-            Self::ExecCommandCopy => write!(f, "exec_command_copy"),
-            Self::ExecCommandPaste => write!(f, "exec_command_paste"),
-            Self::ClipboardDataExfiltration => write!(f, "clipboard_exfiltration"),
+            Self::ApiDetected => write!(f, "clipboard_api_detected"),
+            Self::SilentClipboardRead => write!(f, "silent_clipboard_read"),
+            Self::ClipboardHijacking => write!(f, "clipboard_hijacking"),
+            Self::SensitiveDataClipboard => write!(f, "sensitive_data_clipboard"),
+            Self::MissingPermissionCheck => write!(f, "missing_permission_check"),
+            Self::CrossOriginClipboardAccess => write!(f, "cross_origin_clipboard_access"),
         }
+    }
+}
+
+pub fn clipboard_severity(issue: &ClipboardIssue) -> f64 {
+    match issue {
+        ClipboardIssue::SilentClipboardRead => 8.5,
+        ClipboardIssue::ClipboardHijacking => 8.0,
+        ClipboardIssue::SensitiveDataClipboard => 7.5,
+        ClipboardIssue::CrossOriginClipboardAccess => 6.5,
+        ClipboardIssue::MissingPermissionCheck => 5.5,
+        ClipboardIssue::ApiDetected => 3.0,
     }
 }
 
@@ -35,8 +43,8 @@ pub fn audit_clipboard(target: &str) -> Vec<ClipboardIssue> {
     let Some(client) = recon_client::default_client() else {
         return Vec::new();
     };
-    let body = match client.get(target).send().and_then(|r| r.text()) {
-        Ok(t) => t,
+    let body = match client.get(target).send() {
+        Ok(r) => r.text().unwrap_or_default(),
         Err(_) => return Vec::new(),
     };
     analyze_clipboard(&body)
@@ -49,21 +57,29 @@ pub fn analyze_clipboard(body: &str) -> Vec<ClipboardIssue> {
 
     let mut issues = Vec::new();
 
-    if body.contains("navigator.clipboard.readText")
-        || body.contains("navigator.clipboard.read(")
-    {
-        issues.push(ClipboardIssue::ClipboardReadAccess);
+    if has_clipboard_api(body) {
+        issues.push(ClipboardIssue::ApiDetected);
     }
 
-    if body.contains("navigator.clipboard.writeText")
-        || body.contains("navigator.clipboard.write(")
-    {
-        issues.push(ClipboardIssue::ClipboardWriteAccess);
+    if has_silent_clipboard_read(body) {
+        issues.push(ClipboardIssue::SilentClipboardRead);
     }
 
-    check_event_listeners(body, &mut issues);
-    check_exec_command(body, &mut issues);
-    check_exfiltration(body, &mut issues);
+    if has_clipboard_hijacking(body) {
+        issues.push(ClipboardIssue::ClipboardHijacking);
+    }
+
+    if has_sensitive_data_clipboard(body) {
+        issues.push(ClipboardIssue::SensitiveDataClipboard);
+    }
+
+    if has_missing_permission_check(body) {
+        issues.push(ClipboardIssue::MissingPermissionCheck);
+    }
+
+    if has_cross_origin_clipboard_access(body) {
+        issues.push(ClipboardIssue::CrossOriginClipboardAccess);
+    }
 
     issues
 }
@@ -73,87 +89,153 @@ fn has_clipboard_indicators(body: &str) -> bool {
         || body.contains("execCommand")
         || body.contains("onpaste")
         || body.contains("oncopy")
-        || (body.contains("addEventListener")
-            && (body.contains("paste") || body.contains("copy")))
+        || body.contains("clipboardData")
 }
 
-fn check_event_listeners(body: &str, issues: &mut Vec<ClipboardIssue>) {
-    let paste_patterns = [
-        "addEventListener(\"paste\"",
-        "addEventListener('paste'",
-        "onpaste",
-        "addEventListener(\"paste",
-    ];
-    if paste_patterns.iter().any(|p| body.contains(p)) {
-        issues.push(ClipboardIssue::PasteEventIntercepted);
-    }
-
-    let copy_patterns = [
-        "addEventListener(\"copy\"",
-        "addEventListener('copy'",
-        "oncopy",
-        "addEventListener(\"copy",
-    ];
-    if copy_patterns.iter().any(|p| body.contains(p)) {
-        issues.push(ClipboardIssue::CopyEventIntercepted);
-    }
-}
-
-fn check_exec_command(body: &str, issues: &mut Vec<ClipboardIssue>) {
-    if !body.contains("execCommand") {
-        return;
-    }
-    if body.contains("execCommand(\"copy\"")
+fn has_clipboard_api(body: &str) -> bool {
+    body.contains("navigator.clipboard")
+        || body.contains("clipboard.readText")
+        || body.contains("clipboard.writeText")
+        || body.contains("clipboard.read(")
+        || body.contains("clipboard.write(")
         || body.contains("execCommand('copy'")
-        || body.contains("execCommand(\"copy)")
-        || body.contains("execCommand('copy)")
-    {
-        issues.push(ClipboardIssue::ExecCommandCopy);
-    }
-    if body.contains("execCommand(\"paste\"")
+        || body.contains("execCommand(\"copy\"")
         || body.contains("execCommand('paste'")
-        || body.contains("execCommand(\"paste)")
-        || body.contains("execCommand('paste)")
-    {
-        issues.push(ClipboardIssue::ExecCommandPaste);
-    }
+        || body.contains("execCommand(\"paste\"")
 }
 
-fn check_exfiltration(body: &str, issues: &mut Vec<ClipboardIssue>) {
-    let reads_clipboard = body.contains("navigator.clipboard.readText")
-        || body.contains("navigator.clipboard.read(")
+fn has_silent_clipboard_read(body: &str) -> bool {
+    let has_read = body.contains("clipboard.readText")
+        || body.contains("clipboard.read(")
+        || body.contains("execCommand('paste'")
+        || body.contains("execCommand(\"paste\"");
+
+    if !has_read {
+        return false;
+    }
+
+    let has_user_gesture = body.contains("click")
+        || body.contains("mousedown")
+        || body.contains("keydown")
+        || body.contains("touchstart")
+        || body.contains("pointerdown");
+
+    let has_permission_check = body.contains("navigator.permissions.query")
+        || body.contains("clipboard-read")
+        || body.contains("clipboard-write");
+
+    has_read && !has_user_gesture && !has_permission_check
+}
+
+fn has_clipboard_hijacking(body: &str) -> bool {
+    let has_write = body.contains("clipboard.writeText")
+        || body.contains("clipboard.write(")
+        || body.contains("execCommand('copy'")
+        || body.contains("execCommand(\"copy\"")
+        || body.contains("clipboardData.setData");
+
+    if !has_write {
+        return false;
+    }
+
+    let suspicious_patterns = [
+        "bitcoin",
+        "btc",
+        "ethereum",
+        "eth",
+        "wallet",
+        "0x",
+        "bc1",
+        "address",
+        "crypto",
+        "oncopy",
+        "addEventListener('copy'",
+        "addEventListener(\"copy\"",
+        "clipboardData.setData",
+        "e.preventDefault()",
+        "event.preventDefault()",
+    ];
+
+    suspicious_patterns.iter().any(|p| body.contains(p))
+}
+
+fn has_sensitive_data_clipboard(body: &str) -> bool {
+    let has_clipboard_op = body.contains("clipboard.readText")
+        || body.contains("clipboard.writeText")
+        || body.contains("clipboard.read(")
+        || body.contains("clipboard.write(")
         || body.contains("clipboardData.getData")
-        || body.contains("execCommand('paste")
-        || body.contains("execCommand(\"paste");
+        || body.contains("clipboardData.setData");
 
-    let sends_data = body.contains("fetch(")
-        || body.contains("XMLHttpRequest")
-        || body.contains("sendBeacon")
-        || body.contains(".send(")
-        || body.contains("$.ajax")
-        || body.contains("$.post");
-
-    if reads_clipboard && sends_data {
-        issues.push(ClipboardIssue::ClipboardDataExfiltration);
+    if !has_clipboard_op {
+        return false;
     }
+
+    let sensitive_patterns = [
+        "password",
+        "passwd",
+        "pwd",
+        "token",
+        "secret",
+        "apiKey",
+        "api_key",
+        "accessToken",
+        "access_token",
+        "authToken",
+        "auth_token",
+        "sessionId",
+        "session_id",
+        "privateKey",
+        "private_key",
+        "credential",
+    ];
+
+    sensitive_patterns.iter().any(|p| body.contains(p))
 }
 
-pub fn clipboard_severity(issue: &ClipboardIssue) -> f64 {
-    match issue {
-        ClipboardIssue::ClipboardDataExfiltration => 8.0,
-        ClipboardIssue::ClipboardReadAccess => 6.0,
-        ClipboardIssue::ExecCommandPaste => 5.5,
-        ClipboardIssue::PasteEventIntercepted => 5.0,
-        ClipboardIssue::CopyEventIntercepted => 4.0,
-        ClipboardIssue::ClipboardWriteAccess => 3.5,
-        ClipboardIssue::ExecCommandCopy => 3.0,
+fn has_missing_permission_check(body: &str) -> bool {
+    let has_clipboard_op = body.contains("clipboard.readText")
+        || body.contains("clipboard.read(")
+        || body.contains("clipboard.writeText")
+        || body.contains("clipboard.write(");
+
+    if !has_clipboard_op {
+        return false;
     }
+
+    let has_permission_check = body.contains("navigator.permissions.query")
+        || body.contains("permissions.query")
+        || body.contains("clipboard-read")
+        || body.contains("clipboard-write");
+
+    has_clipboard_op && !has_permission_check
 }
 
-pub fn clipboard_to_operations(
-    issues: &[ClipboardIssue],
-    seq: &mut u64,
-) -> Vec<OperationLogEntry> {
+fn has_cross_origin_clipboard_access(body: &str) -> bool {
+    let has_iframe = body.contains("<iframe") || body.contains("iframe");
+
+    if !has_iframe {
+        return false;
+    }
+
+    let has_clipboard = body.contains("clipboard.readText")
+        || body.contains("clipboard.writeText")
+        || body.contains("clipboard.read(")
+        || body.contains("clipboard.write(");
+
+    if !has_clipboard {
+        return false;
+    }
+
+    let has_allow_clipboard_read = body.contains("allow=\"clipboard-read")
+        || body.contains("allow='clipboard-read")
+        || body.contains("allow=\"clipboard-write")
+        || body.contains("allow='clipboard-write");
+
+    has_iframe && has_clipboard && !has_allow_clipboard_read
+}
+
+pub fn clipboard_to_operations(issues: &[ClipboardIssue], seq: &mut u64) -> Vec<OperationLogEntry> {
     issues
         .iter()
         .map(|issue| {
@@ -161,7 +243,7 @@ pub fn clipboard_to_operations(
                 seq,
                 VulnerabilityClass::SensitiveDataExposure,
                 clipboard_severity(issue),
-                0.7,
+                0.5,
             )
         })
         .collect()

@@ -1460,7 +1460,7 @@ fn run_body_analyzers(
     );
 
     // Notification API audit
-    let notif_issues = crate::notification_audit::analyze_notifications(body, resp.is_https);
+    let notif_issues = crate::notification_audit::analyze_notification(body, resp.is_https);
     collect_ops!(
         seq,
         fc,
