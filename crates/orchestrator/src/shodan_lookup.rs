@@ -40,7 +40,7 @@ pub fn query_internetdb(ip: &str) -> Option<ShodanResult> {
     parse_internetdb_response(&body, ip)
 }
 
-pub(crate) fn parse_internetdb_response(body: &str, ip: &str) -> Option<ShodanResult> {
+pub fn parse_internetdb_response(body: &str, ip: &str) -> Option<ShodanResult> {
     let json: serde_json::Value = serde_json::from_str(body).ok()?;
     let obj = json.as_object()?;
     let ports = obj
@@ -131,4 +131,175 @@ pub fn shodan_to_operations(result: &ShodanResult, seq: &mut u64) -> Vec<Operati
         ));
     }
     entries
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ShodanIssue {
+    HighRiskPort { port: u16 },
+    KnownCve { cve_id: String },
+    MultipleCves { count: usize },
+    OutdatedCpe { cpe: String, technology: String },
+    CloudHosted { provider: String },
+    HoneypotIndicator { tag: String },
+    ExposiveService { port: u16, service: String },
+    HighPortCount { count: usize },
+}
+
+impl std::fmt::Display for ShodanIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HighRiskPort { port } => write!(f, "high_risk_port:{port}"),
+            Self::KnownCve { cve_id } => write!(f, "known_cve:{cve_id}"),
+            Self::MultipleCves { count } => write!(f, "multiple_cves:{count}"),
+            Self::OutdatedCpe { cpe, technology } => write!(f, "outdated_cpe:{technology}:{cpe}"),
+            Self::CloudHosted { provider } => write!(f, "cloud_hosted:{provider}"),
+            Self::HoneypotIndicator { tag } => write!(f, "honeypot:{tag}"),
+            Self::ExposiveService { port, service } => {
+                write!(f, "exposed_service:{service}:{port}")
+            }
+            Self::HighPortCount { count } => write!(f, "high_port_count:{count}"),
+        }
+    }
+}
+
+const HIGH_RISK_PORTS: &[u16] = &[
+    21, 23, 25, 135, 139, 445, 1433, 1521, 3306, 3389, 5432, 5900, 6379, 9200, 11211, 27017,
+];
+
+const CLOUD_PROVIDERS: &[(&str, &str)] = &[
+    ("amazon", "AWS"),
+    ("azure", "Azure"),
+    ("google", "GCP"),
+    ("digitalocean", "DigitalOcean"),
+    ("linode", "Linode"),
+    ("vultr", "Vultr"),
+];
+
+const EXPOSED_SERVICES: &[(u16, &str)] = &[
+    (3306, "MySQL"),
+    (5432, "PostgreSQL"),
+    (6379, "Redis"),
+    (27017, "MongoDB"),
+    (9200, "Elasticsearch"),
+    (11211, "Memcached"),
+    (5900, "VNC"),
+    (3389, "RDP"),
+];
+
+pub fn shodan_issue_severity(issue: &ShodanIssue) -> f64 {
+    match issue {
+        ShodanIssue::KnownCve { .. } => 8.0,
+        ShodanIssue::MultipleCves { count } => {
+            if *count > 10 {
+                9.0
+            } else {
+                7.5
+            }
+        }
+        ShodanIssue::ExposiveService { .. } => 7.0,
+        ShodanIssue::HighRiskPort { .. } => 6.0,
+        ShodanIssue::HoneypotIndicator { .. } => 5.0,
+        ShodanIssue::OutdatedCpe { .. } => 6.5,
+        ShodanIssue::HighPortCount { .. } => 5.5,
+        ShodanIssue::CloudHosted { .. } => 2.0,
+    }
+}
+
+pub fn analyze_shodan_result(result: &ShodanResult) -> Vec<ShodanIssue> {
+    let mut issues = Vec::new();
+
+    for &port in &result.ports {
+        if HIGH_RISK_PORTS.contains(&port) {
+            issues.push(ShodanIssue::HighRiskPort { port });
+        }
+        if let Some(&(_, service)) = EXPOSED_SERVICES.iter().find(|&&(p, _)| p == port) {
+            issues.push(ShodanIssue::ExposiveService {
+                port,
+                service: service.to_string(),
+            });
+        }
+    }
+
+    if result.ports.len() > 20 {
+        issues.push(ShodanIssue::HighPortCount {
+            count: result.ports.len(),
+        });
+    }
+
+    for vuln in &result.vulns {
+        issues.push(ShodanIssue::KnownCve {
+            cve_id: vuln.clone(),
+        });
+    }
+    if result.vulns.len() > 3 {
+        issues.push(ShodanIssue::MultipleCves {
+            count: result.vulns.len(),
+        });
+    }
+
+    for cpe in &result.cpes {
+        if let Some(tech) = extract_cpe_technology(cpe) {
+            issues.push(ShodanIssue::OutdatedCpe {
+                cpe: cpe.clone(),
+                technology: tech,
+            });
+        }
+    }
+
+    for tag in &result.tags {
+        let lower = tag.to_ascii_lowercase();
+        if lower.contains("honeypot") || lower.contains("self-signed") {
+            issues.push(ShodanIssue::HoneypotIndicator { tag: tag.clone() });
+        }
+    }
+
+    for hostname in &result.hostnames {
+        let lower = hostname.to_ascii_lowercase();
+        for &(pattern, provider) in CLOUD_PROVIDERS {
+            if lower.contains(pattern) {
+                issues.push(ShodanIssue::CloudHosted {
+                    provider: provider.to_string(),
+                });
+                break;
+            }
+        }
+    }
+
+    issues
+}
+
+fn extract_cpe_technology(cpe: &str) -> Option<String> {
+    // cpe format: cpe:/a:vendor:product:version or cpe:2.3:a:vendor:product:version
+    let parts: Vec<&str> = cpe.split(':').collect();
+    if parts.len() >= 4 {
+        // For cpe:/a:vendor:product format
+        let product = if cpe.starts_with("cpe:2.3") && parts.len() >= 5 {
+            parts[4]
+        } else if cpe.starts_with("cpe:/") && parts.len() >= 4 {
+            parts[3]
+        } else {
+            return None;
+        };
+        if !product.is_empty() {
+            return Some(product.replace('_', " "));
+        }
+    }
+    None
+}
+
+pub fn shodan_issues_to_operations(
+    issues: &[ShodanIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                shodan_issue_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
 }
