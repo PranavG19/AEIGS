@@ -110,6 +110,7 @@ pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
 pub mod timing_allow_origin_audit;
+pub mod trusted_types_audit;
 pub mod verb_tamper_audit;
 pub mod tls_scanner;
 pub mod update_db;
@@ -224,6 +225,7 @@ pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
 pub use timing_allow_origin_audit::*;
+pub use trusted_types_audit::*;
 pub use verb_tamper_audit::*;
 pub use tls_scanner::*;
 pub use update_db::*;
@@ -579,6 +581,10 @@ mod reporting_endpoints_audit_test;
 #[cfg(test)]
 #[path = "timing_allow_origin_audit_test.rs"]
 mod timing_allow_origin_audit_test;
+
+#[cfg(test)]
+#[path = "trusted_types_audit_test.rs"]
+mod trusted_types_audit_test;
 
 #[cfg(test)]
 #[path = "verb_tamper_audit_test.rs"]
