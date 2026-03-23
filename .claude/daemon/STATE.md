@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1554 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1565 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -52,15 +52,37 @@ status: in-progress
 - [x] Content-Type/X-Content-Type-Options audit (nosniff, charset, MIME)
 - [x] Server-Timing header leak detection (db, cache, internal metrics)
 - [x] Deprecated header audit (Expect-CT, Feature-Policy, HPKP, X-XSS-Protection)
+- [x] Access-Control-Expose-Headers audit (sensitive header leak)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
 - Consolidation: fetch once → pass body to all body-analyzers
 - Size: L (200+ lines, 13+ files). Deferred to dedicated session.
 
+## P9 — SIMPLIFY PASS (after P8 wraps current batch)
+Run `/simplify` skill on each recon feature module one by one.
+Review for reuse, quality, efficiency. Fix issues before moving on.
+Work through all P8 features systematically (newest first).
+
+## P10 — ORCHESTRATION CONSOLIDATION
+Consolidate all recon orchestration management in phase_recon.rs.
+- G14 body-fetch consolidation (13 HTML scanners share one fetch)
+- Unify scanner registration/dispatch pattern
+- Reduce boilerplate in thread spawn + join + extend pattern
+- Single entry point for all recon scanners
+
+## P11 — TEST LINE COVERAGE 90%+
+Get all test line coverage to 90%+ per source file.
+- Use `cargo llvm-cov` or `cargo tarpaulin` to measure per-file coverage
+- Identify files below 90% threshold
+- Add targeted tests for uncovered branches/paths
+- Re-measure and iterate until all files pass 90%
+
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
 2. Continue P8: access-control-expose-headers audit, nel/report-to,
    link header injection, document.domain detection.
-3. G14 body-fetch consolidation (L-sized, next dedicated session).
+3. When P8 batch complete → move to P9 (simplify pass).
+4. Then P10 (orchestration consolidation).
+5. Then P11 (90%+ test coverage per file).

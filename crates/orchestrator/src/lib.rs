@@ -23,6 +23,7 @@ pub mod dns_enumerator;
 pub mod email_security;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
+pub mod expose_headers_audit;
 pub mod form_audit;
 mod graph_persistence;
 pub mod header_audit;
@@ -97,6 +98,7 @@ pub use dns_enumerator::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
+pub use expose_headers_audit::*;
 pub use form_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
@@ -426,6 +428,10 @@ mod server_timing_audit_test;
 #[cfg(test)]
 #[path = "deprecated_header_audit_test.rs"]
 mod deprecated_header_audit_test;
+
+#[cfg(test)]
+#[path = "expose_headers_audit_test.rs"]
+mod expose_headers_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
