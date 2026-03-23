@@ -90,6 +90,7 @@ pub mod jsonp_audit;
 pub mod link_header_audit;
 pub mod local_font_audit;
 pub mod mass_assign_audit;
+pub mod media_session_audit;
 pub mod meta_redirect_audit;
 pub mod meta_tag_audit;
 pub mod method_override_audit;
@@ -276,6 +277,7 @@ pub use jsonp_audit::*;
 pub use link_header_audit::*;
 pub use local_font_audit::*;
 pub use mass_assign_audit::*;
+pub use media_session_audit::*;
 pub use meta_redirect_audit::*;
 pub use meta_tag_audit::*;
 pub use method_override_audit::*;
@@ -871,6 +873,10 @@ mod link_header_audit_test;
 #[cfg(test)]
 #[path = "mass_assign_audit_test.rs"]
 mod mass_assign_audit_test;
+
+#[cfg(test)]
+#[path = "media_session_audit_test.rs"]
+mod media_session_audit_test;
 
 #[cfg(test)]
 #[path = "reporting_endpoints_audit_test.rs"]

@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Media Session API audit
+    let ms_issues = crate::media_session_audit::analyze_media_session(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ms_issues,
+        crate::media_session_audit::media_session_to_operations
+    );
+
     // Vibration API audit
     let vib_issues = crate::vibration_audit::analyze_vibration(body);
     collect_ops!(
