@@ -866,6 +866,16 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Presentation API audit
+    let pres_issues = crate::presentation_audit::analyze_presentation(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pres_issues,
+        crate::presentation_audit::presentation_to_operations
+    );
+
     // WebNFC API audit
     let nfc_issues = crate::web_nfc_audit::analyze_web_nfc(body);
     collect_ops!(

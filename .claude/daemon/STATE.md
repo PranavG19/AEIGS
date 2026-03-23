@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3179 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3195 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -44,9 +44,10 @@ status: in-progress
 83. Web Bluetooth API audit (+15)
 84. WebTransport API audit (+15)
 85. WebNFC API audit (+15)
+86. Presentation API audit (+16)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Presentation API audit, Web Share API audit, Idle Detection API audit, or Ambient Light Sensor audit.
+Continue P8. Next ideas: Web Share API audit, Idle Detection API audit, Ambient Light Sensor audit, or Window Management API audit.

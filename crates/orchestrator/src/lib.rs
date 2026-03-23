@@ -114,6 +114,7 @@ pub mod pipeline;
 pub mod pipeline_composer;
 pub mod postmessage_audit;
 pub mod preconnect_audit;
+pub mod presentation_audit;
 pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
 pub mod rate_limit_detector;
@@ -285,6 +286,7 @@ pub use pipeline::*;
 pub use pipeline_composer::*;
 pub use postmessage_audit::*;
 pub use preconnect_audit::*;
+pub use presentation_audit::*;
 pub use prototype_pollution_audit::*;
 pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
@@ -661,6 +663,10 @@ mod web_transport_audit_test;
 #[cfg(test)]
 #[path = "web_nfc_audit_test.rs"]
 mod web_nfc_audit_test;
+
+#[cfg(test)]
+#[path = "presentation_audit_test.rs"]
+mod presentation_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]
