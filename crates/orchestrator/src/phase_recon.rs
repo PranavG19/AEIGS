@@ -110,6 +110,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let meta_target = ctx.config.target.clone();
     let meta_handle =
         std::thread::spawn(move || crate::meta_tag_audit::audit_meta_tags(&meta_target));
+    let iframe_target = ctx.config.target.clone();
+    let iframe_handle =
+        std::thread::spawn(move || crate::iframe_audit::audit_iframes(&iframe_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -366,6 +369,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::meta_tag_audit::meta_findings_to_operations(&meta_issues, &mut sequence);
     findings_count += meta_ops.len() as u64;
     entries.extend(meta_ops);
+
+    let iframe_findings = iframe_handle.join().unwrap_or_default();
+    let iframe_ops =
+        crate::iframe_audit::iframe_findings_to_operations(&iframe_findings, &mut sequence);
+    findings_count += iframe_ops.len() as u64;
+    entries.extend(iframe_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

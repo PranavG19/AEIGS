@@ -23,6 +23,7 @@ pub mod hsts_preload;
 pub mod http_version;
 pub mod hypothesis_bridge;
 pub mod idor_analyzer;
+pub mod iframe_audit;
 pub mod info_disclosure;
 pub mod interactive;
 pub mod js_library_scanner;
@@ -82,6 +83,7 @@ pub use hsts_preload::*;
 pub use http_version::*;
 pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
+pub use iframe_audit::*;
 pub use info_disclosure::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
@@ -269,6 +271,10 @@ mod mixed_content_test;
 #[cfg(test)]
 #[path = "redirect_scanner_test.rs"]
 mod redirect_scanner_test;
+
+#[cfg(test)]
+#[path = "iframe_audit_test.rs"]
+mod iframe_audit_test;
 
 #[cfg(test)]
 #[path = "info_disclosure_test.rs"]
