@@ -68,6 +68,7 @@ pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod nel_audit;
+pub mod object_url_audit;
 pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod path_traversal_audit;
@@ -189,6 +190,7 @@ pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
 pub use nel_audit::*;
+pub use object_url_audit::*;
 pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use path_traversal_audit::*;
@@ -681,6 +683,10 @@ mod referrer_audit_test;
 #[cfg(test)]
 #[path = "wasm_audit_test.rs"]
 mod wasm_audit_test;
+
+#[cfg(test)]
+#[path = "object_url_audit_test.rs"]
+mod object_url_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

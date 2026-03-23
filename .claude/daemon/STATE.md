@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2208 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2375 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -43,9 +43,18 @@ status: in-progress
 24. feat(recon): Add postMessage security scanner (+15)
 25. feat(recon): Add service worker security scanner (+15)
 26. feat(recon): Add fetch/XHR credential audit scanner (+12)
+27. feat(recon): Add CSP nonce/hash quality scanner (+20)
+28. feat(recon): Add DOM clobbering detection scanner (+20)
+29. feat(recon): Add Trusted Types policy audit scanner (+17)
+30. feat(recon): Add API endpoint leak detection scanner (+21)
+31. feat(recon): Add third-party script risk audit scanner (+18)
+32. feat(recon): Add dependency confusion detection scanner (+19)
+33. feat(recon): Add client-side template injection scanner (+19)
+34. feat(recon): Add Server-Sent Events security scanner (+16)
+35. feat(recon): Add WebAssembly security audit scanner (+17)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: email header injection, IDOR pattern scanner, subdomain wildcard check, or CSP nonce/hash audit.
+Continue P8. Next ideas: credential harvesting form detection, unsafe object URL audit, resource timing leak, or payment form security audit.

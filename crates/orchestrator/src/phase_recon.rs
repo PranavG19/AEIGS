@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Object URL / blob: / data: audit
+    let objurl_issues = crate::object_url_audit::analyze_object_urls(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        objurl_issues,
+        crate::object_url_audit::object_url_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers
