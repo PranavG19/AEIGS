@@ -12,6 +12,7 @@ pub mod cookie_audit;
 pub mod cors_scanner;
 pub mod csp_analyzer;
 pub mod cve_correlator;
+pub mod dangerous_js_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
@@ -74,6 +75,7 @@ pub use checkpoint::*;
 pub use convergence::*;
 pub use cookie_audit::*;
 pub use cors_scanner::*;
+pub use dangerous_js_audit::*;
 pub use csp_analyzer::*;
 pub use cve_correlator::*;
 pub use distributed::*;
@@ -366,6 +368,10 @@ mod sourcemap_detector_test;
 #[cfg(test)]
 #[path = "sri_checker_test.rs"]
 mod sri_checker_test;
+
+#[cfg(test)]
+#[path = "dangerous_js_audit_test.rs"]
+mod dangerous_js_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

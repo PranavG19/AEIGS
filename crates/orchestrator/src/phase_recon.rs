@@ -123,6 +123,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let handler_handle = std::thread::spawn(move || {
         crate::inline_handler_audit::audit_inline_handlers(&handler_target)
     });
+    let djs_target = ctx.config.target.clone();
+    let djs_handle = std::thread::spawn(move || {
+        crate::dangerous_js_audit::audit_dangerous_js(&djs_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -403,6 +407,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::inline_handler_audit::inline_handler_to_operations(&handler_issues, &mut sequence);
     findings_count += handler_ops.len() as u64;
     entries.extend(handler_ops);
+
+    let djs_issues = djs_handle.join().unwrap_or_default();
+    let djs_ops =
+        crate::dangerous_js_audit::dangerous_js_to_operations(&djs_issues, &mut sequence);
+    findings_count += djs_ops.len() as u64;
+    entries.extend(djs_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
