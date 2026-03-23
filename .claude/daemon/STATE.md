@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2841 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2857 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 67 features shipped
+- P8: 68 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -79,9 +79,10 @@ status: in-progress
 60. feat(recon): Add Content-Disposition header security audit scanner (+17)
 61. feat(recon): Add Web Locks API security audit scanner (+16)
 62. feat(recon): Add Reporting API security audit scanner (+17)
+63. feat(recon): Add Payment Request API security audit scanner (+16)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Payment Request API audit, Credential Management API audit, Background Sync API audit, or Performance Observer leak audit.
+Continue P8. Next ideas: Credential Management API audit, Background Sync API audit, Performance Observer leak audit, or Broadcast Channel API audit.
