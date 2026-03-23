@@ -1277,6 +1277,16 @@ fn run_body_analyzers(
         crate::notification_audit::notification_to_operations
     );
 
+    // WebGPU audit
+    let wgpu_issues = crate::webgpu_audit::analyze_webgpu(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wgpu_issues,
+        crate::webgpu_audit::webgpu_to_operations
+    );
+
     // WebRTC leak detection
     let rtc_issues = crate::webrtc_audit::analyze_webrtc(body);
     collect_ops!(

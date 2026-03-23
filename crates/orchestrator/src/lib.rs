@@ -198,6 +198,7 @@ pub mod web_share_audit;
 pub mod web_transport_audit;
 pub mod webcrypto_audit;
 pub mod webhid_audit;
+pub mod webgpu_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
 pub mod webusb_audit;
@@ -400,6 +401,7 @@ pub use web_share_audit::*;
 pub use web_transport_audit::*;
 pub use webcrypto_audit::*;
 pub use webhid_audit::*;
+pub use webgpu_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
 pub use webusb_audit::*;
@@ -741,6 +743,10 @@ mod selection_audit_test;
 #[cfg(test)]
 #[path = "webhid_audit_test.rs"]
 mod webhid_audit_test;
+
+#[cfg(test)]
+#[path = "webgpu_audit_test.rs"]
+mod webgpu_audit_test;
 
 #[cfg(test)]
 #[path = "web_serial_audit_test.rs"]
