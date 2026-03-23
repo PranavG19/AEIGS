@@ -122,3 +122,234 @@ pub fn referrer_to_operations(
         0.9,
     )]
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ReferrerSecurityIssue {
+    UnsafeUrlPolicy,
+    NoReferrerWhenDowngrade,
+    OriginCrossOrigin,
+    MissingReferrerPolicy,
+    ConflictingPolicies,
+    ReferrerInMetaTag,
+    LinkWithNoReferrer,
+    FormWithoutReferrer,
+    CrossOriginLinkLeak,
+    TokenInReferrer,
+}
+
+impl std::fmt::Display for ReferrerSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnsafeUrlPolicy => write!(
+                f,
+                "unsafe-url policy leaks full URL including path and query"
+            ),
+            Self::NoReferrerWhenDowngrade => write!(
+                f,
+                "no-referrer-when-downgrade leaks referrer on HTTPS to HTTP"
+            ),
+            Self::OriginCrossOrigin => {
+                write!(f, "origin-when-cross-origin may leak path information")
+            }
+            Self::MissingReferrerPolicy => write!(
+                f,
+                "missing referrer policy relies on insecure browser default"
+            ),
+            Self::ConflictingPolicies => {
+                write!(f, "meta tag and header referrer policies conflict")
+            }
+            Self::ReferrerInMetaTag => {
+                write!(f, "referrer policy set via meta tag is weaker than header")
+            }
+            Self::LinkWithNoReferrer => write!(
+                f,
+                "selective rel=noreferrer on links may leak from other links"
+            ),
+            Self::FormWithoutReferrer => {
+                write!(f, "forms missing referrer-policy attribute may leak data")
+            }
+            Self::CrossOriginLinkLeak => write!(
+                f,
+                "external links without noreferrer leak referrer information"
+            ),
+            Self::TokenInReferrer => {
+                write!(f, "sensitive tokens detected in referrer-leaking URLs")
+            }
+        }
+    }
+}
+
+pub fn analyze_referrer_security(
+    referrer_policy: Option<&str>,
+    html: &str,
+) -> Vec<ReferrerSecurityIssue> {
+    let mut issues = Vec::new();
+
+    let has_header_policy = referrer_policy.is_some();
+    let header_policy_str = referrer_policy.unwrap_or("");
+
+    let meta_policy = extract_meta_referrer_policy(html);
+
+    if let Some(ref meta_policy_val) = meta_policy {
+        if has_header_policy && !meta_policy_val.eq_ignore_ascii_case(header_policy_str) {
+            issues.push(ReferrerSecurityIssue::ConflictingPolicies);
+        }
+        if has_header_policy || !meta_policy_val.is_empty() {
+            issues.push(ReferrerSecurityIssue::ReferrerInMetaTag);
+        }
+    }
+
+    let effective_policy = if has_header_policy {
+        header_policy_str
+    } else {
+        meta_policy.as_deref().unwrap_or("")
+    };
+
+    if effective_policy.is_empty() {
+        issues.push(ReferrerSecurityIssue::MissingReferrerPolicy);
+    } else if effective_policy.eq_ignore_ascii_case("unsafe-url") {
+        issues.push(ReferrerSecurityIssue::UnsafeUrlPolicy);
+    } else if effective_policy.eq_ignore_ascii_case("no-referrer-when-downgrade") {
+        issues.push(ReferrerSecurityIssue::NoReferrerWhenDowngrade);
+    } else if effective_policy.eq_ignore_ascii_case("origin-when-cross-origin") {
+        issues.push(ReferrerSecurityIssue::OriginCrossOrigin);
+    }
+
+    let has_noreferrer_links =
+        html.contains("rel=\"noreferrer\"") || html.contains("rel='noreferrer'");
+    let has_external_links = count_external_links(html) > 0;
+
+    if has_noreferrer_links && has_external_links {
+        issues.push(ReferrerSecurityIssue::LinkWithNoReferrer);
+    }
+
+    if has_external_links && !is_safe_referrer_policy(effective_policy) && !has_noreferrer_links {
+        issues.push(ReferrerSecurityIssue::CrossOriginLinkLeak);
+    }
+
+    if count_forms_without_referrer_policy(html) > 0 {
+        issues.push(ReferrerSecurityIssue::FormWithoutReferrer);
+    }
+
+    if has_token_in_url(html) {
+        issues.push(ReferrerSecurityIssue::TokenInReferrer);
+    }
+
+    issues
+}
+
+pub fn referrer_security_severity(issue: &ReferrerSecurityIssue) -> f64 {
+    match issue {
+        ReferrerSecurityIssue::UnsafeUrlPolicy => 5.0,
+        ReferrerSecurityIssue::TokenInReferrer => 5.0,
+        ReferrerSecurityIssue::NoReferrerWhenDowngrade => 4.0,
+        ReferrerSecurityIssue::CrossOriginLinkLeak => 3.5,
+        ReferrerSecurityIssue::OriginCrossOrigin => 3.0,
+        ReferrerSecurityIssue::MissingReferrerPolicy => 2.5,
+        ReferrerSecurityIssue::ConflictingPolicies => 2.5,
+        ReferrerSecurityIssue::FormWithoutReferrer => 2.5,
+        ReferrerSecurityIssue::ReferrerInMetaTag => 2.0,
+        ReferrerSecurityIssue::LinkWithNoReferrer => 1.5,
+    }
+}
+
+pub fn referrer_security_to_operations(
+    issues: &[ReferrerSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    if issues.is_empty() {
+        return Vec::new();
+    }
+
+    let max_severity = issues
+        .iter()
+        .map(referrer_security_severity)
+        .fold(0.0_f64, f64::max);
+
+    vec![recon_client::finding_entry(
+        seq,
+        VulnerabilityClass::SecurityMisconfiguration,
+        max_severity,
+        0.5,
+    )]
+}
+
+fn extract_meta_referrer_policy(html: &str) -> Option<String> {
+    let html_lower = html.to_ascii_lowercase();
+    if let Some(start) = html_lower.find("<meta name=\"referrer\"") {
+        let after_tag = &html_lower[start..];
+        if let Some(content_start) = after_tag.find("content=\"") {
+            let content_offset = content_start + 9;
+            let content_part = &after_tag[content_offset..];
+            if let Some(end) = content_part.find('"') {
+                return Some(content_part[..end].to_string());
+            }
+        }
+    }
+    None
+}
+
+fn count_external_links(html: &str) -> usize {
+    let mut count = 0;
+    let html_lower = html.to_ascii_lowercase();
+    let patterns = ["http://", "https://"];
+
+    for pattern in &patterns {
+        let mut pos = 0;
+        while let Some(idx) = html_lower[pos..].find(pattern) {
+            let absolute_idx = pos + idx;
+            if absolute_idx > 10 {
+                let before = &html_lower[absolute_idx.saturating_sub(10)..absolute_idx];
+                if before.contains("href=") {
+                    count += 1;
+                }
+            }
+            pos = absolute_idx + pattern.len();
+        }
+    }
+
+    count
+}
+
+fn count_forms_without_referrer_policy(html: &str) -> usize {
+    let html_lower = html.to_ascii_lowercase();
+    let mut count = 0;
+    let mut pos = 0;
+
+    while let Some(form_idx) = html_lower[pos..].find("<form") {
+        let absolute_idx = pos + form_idx;
+        let after_form = &html_lower[absolute_idx..];
+        if let Some(end_tag) = after_form.find('>') {
+            let form_tag = &after_form[..end_tag];
+            if !form_tag.contains("referrerpolicy=") {
+                count += 1;
+            }
+            pos = absolute_idx + end_tag + 1;
+        } else {
+            break;
+        }
+    }
+
+    count
+}
+
+fn is_safe_referrer_policy(policy: &str) -> bool {
+    let lower = policy.to_ascii_lowercase();
+    matches!(
+        lower.as_str(),
+        "no-referrer" | "same-origin" | "strict-origin" | "strict-origin-when-cross-origin"
+    )
+}
+
+fn has_token_in_url(html: &str) -> bool {
+    let html_lower = html.to_ascii_lowercase();
+    let token_patterns = ["token=", "api_key=", "apikey=", "key=", "secret=", "auth="];
+
+    for pattern in &token_patterns {
+        if html_lower.contains(pattern) {
+            return true;
+        }
+    }
+
+    false
+}

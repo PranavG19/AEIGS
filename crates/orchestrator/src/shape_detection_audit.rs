@@ -110,3 +110,183 @@ pub fn shape_detection_to_operations(
         })
         .collect()
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ShapeDetectionSecurityIssue {
+    FaceDetectionSurveillance,
+    FaceDataExfiltration,
+    FaceDetectionWithoutConsent,
+    TextRecognitionPrivacy,
+    FaceRecognitionFingerprinting,
+    ShapeDetectionInIframe,
+    FaceDataPersistence,
+    ContinuousFaceDetection,
+    FaceDetectionWithGeolocation,
+    ShapeDetectionInWorker,
+}
+
+impl std::fmt::Display for ShapeDetectionSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::FaceDetectionSurveillance => write!(f, "face_detection_surveillance"),
+            Self::FaceDataExfiltration => write!(f, "face_data_exfiltration"),
+            Self::FaceDetectionWithoutConsent => write!(f, "face_detection_without_consent"),
+            Self::TextRecognitionPrivacy => write!(f, "text_recognition_privacy"),
+            Self::FaceRecognitionFingerprinting => write!(f, "face_recognition_fingerprinting"),
+            Self::ShapeDetectionInIframe => write!(f, "shape_detection_in_iframe"),
+            Self::FaceDataPersistence => write!(f, "face_data_persistence"),
+            Self::ContinuousFaceDetection => write!(f, "continuous_face_detection"),
+            Self::FaceDetectionWithGeolocation => write!(f, "face_detection_with_geolocation"),
+            Self::ShapeDetectionInWorker => write!(f, "shape_detection_in_worker"),
+        }
+    }
+}
+
+pub fn analyze_shape_detection_security(body: &str) -> Vec<ShapeDetectionSecurityIssue> {
+    let mut issues = Vec::new();
+    let body_lower = body.to_ascii_lowercase();
+
+    let has_face_detector = body.contains("FaceDetector");
+    let has_text_detector = body.contains("TextDetector");
+
+    if !has_face_detector && !has_text_detector && !body.contains("BarcodeDetector") {
+        return issues;
+    }
+
+    // FaceDetectionSurveillance - tracking with face detection
+    if has_face_detector
+        && (body_lower.contains("track")
+            || body_lower.contains("monitor")
+            || body_lower.contains("surveillance")
+            || body_lower.contains("watchlist"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceDetectionSurveillance);
+    }
+
+    // FaceDataExfiltration - sending face data externally
+    if has_face_detector
+        && body.contains(".detect(")
+        && (body.contains("fetch(")
+            || body.contains("XMLHttpRequest")
+            || body.contains("sendBeacon")
+            || body.contains("WebSocket"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceDataExfiltration);
+    }
+
+    // FaceDetectionWithoutConsent - no permission/consent flow
+    if has_face_detector
+        && !(body_lower.contains("permission")
+            || body_lower.contains("consent")
+            || body_lower.contains("agree")
+            || body_lower.contains("accept"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceDetectionWithoutConsent);
+    }
+
+    // TextRecognitionPrivacy - OCR on sensitive areas
+    if has_text_detector
+        && (body_lower.contains("password")
+            || body_lower.contains("credit")
+            || body_lower.contains("ssn")
+            || body_lower.contains("sensitive")
+            || body_lower.contains("private"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::TextRecognitionPrivacy);
+    }
+
+    // FaceRecognitionFingerprinting - using face features for identity
+    if has_face_detector
+        && (body_lower.contains("fingerprint")
+            || body_lower.contains("identity")
+            || body_lower.contains("recognize")
+            || body_lower.contains("match")
+            || body_lower.contains("compare"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceRecognitionFingerprinting);
+    }
+
+    // ShapeDetectionInIframe - detection from cross-origin iframe
+    if (has_face_detector || has_text_detector)
+        && (body.contains("<iframe")
+            || body.contains("contentWindow")
+            || body.contains("postMessage")
+            || body.contains("parent."))
+    {
+        issues.push(ShapeDetectionSecurityIssue::ShapeDetectionInIframe);
+    }
+
+    // FaceDataPersistence - storing face detection results
+    if has_face_detector
+        && (body.contains("localStorage")
+            || body.contains("sessionStorage")
+            || body.contains("indexedDB")
+            || body.contains("openDatabase"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceDataPersistence);
+    }
+
+    // ContinuousFaceDetection - always-on face detection
+    if has_face_detector
+        && (body.contains("setInterval")
+            || body.contains("requestAnimationFrame")
+            || body.contains("while(")
+            || body.contains("while "))
+    {
+        issues.push(ShapeDetectionSecurityIssue::ContinuousFaceDetection);
+    }
+
+    // FaceDetectionWithGeolocation - combining face data with location
+    if has_face_detector
+        && (body.contains("geolocation")
+            || body.contains("getCurrentPosition")
+            || body.contains("watchPosition")
+            || body.contains("coords"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::FaceDetectionWithGeolocation);
+    }
+
+    // ShapeDetectionInWorker - running detection in worker context
+    if (has_face_detector || has_text_detector || body.contains("BarcodeDetector"))
+        && (body.contains("new Worker")
+            || body.contains("SharedWorker")
+            || body.contains("ServiceWorker")
+            || body.contains("worker.postMessage"))
+    {
+        issues.push(ShapeDetectionSecurityIssue::ShapeDetectionInWorker);
+    }
+
+    issues
+}
+
+pub fn shape_detection_security_severity(issue: &ShapeDetectionSecurityIssue) -> f64 {
+    match issue {
+        ShapeDetectionSecurityIssue::FaceDetectionSurveillance => 9.0,
+        ShapeDetectionSecurityIssue::FaceDataExfiltration => 8.5,
+        ShapeDetectionSecurityIssue::FaceRecognitionFingerprinting => 8.0,
+        ShapeDetectionSecurityIssue::FaceDetectionWithoutConsent => 7.5,
+        ShapeDetectionSecurityIssue::TextRecognitionPrivacy => 7.0,
+        ShapeDetectionSecurityIssue::FaceDetectionWithGeolocation => 7.0,
+        ShapeDetectionSecurityIssue::ContinuousFaceDetection => 6.5,
+        ShapeDetectionSecurityIssue::FaceDataPersistence => 6.0,
+        ShapeDetectionSecurityIssue::ShapeDetectionInIframe => 5.5,
+        ShapeDetectionSecurityIssue::ShapeDetectionInWorker => 4.5,
+    }
+}
+
+pub fn shape_detection_security_to_operations(
+    issues: &[ShapeDetectionSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                shape_detection_security_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}
