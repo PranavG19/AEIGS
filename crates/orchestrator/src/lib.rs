@@ -27,6 +27,7 @@ pub mod csp_nonce_audit;
 pub mod csp_report_leak_audit;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
+pub mod dependency_confusion_audit;
 pub mod deprecated_header_audit;
 pub mod deserialization_audit;
 pub mod distributed;
@@ -147,6 +148,7 @@ pub use csp_nonce_audit::*;
 pub use csp_report_leak_audit::*;
 pub use cve_correlator::*;
 pub use dangerous_js_audit::*;
+pub use dependency_confusion_audit::*;
 pub use deprecated_header_audit::*;
 pub use deserialization_audit::*;
 pub use distributed::*;
@@ -689,6 +691,10 @@ mod content_type_confusion_audit_test;
 #[cfg(test)]
 #[path = "server_timing_audit_test.rs"]
 mod server_timing_audit_test;
+
+#[cfg(test)]
+#[path = "dependency_confusion_audit_test.rs"]
+mod dependency_confusion_audit_test;
 
 #[cfg(test)]
 #[path = "deprecated_header_audit_test.rs"]

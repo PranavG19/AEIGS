@@ -626,6 +626,16 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // Dependency confusion indicators
+    let depconf_issues = crate::dependency_confusion_audit::analyze_dependency_confusion(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        depconf_issues,
+        crate::dependency_confusion_audit::dep_confusion_to_operations
+    );
+
     // Third-party script risk audit
     let tps_issues =
         crate::third_party_script_audit::analyze_third_party_scripts(body, domain);
