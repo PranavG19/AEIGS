@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3502 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3519 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 106 features shipped
+- P8: 107 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -22,10 +22,10 @@ status: in-progress
 95. Content Index API (+16), 96. Device Memory API (+14), 97. Barcode Detection (+15)
 98. Network Information API (+16), 99. Shape Detection API (+15), 100. Vibration API (+15)
 101-104: Media Session, Payment Handler, Badging, Launch Handler
-105. Web Codecs API (+17), 106. Ink API (+15)
+105. Web Codecs API (+17), 106. Ink API (+15), 107. File Handling API (+17)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: File Handling API audit, Declarative Shadow DOM audit, Sanitizer API audit, or Window Controls Overlay audit.
+Continue P8. Next ideas: Declarative Shadow DOM audit, Sanitizer API audit, Window Controls Overlay audit, or WebUSB audit.

@@ -946,6 +946,16 @@ fn run_body_analyzers(
         crate::vibration_audit::vibration_to_operations
     );
 
+    // Declarative Shadow DOM audit
+    let sdom_issues = crate::shadow_dom_audit::analyze_shadow_dom(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sdom_issues,
+        crate::shadow_dom_audit::shadow_dom_to_operations
+    );
+
     // Shape Detection API audit
     let sd_issues = crate::shape_detection_audit::analyze_shape_detection(body);
     collect_ops!(
