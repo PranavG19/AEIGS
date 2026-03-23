@@ -72,6 +72,7 @@ pub mod idor_analyzer;
 pub mod iframe_audit;
 pub mod info_disclosure;
 pub mod inline_handler_audit;
+pub mod intersection_observer_audit;
 pub mod interactive;
 pub mod js_library_scanner;
 pub mod jwt_header_audit;
@@ -227,6 +228,7 @@ pub use idor_analyzer::*;
 pub use iframe_audit::*;
 pub use info_disclosure::*;
 pub use inline_handler_audit::*;
+pub use intersection_observer_audit::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
 pub use jwt_header_audit::*;
@@ -553,6 +555,10 @@ mod info_disclosure_test;
 #[cfg(test)]
 #[path = "inline_handler_audit_test.rs"]
 mod inline_handler_audit_test;
+
+#[cfg(test)]
+#[path = "intersection_observer_audit_test.rs"]
+mod intersection_observer_audit_test;
 
 #[cfg(test)]
 #[path = "subdomain_takeover_test.rs"]
