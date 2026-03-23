@@ -101,6 +101,7 @@ pub mod security_txt;
 pub mod sensitive_file_audit;
 pub mod service_worker_audit;
 pub mod session_fixation_audit;
+pub mod sse_audit;
 pub mod ssrf_redirect_audit;
 pub mod storage_audit;
 pub mod server_timing_audit;
@@ -220,6 +221,7 @@ pub use security_txt::*;
 pub use sensitive_file_audit::*;
 pub use service_worker_audit::*;
 pub use session_fixation_audit::*;
+pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
 pub use storage_audit::*;
 pub use server_timing_audit::*;
@@ -553,6 +555,10 @@ mod service_worker_audit_test;
 #[cfg(test)]
 #[path = "session_fixation_audit_test.rs"]
 mod session_fixation_audit_test;
+
+#[cfg(test)]
+#[path = "sse_audit_test.rs"]
+mod sse_audit_test;
 
 #[cfg(test)]
 #[path = "ssrf_redirect_audit_test.rs"]

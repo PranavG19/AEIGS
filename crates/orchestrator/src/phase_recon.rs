@@ -626,6 +626,16 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // Server-Sent Events audit
+    let sse_issues = crate::sse_audit::analyze_sse_usage(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sse_issues,
+        crate::sse_audit::sse_to_operations
+    );
+
     // Client-side template injection
     let csti_issues = crate::template_injection_audit::analyze_template_injection(body);
     collect_ops!(
