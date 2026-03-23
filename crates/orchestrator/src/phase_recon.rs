@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // USB/HID/Serial hardware API audit
+    let hw_issues = crate::hardware_api_audit::analyze_hardware_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        hw_issues,
+        crate::hardware_api_audit::hardware_api_to_operations
+    );
+
     // Idle detection API audit
     let idle_issues = crate::idle_detection_audit::analyze_idle_detection(body);
     collect_ops!(
