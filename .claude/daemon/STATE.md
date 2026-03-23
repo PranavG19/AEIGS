@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 7911 lib, 0 failed
+- cargo test -p aegis-orchestrator: 8036 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -72,6 +72,7 @@ status: in-progress
 229. Navigation API (13→76), 230. PiP Audit (13→78), 231. Preconnect (13→73)
 232. Screen Capture (13→70), 233. TLS Scanner (13→72), 234. Content Type (14→68)
 235. Content Type Confusion (14→60), 236. Device Memory (14→68), 237. Gamepad (14→64)
+238. Mass Assign (14→60), 239. Meta Tag (14→50), 240. Mixed Content (14→68)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
