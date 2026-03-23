@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Navigation API audit
+    let nav_issues = crate::navigation_api_audit::analyze_navigation_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        nav_issues,
+        crate::navigation_api_audit::navigation_api_to_operations
+    );
+
     // Gamepad API fingerprinting audit
     let gp_issues = crate::gamepad_audit::analyze_gamepad(body);
     collect_ops!(

@@ -83,6 +83,7 @@ pub mod meta_tag_audit;
 pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
+pub mod navigation_api_audit;
 pub mod nel_audit;
 pub mod notification_audit;
 pub mod object_url_audit;
@@ -237,6 +238,7 @@ pub use meta_tag_audit::*;
 pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
+pub use navigation_api_audit::*;
 pub use nel_audit::*;
 pub use notification_audit::*;
 pub use object_url_audit::*;
@@ -695,6 +697,10 @@ mod drag_drop_audit_test;
 #[cfg(test)]
 #[path = "nel_audit_test.rs"]
 mod nel_audit_test;
+
+#[cfg(test)]
+#[path = "navigation_api_audit_test.rs"]
+mod navigation_api_audit_test;
 
 #[cfg(test)]
 #[path = "link_header_audit_test.rs"]
