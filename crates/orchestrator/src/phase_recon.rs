@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // DeviceOrientation/Motion fingerprinting
+    let dm_issues = crate::device_motion_audit::analyze_device_motion(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        dm_issues,
+        crate::device_motion_audit::device_motion_to_operations
+    );
+
     // Viewport meta audit
     let vp_issues = crate::viewport_audit::analyze_viewport(body);
     collect_ops!(
