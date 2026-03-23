@@ -305,9 +305,10 @@ fn run_header_analyzers(
         crate::clear_site_data_audit::clear_site_data_to_operations
     );
 
-    // SourceMap header
+    // SourceMap header + body analysis
     let sm_val = hdr(resp, "sourcemap").or_else(|| hdr(resp, "x-sourcemap"));
-    let smhdr_issues = crate::sourcemap_header_audit::analyze_sourcemap_header(sm_val.as_deref());
+    let smhdr_issues =
+        crate::sourcemap_header_audit::analyze_sourcemap(sm_val.as_deref(), &resp.body);
     collect_ops!(
         seq,
         fc,
@@ -363,14 +364,20 @@ fn run_header_analyzers(
 
     // X-DNS-Prefetch-Control
     let dnspf_val = hdr(resp, "x-dns-prefetch-control");
-    let dnspf_issues =
-        crate::dns_prefetch_control_audit::analyze_dns_prefetch_control(dnspf_val.as_deref());
+    let dnspf_all = hdr_all(resp, "x-dns-prefetch-control");
+    let mut dnspf_issues =
+        crate::dns_prefetch_control_audit::analyze_dns_prefetch(dnspf_val.as_deref(), &resp.body);
+    if let Some(conflict) =
+        crate::dns_prefetch_control_audit::detect_conflicting_dns_prefetch(&dnspf_all)
+    {
+        dnspf_issues.push(conflict);
+    }
     collect_ops!(
         seq,
         fc,
         entries,
         dnspf_issues,
-        crate::dns_prefetch_control_audit::dns_prefetch_control_to_operations
+        crate::dns_prefetch_control_audit::dns_prefetch_to_operations
     );
 
     // Set-Cookie
