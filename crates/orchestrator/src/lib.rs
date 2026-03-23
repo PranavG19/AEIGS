@@ -6,6 +6,7 @@ pub mod benchmark;
 pub mod cache_audit;
 pub mod calibration;
 pub mod checkpoint;
+pub mod clear_site_data_audit;
 pub mod comment_leak;
 pub mod content_type_audit;
 pub mod convergence;
@@ -87,6 +88,7 @@ pub use base_tag_audit::*;
 pub use cache_audit::*;
 pub use comment_leak::*;
 pub use checkpoint::*;
+pub use clear_site_data_audit::*;
 pub use content_type_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
@@ -422,6 +424,10 @@ mod reporting_endpoints_audit_test;
 #[cfg(test)]
 #[path = "timing_allow_origin_audit_test.rs"]
 mod timing_allow_origin_audit_test;
+
+#[cfg(test)]
+#[path = "clear_site_data_audit_test.rs"]
+mod clear_site_data_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

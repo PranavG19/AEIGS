@@ -181,6 +181,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let tao_handle = std::thread::spawn(move || {
         crate::timing_allow_origin_audit::audit_timing_allow_origin(&tao_target)
     });
+    let csd_target = ctx.config.target.clone();
+    let csd_handle = std::thread::spawn(move || {
+        crate::clear_site_data_audit::audit_clear_site_data(&csd_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -562,6 +566,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += tao_ops.len() as u64;
     entries.extend(tao_ops);
+
+    let csd_issues = csd_handle.join().unwrap_or_default();
+    let csd_ops = crate::clear_site_data_audit::clear_site_data_to_operations(
+        &csd_issues,
+        &mut sequence,
+    );
+    findings_count += csd_ops.len() as u64;
+    entries.extend(csd_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

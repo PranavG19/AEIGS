@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1565 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1635 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -58,6 +58,7 @@ status: in-progress
 - [x] Link header audit (external preload/prefetch, HTTP resources, dns-prefetch)
 - [x] Reporting-Endpoints audit (external collectors, HTTP endpoints)
 - [x] Timing-Allow-Origin audit (wildcard, HTTP origins, many origins)
+- [x] Clear-Site-Data audit (wildcard, cookies/storage/cache on GET, HTTP)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -147,7 +148,7 @@ Address findings from recon scanner audit.
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: clear-site-data header check, source-map header audit.
+2. Continue P8: source-map header audit, x-powered-by detection.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).
