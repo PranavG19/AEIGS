@@ -896,6 +896,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Import Maps audit
+    let im_issues = crate::import_map_audit::analyze_import_map(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        im_issues,
+        crate::import_map_audit::import_map_to_operations
+    );
+
     // Ink API audit
     let ink_issues = crate::ink_api_audit::analyze_ink_api(body);
     collect_ops!(

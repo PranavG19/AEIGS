@@ -84,6 +84,7 @@ pub mod hypothesis_bridge;
 pub mod idle_detection_audit;
 pub mod idor_analyzer;
 pub mod iframe_audit;
+pub mod import_map_audit;
 pub mod info_disclosure;
 pub mod inline_handler_audit;
 pub mod ink_api_audit;
@@ -284,6 +285,7 @@ pub use hypothesis_bridge::*;
 pub use idle_detection_audit::*;
 pub use idor_analyzer::*;
 pub use iframe_audit::*;
+pub use import_map_audit::*;
 pub use info_disclosure::*;
 pub use inline_handler_audit::*;
 pub use ink_api_audit::*;
@@ -651,6 +653,10 @@ mod request_smuggling_audit_test;
 #[cfg(test)]
 #[path = "iframe_audit_test.rs"]
 mod iframe_audit_test;
+
+#[cfg(test)]
+#[path = "import_map_audit_test.rs"]
+mod import_map_audit_test;
 
 #[cfg(test)]
 #[path = "info_disclosure_test.rs"]
