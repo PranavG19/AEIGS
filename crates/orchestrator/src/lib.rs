@@ -9,6 +9,7 @@ pub mod benchmark;
 pub mod cache_audit;
 pub mod cache_poison_audit;
 pub mod calibration;
+pub mod canvas_fingerprint_audit;
 pub mod checkpoint;
 pub mod clear_site_data_audit;
 pub mod clipboard_audit;
@@ -145,6 +146,7 @@ pub use battery_audit::*;
 pub use base_tag_audit::*;
 pub use cache_audit::*;
 pub use cache_poison_audit::*;
+pub use canvas_fingerprint_audit::*;
 pub use checkpoint::*;
 pub use clear_site_data_audit::*;
 pub use clickjack_audit::*;
@@ -747,6 +749,10 @@ mod notification_audit_test;
 #[cfg(test)]
 #[path = "battery_audit_test.rs"]
 mod battery_audit_test;
+
+#[cfg(test)]
+#[path = "canvas_fingerprint_audit_test.rs"]
+mod canvas_fingerprint_audit_test;
 
 #[cfg(test)]
 #[path = "websocket_audit_test.rs"]

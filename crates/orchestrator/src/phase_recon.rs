@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Canvas/audio/font fingerprinting
+    let fp_issues = crate::canvas_fingerprint_audit::analyze_canvas_fingerprint(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fp_issues,
+        crate::canvas_fingerprint_audit::canvas_fingerprint_to_operations
+    );
+
     // Battery API fingerprinting
     let batt_issues = crate::battery_audit::analyze_battery(body);
     collect_ops!(
