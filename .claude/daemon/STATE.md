@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2749 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2764 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -73,9 +73,10 @@ status: in-progress
 54. feat(recon): Add screen capture API security audit scanner (+13)
 55. feat(recon): Add idle detection API abuse scanner (+13)
 56. feat(recon): Add USB/HID/Serial hardware API audit scanner (+15)
+57. feat(recon): Add Web Speech API security audit scanner (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Web Speech API audit, File System Access API audit, Web NFC/Bluetooth API audit, or Content-Disposition header audit.
+Continue P8. Next ideas: File System Access API audit, Web NFC/Bluetooth API audit, Content-Disposition header audit, or Web Locks API audit.

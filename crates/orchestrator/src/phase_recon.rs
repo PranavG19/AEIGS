@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // File System Access API audit
+    let fa_issues = crate::file_access_audit::analyze_file_access(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fa_issues,
+        crate::file_access_audit::file_access_to_operations
+    );
+
     // Web Speech API audit
     let speech_issues = crate::speech_api_audit::analyze_speech_api(body);
     collect_ops!(

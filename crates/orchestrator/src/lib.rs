@@ -49,6 +49,7 @@ pub mod error_page_audit;
 pub mod etag_audit;
 pub mod expose_headers_audit;
 pub mod fetch_credential_audit;
+pub mod file_access_audit;
 pub mod form_audit;
 pub mod geolocation_audit;
 pub mod graphql_introspection_audit;
@@ -194,6 +195,7 @@ pub use error_page_audit::*;
 pub use etag_audit::*;
 pub use expose_headers_audit::*;
 pub use fetch_credential_audit::*;
+pub use file_access_audit::*;
 pub use form_audit::*;
 pub use geolocation_audit::*;
 pub use graphql_introspection_audit::*;
@@ -361,6 +363,10 @@ mod endpoint_similarity_test;
 #[cfg(test)]
 #[path = "fetch_credential_audit_test.rs"]
 mod fetch_credential_audit_test;
+
+#[cfg(test)]
+#[path = "file_access_audit_test.rs"]
+mod file_access_audit_test;
 
 #[cfg(test)]
 #[path = "form_audit_test.rs"]
