@@ -18,6 +18,7 @@ pub mod distributed_transport;
 pub mod dns_enumerator;
 pub mod email_security;
 pub mod endpoint_similarity;
+pub mod error_page_audit;
 pub mod form_audit;
 mod graph_persistence;
 pub mod header_audit;
@@ -84,6 +85,7 @@ pub use distributed_transport::*;
 pub use dns_enumerator::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
+pub use error_page_audit::*;
 pub use form_audit::*;
 pub use graph_persistence::*;
 pub use header_audit::*;
@@ -378,6 +380,10 @@ mod dangerous_js_audit_test;
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
 mod preconnect_audit_test;
+
+#[cfg(test)]
+#[path = "error_page_audit_test.rs"]
+mod error_page_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]

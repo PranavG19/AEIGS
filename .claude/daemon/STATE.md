@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1429 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1457 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -41,9 +41,16 @@ status: in-progress
 - [x] Window.opener vulnerability detection (target=_blank)
 - [x] Inline event handler detection (XSS indicator)
 - [x] Dangerous JS pattern detection (eval, innerHTML, document.write)
+- [x] Link preconnect/dns-prefetch audit
+- [x] Error page info leak scanner (stack traces, debug info, SQL errors)
+
+## G14-deferred
+- 13 HTML-body scanners each independently fetch the same target URL
+- Consolidation: fetch once → pass body to all body-analyzers
+- Size: L (200+ lines, 13+ files). Deferred to dedicated session.
 
 ## handoff
 NEXT STEPS (in order):
-1. Continue P8: link preconnect audit, error page info leak,
-   content-type mismatch detection.
-2. Next G14 check after 1 more feature.
+1. Continue P8: content-type mismatch detection, CORS preflight audit,
+   referrer-policy audit.
+2. G14 body-fetch consolidation (L-sized, next dedicated session).

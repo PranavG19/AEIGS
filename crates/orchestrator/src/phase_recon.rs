@@ -131,6 +131,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let precon_handle = std::thread::spawn(move || {
         crate::preconnect_audit::audit_preconnects(&precon_target)
     });
+    let errpage_target = ctx.config.target.clone();
+    let errpage_handle = std::thread::spawn(move || {
+        crate::error_page_audit::audit_error_pages(&errpage_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -423,6 +427,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::preconnect_audit::preconnect_to_operations(&precon_issues, &mut sequence);
     findings_count += precon_ops.len() as u64;
     entries.extend(precon_ops);
+
+    let errpage_leaks = errpage_handle.join().unwrap_or_default();
+    let errpage_ops =
+        crate::error_page_audit::error_page_to_operations(&errpage_leaks, &mut sequence);
+    findings_count += errpage_ops.len() as u64;
+    entries.extend(errpage_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
