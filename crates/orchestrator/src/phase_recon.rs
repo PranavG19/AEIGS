@@ -1266,6 +1266,36 @@ fn run_body_analyzers(
         crate::declarative_shadow_dom_audit::declarative_shadow_dom_to_operations
     );
 
+    // Structured Clone audit
+    let sc_issues = crate::structured_clone_audit::analyze_structured_clone(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sc_issues,
+        crate::structured_clone_audit::structured_clone_to_operations
+    );
+
+    // Page Lifecycle audit
+    let pl_issues = crate::page_lifecycle_audit::analyze_page_lifecycle(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        pl_issues,
+        crate::page_lifecycle_audit::page_lifecycle_to_operations
+    );
+
+    // Event Source audit
+    let es_issues = crate::event_source_audit::analyze_event_source(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        es_issues,
+        crate::event_source_audit::event_source_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(

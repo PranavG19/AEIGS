@@ -71,6 +71,7 @@ pub mod encoding_api_audit;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
 pub mod etag_audit;
+pub mod event_source_audit;
 pub mod expose_headers_audit;
 pub mod eyedropper_audit;
 pub mod fenced_frame_audit;
@@ -127,6 +128,7 @@ pub mod object_url_audit;
 pub mod observable_audit;
 pub mod open_redirect_param_audit;
 pub mod opener_audit;
+pub mod page_lifecycle_audit;
 pub mod path_traversal_audit;
 pub mod payment_form_audit;
 pub mod payment_handler_audit;
@@ -192,6 +194,7 @@ pub mod sourcemap_detector;
 pub mod sourcemap_header_audit;
 pub mod speech_api_audit;
 pub mod sri_checker;
+pub mod structured_clone_audit;
 pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
@@ -306,6 +309,7 @@ pub use encoding_api_audit::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
 pub use etag_audit::*;
+pub use event_source_audit::*;
 pub use expose_headers_audit::*;
 pub use eyedropper_audit::*;
 pub use fenced_frame_audit::*;
@@ -360,6 +364,7 @@ pub use object_url_audit::*;
 pub use observable_audit::*;
 pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
+pub use page_lifecycle_audit::*;
 pub use path_traversal_audit::*;
 pub use payment_form_audit::*;
 pub use payment_handler_audit::*;
@@ -425,6 +430,7 @@ pub use sourcemap_detector::*;
 pub use sourcemap_header_audit::*;
 pub use speech_api_audit::*;
 pub use sri_checker::*;
+pub use structured_clone_audit::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
@@ -1405,3 +1411,15 @@ mod navigator_login_audit_test;
 #[cfg(test)]
 #[path = "declarative_shadow_dom_audit_test.rs"]
 mod declarative_shadow_dom_audit_test;
+
+#[cfg(test)]
+#[path = "structured_clone_audit_test.rs"]
+mod structured_clone_audit_test;
+
+#[cfg(test)]
+#[path = "page_lifecycle_audit_test.rs"]
+mod page_lifecycle_audit_test;
+
+#[cfg(test)]
+#[path = "event_source_audit_test.rs"]
+mod event_source_audit_test;
