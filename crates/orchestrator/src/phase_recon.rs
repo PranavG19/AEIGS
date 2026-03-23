@@ -189,6 +189,9 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let smhdr_handle = std::thread::spawn(move || {
         crate::sourcemap_header_audit::audit_sourcemap_header(&smhdr_target)
     });
+    let etag_target = ctx.config.target.clone();
+    let etag_handle =
+        std::thread::spawn(move || crate::etag_audit::audit_etag(&etag_target));
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -586,6 +589,11 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += smhdr_ops.len() as u64;
     entries.extend(smhdr_ops);
+
+    let etag_issues = etag_handle.join().unwrap_or_default();
+    let etag_ops = crate::etag_audit::etag_to_operations(&etag_issues, &mut sequence);
+    findings_count += etag_ops.len() as u64;
+    entries.extend(etag_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

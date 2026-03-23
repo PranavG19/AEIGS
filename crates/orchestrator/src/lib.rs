@@ -25,6 +25,7 @@ pub mod dns_enumerator;
 pub mod email_security;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
+pub mod etag_audit;
 pub mod expose_headers_audit;
 pub mod form_audit;
 mod graph_persistence;
@@ -107,6 +108,7 @@ pub use dns_enumerator::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
+pub use etag_audit::*;
 pub use expose_headers_audit::*;
 pub use form_audit::*;
 pub use graph_persistence::*;
@@ -434,6 +436,10 @@ mod clear_site_data_audit_test;
 #[cfg(test)]
 #[path = "sourcemap_header_audit_test.rs"]
 mod sourcemap_header_audit_test;
+
+#[cfg(test)]
+#[path = "etag_audit_test.rs"]
+mod etag_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
