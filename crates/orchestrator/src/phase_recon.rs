@@ -540,6 +540,16 @@ fn run_body_analyzers(
         crate::hidden_input_audit::hidden_input_to_operations
     );
 
+    // Client-side storage audit
+    let storage_issues = crate::storage_audit::analyze_storage_usage(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        storage_issues,
+        crate::storage_audit::storage_to_operations
+    );
+
     // WebSocket references in HTML
     let ws_issues = crate::websocket_audit::analyze_html_for_websockets(body);
     collect_ops!(
