@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3378 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3393 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 98 features shipped
+- P8: 99 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -57,9 +57,10 @@ status: in-progress
 96. Device Memory API audit (+14)
 97. Barcode Detection API audit (+15)
 98. Network Information API audit (+16)
+99. Shape Detection API audit (+15)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Shape Detection API audit, Text Detection API audit, Vibration API audit, or Clipboard Events audit.
+Continue P8. Next ideas: Vibration API audit, Media Session API audit, Payment Handler API audit, or Launch Handler API audit.

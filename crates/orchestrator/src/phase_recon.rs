@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Shape Detection API audit
+    let sd_issues = crate::shape_detection_audit::analyze_shape_detection(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sd_issues,
+        crate::shape_detection_audit::shape_detection_to_operations
+    );
+
     // Network Information API audit
     let ni_issues = crate::network_info_audit::analyze_network_info(body);
     collect_ops!(
