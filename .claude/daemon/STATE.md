@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1944 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1962 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 56 features shipped
+- P8: 57 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -26,9 +26,10 @@ status: in-progress
 7. feat(recon): Add cookie prefix audit scanner (+18)
 8. feat(recon): Add cache poisoning risk scanner (+17)
 9. feat(recon): Add SSRF redirect chain detection scanner (+18)
+10. feat(recon): Add JWT header audit scanner (+18)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: JWT header audit, API versioning detection, CSP report-uri leak, or mass assignment pattern scan.
+Continue P8. Next ideas: API versioning detection, CSP report-uri leak, mass assignment pattern scan, or GraphQL introspection leak.

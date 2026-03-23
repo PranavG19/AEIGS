@@ -642,6 +642,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let clickjack_handle = std::thread::spawn(move || {
         crate::clickjack_audit::audit_clickjacking(&clickjack_target)
     });
+    let jwt_target = ctx.config.target.clone();
+    let jwt_handle = std::thread::spawn(move || {
+        crate::jwt_header_audit::audit_jwt_headers(&jwt_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -890,6 +894,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::clickjack_audit::clickjack_to_operations(&clickjack_issues, &mut sequence);
     findings_count += clickjack_ops.len() as u64;
     entries.extend(clickjack_ops);
+
+    let jwt_issues = jwt_handle.join().unwrap_or_default();
+    let jwt_ops =
+        crate::jwt_header_audit::jwt_header_to_operations(&jwt_issues, &mut sequence);
+    findings_count += jwt_ops.len() as u64;
+    entries.extend(jwt_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

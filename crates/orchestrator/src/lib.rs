@@ -49,6 +49,7 @@ pub mod info_disclosure;
 pub mod inline_handler_audit;
 pub mod interactive;
 pub mod js_library_scanner;
+pub mod jwt_header_audit;
 pub mod jsonp_audit;
 pub mod link_header_audit;
 pub mod meta_tag_audit;
@@ -144,6 +145,7 @@ pub use info_disclosure::*;
 pub use inline_handler_audit::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
+pub use jwt_header_audit::*;
 pub use jsonp_audit::*;
 pub use link_header_audit::*;
 pub use meta_tag_audit::*;
@@ -437,6 +439,10 @@ mod comment_leak_test;
 #[cfg(test)]
 #[path = "js_library_scanner_test.rs"]
 mod js_library_scanner_test;
+
+#[cfg(test)]
+#[path = "jwt_header_audit_test.rs"]
+mod jwt_header_audit_test;
 
 #[cfg(test)]
 #[path = "recon_client_test.rs"]
