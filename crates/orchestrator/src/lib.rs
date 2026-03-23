@@ -55,6 +55,7 @@ pub mod expose_headers_audit;
 pub mod fetch_credential_audit;
 pub mod file_access_audit;
 pub mod form_audit;
+pub mod gamepad_audit;
 pub mod geolocation_audit;
 pub mod graphql_introspection_audit;
 mod graph_persistence;
@@ -210,6 +211,7 @@ pub use expose_headers_audit::*;
 pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
 pub use form_audit::*;
+pub use gamepad_audit::*;
 pub use geolocation_audit::*;
 pub use graphql_introspection_audit::*;
 pub use graph_persistence::*;
@@ -845,6 +847,10 @@ mod clipboard_audit_test;
 #[cfg(test)]
 #[path = "geolocation_audit_test.rs"]
 mod geolocation_audit_test;
+
+#[cfg(test)]
+#[path = "gamepad_audit_test.rs"]
+mod gamepad_audit_test;
 
 #[cfg(test)]
 #[path = "webrtc_audit_test.rs"]
