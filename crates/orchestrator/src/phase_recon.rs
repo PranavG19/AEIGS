@@ -200,6 +200,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let proxyhdr_handle = std::thread::spawn(move || {
         crate::proxy_header_audit::audit_proxy_headers(&proxyhdr_target)
     });
+    let dnspf_target = ctx.config.target.clone();
+    let dnspf_handle = std::thread::spawn(move || {
+        crate::dns_prefetch_control_audit::audit_dns_prefetch_control(&dnspf_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -616,6 +620,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::proxy_header_audit::proxy_header_to_operations(&proxyhdr_issues, &mut sequence);
     findings_count += proxyhdr_ops.len() as u64;
     entries.extend(proxyhdr_ops);
+
+    let dnspf_issues = dnspf_handle.join().unwrap_or_default();
+    let dnspf_ops = crate::dns_prefetch_control_audit::dns_prefetch_control_to_operations(
+        &dnspf_issues,
+        &mut sequence,
+    );
+    findings_count += dnspf_ops.len() as u64;
+    entries.extend(dnspf_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

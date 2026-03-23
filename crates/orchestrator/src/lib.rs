@@ -22,6 +22,7 @@ pub mod deprecated_header_audit;
 pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
+pub mod dns_prefetch_control_audit;
 pub mod email_security;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
@@ -107,6 +108,7 @@ pub use cve_correlator::*;
 pub use distributed::*;
 pub use distributed_transport::*;
 pub use dns_enumerator::*;
+pub use dns_prefetch_control_audit::*;
 pub use email_security::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
@@ -452,6 +454,10 @@ mod www_authenticate_audit_test;
 #[cfg(test)]
 #[path = "proxy_header_audit_test.rs"]
 mod proxy_header_audit_test;
+
+#[cfg(test)]
+#[path = "dns_prefetch_control_audit_test.rs"]
+mod dns_prefetch_control_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
