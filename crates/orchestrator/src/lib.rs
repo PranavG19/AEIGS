@@ -30,6 +30,7 @@ pub mod content_disposition_audit;
 pub mod content_index_audit;
 pub mod content_type_audit;
 pub mod content_type_confusion_audit;
+pub mod content_visibility_audit;
 pub mod contact_picker_audit;
 pub mod convergence;
 pub mod cookie_audit;
@@ -144,6 +145,7 @@ pub mod popover_audit;
 pub mod postmessage_audit;
 pub mod preconnect_audit;
 pub mod presentation_audit;
+pub mod priority_hints_audit;
 pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
 pub mod rate_limit_detector;
@@ -215,6 +217,7 @@ pub mod web_otp_audit;
 pub mod web_serial_audit;
 pub mod web_share_audit;
 pub mod web_transport_audit;
+pub mod web_vitals_audit;
 pub mod webcrypto_audit;
 pub mod webnn_audit;
 pub mod webhid_audit;
@@ -258,6 +261,7 @@ pub use content_disposition_audit::*;
 pub use content_index_audit::*;
 pub use content_type_audit::*;
 pub use content_type_confusion_audit::*;
+pub use content_visibility_audit::*;
 pub use contact_picker_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
@@ -368,6 +372,7 @@ pub use popover_audit::*;
 pub use postmessage_audit::*;
 pub use preconnect_audit::*;
 pub use presentation_audit::*;
+pub use priority_hints_audit::*;
 pub use prototype_pollution_audit::*;
 pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
@@ -438,6 +443,7 @@ pub use web_otp_audit::*;
 pub use web_serial_audit::*;
 pub use web_share_audit::*;
 pub use web_transport_audit::*;
+pub use web_vitals_audit::*;
 pub use webcrypto_audit::*;
 pub use webnn_audit::*;
 pub use webhid_audit::*;
@@ -1351,3 +1357,15 @@ mod web_otp_audit_test;
 #[cfg(test)]
 #[path = "storage_bucket_audit_test.rs"]
 mod storage_bucket_audit_test;
+
+#[cfg(test)]
+#[path = "web_vitals_audit_test.rs"]
+mod web_vitals_audit_test;
+
+#[cfg(test)]
+#[path = "priority_hints_audit_test.rs"]
+mod priority_hints_audit_test;
+
+#[cfg(test)]
+#[path = "content_visibility_audit_test.rs"]
+mod content_visibility_audit_test;

@@ -1176,6 +1176,36 @@ fn run_body_analyzers(
         crate::storage_bucket_audit::storage_bucket_to_operations
     );
 
+    // Web Vitals audit
+    let wv_issues = crate::web_vitals_audit::analyze_web_vitals(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wv_issues,
+        crate::web_vitals_audit::web_vitals_to_operations
+    );
+
+    // Priority Hints audit
+    let ph_issues = crate::priority_hints_audit::analyze_priority_hints(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ph_issues,
+        crate::priority_hints_audit::priority_hints_to_operations
+    );
+
+    // Content Visibility audit
+    let cv_issues = crate::content_visibility_audit::analyze_content_visibility(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cv_issues,
+        crate::content_visibility_audit::content_visibility_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
