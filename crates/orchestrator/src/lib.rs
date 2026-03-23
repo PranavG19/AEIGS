@@ -7,6 +7,7 @@ pub mod cache_audit;
 pub mod calibration;
 pub mod checkpoint;
 pub mod comment_leak;
+pub mod content_type_audit;
 pub mod convergence;
 pub mod cookie_audit;
 pub mod coop_coep_audit;
@@ -78,6 +79,7 @@ pub use base_tag_audit::*;
 pub use cache_audit::*;
 pub use comment_leak::*;
 pub use checkpoint::*;
+pub use content_type_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
 pub use coop_coep_audit::*;
@@ -408,6 +410,10 @@ mod coop_coep_audit_test;
 #[cfg(test)]
 #[path = "corp_audit_test.rs"]
 mod corp_audit_test;
+
+#[cfg(test)]
+#[path = "content_type_audit_test.rs"]
+mod content_type_audit_test;
 
 #[cfg(test)]
 #[path = "integration_validation_test.rs"]
