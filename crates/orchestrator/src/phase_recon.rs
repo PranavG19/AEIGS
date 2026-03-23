@@ -385,7 +385,8 @@ fn run_header_analyzers(
     );
 
     // Session fixation / session security
-    let session_issues = crate::session_fixation_audit::analyze_session_security("", &set_cookies);
+    let session_issues =
+        crate::session_fixation_audit::analyze_session_fixation("", &set_cookies, "");
     collect_ops!(
         seq,
         fc,
@@ -631,7 +632,7 @@ fn run_body_analyzers(
         fc,
         entries,
         domclob_issues,
-        crate::dom_clobbering_audit::dom_clobber_to_operations
+        crate::dom_clobbering_audit::dom_clobbering_to_operations
     );
 
     // Deserialization indicators in response body
