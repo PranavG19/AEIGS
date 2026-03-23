@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Permissions API abuse
+    let perm_issues = crate::permissions_api_audit::analyze_permissions_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        perm_issues,
+        crate::permissions_api_audit::permissions_api_to_operations
+    );
+
     // Meta redirect / JS redirect audit
     let mr_issues = crate::meta_redirect_audit::analyze_meta_redirect(body);
     collect_ops!(

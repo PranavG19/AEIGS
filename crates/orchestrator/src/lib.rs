@@ -80,6 +80,7 @@ pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod path_traversal_audit;
 pub mod payment_form_audit;
+pub mod permissions_api_audit;
 pub mod permissions_policy;
 mod phase_analyze;
 mod phase_crawl;
@@ -214,6 +215,7 @@ pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use path_traversal_audit::*;
 pub use payment_form_audit::*;
+pub use permissions_api_audit::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
@@ -539,6 +541,10 @@ mod security_txt_test;
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]
 mod tech_detector_test;
+
+#[cfg(test)]
+#[path = "permissions_api_audit_test.rs"]
+mod permissions_api_audit_test;
 
 #[cfg(test)]
 #[path = "permissions_policy_test.rs"]
