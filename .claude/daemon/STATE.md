@@ -53,6 +53,7 @@ status: in-progress
 - [x] Server-Timing header leak detection (db, cache, internal metrics)
 - [x] Deprecated header audit (Expect-CT, Feature-Policy, HPKP, X-XSS-Protection)
 - [x] Access-Control-Expose-Headers audit (sensitive header leak)
+- [x] document.domain detection (deprecated API, XSS relaxation)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -78,11 +79,74 @@ Get all test line coverage to 90%+ per source file.
 - Add targeted tests for uncovered branches/paths
 - Re-measure and iterate until all files pass 90%
 
+## P12 — SECURITY HARDENING
+Address findings from codebase security audit.
+
+### P12a — Trufflehog path traversal (HIGH)
+- crates/exploiter/src/trufflehog_wrapper.rs: `context.endpoint` passed as
+  filesystem path without validation. Canonicalize path, reject `..` components,
+  ensure path stays within scan root.
+
+### P12b — Auth header/cookie sanitization (MEDIUM)
+- crates/exploiter/src/sqlmap_wrapper.rs, httpx_wrapper.rs, feroxbuster_wrapper.rs:
+  auth headers/cookies passed to external tools without validating for control
+  characters (newlines, nulls). Add `validate_header_value()` guard that rejects
+  control chars before passing to any ToolWrapper.
+
+### P12c — Obfuscation bypass test coverage (MEDIUM)
+- crates/protocol/src/target_validation.rs: Add regression tests for hex IP
+  (0x7f000001), octal IP (016777343), decimal IP (2130706433), double-encoding,
+  Unicode normalization attacks, DNS rebinding via nip.io variants.
+
+### P12d — Scope attestation date parsing (LOW)
+- crates/protocol/src/scope_attestation.rs: Replace string comparison for expiry
+  with chrono::NaiveDate::parse(). Clarify UTC assumption.
+
+## P13 — ARCHITECTURE IMPROVEMENTS
+Address findings from architecture audit.
+
+### P13a — Extract Phase trait (HIGH)
+- Define `Phase` trait with `async fn run(&mut self, ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError>`
+- Implement for each phase (ReconPhase, CrawlPhase, FuzzPhase<T>, etc.)
+- Orchestrator becomes an executor loop, not explicit function calls
+- Enables cross-cutting concerns (retry, metrics, timeout) without touching each call site
+
+### P13b — Parameterize I/O in fuzzing crate (MEDIUM)
+- fuzzing/src/bot_detection_probe.rs, cloud_detector.rs, cors_detector.rs,
+  graphql_tester.rs: Extract `HttpClient` trait, parameterize detectors over it.
+  Enables unit testing heuristic logic without reqwest/wiremock.
+
+### P13c — Move scanners out of orchestrator (MEDIUM)
+- Move 30+ recon scanners from crates/orchestrator/src/ to crates/passive-recon/src/
+- Move cve_correlator, idor_analyzer, subdomain_takeover to new crates/security-analysis/
+- Target: orchestrator down to ~20 core files (phases, pipeline, coordination)
+
+### P13d — Standardize error types (LOW)
+- Replace remaining Result<T, String> with domain-specific error enums
+- FuzzTransport error should be Result<FuzzResponse, FuzzError>, not String
+
+## P14 — RECON SCANNER POLISH
+Address findings from recon scanner audit.
+
+### P14a — Cache compiled regexes (LOW)
+- js_library_scanner.rs: Regex::new() called per scan. Use once_cell::sync::Lazy
+  for compiled regex map.
+
+### P14b — Add error logging to scanners (LOW)
+- All 31 scanners silently return Vec::new() on HTTP errors. Add tracing::warn!
+  for network failures so false negatives are debuggable.
+
+### P14c — Reduce false positives in error_page_audit (LOW)
+- Check Content-Type is text/html before pattern matching. "syntax error" in
+  JSON API responses currently triggers false positive.
+
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: access-control-expose-headers audit, nel/report-to,
-   link header injection, document.domain detection.
+2. Continue P8: NEL/Report-To audit, link header injection.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).
+6. Then P12 (security hardening — P12a first).
+7. Then P13 (architecture improvements — P13a first).
+8. Then P14 (recon scanner polish).

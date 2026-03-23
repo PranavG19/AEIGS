@@ -16,6 +16,7 @@ pub mod cors_scanner;
 pub mod csp_analyzer;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
+pub mod document_domain_audit;
 pub mod deprecated_header_audit;
 pub mod distributed;
 pub mod distributed_transport;
@@ -89,6 +90,7 @@ pub use coop_coep_audit::*;
 pub use corp_audit::*;
 pub use cors_scanner::*;
 pub use dangerous_js_audit::*;
+pub use document_domain_audit::*;
 pub use deprecated_header_audit::*;
 pub use csp_analyzer::*;
 pub use cve_correlator::*;
@@ -392,6 +394,10 @@ mod sri_checker_test;
 #[cfg(test)]
 #[path = "dangerous_js_audit_test.rs"]
 mod dangerous_js_audit_test;
+
+#[cfg(test)]
+#[path = "document_domain_audit_test.rs"]
+mod document_domain_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

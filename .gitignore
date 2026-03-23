@@ -12,3 +12,4 @@ node_modules/
 .claude/daemon/logs/
 .claude/ralph-loop.local.md
 SYSTEM_PROMPT.md
+.test-cache/

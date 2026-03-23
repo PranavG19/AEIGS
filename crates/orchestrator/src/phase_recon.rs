@@ -163,6 +163,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let exphdr_handle = std::thread::spawn(move || {
         crate::expose_headers_audit::audit_expose_headers(&exphdr_target)
     });
+    let docdomain_target = ctx.config.target.clone();
+    let docdomain_handle = std::thread::spawn(move || {
+        crate::document_domain_audit::audit_document_domain(&docdomain_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -509,6 +513,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::expose_headers_audit::expose_headers_to_operations(&exphdr_issues, &mut sequence);
     findings_count += exphdr_ops.len() as u64;
     entries.extend(exphdr_ops);
+
+    let docdomain_issues = docdomain_handle.join().unwrap_or_default();
+    let docdomain_ops = crate::document_domain_audit::document_domain_to_operations(
+        &docdomain_issues,
+        &mut sequence,
+    );
+    findings_count += docdomain_ops.len() as u64;
+    entries.extend(docdomain_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
