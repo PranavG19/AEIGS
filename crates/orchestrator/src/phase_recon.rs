@@ -626,6 +626,17 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // WebAssembly security audit
+    let wasm_csp = hdr(resp, "content-security-policy").unwrap_or_default();
+    let wasm_issues = crate::wasm_audit::analyze_wasm_usage(body, &wasm_csp);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wasm_issues,
+        crate::wasm_audit::wasm_to_operations
+    );
+
     // Server-Sent Events audit
     let sse_issues = crate::sse_audit::analyze_sse_usage(body);
     collect_ops!(
