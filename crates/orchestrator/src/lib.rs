@@ -194,6 +194,7 @@ pub mod webhid_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
 pub mod webusb_audit;
+pub mod window_controls_overlay_audit;
 pub mod window_management_audit;
 pub mod window_name_audit;
 pub mod wireless_api_audit;
@@ -388,6 +389,7 @@ pub use webhid_audit::*;
 pub use webrtc_audit::*;
 pub use websocket_audit::*;
 pub use webusb_audit::*;
+pub use window_controls_overlay_audit::*;
 pub use window_management_audit::*;
 pub use window_name_audit::*;
 pub use wireless_api_audit::*;
@@ -749,6 +751,10 @@ mod window_management_audit_test;
 #[cfg(test)]
 #[path = "webusb_audit_test.rs"]
 mod webusb_audit_test;
+
+#[cfg(test)]
+#[path = "window_controls_overlay_audit_test.rs"]
+mod window_controls_overlay_audit_test;
 
 #[cfg(test)]
 #[path = "tech_detector_test.rs"]

@@ -1066,6 +1066,16 @@ fn run_body_analyzers(
         crate::compute_pressure_audit::compute_pressure_to_operations
     );
 
+    // Window Controls Overlay audit
+    let wco_issues = crate::window_controls_overlay_audit::analyze_window_controls_overlay(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wco_issues,
+        crate::window_controls_overlay_audit::window_controls_overlay_to_operations
+    );
+
     // Window Management API audit
     let wm_issues = crate::window_management_audit::analyze_window_management(body);
     collect_ops!(
