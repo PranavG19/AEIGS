@@ -12,6 +12,7 @@ pub mod clear_site_data_audit;
 pub mod clickjack_audit;
 pub mod comment_leak;
 pub mod content_type_audit;
+pub mod content_type_confusion_audit;
 pub mod convergence;
 pub mod cookie_audit;
 pub mod cookie_prefix_audit;
@@ -122,6 +123,7 @@ pub use clear_site_data_audit::*;
 pub use clickjack_audit::*;
 pub use comment_leak::*;
 pub use content_type_audit::*;
+pub use content_type_confusion_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
 pub use cookie_prefix_audit::*;
@@ -619,6 +621,10 @@ mod corp_audit_test;
 #[cfg(test)]
 #[path = "content_type_audit_test.rs"]
 mod content_type_audit_test;
+
+#[cfg(test)]
+#[path = "content_type_confusion_audit_test.rs"]
+mod content_type_confusion_audit_test;
 
 #[cfg(test)]
 #[path = "server_timing_audit_test.rs"]
