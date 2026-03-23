@@ -231,9 +231,21 @@ fn run_header_analyzers(
     );
 
     // Deprecated headers
-    let dephdr_issues = crate::deprecated_header_audit::analyze_deprecated_headers(|name| {
-        resp.headers.get(name).is_some()
-    });
+    let dephdr_pairs: Vec<(String, String)> = resp
+        .headers
+        .iter()
+        .filter_map(|(name, value)| {
+            value
+                .to_str()
+                .ok()
+                .map(|v| (name.as_str().to_string(), v.to_string()))
+        })
+        .collect();
+    let dephdr_refs: Vec<(&str, &str)> = dephdr_pairs
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
+    let dephdr_issues = crate::deprecated_header_audit::analyze_deprecated_headers(&dephdr_refs);
     collect_ops!(
         seq,
         fc,
@@ -313,8 +325,12 @@ fn run_header_analyzers(
 
     // Clear-Site-Data
     let csd_val = hdr(resp, "clear-site-data");
-    let csd_issues =
-        crate::clear_site_data_audit::analyze_clear_site_data(csd_val.as_deref(), resp.is_https);
+    let csd_has_location = resp.headers.contains_key("location");
+    let csd_issues = crate::clear_site_data_audit::analyze_clear_site_data(
+        csd_val.as_deref(),
+        resp.is_https,
+        csd_has_location,
+    );
     collect_ops!(
         seq,
         fc,
