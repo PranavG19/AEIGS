@@ -89,6 +89,7 @@ pub mod opener_audit;
 pub mod path_traversal_audit;
 pub mod payment_form_audit;
 pub mod payment_request_audit;
+pub mod perf_observer_audit;
 pub mod permissions_api_audit;
 pub mod permissions_policy;
 mod phase_analyze;
@@ -240,6 +241,7 @@ pub use opener_audit::*;
 pub use path_traversal_audit::*;
 pub use payment_form_audit::*;
 pub use payment_request_audit::*;
+pub use perf_observer_audit::*;
 pub use permissions_api_audit::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
@@ -813,6 +815,10 @@ mod payment_form_audit_test;
 #[cfg(test)]
 #[path = "payment_request_audit_test.rs"]
 mod payment_request_audit_test;
+
+#[cfg(test)]
+#[path = "perf_observer_audit_test.rs"]
+mod perf_observer_audit_test;
 
 #[cfg(test)]
 #[path = "window_name_audit_test.rs"]

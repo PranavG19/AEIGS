@@ -973,6 +973,16 @@ fn run_body_analyzers(
         crate::object_url_audit::object_url_to_operations
     );
 
+    // Performance Observer leak audit
+    let po_issues = crate::perf_observer_audit::analyze_perf_observer(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        po_issues,
+        crate::perf_observer_audit::perf_observer_to_operations
+    );
+
     // Background Sync API audit
     let bgsync_issues = crate::background_sync_audit::analyze_background_sync(body);
     collect_ops!(
