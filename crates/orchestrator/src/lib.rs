@@ -20,6 +20,7 @@ pub mod comment_leak;
 pub mod content_disposition_audit;
 pub mod content_type_audit;
 pub mod content_type_confusion_audit;
+pub mod contact_picker_audit;
 pub mod convergence;
 pub mod cookie_audit;
 pub mod cookie_prefix_audit;
@@ -188,6 +189,7 @@ pub use comment_leak::*;
 pub use content_disposition_audit::*;
 pub use content_type_audit::*;
 pub use content_type_confusion_audit::*;
+pub use contact_picker_audit::*;
 pub use convergence::*;
 pub use cookie_audit::*;
 pub use cookie_prefix_audit::*;
@@ -655,6 +657,10 @@ mod comment_leak_test;
 #[cfg(test)]
 #[path = "content_disposition_audit_test.rs"]
 mod content_disposition_audit_test;
+
+#[cfg(test)]
+#[path = "contact_picker_audit_test.rs"]
+mod contact_picker_audit_test;
 
 #[cfg(test)]
 #[path = "js_library_scanner_test.rs"]

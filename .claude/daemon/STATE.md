@@ -6,7 +6,7 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 3073 lib, 0 failed
+- cargo test -p aegis-orchestrator: 3089 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
@@ -37,9 +37,10 @@ status: in-progress
 76. EyeDropper API audit (+13)
 77. Fullscreen API abuse audit (+15)
 78. Selection API data leak audit (+14)
+79. Contact Picker API audit (+16)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Contact Picker API audit, Screen Capture API audit, File System Access API audit, or USB/HID API audit.
+Continue P8. Next ideas: Screen Capture API audit, File System Access API audit, USB/HID API audit, or Serial/Bluetooth API audit.
