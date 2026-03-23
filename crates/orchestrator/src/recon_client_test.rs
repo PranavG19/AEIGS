@@ -3,7 +3,7 @@ use aegis_protocol::operation::GraphOperation;
 
 use crate::recon_client::{
     build_client, build_client_limited_redirect, build_client_no_redirect, default_client,
-    finding_entry, validated_domain,
+    extract_host, finding_entry, is_external, truncate, validated_domain,
 };
 
 #[test]
@@ -75,4 +75,64 @@ fn finding_entry_increments_sequence() {
     assert_eq!(e1.sequence_number, 11);
     assert_eq!(e2.sequence_number, 12);
     assert_eq!(seq, 12);
+}
+
+#[test]
+fn truncate_short_string_unchanged() {
+    assert_eq!(truncate("hello", 10), "hello");
+}
+
+#[test]
+fn truncate_long_string_appends_ellipsis() {
+    assert_eq!(truncate("hello world", 8), "hello...");
+}
+
+#[test]
+fn truncate_exact_length_unchanged() {
+    assert_eq!(truncate("hello", 5), "hello");
+}
+
+#[test]
+fn is_external_same_domain_returns_false() {
+    assert!(!is_external("https://example.com/path", "example.com"));
+}
+
+#[test]
+fn is_external_subdomain_returns_false() {
+    assert!(!is_external("https://api.example.com/path", "example.com"));
+}
+
+#[test]
+fn is_external_different_domain_returns_true() {
+    assert!(is_external("https://evil.com/path", "example.com"));
+}
+
+#[test]
+fn is_external_suffix_collision_returns_true() {
+    assert!(is_external("https://evilexample.com/path", "example.com"));
+}
+
+#[test]
+fn is_external_no_scheme_returns_false() {
+    assert!(!is_external("example.com/path", "example.com"));
+}
+
+#[test]
+fn is_external_case_insensitive() {
+    assert!(!is_external("https://EXAMPLE.COM/path", "example.com"));
+}
+
+#[test]
+fn extract_host_https() {
+    assert_eq!(extract_host("https://example.com/path"), Some("example.com".into()));
+}
+
+#[test]
+fn extract_host_with_port() {
+    assert_eq!(extract_host("https://example.com:8443/path"), Some("example.com".into()));
+}
+
+#[test]
+fn extract_host_no_scheme_returns_none() {
+    assert!(extract_host("example.com/path").is_none());
 }

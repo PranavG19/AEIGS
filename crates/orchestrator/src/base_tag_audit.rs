@@ -64,7 +64,7 @@ pub(crate) fn analyze_base_tags(html: &str, domain: &str) -> Vec<BaseTagFinding>
             });
         }
 
-        if is_external_href(&href, domain) {
+        if recon_client::is_external(&href, domain) {
             findings.push(BaseTagFinding {
                 issue: BaseTagIssue::ExternalBaseHref,
                 href,
@@ -73,17 +73,6 @@ pub(crate) fn analyze_base_tags(html: &str, domain: &str) -> Vec<BaseTagFinding>
     }
 
     findings
-}
-
-fn is_external_href(href: &str, domain: &str) -> bool {
-    if let Some(rest) = href.strip_prefix("http://").or_else(|| href.strip_prefix("https://")) {
-        let host = rest.split('/').next().unwrap_or("");
-        let host_no_port = host.split(':').next().unwrap_or(host);
-        !host_no_port.eq_ignore_ascii_case(domain)
-            && !host_no_port.ends_with(&format!(".{domain}"))
-    } else {
-        false
-    }
 }
 
 pub fn base_tag_to_operations(

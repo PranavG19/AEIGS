@@ -69,6 +69,7 @@ pub(crate) fn truncate(s: &str, max: usize) -> String {
 }
 
 /// Checks whether a URL points to an external domain (not a subdomain of `target_domain`).
+/// Uses dot-prefix matching to avoid false negatives (e.g. `evilexample.com` vs `example.com`).
 pub(crate) fn is_external(url: &str, target_domain: &str) -> bool {
     let rest = url
         .strip_prefix("https://")
@@ -78,7 +79,13 @@ pub(crate) fn is_external(url: &str, target_domain: &str) -> bool {
     };
     let host = rest.split('/').next().unwrap_or("");
     let host = host.split(':').next().unwrap_or("");
-    !host.is_empty() && !host.ends_with(target_domain) && host != target_domain
+    if host.is_empty() {
+        return false;
+    }
+    !host.eq_ignore_ascii_case(target_domain)
+        && !host
+            .to_ascii_lowercase()
+            .ends_with(&format!(".{}", target_domain.to_ascii_lowercase()))
 }
 
 /// Extracts the hostname from a URL, stripping scheme, port, and path.

@@ -1,8 +1,8 @@
 # DAEMON STATE
 
 ## current
-priority: P8 (CONTINUOUS_IMPROVEMENT)
-task: continue P8 recon features
+priority: P9 (SIMPLIFY_PASS)
+task: consolidate duplicated code across recon scanners
 status: in-progress
 
 ## test-results
@@ -11,34 +11,21 @@ status: in-progress
 
 ## priority-clearance
 - P0-P6: CLEAR — P7: BLOCKED (Docker not running)
-- P8: IN PROGRESS (46 features shipped, 13 this session)
+- P8: 46 features shipped — CLEAR for now
+- P9: IN PROGRESS
 
-## P8-progress (43 features)
-Batches 1-3 (31 features): TLS, headers, robots, DNS, CORS, cookies, methods,
-redirects, info disclosure, subdomain takeover, email, CSP, HSTS, HTTP version,
-WAF, rate limit, security.txt, tech fingerprint, permissions-policy, cache,
-JS library, SRI, mixed content, forms, comment leak, sourcemap, meta tags,
-iframe, html_parser consolidation, base tag, opener, inline handlers,
-dangerous JS, preconnect, error pages, referrer, XFO, COOP/COEP, CORP,
-cookie SameSite=None, CORS creds+reflection, content-type, server-timing,
-deprecated headers, expose-headers.
-This session (10 features):
-- [x] document.domain detection, NEL/Report-To audit, Link header audit
-- [x] Reporting-Endpoints, Timing-Allow-Origin, Clear-Site-Data
-- [x] SourceMap header, ETag leak, WWW-Authenticate, Proxy headers
-- [x] X-DNS-Prefetch-Control, JSONP endpoint detection, Hidden input audit
-
-## G14-deferred
-- 20+ header scanners + 13 HTML-body scanners make independent HTTP fetches
-- Consolidation: fetch once → pass headers/body to all analyzers
-- Size: L (200+ lines, 20+ files). Deferred to P10.
+## P9-progress
+- [x] Consolidate truncate/is_external/extract_host into recon_client.rs (5 modules updated)
+- [x] Cache truncated value in jsonp_audit loop (efficiency fix)
+- [ ] scan_config.rs has duplicate extract_host() — consolidate next
+- [ ] base_tag_audit.rs has is_external_href() — review if recon_client::is_external works
 
 ## handoff
 NEXT STEPS (in order):
-1. P8 batch COMPLETE for this session. 46 features total. Move to P9 next session.
-2. When P8 batch complete → P9 (simplify pass on each module)
-3. P10 (orchestration consolidation — fetch-once, scanner dispatch)
-4. P11 (90%+ test coverage per file)
-5. P12 (security hardening — P12a trufflehog path traversal first)
-6. P13 (architecture — P13a Phase trait first)
-7. P14 (scanner polish — regex caching, error logging, false positive reduction)
+1. P9: Consolidate scan_config.rs extract_host → recon_client::extract_host
+2. P9: Review base_tag_audit.rs is_external_href for consolidation
+3. P9: Scan remaining modules for other duplicated patterns
+4. P10 (orchestration consolidation — fetch-once, scanner dispatch)
+5. P11 (90%+ test coverage per file)
+6. P12 (security hardening)
+7. P13 (architecture — Phase trait)
