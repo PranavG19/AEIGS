@@ -4,6 +4,7 @@ pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
 pub mod attest;
 pub mod attribution_reporting_audit;
+pub mod audio_worklet_audit;
 pub mod auth_session;
 pub mod background_fetch_audit;
 pub mod background_sync_audit;
@@ -11,6 +12,7 @@ pub mod badging_audit;
 pub mod barcode_detection_audit;
 pub mod base_tag_audit;
 pub mod battery_audit;
+pub mod beacon_api_audit;
 pub mod benchmark;
 pub mod broadcast_channel_audit;
 pub mod cache_audit;
@@ -103,6 +105,7 @@ pub mod launch_handler_audit;
 pub mod link_header_audit;
 pub mod local_font_audit;
 pub mod mass_assign_audit;
+pub mod media_capabilities_audit;
 pub mod media_recorder_audit;
 pub mod media_session_audit;
 pub mod meta_redirect_audit;
@@ -228,12 +231,14 @@ pub use ambient_light_audit::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use attribution_reporting_audit::*;
+pub use audio_worklet_audit::*;
 pub use auth_session::*;
 pub use background_fetch_audit::*;
 pub use background_sync_audit::*;
 pub use badging_audit::*;
 pub use barcode_detection_audit::*;
 pub use battery_audit::*;
+pub use beacon_api_audit::*;
 pub use base_tag_audit::*;
 pub use broadcast_channel_audit::*;
 pub use cache_audit::*;
@@ -321,6 +326,7 @@ pub use launch_handler_audit::*;
 pub use link_header_audit::*;
 pub use local_font_audit::*;
 pub use mass_assign_audit::*;
+pub use media_capabilities_audit::*;
 pub use media_recorder_audit::*;
 pub use media_session_audit::*;
 pub use meta_redirect_audit::*;
@@ -1315,3 +1321,15 @@ mod custom_element_audit_test;
 #[cfg(test)]
 #[path = "util_test.rs"]
 mod util_test;
+
+#[cfg(test)]
+#[path = "audio_worklet_audit_test.rs"]
+mod audio_worklet_audit_test;
+
+#[cfg(test)]
+#[path = "beacon_api_audit_test.rs"]
+mod beacon_api_audit_test;
+
+#[cfg(test)]
+#[path = "media_capabilities_audit_test.rs"]
+mod media_capabilities_audit_test;

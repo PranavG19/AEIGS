@@ -1116,6 +1116,36 @@ fn run_body_analyzers(
         crate::webusb_audit::webusb_to_operations
     );
 
+    // Audio Worklet API audit
+    let aw_issues = crate::audio_worklet_audit::analyze_audio_worklet(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        aw_issues,
+        crate::audio_worklet_audit::audio_worklet_to_operations
+    );
+
+    // Media Capabilities API audit
+    let mc_issues = crate::media_capabilities_audit::analyze_media_capabilities(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        mc_issues,
+        crate::media_capabilities_audit::media_capabilities_to_operations
+    );
+
+    // Beacon API audit
+    let beacon_issues = crate::beacon_api_audit::analyze_beacon_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        beacon_issues,
+        crate::beacon_api_audit::beacon_api_to_operations
+    );
+
     // Local Font Access API audit
     let lf_issues = crate::local_font_audit::analyze_local_font(body);
     collect_ops!(
