@@ -68,6 +68,7 @@ pub mod jwt_header_audit;
 pub mod jsonp_audit;
 pub mod link_header_audit;
 pub mod mass_assign_audit;
+pub mod meta_redirect_audit;
 pub mod meta_tag_audit;
 pub mod method_override_audit;
 pub mod method_scanner;
@@ -201,6 +202,7 @@ pub use jwt_header_audit::*;
 pub use jsonp_audit::*;
 pub use link_header_audit::*;
 pub use mass_assign_audit::*;
+pub use meta_redirect_audit::*;
 pub use meta_tag_audit::*;
 pub use method_override_audit::*;
 pub use method_scanner::*;
@@ -441,6 +443,10 @@ mod cookie_audit_test;
 #[cfg(test)]
 #[path = "cookie_prefix_audit_test.rs"]
 mod cookie_prefix_audit_test;
+
+#[cfg(test)]
+#[path = "meta_redirect_audit_test.rs"]
+mod meta_redirect_audit_test;
 
 #[cfg(test)]
 #[path = "meta_tag_audit_test.rs"]

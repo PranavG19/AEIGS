@@ -699,6 +699,16 @@ fn run_body_analyzers(
         crate::trusted_types_audit::trusted_types_to_operations
     );
 
+    // Meta redirect / JS redirect audit
+    let mr_issues = crate::meta_redirect_audit::analyze_meta_redirect(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        mr_issues,
+        crate::meta_redirect_audit::meta_redirect_to_operations
+    );
+
     // Canvas/audio/font fingerprinting
     let fp_issues = crate::canvas_fingerprint_audit::analyze_canvas_fingerprint(body);
     collect_ops!(
