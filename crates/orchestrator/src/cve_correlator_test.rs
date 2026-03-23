@@ -138,3 +138,70 @@ fn correlate_cves_empty_tech_returns_empty() {
     let matches = cve_correlator::correlate_cves(&techs);
     assert!(matches.is_empty());
 }
+
+#[test]
+fn parse_nvd_response_prefers_english_description() {
+    let json = r#"{
+        "vulnerabilities": [{
+            "cve": {
+                "id": "CVE-2024-0001",
+                "descriptions": [
+                    {"lang": "es", "value": "Vulnerabilidad en..."},
+                    {"lang": "en", "value": "Vulnerability in..."}
+                ],
+                "metrics": {}
+            }
+        }]
+    }"#;
+    let matches = cve_correlator::parse_nvd_response(json, "test");
+    assert_eq!(matches[0].description, "Vulnerability in...");
+}
+
+#[test]
+fn parse_nvd_response_missing_cve_field() {
+    let json = r#"{"vulnerabilities": [{"cve": null}]}"#;
+    let matches = cve_correlator::parse_nvd_response(json, "test");
+    assert!(matches.is_empty());
+}
+
+#[test]
+fn cve_matches_to_operations_uses_known_vuln_dep_class() {
+    let matches = vec![cve_correlator::NvdCveMatch {
+        cve_id: "CVE-2024-0001".to_string(),
+        description: "test".to_string(),
+        cvss_score: Some(9.8),
+        technology: "openssl".to_string(),
+    }];
+    let mut seq = 0;
+    let ops = cve_correlator::cve_matches_to_operations(&matches, &mut seq);
+    match &ops[0].operation {
+        GraphOperation::AddFinding {
+            vulnerability_class,
+            ..
+        } => {
+            assert_eq!(
+                *vulnerability_class,
+                aegis_protocol::finding::VulnerabilityClass::KnownVulnerableDependency
+            );
+        }
+        _ => panic!("expected AddFinding"),
+    }
+}
+
+#[test]
+fn parse_nvd_response_v31_takes_precedence_over_v2() {
+    let json = r#"{
+        "vulnerabilities": [{
+            "cve": {
+                "id": "CVE-2024-0001",
+                "descriptions": [{"lang": "en", "value": "test"}],
+                "metrics": {
+                    "cvssMetricV31": [{"cvssData": {"baseScore": 9.0}}],
+                    "cvssMetricV2": [{"cvssData": {"baseScore": 5.0}}]
+                }
+            }
+        }]
+    }"#;
+    let matches = cve_correlator::parse_nvd_response(json, "test");
+    assert_eq!(matches[0].cvss_score, Some(9.0));
+}

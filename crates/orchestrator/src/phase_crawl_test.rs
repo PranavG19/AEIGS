@@ -7,7 +7,7 @@ use aegis_supervisor::capability_manager::CapabilityManager;
 
 use crate::actor::{CrawlActor, ScanActor};
 use crate::convergence::RefutedTracker;
-use crate::phase_crawl::crawl_result_to_operations;
+use crate::phase_crawl::{crawl_result_to_operations, extract_href_links, resolve_url};
 use crate::pipeline;
 use crate::scan_config;
 
@@ -309,4 +309,57 @@ fn crawl_actor_operations_count_matches_endpoints() {
 
     let post_ops = ctx.graph.total_operations_applied().unwrap();
     assert_eq!(post_ops, 0);
+}
+
+#[test]
+fn extract_href_links_finds_localhost_links() {
+    let html = r#"<a href="http://localhost:3000/api">API</a><a href="http://localhost:3000/login">Login</a>"#;
+    let links = extract_href_links(html, "http://localhost:3000");
+    assert_eq!(links.len(), 2);
+    assert!(links.contains(&"http://localhost:3000/api".to_string()));
+    assert!(links.contains(&"http://localhost:3000/login".to_string()));
+}
+
+#[test]
+fn extract_href_links_resolves_relative_paths() {
+    let html = r#"<a href="/about">About</a>"#;
+    let links = extract_href_links(html, "http://localhost:3000/page");
+    assert_eq!(links, vec!["http://localhost:3000/about"]);
+}
+
+#[test]
+fn extract_href_links_rejects_external() {
+    let html = r#"<a href="https://example.com/page">External</a>"#;
+    let links = extract_href_links(html, "http://localhost:3000");
+    assert!(links.is_empty());
+}
+
+#[test]
+fn extract_href_links_empty_html() {
+    let links = extract_href_links("", "http://localhost:3000");
+    assert!(links.is_empty());
+}
+
+#[test]
+fn resolve_url_absolute_localhost() {
+    let resolved = resolve_url("http://127.0.0.1:8080/api", "http://127.0.0.1:8080");
+    assert_eq!(resolved, Some("http://127.0.0.1:8080/api".to_string()));
+}
+
+#[test]
+fn resolve_url_relative_path() {
+    let resolved = resolve_url("/users", "http://localhost:3000/api");
+    assert_eq!(resolved, Some("http://localhost:3000/users".to_string()));
+}
+
+#[test]
+fn resolve_url_rejects_external() {
+    let resolved = resolve_url("https://evil.com/steal", "http://localhost:3000");
+    assert!(resolved.is_none());
+}
+
+#[test]
+fn resolve_url_rejects_relative_without_slash() {
+    let resolved = resolve_url("page.html", "http://localhost:3000/dir/");
+    assert!(resolved.is_none());
 }
