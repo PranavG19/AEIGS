@@ -866,6 +866,16 @@ fn run_body_analyzers(
         crate::web_bluetooth_audit::web_bluetooth_to_operations
     );
 
+    // Compute Pressure API audit
+    let cp2_issues = crate::compute_pressure_audit::analyze_compute_pressure(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cp2_issues,
+        crate::compute_pressure_audit::compute_pressure_to_operations
+    );
+
     // Window Management API audit
     let wm_issues = crate::window_management_audit::analyze_window_management(body);
     collect_ops!(
