@@ -192,6 +192,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let etag_target = ctx.config.target.clone();
     let etag_handle =
         std::thread::spawn(move || crate::etag_audit::audit_etag(&etag_target));
+    let wwwauth_target = ctx.config.target.clone();
+    let wwwauth_handle = std::thread::spawn(move || {
+        crate::www_authenticate_audit::audit_www_authenticate(&wwwauth_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -594,6 +598,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let etag_ops = crate::etag_audit::etag_to_operations(&etag_issues, &mut sequence);
     findings_count += etag_ops.len() as u64;
     entries.extend(etag_ops);
+
+    let wwwauth_issues = wwwauth_handle.join().unwrap_or_default();
+    let wwwauth_ops = crate::www_authenticate_audit::www_authenticate_to_operations(
+        &wwwauth_issues,
+        &mut sequence,
+    );
+    findings_count += wwwauth_ops.len() as u64;
+    entries.extend(wwwauth_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

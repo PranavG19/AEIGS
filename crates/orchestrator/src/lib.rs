@@ -82,6 +82,7 @@ pub mod tls_scanner;
 pub mod update_db;
 mod util;
 pub mod waf_detector;
+pub mod www_authenticate_audit;
 pub mod xfo_audit;
 
 pub use actor::*;
@@ -163,6 +164,7 @@ pub use timing_allow_origin_audit::*;
 pub use tls_scanner::*;
 pub use update_db::*;
 pub use waf_detector::*;
+pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
 
 #[cfg(test)]
@@ -440,6 +442,10 @@ mod sourcemap_header_audit_test;
 #[cfg(test)]
 #[path = "etag_audit_test.rs"]
 mod etag_audit_test;
+
+#[cfg(test)]
+#[path = "www_authenticate_audit_test.rs"]
+mod www_authenticate_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

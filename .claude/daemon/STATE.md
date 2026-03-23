@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1635 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1667 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -61,6 +61,7 @@ status: in-progress
 - [x] Clear-Site-Data audit (wildcard, cookies/storage/cache on GET, HTTP)
 - [x] SourceMap response header audit (SourceMap + X-SourceMap headers)
 - [x] ETag leak detection (Apache inode, weak ETags, unusually long ETags)
+- [x] WWW-Authenticate audit (Basic over HTTP, Digest w/o qop, realm info leak)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -150,7 +151,7 @@ Address findings from recon scanner audit.
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: www-authenticate analysis, age/via header fingerprinting.
+2. Continue P8: age/via header fingerprinting, x-dns-prefetch-control audit.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).
