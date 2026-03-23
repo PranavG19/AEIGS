@@ -2,6 +2,10 @@ use crate::cors_scanner::*;
 
 #[test]
 fn cors_severity_reflected_is_highest() {
+    assert!(
+        cors_severity(&CorsIssue::CredentialsWithReflection)
+            > cors_severity(&CorsIssue::ReflectedOrigin)
+    );
     assert!(cors_severity(&CorsIssue::ReflectedOrigin) > cors_severity(&CorsIssue::NullOrigin));
     assert!(cors_severity(&CorsIssue::NullOrigin) > cors_severity(&CorsIssue::ArbitrarySubdomain));
     assert!(
@@ -92,4 +96,33 @@ fn scan_cors_skips_loopback() {
 fn scan_cors_skips_invalid() {
     let findings = scan_cors("not-a-url");
     assert!(findings.is_empty());
+}
+
+#[test]
+fn credentials_with_reflection_display() {
+    assert_eq!(
+        CorsIssue::CredentialsWithReflection.to_string(),
+        "credentials_with_reflection"
+    );
+}
+
+#[test]
+fn credentials_with_reflection_severity_highest() {
+    assert_eq!(cors_severity(&CorsIssue::CredentialsWithReflection), 8.0);
+}
+
+#[test]
+fn credentials_with_reflection_operations() {
+    let findings = vec![CorsFinding {
+        issue: CorsIssue::CredentialsWithReflection,
+        acao_value: "https://evil.com".to_string(),
+    }];
+    let mut seq = 0;
+    let ops = cors_findings_to_operations(&findings, &mut seq);
+    match &ops[0].operation {
+        aegis_protocol::operation::GraphOperation::AddFinding { severity, .. } => {
+            assert_eq!(*severity, 8.0);
+        }
+        _ => panic!("expected AddFinding"),
+    }
 }

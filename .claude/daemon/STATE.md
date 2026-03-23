@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1513 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1516 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -48,6 +48,7 @@ status: in-progress
 - [x] COOP/COEP header audit (missing, unsafe-none)
 - [x] CORP header audit (missing, cross-origin, invalid)
 - [x] Cookie SameSite=None detection (added to existing cookie_audit)
+- [x] CORS credentials+reflection detection (severity 8.0, highest)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL

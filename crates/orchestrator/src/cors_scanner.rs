@@ -19,6 +19,7 @@ pub enum CorsIssue {
     NullOrigin,
     ReflectedOrigin,
     ArbitrarySubdomain,
+    CredentialsWithReflection,
 }
 
 impl std::fmt::Display for CorsIssue {
@@ -28,6 +29,7 @@ impl std::fmt::Display for CorsIssue {
             CorsIssue::NullOrigin => write!(f, "null_origin"),
             CorsIssue::ReflectedOrigin => write!(f, "reflected_origin"),
             CorsIssue::ArbitrarySubdomain => write!(f, "arbitrary_subdomain"),
+            CorsIssue::CredentialsWithReflection => write!(f, "credentials_with_reflection"),
         }
     }
 }
@@ -61,13 +63,19 @@ pub fn scan_cors(target: &str) -> Vec<CorsFinding> {
     }
 
     let evil_origin = "https://evil.example.com";
-    if let Some(acao) = fetch_acao(&client, target, Some(evil_origin))
+    if let Some((acao, acac)) = fetch_acao_with_creds(&client, target, Some(evil_origin))
         && acao == evil_origin
     {
         findings.push(CorsFinding {
             issue: CorsIssue::ReflectedOrigin,
-            acao_value: acao,
+            acao_value: acao.clone(),
         });
+        if acac {
+            findings.push(CorsFinding {
+                issue: CorsIssue::CredentialsWithReflection,
+                acao_value: acao,
+            });
+        }
     }
 
     let subdomain_origin = format!("https://evil.{domain}");
@@ -88,19 +96,36 @@ fn fetch_acao(
     target: &str,
     origin: Option<&str>,
 ) -> Option<String> {
+    fetch_acao_with_creds(client, target, origin).map(|(acao, _)| acao)
+}
+
+fn fetch_acao_with_creds(
+    client: &reqwest::blocking::Client,
+    target: &str,
+    origin: Option<&str>,
+) -> Option<(String, bool)> {
     let mut req = client.get(target);
     if let Some(o) = origin {
         req = req.header("Origin", o);
     }
     let resp = req.send().ok()?;
-    resp.headers()
+    let acao = resp
+        .headers()
         .get("access-control-allow-origin")
         .and_then(|v| v.to_str().ok())
-        .map(|v| v.to_string())
+        .map(|v| v.to_string())?;
+    let acac = resp
+        .headers()
+        .get("access-control-allow-credentials")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false);
+    Some((acao, acac))
 }
 
 pub(crate) fn cors_severity(issue: &CorsIssue) -> f64 {
     match issue {
+        CorsIssue::CredentialsWithReflection => 8.0,
         CorsIssue::ReflectedOrigin => 7.0,
         CorsIssue::NullOrigin => 6.0,
         CorsIssue::ArbitrarySubdomain => 5.5,
