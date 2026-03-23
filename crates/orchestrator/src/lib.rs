@@ -32,6 +32,7 @@ pub mod js_library_scanner;
 pub mod meta_tag_audit;
 pub mod method_scanner;
 pub mod mixed_content;
+pub mod opener_audit;
 pub mod permissions_policy;
 mod phase_analyze;
 mod phase_crawl;
@@ -93,6 +94,7 @@ pub use js_library_scanner::*;
 pub use meta_tag_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
+pub use opener_audit::*;
 pub use permissions_policy::*;
 pub use phase_analyze::*;
 pub use phase_crawl::*;
@@ -278,6 +280,10 @@ mod method_scanner_test;
 #[cfg(test)]
 #[path = "mixed_content_test.rs"]
 mod mixed_content_test;
+
+#[cfg(test)]
+#[path = "opener_audit_test.rs"]
+mod opener_audit_test;
 
 #[cfg(test)]
 #[path = "redirect_scanner_test.rs"]
