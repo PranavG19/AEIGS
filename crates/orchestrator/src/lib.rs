@@ -40,6 +40,7 @@ pub mod credential_harvest_audit;
 pub mod cors_scanner;
 pub mod crlf_injection_audit;
 pub mod csp_analyzer;
+pub mod custom_element_audit;
 pub mod csp_nonce_audit;
 pub mod csp_report_leak_audit;
 pub mod cve_correlator;
@@ -60,6 +61,7 @@ pub mod document_domain_audit;
 pub mod document_pip_audit;
 pub mod drag_drop_audit;
 pub mod email_security;
+pub mod encoding_api_audit;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
 pub mod etag_audit;
@@ -198,6 +200,7 @@ pub mod viewport_audit;
 pub mod waf_detector;
 pub mod wake_lock_audit;
 pub mod wasm_audit;
+pub mod web_animation_audit;
 pub mod web_audio_audit;
 pub mod web_bluetooth_audit;
 pub mod web_codecs_audit;
@@ -259,6 +262,7 @@ pub use credential_api_audit::*;
 pub use credential_harvest_audit::*;
 pub use csp_analyzer::*;
 pub use csp_nonce_audit::*;
+pub use custom_element_audit::*;
 pub use csp_report_leak_audit::*;
 pub use cve_correlator::*;
 pub use dangerous_js_audit::*;
@@ -277,6 +281,7 @@ pub use document_domain_audit::*;
 pub use document_pip_audit::*;
 pub use drag_drop_audit::*;
 pub use email_security::*;
+pub use encoding_api_audit::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
 pub use etag_audit::*;
@@ -412,6 +417,7 @@ pub use viewport_audit::*;
 pub use waf_detector::*;
 pub use wake_lock_audit::*;
 pub use wasm_audit::*;
+pub use web_animation_audit::*;
 pub use web_audio_audit::*;
 pub use web_bluetooth_audit::*;
 pub use web_codecs_audit::*;
@@ -1275,6 +1281,10 @@ mod expose_headers_audit_test;
 mod integration_validation_test;
 
 #[cfg(test)]
+#[path = "web_animation_audit_test.rs"]
+mod web_animation_audit_test;
+
+#[cfg(test)]
 #[path = "web_audio_audit_test.rs"]
 mod web_audio_audit_test;
 
@@ -1293,6 +1303,14 @@ mod media_recorder_audit_test;
 #[cfg(test)]
 #[path = "shared_worker_audit_test.rs"]
 mod shared_worker_audit_test;
+
+#[cfg(test)]
+#[path = "encoding_api_audit_test.rs"]
+mod encoding_api_audit_test;
+
+#[cfg(test)]
+#[path = "custom_element_audit_test.rs"]
+mod custom_element_audit_test;
 
 #[cfg(test)]
 #[path = "util_test.rs"]

@@ -1660,6 +1660,36 @@ fn run_body_analyzers(
         crate::shared_worker_audit::shared_worker_to_operations
     );
 
+    // Custom Element (Web Components) security audit
+    let ce_issues = crate::custom_element_audit::analyze_custom_element(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ce_issues,
+        crate::custom_element_audit::custom_element_to_operations
+    );
+
+    // Web Animation API security audit
+    let wani_issues = crate::web_animation_audit::analyze_web_animation(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        wani_issues,
+        crate::web_animation_audit::web_animation_to_operations
+    );
+
+    // Encoding API security audit
+    let enc_issues = crate::encoding_api_audit::analyze_encoding_api(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        enc_issues,
+        crate::encoding_api_audit::encoding_api_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers
