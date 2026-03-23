@@ -106,6 +106,7 @@ pub mod open_redirect_param_audit;
 pub mod opener_audit;
 pub mod path_traversal_audit;
 pub mod payment_form_audit;
+pub mod payment_handler_audit;
 pub mod payment_request_audit;
 pub mod perf_observer_audit;
 pub mod permissions_api_audit;
@@ -293,6 +294,7 @@ pub use open_redirect_param_audit::*;
 pub use opener_audit::*;
 pub use path_traversal_audit::*;
 pub use payment_form_audit::*;
+pub use payment_handler_audit::*;
 pub use payment_request_audit::*;
 pub use perf_observer_audit::*;
 pub use permissions_api_audit::*;
@@ -1005,6 +1007,10 @@ mod payment_form_audit_test;
 #[cfg(test)]
 #[path = "payment_request_audit_test.rs"]
 mod payment_request_audit_test;
+
+#[cfg(test)]
+#[path = "payment_handler_audit_test.rs"]
+mod payment_handler_audit_test;
 
 #[cfg(test)]
 #[path = "perf_observer_audit_test.rs"]

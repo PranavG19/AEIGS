@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Payment Handler API audit
+    let ph_issues = crate::payment_handler_audit::analyze_payment_handler(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ph_issues,
+        crate::payment_handler_audit::payment_handler_to_operations
+    );
+
     // Media Session API audit
     let ms_issues = crate::media_session_audit::analyze_media_session(body);
     collect_ops!(
