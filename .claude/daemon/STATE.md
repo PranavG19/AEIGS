@@ -6,7 +6,7 @@ task: continue P8 recon features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 1406 lib, 0 failed
+- cargo test -p aegis-orchestrator: 1416 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 - cargo fmt --all --check: 0 diffs
 
@@ -39,9 +39,10 @@ status: in-progress
   All 6 tag scanners now use shared html_parser helpers
 - [x] Base tag hijack detection (external, HTTP, multiple)
 - [x] Window.opener vulnerability detection (target=_blank)
+- [x] Inline event handler detection (XSS indicator)
 
 ## handoff
 NEXT STEPS (in order):
 1. Continue P8: link preconnect audit, error page info leak,
-   inline event handler detection, autocomplete on sensitive fields.
-2. Next G14 check after 3 more features.
+   content-type mismatch detection.
+2. Next G14 check after 2 more features.

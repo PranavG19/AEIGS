@@ -27,6 +27,7 @@ pub mod hypothesis_bridge;
 pub mod idor_analyzer;
 pub mod iframe_audit;
 pub mod info_disclosure;
+pub mod inline_handler_audit;
 pub mod interactive;
 pub mod js_library_scanner;
 pub mod meta_tag_audit;
@@ -89,6 +90,7 @@ pub use hypothesis_bridge::*;
 pub use idor_analyzer::*;
 pub use iframe_audit::*;
 pub use info_disclosure::*;
+pub use inline_handler_audit::*;
 pub use interactive::*;
 pub use js_library_scanner::*;
 pub use meta_tag_audit::*;
@@ -296,6 +298,10 @@ mod iframe_audit_test;
 #[cfg(test)]
 #[path = "info_disclosure_test.rs"]
 mod info_disclosure_test;
+
+#[cfg(test)]
+#[path = "inline_handler_audit_test.rs"]
+mod inline_handler_audit_test;
 
 #[cfg(test)]
 #[path = "subdomain_takeover_test.rs"]

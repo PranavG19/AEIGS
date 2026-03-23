@@ -119,6 +119,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let opener_target = ctx.config.target.clone();
     let opener_handle =
         std::thread::spawn(move || crate::opener_audit::audit_opener(&opener_target));
+    let handler_target = ctx.config.target.clone();
+    let handler_handle = std::thread::spawn(move || {
+        crate::inline_handler_audit::audit_inline_handlers(&handler_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -393,6 +397,12 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::opener_audit::opener_to_operations(&opener_issues, &mut sequence);
     findings_count += opener_ops.len() as u64;
     entries.extend(opener_ops);
+
+    let handler_issues = handler_handle.join().unwrap_or_default();
+    let handler_ops =
+        crate::inline_handler_audit::inline_handler_to_operations(&handler_issues, &mut sequence);
+    findings_count += handler_ops.len() as u64;
+    entries.extend(handler_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
