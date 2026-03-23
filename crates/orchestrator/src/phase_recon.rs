@@ -1630,6 +1630,36 @@ fn run_body_analyzers(
         crate::media_recorder_audit::media_recorder_to_operations
     );
 
+    // Image Capture API security audit
+    let ic_issues = crate::image_capture_audit::analyze_image_capture(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ic_issues,
+        crate::image_capture_audit::image_capture_to_operations
+    );
+
+    // Background Fetch API security audit
+    let bf_issues = crate::background_fetch_audit::analyze_background_fetch(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bf_issues,
+        crate::background_fetch_audit::background_fetch_to_operations
+    );
+
+    // Shared Worker security audit
+    let sw_issues = crate::shared_worker_audit::analyze_shared_worker(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        sw_issues,
+        crate::shared_worker_audit::shared_worker_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers

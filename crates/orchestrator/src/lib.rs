@@ -5,6 +5,7 @@ pub mod api_version_audit;
 pub mod attest;
 pub mod attribution_reporting_audit;
 pub mod auth_session;
+pub mod background_fetch_audit;
 pub mod background_sync_audit;
 pub mod badging_audit;
 pub mod barcode_detection_audit;
@@ -86,6 +87,7 @@ pub mod hypothesis_bridge;
 pub mod idle_detection_audit;
 pub mod idor_analyzer;
 pub mod iframe_audit;
+pub mod image_capture_audit;
 pub mod import_map_audit;
 pub mod info_disclosure;
 pub mod inline_handler_audit;
@@ -171,6 +173,7 @@ pub mod storage_access_audit;
 pub mod storage_audit;
 pub mod server_timing_audit;
 pub mod shared_buffer_audit;
+pub mod shared_worker_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
 pub mod sourcemap_header_audit;
@@ -223,6 +226,7 @@ pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use attribution_reporting_audit::*;
 pub use auth_session::*;
+pub use background_fetch_audit::*;
 pub use background_sync_audit::*;
 pub use badging_audit::*;
 pub use barcode_detection_audit::*;
@@ -298,6 +302,7 @@ pub use hypothesis_bridge::*;
 pub use idle_detection_audit::*;
 pub use idor_analyzer::*;
 pub use iframe_audit::*;
+pub use image_capture_audit::*;
 pub use import_map_audit::*;
 pub use info_disclosure::*;
 pub use inline_handler_audit::*;
@@ -383,6 +388,7 @@ pub use storage_access_audit::*;
 pub use storage_audit::*;
 pub use server_timing_audit::*;
 pub use shared_buffer_audit::*;
+pub use shared_worker_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
 pub use sourcemap_header_audit::*;
@@ -675,6 +681,10 @@ mod request_smuggling_audit_test;
 #[cfg(test)]
 #[path = "iframe_audit_test.rs"]
 mod iframe_audit_test;
+
+#[cfg(test)]
+#[path = "image_capture_audit_test.rs"]
+mod image_capture_audit_test;
 
 #[cfg(test)]
 #[path = "import_map_audit_test.rs"]
@@ -1185,6 +1195,10 @@ mod notification_audit_test;
 mod battery_audit_test;
 
 #[cfg(test)]
+#[path = "background_fetch_audit_test.rs"]
+mod background_fetch_audit_test;
+
+#[cfg(test)]
 #[path = "background_sync_audit_test.rs"]
 mod background_sync_audit_test;
 
@@ -1275,6 +1289,10 @@ mod text_fragment_audit_test;
 #[cfg(test)]
 #[path = "media_recorder_audit_test.rs"]
 mod media_recorder_audit_test;
+
+#[cfg(test)]
+#[path = "shared_worker_audit_test.rs"]
+mod shared_worker_audit_test;
 
 #[cfg(test)]
 #[path = "util_test.rs"]
