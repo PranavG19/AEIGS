@@ -1,11 +1,51 @@
+use std::fmt;
+
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::operation::OperationLogEntry;
 
 use crate::recon_client;
 
-#[derive(Debug, Clone)]
-pub struct DocumentDomainIssue {
-    pub snippet: String,
+#[derive(Debug, Clone, PartialEq)]
+pub enum DocumentDomainIssue {
+    Assignment { snippet: String },
+    DynamicAssignment { snippet: String },
+    ParentDomainRelaxation { snippet: String },
+    DeprecatedApiUsage,
+    DocumentDomainInEval { snippet: String },
+    DocumentDomainRead,
+    ConditionalAssignment { snippet: String },
+}
+
+impl fmt::Display for DocumentDomainIssue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Assignment { snippet } => write!(f, "assignment: {snippet}"),
+            Self::DynamicAssignment { snippet } => write!(f, "dynamic_assignment: {snippet}"),
+            Self::ParentDomainRelaxation { snippet } => {
+                write!(f, "parent_domain_relaxation: {snippet}")
+            }
+            Self::DeprecatedApiUsage => write!(f, "deprecated_api_usage"),
+            Self::DocumentDomainInEval { snippet } => {
+                write!(f, "document_domain_in_eval: {snippet}")
+            }
+            Self::DocumentDomainRead => write!(f, "document_domain_read"),
+            Self::ConditionalAssignment { snippet } => {
+                write!(f, "conditional_assignment: {snippet}")
+            }
+        }
+    }
+}
+
+pub fn document_domain_severity(issue: &DocumentDomainIssue) -> f64 {
+    match issue {
+        DocumentDomainIssue::Assignment { .. } => 5.0,
+        DocumentDomainIssue::DynamicAssignment { .. } => 6.5,
+        DocumentDomainIssue::ParentDomainRelaxation { .. } => 7.0,
+        DocumentDomainIssue::DeprecatedApiUsage => 3.0,
+        DocumentDomainIssue::DocumentDomainInEval { .. } => 7.5,
+        DocumentDomainIssue::DocumentDomainRead => 2.0,
+        DocumentDomainIssue::ConditionalAssignment { .. } => 5.5,
+    }
 }
 
 pub fn audit_document_domain(target: &str) -> Vec<DocumentDomainIssue> {
@@ -22,7 +62,7 @@ pub fn audit_document_domain(target: &str) -> Vec<DocumentDomainIssue> {
     find_document_domain(&body)
 }
 
-pub(crate) fn find_document_domain(html: &str) -> Vec<DocumentDomainIssue> {
+pub fn find_document_domain(html: &str) -> Vec<DocumentDomainIssue> {
     let lower = html.to_ascii_lowercase();
     let mut issues = Vec::new();
     let mut search_from = 0;
@@ -43,17 +83,81 @@ pub(crate) fn find_document_domain(html: &str) -> Vec<DocumentDomainIssue> {
             .map(|e| abs_start + tag_end + 1 + e)
             .unwrap_or(lower.len());
 
-        let script_body = &lower[abs_start + tag_end + 1..script_end];
+        let script_body_lower = &lower[abs_start + tag_end + 1..script_end];
+        let original_body = &html[abs_start + tag_end + 1..script_end];
         search_from = script_end;
 
-        if script_body.contains("document.domain") {
-            let original_body = &html[abs_start + tag_end + 1..script_end];
-            let snippet = extract_snippet(original_body, "document.domain");
-            issues.push(DocumentDomainIssue { snippet });
+        if !script_body_lower.contains("document.domain") {
+            continue;
         }
+
+        issues.push(DocumentDomainIssue::DeprecatedApiUsage);
+
+        let has_eval = script_body_lower.contains("eval(");
+
+        if has_eval {
+            let snippet = extract_snippet(original_body, "eval(");
+            issues.push(DocumentDomainIssue::DocumentDomainInEval { snippet });
+        }
+
+        classify_usages(script_body_lower, original_body, &mut issues);
     }
 
     issues
+}
+
+fn classify_usages(
+    script_lower: &str,
+    original: &str,
+    issues: &mut Vec<DocumentDomainIssue>,
+) {
+    let mut pos = 0;
+    while let Some(idx) = script_lower[pos..].find("document.domain") {
+        let abs = pos + idx;
+        let after_keyword = abs + "document.domain".len();
+        let rest = script_lower[after_keyword..].trim_start();
+
+        if rest.starts_with('=') && !rest.starts_with("==") {
+            let snippet = extract_snippet(original, "document.domain");
+            let rhs = &rest[1..].trim_start();
+            let line_lower = line_containing(script_lower, abs);
+
+            if line_lower.contains("if ")
+                || line_lower.contains("if(")
+                || line_lower.contains("? ")
+                || line_lower.contains("?\"")
+            {
+                issues.push(DocumentDomainIssue::ConditionalAssignment {
+                    snippet: snippet.clone(),
+                });
+            }
+
+            if rhs.starts_with('"') || rhs.starts_with('\'') {
+                issues.push(DocumentDomainIssue::Assignment { snippet });
+            } else {
+                issues.push(DocumentDomainIssue::DynamicAssignment { snippet });
+            }
+        } else if rest.starts_with("==")
+            || rest.starts_with("!=")
+            || rest.is_empty()
+            || rest.starts_with(')')
+            || rest.starts_with(';')
+            || rest.starts_with(',')
+        {
+            issues.push(DocumentDomainIssue::DocumentDomainRead);
+        }
+
+        pos = after_keyword;
+    }
+}
+
+fn line_containing(text: &str, byte_pos: usize) -> &str {
+    let start = text[..byte_pos].rfind('\n').map(|p| p + 1).unwrap_or(0);
+    let end = text[byte_pos..]
+        .find('\n')
+        .map(|p| byte_pos + p)
+        .unwrap_or(text.len());
+    &text[start..end]
 }
 
 fn extract_snippet(body: &str, pattern: &str) -> String {
@@ -78,14 +182,15 @@ pub fn document_domain_to_operations(
     issues: &[DocumentDomainIssue],
     seq: &mut u64,
 ) -> Vec<OperationLogEntry> {
-    if issues.is_empty() {
-        return Vec::new();
-    }
-
-    vec![recon_client::finding_entry(
-        seq,
-        VulnerabilityClass::SecurityMisconfiguration,
-        5.0,
-        0.8,
-    )]
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::SecurityMisconfiguration,
+                document_domain_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
 }

@@ -7,6 +7,13 @@ use crate::recon_client;
 pub enum CrlfIssue {
     HeaderInjection { parameter: String },
     ResponseSplitting { parameter: String },
+    EncodedCrlf { parameter: String, encoding: String },
+    UnicodeCrlf { parameter: String },
+    SetCookieInjection { parameter: String },
+    LocationHeaderInjection { parameter: String },
+    ContentTypeInjection { parameter: String },
+    CrlfInUserAgent,
+    PartialHeaderInjection { parameter: String },
 }
 
 impl std::fmt::Display for CrlfIssue {
@@ -17,6 +24,30 @@ impl std::fmt::Display for CrlfIssue {
             }
             Self::ResponseSplitting { parameter } => {
                 write!(f, "crlf_response_splitting:{parameter}")
+            }
+            Self::EncodedCrlf {
+                parameter,
+                encoding,
+            } => {
+                write!(f, "crlf_encoded:{parameter}:{encoding}")
+            }
+            Self::UnicodeCrlf { parameter } => {
+                write!(f, "crlf_unicode:{parameter}")
+            }
+            Self::SetCookieInjection { parameter } => {
+                write!(f, "crlf_set_cookie_injection:{parameter}")
+            }
+            Self::LocationHeaderInjection { parameter } => {
+                write!(f, "crlf_location_header_injection:{parameter}")
+            }
+            Self::ContentTypeInjection { parameter } => {
+                write!(f, "crlf_content_type_injection:{parameter}")
+            }
+            Self::CrlfInUserAgent => {
+                write!(f, "crlf_in_user_agent")
+            }
+            Self::PartialHeaderInjection { parameter } => {
+                write!(f, "crlf_partial_header_injection:{parameter}")
             }
         }
     }
@@ -75,31 +106,85 @@ pub fn audit_crlf(target: &str) -> Vec<CrlfIssue> {
     issues
 }
 
-#[cfg(test)]
-pub(crate) fn analyze_crlf_response(
+pub fn analyze_crlf_response(
     resp_headers: &[(String, String)],
     body: &str,
     parameter: &str,
-) -> Option<CrlfIssue> {
+) -> Vec<CrlfIssue> {
+    let mut issues = Vec::new();
+
+    let mut has_canary_header = false;
     for (name, value) in resp_headers {
         if name.eq_ignore_ascii_case(CRLF_CANARY_HEADER) && value.contains(CRLF_CANARY_VALUE) {
-            return Some(CrlfIssue::HeaderInjection {
+            has_canary_header = true;
+            issues.push(CrlfIssue::HeaderInjection {
+                parameter: parameter.to_string(),
+            });
+            break;
+        }
+    }
+
+    if !has_canary_header
+        && body.contains(&format!("{CRLF_CANARY_HEADER}:{CRLF_CANARY_VALUE}"))
+    {
+        issues.push(CrlfIssue::ResponseSplitting {
+            parameter: parameter.to_string(),
+        });
+    }
+
+    for (name, value) in resp_headers {
+        if name.eq_ignore_ascii_case("set-cookie") && value.contains(CRLF_CANARY_VALUE) {
+            issues.push(CrlfIssue::SetCookieInjection {
+                parameter: parameter.to_string(),
+            });
+            break;
+        }
+    }
+
+    for (name, value) in resp_headers {
+        if name.eq_ignore_ascii_case("location") && value.contains(CRLF_CANARY_VALUE) {
+            issues.push(CrlfIssue::LocationHeaderInjection {
+                parameter: parameter.to_string(),
+            });
+            break;
+        }
+    }
+
+    let has_injected_content_type = resp_headers.iter().any(|(name, value)| {
+        name.eq_ignore_ascii_case("content-type") && value.contains(CRLF_CANARY_VALUE)
+    });
+    if has_injected_content_type {
+        issues.push(CrlfIssue::ContentTypeInjection {
+            parameter: parameter.to_string(),
+        });
+    }
+
+    if issues.is_empty() {
+        let has_partial = body.contains("\r\n")
+            && body.contains(CRLF_CANARY_VALUE)
+            || body.contains("%0d%0a")
+                && body.contains(CRLF_CANARY_VALUE);
+        if has_partial {
+            issues.push(CrlfIssue::PartialHeaderInjection {
                 parameter: parameter.to_string(),
             });
         }
     }
-    if body.contains(&format!("{CRLF_CANARY_HEADER}:{CRLF_CANARY_VALUE}")) {
-        return Some(CrlfIssue::ResponseSplitting {
-            parameter: parameter.to_string(),
-        });
-    }
-    None
+
+    issues
 }
 
-pub(crate) fn crlf_severity(issue: &CrlfIssue) -> f64 {
+pub fn crlf_severity(issue: &CrlfIssue) -> f64 {
     match issue {
         CrlfIssue::HeaderInjection { .. } => 7.5,
         CrlfIssue::ResponseSplitting { .. } => 8.5,
+        CrlfIssue::EncodedCrlf { .. } => 7.0,
+        CrlfIssue::UnicodeCrlf { .. } => 7.0,
+        CrlfIssue::SetCookieInjection { .. } => 8.0,
+        CrlfIssue::LocationHeaderInjection { .. } => 7.5,
+        CrlfIssue::ContentTypeInjection { .. } => 6.5,
+        CrlfIssue::CrlfInUserAgent => 5.0,
+        CrlfIssue::PartialHeaderInjection { .. } => 4.0,
     }
 }
 
@@ -111,7 +196,7 @@ pub fn crlf_to_operations(issues: &[CrlfIssue], seq: &mut u64) -> Vec<OperationL
                 seq,
                 VulnerabilityClass::SecurityMisconfiguration,
                 crlf_severity(issue),
-                0.85,
+                0.5,
             )
         })
         .collect()
