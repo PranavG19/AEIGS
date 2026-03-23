@@ -26,6 +26,37 @@ impl std::fmt::Display for ContactPickerIssue {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum ContactPickerSecurityIssue {
+    ContactDataExfiltration,
+    ContactWithoutConsent,
+    ExcessiveContactProperties,
+    ContactFingerprinting,
+    ContactInBackground,
+    ContactCrossOrigin,
+    ContactPersistence,
+    ContactBulkAccess,
+    ContactWithoutUserGesture,
+    ContactSilentCollection,
+}
+
+impl std::fmt::Display for ContactPickerSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ContactDataExfiltration => write!(f, "contact_data_exfiltration"),
+            Self::ContactWithoutConsent => write!(f, "contact_without_consent"),
+            Self::ExcessiveContactProperties => write!(f, "excessive_contact_properties"),
+            Self::ContactFingerprinting => write!(f, "contact_fingerprinting"),
+            Self::ContactInBackground => write!(f, "contact_in_background"),
+            Self::ContactCrossOrigin => write!(f, "contact_cross_origin"),
+            Self::ContactPersistence => write!(f, "contact_persistence"),
+            Self::ContactBulkAccess => write!(f, "contact_bulk_access"),
+            Self::ContactWithoutUserGesture => write!(f, "contact_without_user_gesture"),
+            Self::ContactSilentCollection => write!(f, "contact_silent_collection"),
+        }
+    }
+}
+
 pub fn audit_contact_picker(target: &str) -> Vec<ContactPickerIssue> {
     if recon_client::validated_domain(target).is_none() {
         return Vec::new();
@@ -74,6 +105,98 @@ pub fn analyze_contact_picker(body: &str) -> Vec<ContactPickerIssue> {
     issues
 }
 
+pub fn analyze_contact_picker_security(body: &str) -> Vec<ContactPickerSecurityIssue> {
+    if !body.contains("ContactsManager")
+        && !body.contains("contacts.select")
+        && !body.contains("navigator.contacts")
+    {
+        return Vec::new();
+    }
+
+    let mut issues = Vec::new();
+
+    if (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && body.contains("contacts.select")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactDataExfiltration);
+    }
+
+    let body_lower = body.to_lowercase();
+    if !body_lower.contains("permission")
+        && !body_lower.contains("consent")
+        && !body_lower.contains("confirm")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactWithoutConsent);
+    }
+
+    let prop_count = [
+        "\"name\"",
+        "'name'",
+        "\"email\"",
+        "'email'",
+        "\"tel\"",
+        "'tel'",
+        "\"address\"",
+        "'address'",
+        "\"icon\"",
+        "'icon'",
+    ]
+    .iter()
+    .filter(|p| body.contains(*p))
+    .count();
+
+    if prop_count >= 5 {
+        issues.push(ContactPickerSecurityIssue::ExcessiveContactProperties);
+    }
+
+    if (body.contains("fingerprint") || body.contains("deviceId") || body.contains("trackingId"))
+        && body.contains("contacts")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactFingerprinting);
+    }
+
+    if (body.contains("document.hidden") || body.contains("visibilityState"))
+        && body.contains("contacts.select")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactInBackground);
+    }
+
+    if (body.contains("postMessage") || body.contains("iframe")) && body.contains("contacts.select")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactCrossOrigin);
+    }
+
+    if (body.contains("localStorage")
+        || body.contains("indexedDB")
+        || body.contains("sessionStorage"))
+        && body.contains("contacts")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactPersistence);
+    }
+
+    if body.contains("multiple: true") || body.contains("multiple:true") {
+        issues.push(ContactPickerSecurityIssue::ContactBulkAccess);
+    }
+
+    if !body.contains("click")
+        && !body.contains("keydown")
+        && !body.contains("pointerdown")
+        && body.contains("contacts.select")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactWithoutUserGesture);
+    }
+
+    if !body_lower.contains("ui")
+        && !body_lower.contains("indicator")
+        && !body_lower.contains("notification")
+        && body.contains("contacts.select")
+    {
+        issues.push(ContactPickerSecurityIssue::ContactSilentCollection);
+    }
+
+    issues
+}
+
 fn count_contact_properties(body: &str) -> usize {
     let props = [
         "\"name\"",
@@ -101,6 +224,21 @@ pub fn contact_picker_severity(issue: &ContactPickerIssue) -> f64 {
     }
 }
 
+pub fn contact_picker_security_severity(issue: &ContactPickerSecurityIssue) -> f64 {
+    match issue {
+        ContactPickerSecurityIssue::ContactDataExfiltration => 9.0,
+        ContactPickerSecurityIssue::ContactFingerprinting => 8.5,
+        ContactPickerSecurityIssue::ContactCrossOrigin => 8.0,
+        ContactPickerSecurityIssue::ContactPersistence => 7.5,
+        ContactPickerSecurityIssue::ContactBulkAccess => 7.0,
+        ContactPickerSecurityIssue::ContactWithoutConsent => 6.5,
+        ContactPickerSecurityIssue::ExcessiveContactProperties => 6.0,
+        ContactPickerSecurityIssue::ContactInBackground => 5.5,
+        ContactPickerSecurityIssue::ContactWithoutUserGesture => 5.0,
+        ContactPickerSecurityIssue::ContactSilentCollection => 4.5,
+    }
+}
+
 pub fn contact_picker_to_operations(
     issues: &[ContactPickerIssue],
     seq: &mut u64,
@@ -113,6 +251,23 @@ pub fn contact_picker_to_operations(
                 VulnerabilityClass::SensitiveDataExposure,
                 contact_picker_severity(issue),
                 0.7,
+            )
+        })
+        .collect()
+}
+
+pub fn contact_picker_security_to_operations(
+    issues: &[ContactPickerSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                contact_picker_security_severity(issue),
+                0.5,
             )
         })
         .collect()

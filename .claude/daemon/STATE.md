@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 9845 lib, 0 failed
+- cargo test -p aegis-orchestrator: 9973 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 276 features shipped
+- P8: 279 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -85,6 +85,7 @@ status: in-progress
 268. Vibration (15→87), 269. Web Bluetooth (15→73), 270. Web NFC (15→60)
 271. Web Serial (15→62), 272. Web Transport (15→74), 273. WebHID (15→69)
 274. WebUSB (15→62), 275. Window Management (15→61), 276. Abort Controller (16→51)
+277. Broadcast Channel (16→61), 278. Contact Picker (16→55), 279. Content Index (16→60)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
