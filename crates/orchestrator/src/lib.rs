@@ -74,6 +74,7 @@ pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
 pub mod telemetry;
+pub mod timing_allow_origin_audit;
 pub mod tls_scanner;
 pub mod update_db;
 mod util;
@@ -152,6 +153,7 @@ pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
 pub use telemetry::*;
+pub use timing_allow_origin_audit::*;
 pub use tls_scanner::*;
 pub use update_db::*;
 pub use waf_detector::*;
@@ -416,6 +418,10 @@ mod link_header_audit_test;
 #[cfg(test)]
 #[path = "reporting_endpoints_audit_test.rs"]
 mod reporting_endpoints_audit_test;
+
+#[cfg(test)]
+#[path = "timing_allow_origin_audit_test.rs"]
+mod timing_allow_origin_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]

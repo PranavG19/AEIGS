@@ -57,6 +57,7 @@ status: in-progress
 - [x] NEL/Report-To header audit (external collectors, HTTP endpoints, high sample rates)
 - [x] Link header audit (external preload/prefetch, HTTP resources, dns-prefetch)
 - [x] Reporting-Endpoints audit (external collectors, HTTP endpoints)
+- [x] Timing-Allow-Origin audit (wildcard, HTTP origins, many origins)
 
 ## G14-deferred
 - 13 HTML-body scanners each independently fetch the same target URL
@@ -146,7 +147,7 @@ Address findings from recon scanner audit.
 ## handoff
 NEXT STEPS (in order):
 1. G14 check due: 5+ header scanners since last consolidation.
-2. Continue P8: timing-allow-origin audit, clear-site-data header check.
+2. Continue P8: clear-site-data header check, source-map header audit.
 3. When P8 batch complete → move to P9 (simplify pass).
 4. Then P10 (orchestration consolidation).
 5. Then P11 (90%+ test coverage per file).

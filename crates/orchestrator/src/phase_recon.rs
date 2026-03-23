@@ -177,6 +177,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let repep_handle = std::thread::spawn(move || {
         crate::reporting_endpoints_audit::audit_reporting_endpoints(&repep_target)
     });
+    let tao_target = ctx.config.target.clone();
+    let tao_handle = std::thread::spawn(move || {
+        crate::timing_allow_origin_audit::audit_timing_allow_origin(&tao_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -550,6 +554,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     );
     findings_count += repep_ops.len() as u64;
     entries.extend(repep_ops);
+
+    let tao_issues = tao_handle.join().unwrap_or_default();
+    let tao_ops = crate::timing_allow_origin_audit::timing_allow_origin_to_operations(
+        &tao_issues,
+        &mut sequence,
+    );
+    findings_count += tao_ops.len() as u64;
+    entries.extend(tao_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {
