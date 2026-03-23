@@ -650,6 +650,10 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
     let apiver_handle = std::thread::spawn(move || {
         crate::api_version_audit::audit_api_versioning(&apiver_target)
     });
+    let cspreport_target = ctx.config.target.clone();
+    let cspreport_handle = std::thread::spawn(move || {
+        crate::csp_report_leak_audit::audit_csp_report_leak(&cspreport_target)
+    });
     let trufflehog_handle = ctx.config.source_dir.as_ref().map(|dir| {
         let dir = dir.clone();
         std::thread::spawn(move || scan_secrets(&dir))
@@ -910,6 +914,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
         crate::api_version_audit::api_version_to_operations(&apiver_issues, &mut sequence);
     findings_count += apiver_ops.len() as u64;
     entries.extend(apiver_ops);
+
+    let cspreport_issues = cspreport_handle.join().unwrap_or_default();
+    let cspreport_ops = crate::csp_report_leak_audit::csp_report_leak_to_operations(
+        &cspreport_issues,
+        &mut sequence,
+    );
+    findings_count += cspreport_ops.len() as u64;
+    entries.extend(cspreport_ops);
 
     let ops_count = entries.len() as u64;
     if !entries.is_empty() {

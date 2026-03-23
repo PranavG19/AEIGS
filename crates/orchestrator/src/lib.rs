@@ -21,6 +21,7 @@ pub mod cors_preflight_audit;
 pub mod cors_scanner;
 pub mod crlf_injection_audit;
 pub mod csp_analyzer;
+pub mod csp_report_leak_audit;
 pub mod cve_correlator;
 pub mod dangerous_js_audit;
 pub mod deprecated_header_audit;
@@ -121,6 +122,7 @@ pub use corp_audit::*;
 pub use cors_preflight_audit::*;
 pub use cors_scanner::*;
 pub use csp_analyzer::*;
+pub use csp_report_leak_audit::*;
 pub use cve_correlator::*;
 pub use dangerous_js_audit::*;
 pub use deprecated_header_audit::*;
@@ -401,6 +403,10 @@ mod email_security_test;
 #[cfg(test)]
 #[path = "csp_analyzer_test.rs"]
 mod csp_analyzer_test;
+
+#[cfg(test)]
+#[path = "csp_report_leak_audit_test.rs"]
+mod csp_report_leak_audit_test;
 
 #[cfg(test)]
 #[path = "hsts_preload_test.rs"]
