@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 8306 lib, 0 failed
+- cargo test -p aegis-orchestrator: 8448 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 234 features shipped
+- P8: 237 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -75,6 +75,7 @@ status: in-progress
 238. Mass Assign (14→60), 239. Meta Tag (14→50), 240. Mixed Content (14→68)
 241. Resize Observer (14→58), 242. Selection (14→51), 243. Wake Lock (14→59)
 244. Wireless API (14→60), 245. XFO Audit (14→60), 246. Background Sync (15→67)
+247. Badging (15→61), 248. Barcode Detection (15→62), 249. Battery (15→64)
 
 ## handoff
 Continue P8. Next: improve more scanners with low test counts.
