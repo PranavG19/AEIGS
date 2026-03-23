@@ -2211,7 +2211,7 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     let cors_pf_issues = cors_pf_handle.join().unwrap_or_default();
     let cors_pf_ops =
-        crate::cors_preflight_audit::preflight_to_operations(&cors_pf_issues, &mut sequence);
+        crate::cors_preflight_audit::cors_preflight_to_operations(&cors_pf_issues, &mut sequence);
     findings_count += cors_pf_ops.len() as u64;
     entries.extend(cors_pf_ops);
 
