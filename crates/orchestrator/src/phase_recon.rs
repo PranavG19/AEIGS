@@ -1453,6 +1453,16 @@ fn run_body_analyzers(
         crate::perf_observer_audit::perf_observer_to_operations
     );
 
+    // Attribution Reporting API audit
+    let ar_issues = crate::attribution_reporting_audit::analyze_attribution_reporting(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ar_issues,
+        crate::attribution_reporting_audit::attribution_reporting_to_operations
+    );
+
     // Background Sync API audit
     let bgsync_issues = crate::background_sync_audit::analyze_background_sync(body);
     collect_ops!(

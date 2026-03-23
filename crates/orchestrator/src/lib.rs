@@ -3,6 +3,7 @@ pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
 pub mod attest;
+pub mod attribution_reporting_audit;
 pub mod auth_session;
 pub mod background_sync_audit;
 pub mod badging_audit;
@@ -208,6 +209,7 @@ pub use actor::*;
 pub use ambient_light_audit::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
+pub use attribution_reporting_audit::*;
 pub use auth_session::*;
 pub use background_sync_audit::*;
 pub use badging_audit::*;
@@ -521,6 +523,10 @@ mod idle_detection_audit_test;
 #[cfg(test)]
 #[path = "idor_analyzer_test.rs"]
 mod idor_analyzer_test;
+
+#[cfg(test)]
+#[path = "attribution_reporting_audit_test.rs"]
+mod attribution_reporting_audit_test;
 
 #[cfg(test)]
 #[path = "auth_session_test.rs"]
