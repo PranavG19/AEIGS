@@ -1096,6 +1096,16 @@ fn run_body_analyzers(
         crate::web_transport_audit::web_transport_to_operations
     );
 
+    // File Handling API audit
+    let fh_issues = crate::file_handling_audit::analyze_file_handling(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        fh_issues,
+        crate::file_handling_audit::file_handling_to_operations
+    );
+
     // File System Access API audit
     let fsa_issues = crate::file_system_access_audit::analyze_file_system_access(body);
     collect_ops!(

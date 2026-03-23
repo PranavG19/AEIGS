@@ -63,6 +63,7 @@ pub mod expose_headers_audit;
 pub mod eyedropper_audit;
 pub mod fetch_credential_audit;
 pub mod file_access_audit;
+pub mod file_handling_audit;
 pub mod file_system_access_audit;
 pub mod form_audit;
 pub mod fullscreen_audit;
@@ -257,6 +258,7 @@ pub use expose_headers_audit::*;
 pub use eyedropper_audit::*;
 pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
+pub use file_handling_audit::*;
 pub use file_system_access_audit::*;
 pub use form_audit::*;
 pub use fullscreen_audit::*;
@@ -867,6 +869,10 @@ mod eyedropper_audit_test;
 #[cfg(test)]
 #[path = "fullscreen_audit_test.rs"]
 mod fullscreen_audit_test;
+
+#[cfg(test)]
+#[path = "file_handling_audit_test.rs"]
+mod file_handling_audit_test;
 
 #[cfg(test)]
 #[path = "file_system_access_audit_test.rs"]
