@@ -71,6 +71,7 @@ pub mod security_txt;
 pub mod server_timing_audit;
 pub mod shodan_lookup;
 pub mod sourcemap_detector;
+pub mod sourcemap_header_audit;
 pub mod sri_checker;
 pub mod subdomain_takeover;
 pub mod tech_detector;
@@ -151,6 +152,7 @@ pub use security_txt::*;
 pub use server_timing_audit::*;
 pub use shodan_lookup::*;
 pub use sourcemap_detector::*;
+pub use sourcemap_header_audit::*;
 pub use sri_checker::*;
 pub use subdomain_takeover::*;
 pub use tech_detector::*;
@@ -428,6 +430,10 @@ mod timing_allow_origin_audit_test;
 #[cfg(test)]
 #[path = "clear_site_data_audit_test.rs"]
 mod clear_site_data_audit_test;
+
+#[cfg(test)]
+#[path = "sourcemap_header_audit_test.rs"]
+mod sourcemap_header_audit_test;
 
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
