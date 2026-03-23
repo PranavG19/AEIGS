@@ -64,6 +64,7 @@ mod phase_report;
 pub mod pipeline;
 pub mod pipeline_composer;
 pub mod preconnect_audit;
+pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
 pub mod rate_limit_detector;
 pub mod recon_client;
@@ -152,6 +153,7 @@ pub use phase_report::*;
 pub use pipeline::*;
 pub use pipeline_composer::*;
 pub use preconnect_audit::*;
+pub use prototype_pollution_audit::*;
 pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
 pub use recon_client::*;
@@ -491,6 +493,10 @@ mod host_header_audit_test;
 #[cfg(test)]
 #[path = "preconnect_audit_test.rs"]
 mod preconnect_audit_test;
+
+#[cfg(test)]
+#[path = "prototype_pollution_audit_test.rs"]
+mod prototype_pollution_audit_test;
 
 #[cfg(test)]
 #[path = "error_page_audit_test.rs"]
