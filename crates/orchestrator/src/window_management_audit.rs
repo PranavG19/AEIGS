@@ -109,3 +109,149 @@ pub fn window_management_to_operations(
         })
         .collect()
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WindowManagementSecurityIssue {
+    ScreenEnumeration,
+    WindowPositionTracking,
+    MultiScreenFingerprinting,
+    WindowPlacementAbuse,
+    FullscreenOnAllScreens,
+    WindowCrossOriginPositioning,
+    ScreenDetailsSurveillance,
+    WindowInBackground,
+    WindowResizeTracking,
+    ScreenLabelExposure,
+}
+
+impl std::fmt::Display for WindowManagementSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ScreenEnumeration => write!(f, "screen_enumeration"),
+            Self::WindowPositionTracking => write!(f, "window_position_tracking"),
+            Self::MultiScreenFingerprinting => write!(f, "multi_screen_fingerprinting"),
+            Self::WindowPlacementAbuse => write!(f, "window_placement_abuse"),
+            Self::FullscreenOnAllScreens => write!(f, "fullscreen_on_all_screens"),
+            Self::WindowCrossOriginPositioning => write!(f, "window_cross_origin_positioning"),
+            Self::ScreenDetailsSurveillance => write!(f, "screen_details_surveillance"),
+            Self::WindowInBackground => write!(f, "window_in_background"),
+            Self::WindowResizeTracking => write!(f, "window_resize_tracking"),
+            Self::ScreenLabelExposure => write!(f, "screen_label_exposure"),
+        }
+    }
+}
+
+pub fn analyze_window_management_security(body: &str) -> Vec<WindowManagementSecurityIssue> {
+    let mut issues = Vec::new();
+
+    if body.contains("screens") && body.contains(".length") {
+        issues.push(WindowManagementSecurityIssue::ScreenEnumeration);
+    }
+
+    if body.contains("screenX") || body.contains("screenY") {
+        let has_tracking = body.contains("setInterval") || body.contains("requestAnimationFrame");
+        if has_tracking {
+            issues.push(WindowManagementSecurityIssue::WindowPositionTracking);
+        }
+    }
+
+    if body.contains("screens") && body.contains("devicePixelRatio") {
+        let has_fingerprint_storage = body.contains("localStorage")
+            || body.contains("sessionStorage")
+            || body.contains("indexedDB");
+        if has_fingerprint_storage {
+            issues.push(WindowManagementSecurityIssue::MultiScreenFingerprinting);
+        }
+    }
+
+    if body.contains("window.open") && body.contains("screens") {
+        let has_coords = body.contains("left=") || body.contains("top=");
+        if has_coords {
+            issues.push(WindowManagementSecurityIssue::WindowPlacementAbuse);
+        }
+    }
+
+    if body.contains("requestFullscreen") {
+        let has_loop = body.contains("forEach") || body.contains("for");
+        if has_loop && body.contains("screens") {
+            issues.push(WindowManagementSecurityIssue::FullscreenOnAllScreens);
+        }
+    }
+
+    if body.contains("postMessage") && (body.contains("screenX") || body.contains("screenY")) {
+        issues.push(WindowManagementSecurityIssue::WindowCrossOriginPositioning);
+    }
+
+    if body.contains("getScreenDetails") {
+        let surveillance_indicators = [
+            "availWidth",
+            "availHeight",
+            "colorDepth",
+            "orientation",
+            "isPrimary",
+            "isInternal",
+        ];
+        let count = surveillance_indicators
+            .iter()
+            .filter(|&indicator| body.contains(indicator))
+            .count();
+        if count >= 3 {
+            issues.push(WindowManagementSecurityIssue::ScreenDetailsSurveillance);
+        }
+    }
+
+    if body.contains("document.hidden") || body.contains("visibilityState") {
+        let has_positioning = body.contains("moveTo") || body.contains("moveBy");
+        if has_positioning {
+            issues.push(WindowManagementSecurityIssue::WindowInBackground);
+        }
+    }
+
+    if body.contains("resize") && body.contains("addEventListener") {
+        let has_exfil = body.contains("fetch") || body.contains("sendBeacon");
+        if has_exfil {
+            issues.push(WindowManagementSecurityIssue::WindowResizeTracking);
+        }
+    }
+
+    if body.contains("label") && body.contains("screens") {
+        let has_exfil = body.contains("fetch") || body.contains("XMLHttpRequest");
+        if has_exfil {
+            issues.push(WindowManagementSecurityIssue::ScreenLabelExposure);
+        }
+    }
+
+    issues
+}
+
+pub fn window_management_security_severity(issue: &WindowManagementSecurityIssue) -> f64 {
+    match issue {
+        WindowManagementSecurityIssue::ScreenDetailsSurveillance => 7.5,
+        WindowManagementSecurityIssue::MultiScreenFingerprinting => 7.0,
+        WindowManagementSecurityIssue::ScreenLabelExposure => 6.8,
+        WindowManagementSecurityIssue::WindowCrossOriginPositioning => 6.5,
+        WindowManagementSecurityIssue::WindowPositionTracking => 6.0,
+        WindowManagementSecurityIssue::WindowPlacementAbuse => 5.8,
+        WindowManagementSecurityIssue::FullscreenOnAllScreens => 5.5,
+        WindowManagementSecurityIssue::WindowResizeTracking => 5.2,
+        WindowManagementSecurityIssue::WindowInBackground => 5.0,
+        WindowManagementSecurityIssue::ScreenEnumeration => 4.5,
+    }
+}
+
+pub fn window_management_security_to_operations(
+    issues: &[WindowManagementSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                window_management_security_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}
