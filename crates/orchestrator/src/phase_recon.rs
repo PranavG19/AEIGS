@@ -876,6 +876,16 @@ fn run_body_analyzers(
         crate::web_share_audit::web_share_to_operations
     );
 
+    // Barcode Detection API audit
+    let bd_issues = crate::barcode_detection_audit::analyze_barcode_detection(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        bd_issues,
+        crate::barcode_detection_audit::barcode_detection_to_operations
+    );
+
     // Device Memory API audit
     let dm_issues = crate::device_memory_audit::analyze_device_memory(body);
     collect_ops!(

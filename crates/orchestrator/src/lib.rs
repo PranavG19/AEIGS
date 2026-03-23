@@ -5,6 +5,7 @@ pub mod api_version_audit;
 pub mod attest;
 pub mod auth_session;
 pub mod background_sync_audit;
+pub mod barcode_detection_audit;
 pub mod base_tag_audit;
 pub mod battery_audit;
 pub mod benchmark;
@@ -193,6 +194,7 @@ pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
 pub use auth_session::*;
 pub use background_sync_audit::*;
+pub use barcode_detection_audit::*;
 pub use battery_audit::*;
 pub use base_tag_audit::*;
 pub use broadcast_channel_audit::*;
@@ -495,6 +497,10 @@ mod auth_session_test;
 #[cfg(test)]
 #[path = "base_tag_audit_test.rs"]
 mod base_tag_audit_test;
+
+#[cfg(test)]
+#[path = "barcode_detection_audit_test.rs"]
+mod barcode_detection_audit_test;
 
 #[cfg(test)]
 #[path = "cve_correlator_test.rs"]
