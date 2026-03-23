@@ -15,6 +15,7 @@ pub mod clear_site_data_audit;
 pub mod clipboard_audit;
 pub mod clickjack_audit;
 pub mod comment_leak;
+pub mod content_disposition_audit;
 pub mod content_type_audit;
 pub mod content_type_confusion_audit;
 pub mod convergence;
@@ -164,6 +165,7 @@ pub use clear_site_data_audit::*;
 pub use clickjack_audit::*;
 pub use clipboard_audit::*;
 pub use comment_leak::*;
+pub use content_disposition_audit::*;
 pub use content_type_audit::*;
 pub use content_type_confusion_audit::*;
 pub use convergence::*;
@@ -605,6 +607,10 @@ mod cache_poison_audit_test;
 #[cfg(test)]
 #[path = "comment_leak_test.rs"]
 mod comment_leak_test;
+
+#[cfg(test)]
+#[path = "content_disposition_audit_test.rs"]
+mod content_disposition_audit_test;
 
 #[cfg(test)]
 #[path = "js_library_scanner_test.rs"]

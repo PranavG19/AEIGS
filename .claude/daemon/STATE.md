@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 2777 lib, 0 failed
+- cargo test -p aegis-orchestrator: 2808 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 64 features shipped
+- P8: 65 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -75,9 +75,11 @@ status: in-progress
 56. feat(recon): Add USB/HID/Serial hardware API audit scanner (+15)
 57. feat(recon): Add Web Speech API security audit scanner (+15)
 58. feat(recon): Add File System Access API security audit scanner (+13)
+59. feat(recon): Add Web NFC/Bluetooth wireless API audit scanner (+14)
+60. feat(recon): Add Content-Disposition header security audit scanner (+17)
 
 ## known-issues
 - eval.rs: dead code (broken benchmark imports, never wired). Needs rewrite to align with actual benchmark API.
 
 ## handoff
-Continue P8. Next ideas: Web NFC/Bluetooth API audit, Content-Disposition header audit, Web Locks API audit, or Reporting API audit.
+Continue P8. Next ideas: Web Locks API audit, Reporting API audit, Payment Request API audit, or Credential Management API audit.

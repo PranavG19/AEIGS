@@ -187,6 +187,20 @@ fn run_header_analyzers(
         crate::content_type_audit::content_type_to_operations
     );
 
+    // Content-Disposition
+    let cd_val = hdr(resp, "content-disposition").unwrap_or_default();
+    let cd_issues = crate::content_disposition_audit::analyze_content_disposition(
+        ct.as_deref().unwrap_or(""),
+        &cd_val,
+    );
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        cd_issues,
+        crate::content_disposition_audit::content_disposition_to_operations
+    );
+
     // Server-Timing
     let st_values = hdr_all(resp, "server-timing");
     let stiming_leaks = crate::server_timing_audit::analyze_server_timing(&st_values);
