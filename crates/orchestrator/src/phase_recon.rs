@@ -626,6 +626,16 @@ fn run_body_analyzers(
         crate::deserialization_audit::deserialization_to_operations
     );
 
+    // Client-side template injection
+    let csti_issues = crate::template_injection_audit::analyze_template_injection(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        csti_issues,
+        crate::template_injection_audit::template_injection_to_operations
+    );
+
     // Dependency confusion indicators
     let depconf_issues = crate::dependency_confusion_audit::analyze_dependency_confusion(body);
     collect_ops!(
