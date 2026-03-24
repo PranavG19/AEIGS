@@ -1,0 +1,372 @@
+Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-opus-4-6-v1
+[0m
+@aws-sdk/credential-provider-node - defaultProvider::fromEnv WARNING:
+    Multiple credential sources detected: 
+    Both AWS_PROFILE and the pair AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY static credentials are set.
+    This SDK will proceed with the AWS_PROFILE value.
+    
+    However, a future version may change this behavior to prefer the ENV static credentials.
+    Please ensure that your environment only sets either the AWS_PROFILE or the
+    AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY pair.
+
+I'll read TASK.md first to understand what needs to be built.
+[0m→ [0mRead TASK.md
+Got it. Let me quickly check the existing patterns and the `FuzzResponse` type.
+[0m→ [0mRead crates/fuzzing/src/lib.rs
+[0m✱ [0mGrep "pub struct FuzzResponse"[90m in crates/protocol/src · 1 match[0m
+[0m→ [0mRead crates/fuzzing/src/scheduler.rs[90m [limit=60][0m
+[0m→ [0mRead crates/protocol/src/request.rs
+[0m→ [0mRead crates/fuzzing/src/oracle.rs[90m [limit=50][0m
+[0m→ [0mRead crates/fuzzing/Cargo.toml
+Now let me check the executor.rs to see the FuzzResponse re-export pattern:
+[0m✱ [0mGrep "pub use.*FuzzResponse|pub type FuzzResponse"[90m in crates/fuzzing/src · 1 match[0m
+Good — `FuzzResponse` is re-exported from `executor.rs`. Now I have everything I need. Let me build this.
+[0m
+[0m# [0mTodos
+[ ] Write coverage_tracker.rs — BehavioralSignature, CoverageTracker, CoverageResult
+[ ] Write coverage_tracker_test.rs — 20+ tests for all components
+[ ] Wire into lib.rs (pub mod + test path)
+[ ] Run cargo test, fix issues, commit
+[ ] Run clippy, fix warnings, final commit
+[ ] Mark TASK.md as DONE
+[0m
+[0m← [0mWrite crates/fuzzing/src/coverage_tracker.rs
+Wrote file successfully.
+[0m
+Now the test file:
+[0m# [0mTodos
+[x] Write coverage_tracker.rs — BehavioralSignature, CoverageTracker, CoverageResult
+[ ] Write coverage_tracker_test.rs — 20+ tests for all components
+[ ] Wire into lib.rs (pub mod + test path)
+[ ] Run cargo test, fix issues, commit
+[ ] Run clippy, fix warnings, final commit
+[ ] Mark TASK.md as DONE
+[0m
+[0m← [0mWrite crates/fuzzing/src/coverage_tracker_test.rs
+Wrote file successfully.
+[0m
+Now wire it into lib.rs:
+[0m# [0mTodos
+[x] Write coverage_tracker.rs — BehavioralSignature, CoverageTracker, CoverageResult
+[x] Write coverage_tracker_test.rs — 20+ tests for all components
+[ ] Wire into lib.rs (pub mod + test path)
+[ ] Run cargo test, fix issues, commit
+[ ] Run clippy, fix warnings, final commit
+[ ] Mark TASK.md as DONE
+[0m
+[0m→ [0mRead crates/fuzzing/src/lib.rs
+[0m
+[0m← [0mEdit crates/fuzzing/src/lib.rs
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
++++ /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
+@@ -1,8 +1,9 @@
+ pub mod bot_detection_probe;
+ pub mod cloud_detector;
+ pub mod confirmation;
+ pub mod cors_detector;
++pub mod coverage_tracker;
+ pub mod defense_profile;
+ pub mod executor;
+ pub mod graphql_tester;
+ pub mod header_analyzer;
+
+[0m
+[0m← [0mEdit crates/fuzzing/src/lib.rs
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
++++ /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/lib.rs
+@@ -73,4 +73,8 @@
+ 
+ #[cfg(test)]
+ #[path = "race_tester_test.rs"]
+ mod race_tester_test;
++
++#[cfg(test)]
++#[path = "coverage_tracker_test.rs"]
++mod coverage_tracker_test;
+
+[0m
+Now run the tests:
+[0m# [0mTodos
+[x] Write coverage_tracker.rs — BehavioralSignature, CoverageTracker, CoverageResult
+[x] Write coverage_tracker_test.rs — 20+ tests for all components
+[x] Wire into lib.rs (pub mod + test path)
+[ ] Run cargo test, fix issues, commit
+[ ] Run clippy, fix warnings, final commit
+[ ] Mark TASK.md as DONE
+[0m
+[0m$ [0mcargo test -p aegis-fuzzing -- coverage_tracker 2>&1
+Updating crates.io index
+     Locking 337 packages to latest compatible versions
+      Adding cargo-lock v10.1.0 (available: v11.0.1)
+      Adding crossterm v0.28.1 (available: v0.29.0)
+      Adding generic-array v0.14.7 (available: v0.14.9)
+      Adding matchit v0.8.4 (available: v0.8.6)
+      Adding petgraph v0.7.1 (available: v0.8.3)
+      Adding rand v0.9.2 (available: v0.10.0)
+      Adding ratatui v0.29.0 (available: v0.30.0)
+      Adding reqwest v0.12.28 (available: v0.13.2)
+      Adding rusqlite v0.32.1 (available: v0.39.0)
+      Adding unicode-width v0.2.0 (available: v0.2.2)
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling unicode-ident v1.0.24
+   Compiling libc v0.2.183
+   Compiling cfg-if v1.0.4
+   Compiling smallvec v1.15.1
+   Compiling itoa v1.0.18
+   Compiling stable_deref_trait v1.2.1
+   Compiling parking_lot_core v0.9.12
+   Compiling pin-project-lite v0.2.17
+   Compiling bytes v1.11.1
+   Compiling once_cell v1.21.4
+   Compiling futures-core v0.3.32
+   Compiling scopeguard v1.2.0
+   Compiling memchr v2.8.0
+   Compiling typenum v1.19.0
+   Compiling lock_api v0.4.14
+   Compiling core-foundation-sys v0.8.7
+   Compiling version_check v0.9.5
+   Compiling futures-sink v0.3.32
+   Compiling bitflags v2.11.0
+   Compiling tracing-core v0.1.36
+   Compiling generic-array v0.14.7
+   Compiling http v1.4.0
+   Compiling litemap v0.8.1
+   Compiling log v0.4.29
+   Compiling getrandom v0.4.2
+   Compiling serde_core v1.0.228
+   Compiling writeable v0.6.2
+   Compiling icu_normalizer_data v2.1.1
+   Compiling slab v0.4.12
+   Compiling icu_properties_data v2.1.2
+   Compiling percent-encoding v2.3.2
+   Compiling http-body v1.0.1
+   Compiling equivalent v1.0.2
+   Compiling httparse v1.10.1
+   Compiling errno v0.3.14
+   Compiling mio v1.1.1
+   Compiling syn v2.0.117
+   Compiling signal-hook-registry v1.4.8
+   Compiling socket2 v0.6.3
+   Compiling parking_lot v0.12.5
+   Compiling semver v1.0.27
+   Compiling rustix v1.1.4
+   Compiling futures-io v0.3.32
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling tower-service v0.3.3
+   Compiling serde v1.0.228
+   Compiling futures-task v0.3.32
+   Compiling zmij v1.0.21
+   Compiling hashbrown v0.16.1
+   Compiling system-configuration-sys v0.6.0
+   Compiling digest v0.10.7
+   Compiling futures-util v0.3.32
+   Compiling rustc_version v0.4.1
+   Compiling cpufeatures v0.2.17
+   Compiling indexmap v2.13.0
+   Compiling form_urlencoded v1.2.2
+   Compiling serde_json v1.0.149
+   Compiling fnv v1.0.7
+   Compiling zeroize v1.8.2
+   Compiling atomic-waker v1.1.2
+   Compiling try-lock v0.2.5
+   Compiling curve25519-dalek v4.1.3
+   Compiling want v0.3.1
+   Compiling core-foundation v0.10.1
+   Compiling core-foundation v0.9.4
+   Compiling security-framework-sys v2.17.0
+   Compiling futures-channel v0.3.32
+   Compiling sync_wrapper v1.0.2
+   Compiling native-tls v0.2.18
+   Compiling zerocopy v0.8.47
+   Compiling utf8_iter v1.0.4
+   Compiling httpdate v1.0.3
+   Compiling pin-utils v0.1.0
+   Compiling tower-layer v0.3.3
+   Compiling getrandom v0.3.4
+   Compiling fastrand v2.3.0
+   Compiling security-framework v3.7.0
+   Compiling system-configuration v0.7.0
+   Compiling http-body-util v0.1.3
+   Compiling ipnet v2.12.0
+   Compiling tempfile v3.27.0
+   Compiling synstructure v0.13.2
+   Compiling base64 v0.22.1
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling ed25519 v2.2.3
+   Compiling keccak v0.1.6
+   Compiling sha2 v0.10.9
+   Compiling mime v0.3.17
+   Compiling rand_core v0.6.4
+   Compiling ryu v1.0.23
+   Compiling thiserror v2.0.18
+   Compiling sha3 v0.10.8
+   Compiling rand_core v0.9.5
+   Compiling uuid v1.22.0
+   Compiling aho-corasick v1.1.4
+   Compiling ed25519-dalek v2.2.0
+   Compiling regex-syntax v0.8.10
+   Compiling iri-string v0.7.11
+   Compiling rustls-pki-types v1.14.0
+   Compiling encoding_rs v0.8.35
+   Compiling serde_path_to_error v0.1.20
+   Compiling matchit v0.8.4
+   Compiling zerofrom-derive v0.1.6
+   Compiling yoke-derive v0.8.1
+   Compiling zerovec-derive v0.11.2
+   Compiling displaydoc v0.2.5
+   Compiling tokio-macros v2.6.1
+   Compiling tokio v1.50.0
+   Compiling tracing-attributes v0.1.31
+   Compiling serde_derive v1.0.228
+   Compiling zerofrom v0.1.6
+   Compiling thiserror-impl v2.0.18
+   Compiling regex-automata v0.4.14
+   Compiling urlencoding v2.1.3
+   Compiling yoke v0.8.1
+   Compiling zerovec v0.11.5
+   Compiling zerotrie v0.2.3
+   Compiling ppv-lite86 v0.2.21
+   Compiling tracing v0.1.44
+   Compiling rand_chacha v0.9.0
+   Compiling rand v0.9.2
+   Compiling axum-core v0.5.6
+   Compiling tinystr v0.8.2
+   Compiling potential_utf v0.1.4
+   Compiling regex v1.12.3
+   Compiling icu_collections v2.1.1
+   Compiling icu_locale_core v2.1.1
+   Compiling icu_provider v2.1.1
+   Compiling icu_normalizer v2.1.1
+   Compiling icu_properties v2.1.2
+   Compiling serde_urlencoded v0.7.1
+   Compiling idna_adapter v1.2.1
+   Compiling tokio-util v0.7.18
+   Compiling tower v0.5.3
+   Compiling tokio-native-tls v0.3.1
+   Compiling idna v1.1.0
+   Compiling url v2.5.8
+   Compiling h2 v0.4.13
+   Compiling tower-http v0.6.8
+   Compiling aegis-protocol v0.1.0 (/Users/pranavgk/Documents/temp/adver/.workers/w3/crates/protocol)
+   Compiling aegis-knowledge-graph v0.1.0 (/Users/pranavgk/Documents/temp/adver/.workers/w3/crates/knowledge-graph)
+   Compiling hyper v1.8.1
+   Compiling hyper-util v0.1.20
+   Compiling hyper-tls v0.6.0
+   Compiling axum v0.8.8
+   Compiling reqwest v0.12.28
+   Compiling aegis-fuzzing v0.1.0 (/Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing)
+warning: unused import: `BehavioralSignature`
+ --> crates/fuzzing/src/coverage_tracker_test.rs:4:25
+  |
+4 |     duration_to_bucket, BehavioralSignature, CoverageResult, CoverageTracker,
+  |                         ^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `aegis-fuzzing` (lib test) generated 1 warning (run `cargo fix --lib -p aegis-fuzzing --tests` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.82s
+     Running unittests src/lib.rs (target/debug/deps/aegis_fuzzing-59320d7aa921baee)
+
+running 33 tests
+test coverage_tracker_test::default_trait ... ok
+test coverage_tracker_test::content_length_small_bucket ... ok
+test coverage_tracker_test::error_class_rate_limit ... ok
+test coverage_tracker_test::coverage_count_increments ... ok
+test coverage_tracker_test::error_class_none_for_clean_response ... ok
+test coverage_tracker_test::eight_distinct_code_paths ... ok
+test coverage_tracker_test::content_length_empty_bucket ... ok
+test coverage_tracker_test::different_header_sets_are_distinct ... ok
+test coverage_tracker_test::different_html_structures_are_distinct ... ok
+test coverage_tracker_test::empty_body_produces_consistent_hash ... ok
+test coverage_tracker_test::different_json_structures_are_distinct ... ok
+test coverage_tracker_test::error_class_sql ... ok
+test coverage_tracker_test::error_class_stack_trace ... ok
+test coverage_tracker_test::history_tracks_discoveries ... ok
+test coverage_tracker_test::html_body_structure ... ok
+test coverage_tracker_test::is_novel_check ... ok
+test coverage_tracker_test::json_array_structure ... ok
+test coverage_tracker_test::json_body_structure ... ok
+test coverage_tracker_test::novel_then_known ... ok
+test coverage_tracker_test::nested_json_captures_key_tree ... ok
+test coverage_tracker_test::plain_text_body_structure ... ok
+test coverage_tracker_test::priority_boost_known_is_zero ... ok
+test coverage_tracker_test::priority_boost_novel_is_positive ... ok
+test coverage_tracker_test::same_headers_different_values_produce_same_hash ... ok
+test coverage_tracker_test::status_bucket_2xx ... ok
+test coverage_tracker_test::status_bucket_4xx ... ok
+test coverage_tracker_test::status_bucket_5xx ... ok
+test coverage_tracker_test::timing_bucket_boundary_10ms ... ok
+test coverage_tracker_test::timing_bucket_over_1s ... ok
+test coverage_tracker_test::timing_bucket_under_100ms ... ok
+test coverage_tracker_test::timing_bucket_under_10ms ... ok
+test coverage_tracker_test::timing_bucket_under_1s ... ok
+test coverage_tracker_test::timing_bucket_under_500ms ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 849 filtered out; finished in 0.00s
+
+     Running tests/integration.rs (target/debug/deps/integration-dfaec2c293051ab1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.00s
+
+   Doc-tests aegis_fuzzing
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[0m
+All 33 tests pass. One unused import warning to fix. Let me fix that and commit:
+[0m← [0mEdit crates/fuzzing/src/coverage_tracker_test.rs
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/coverage_tracker_test.rs
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/coverage_tracker_test.rs
++++ /Users/pranavgk/Documents/temp/adver/.workers/w3/crates/fuzzing/src/coverage_tracker_test.rs
+@@ -1,9 +1,7 @@
+ use std::time::Duration;
+ 
+-use crate::coverage_tracker::{
+-    duration_to_bucket, BehavioralSignature, CoverageResult, CoverageTracker,
+-};
++use crate::coverage_tracker::{duration_to_bucket, CoverageResult, CoverageTracker};
+ use crate::executor::FuzzResponse;
+ 
+ fn make_response(
+     status_code: u16,
+
+[0m
+[0m$ [0mcargo test -p aegis-fuzzing -- coverage_tracker 2>&1 | tail -20
+test coverage_tracker_test::timing_bucket_boundary_10ms ... ok
+test coverage_tracker_test::timing_bucket_over_1s ... ok
+test coverage_tracker_test::timing_bucket_under_10ms ... ok
+test coverage_tracker_test::timing_bucket_under_1s ... ok
+test coverage_tracker_test::timing_bucket_under_500ms ... ok
+
+test result: ok. 33 passed; 0 failed; 0 ignored; 0 measured; 849 filtered out; finished in 0.01s
+
+     Running tests/integration.rs (target/debug/deps/integration-dfaec2c293051ab1)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.00s
+
+   Doc-tests aegis_fuzzing
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+[0m
+33 tests pass, no warnings. Commit:
