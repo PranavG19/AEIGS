@@ -8,6 +8,7 @@ pub mod api_version_audit;
 pub mod attest;
 pub mod attribution_reporting_audit;
 pub mod audio_worklet_audit;
+pub mod auth_breaker;
 pub mod auth_session;
 pub mod background_fetch_audit;
 pub mod background_sync_audit;
