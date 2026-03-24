@@ -165,9 +165,11 @@ fn boundary_values_float_includes_special() {
 fn boundary_values_email_includes_attacks() {
     let values = boundary_values(SlotType::Email);
     assert!(values.iter().any(|v| v.contains("script")));
-    assert!(values
-        .iter()
-        .any(|v| v.contains("\\r\\n") || v.contains("\r\n")));
+    assert!(
+        values
+            .iter()
+            .any(|v| v.contains("\\r\\n") || v.contains("\r\n"))
+    );
 }
 
 #[test]
@@ -234,9 +236,11 @@ fn type_confusion_integer() {
     assert!(confused.len() >= 5);
     assert!(confused.iter().any(|(_, v)| v == "true"));
     assert!(confused.iter().any(|(_, v)| v == "null"));
-    assert!(confused
-        .iter()
-        .any(|(_, v)| v.starts_with('[') || v.starts_with('{')));
+    assert!(
+        confused
+            .iter()
+            .any(|(_, v)| v.starts_with('[') || v.starts_with('{'))
+    );
 }
 
 #[test]
@@ -265,9 +269,11 @@ fn constraint_violations_max_length() {
         ..Default::default()
     };
     let violations = constraint_violations(SlotType::String, &constraint);
-    assert!(violations
-        .iter()
-        .any(|(name, _)| name.contains("max_length")));
+    assert!(
+        violations
+            .iter()
+            .any(|(name, _)| name.contains("max_length"))
+    );
     let over = violations
         .iter()
         .find(|(n, _)| n.contains("max_length"))
@@ -282,9 +288,11 @@ fn constraint_violations_min_length() {
         ..Default::default()
     };
     let violations = constraint_violations(SlotType::String, &constraint);
-    assert!(violations
-        .iter()
-        .any(|(name, _)| name.contains("min_length")));
+    assert!(
+        violations
+            .iter()
+            .any(|(name, _)| name.contains("min_length"))
+    );
     let under = violations
         .iter()
         .find(|(n, _)| n.contains("min_length"))
@@ -299,9 +307,11 @@ fn constraint_violations_max_value() {
         ..Default::default()
     };
     let violations = constraint_violations(SlotType::Integer, &constraint);
-    assert!(violations
-        .iter()
-        .any(|(name, _)| name.contains("max_value")));
+    assert!(
+        violations
+            .iter()
+            .any(|(name, _)| name.contains("max_value"))
+    );
 }
 
 #[test]
@@ -322,9 +332,11 @@ fn constraint_violations_required() {
         ..Default::default()
     };
     let violations = constraint_violations(SlotType::String, &constraint);
-    assert!(violations
-        .iter()
-        .any(|(name, _)| name.contains("missing_required")));
+    assert!(
+        violations
+            .iter()
+            .any(|(name, _)| name.contains("missing_required"))
+    );
 }
 
 #[test]
@@ -334,9 +346,11 @@ fn constraint_violations_non_nullable() {
         ..Default::default()
     };
     let violations = constraint_violations(SlotType::String, &constraint);
-    assert!(violations
-        .iter()
-        .any(|(name, _)| name.contains("null_non_nullable")));
+    assert!(
+        violations
+            .iter()
+            .any(|(name, _)| name.contains("null_non_nullable"))
+    );
 }
 
 #[test]
@@ -375,9 +389,11 @@ fn format_string_payloads_non_empty() {
     let payloads = format_string_payloads();
     assert!(payloads.len() >= 10);
     assert!(payloads.iter().any(|(_, v)| v.contains("%s")));
-    assert!(payloads
-        .iter()
-        .any(|(_, v)| v.contains("${") || v.contains("#{") || v.contains("{{")));
+    assert!(
+        payloads
+            .iter()
+            .any(|(_, v)| v.contains("${") || v.contains("#{") || v.contains("{{"))
+    );
 }
 
 #[test]
@@ -392,12 +408,16 @@ fn extract_grammar_single_endpoint() {
     let endpoint_rule = rules.iter().find(|r| r.name == "endpoint_0").unwrap();
     assert!(!endpoint_rule.expansions.is_empty());
     let symbols = &endpoint_rule.expansions[0].symbols;
-    assert!(symbols
-        .iter()
-        .any(|s| matches!(s, Symbol::Terminal(t) if t == "GET")));
-    assert!(symbols
-        .iter()
-        .any(|s| matches!(s, Symbol::TypedSlot(SlotType::Integer))));
+    assert!(
+        symbols
+            .iter()
+            .any(|s| matches!(s, Symbol::Terminal(t) if t == "GET"))
+    );
+    assert!(
+        symbols
+            .iter()
+            .any(|s| matches!(s, Symbol::TypedSlot(SlotType::Integer)))
+    );
 }
 
 #[test]
@@ -424,15 +444,21 @@ fn extract_grammar_query_params() {
     let rules = extract_grammar(&[endpoint]);
     let ep_rule = rules.iter().find(|r| r.name == "endpoint_0").unwrap();
     let symbols = &ep_rule.expansions[0].symbols;
-    assert!(symbols
-        .iter()
-        .any(|s| matches!(s, Symbol::Terminal(t) if t == "?")));
-    assert!(symbols
-        .iter()
-        .any(|s| matches!(s, Symbol::Terminal(t) if t == "q=")));
-    assert!(symbols
-        .iter()
-        .any(|s| matches!(s, Symbol::Terminal(t) if t == "page=")));
+    assert!(
+        symbols
+            .iter()
+            .any(|s| matches!(s, Symbol::Terminal(t) if t == "?"))
+    );
+    assert!(
+        symbols
+            .iter()
+            .any(|s| matches!(s, Symbol::Terminal(t) if t == "q="))
+    );
+    assert!(
+        symbols
+            .iter()
+            .any(|s| matches!(s, Symbol::Terminal(t) if t == "page="))
+    );
 }
 
 #[test]

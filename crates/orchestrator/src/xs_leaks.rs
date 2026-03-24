@@ -4,22 +4,22 @@ use std::time::Duration;
 
 use aegis_protocol::finding::VulnerabilityClass;
 
-/// Cross-origin information leakage (XS-Leaks) taxonomy engine.
-///
-/// XS-Leaks exploit browser side channels to extract cross-origin
-/// data that should be protected by the Same-Origin Policy. Unlike
-/// XSS (which requires code execution in the target origin), XS-Leaks
-/// work by observing *observable differences* in browser behavior when
-/// interacting with cross-origin resources.
-///
-/// The attacker's page performs a cross-origin interaction (embed an
-/// iframe, load an image, fetch a resource) and measures a side channel
-/// (timing, frame count, error event, cache state, redirect count).
-/// Differences in the side channel reveal information about the victim's
-/// authenticated state on the target origin.
-///
-/// Taxonomy based on xsleaks.dev + Sudhodanan et al. (CCS 2020) +
-/// Van Goethem et al. (USENIX 2020).
+// Cross-origin information leakage (XS-Leaks) taxonomy engine.
+//
+// XS-Leaks exploit browser side channels to extract cross-origin
+// data that should be protected by the Same-Origin Policy. Unlike
+// XSS (which requires code execution in the target origin), XS-Leaks
+// work by observing *observable differences* in browser behavior when
+// interacting with cross-origin resources.
+//
+// The attacker's page performs a cross-origin interaction (embed an
+// iframe, load an image, fetch a resource) and measures a side channel
+// (timing, frame count, error event, cache state, redirect count).
+// Differences in the side channel reveal information about the victim's
+// authenticated state on the target origin.
+//
+// Taxonomy based on xsleaks.dev + Sudhodanan et al. (CCS 2020) +
+// Van Goethem et al. (USENIX 2020).
 
 /// Categories of XS-Leak techniques grouped by observation channel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -1241,7 +1241,7 @@ pub fn detect_defenses(headers: &HashMap<String, String>) -> Vec<XsLeakDefense> 
         .map(|(k, v)| (k.to_lowercase(), v.to_lowercase()))
         .collect();
 
-    if lower.get("x-frame-options").is_some()
+    if lower.contains_key("x-frame-options")
         || lower
             .get("content-security-policy")
             .is_some_and(|v| v.contains("frame-ancestors"))
@@ -1385,7 +1385,7 @@ pub fn analyze_differential(
             } else {
                 1.0
             };
-            let detected = ratio > 1.5 || ratio < 0.67;
+            let detected = !(0.67..=1.5).contains(&ratio);
             let strength = ((ratio - 1.0).abs() / 2.0).min(1.0);
             let desc = format!(
                 "Auth response {}ms, unauth {}ms. Ratio: {:.2}",

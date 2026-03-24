@@ -1,25 +1,25 @@
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr};
 
-/// DNS rebinding attack automation for SSRF chain escalation.
-///
-/// DNS rebinding exploits the gap between DNS resolution and HTTP
-/// connection. The attack flow:
-///
-/// 1. Attacker controls a DNS name (e.g., `evil.attacker.com`)
-/// 2. First resolution → attacker's public IP (passes SSRF validation)
-/// 3. Application opens connection to the resolved IP
-/// 4. Second resolution (after TTL=0 expiry) → internal IP (127.0.0.1,
-///    169.254.169.254, 10.x.x.x)
-/// 5. Application follows redirect or makes second request → hits internal
-///    service
-///
-/// This module generates:
-/// - DNS rebinding payloads with configurable first/second IPs
-/// - TTL manipulation strategies
-/// - Race condition timing for DNS cache poisoning
-/// - Integration payloads for SSRF chains (cloud metadata, internal APIs)
-/// - Multiple rebinding techniques (A record flip, CNAME chain, DNS pinning bypass)
+// DNS rebinding attack automation for SSRF chain escalation.
+//
+// DNS rebinding exploits the gap between DNS resolution and HTTP
+// connection. The attack flow:
+//
+// 1. Attacker controls a DNS name (e.g., `evil.attacker.com`)
+// 2. First resolution → attacker's public IP (passes SSRF validation)
+// 3. Application opens connection to the resolved IP
+// 4. Second resolution (after TTL=0 expiry) → internal IP (127.0.0.1,
+//    169.254.169.254, 10.x.x.x)
+// 5. Application follows redirect or makes second request → hits internal
+//    service
+//
+// This module generates:
+// - DNS rebinding payloads with configurable first/second IPs
+// - TTL manipulation strategies
+// - Race condition timing for DNS cache poisoning
+// - Integration payloads for SSRF chains (cloud metadata, internal APIs)
+// - Multiple rebinding techniques (A record flip, CNAME chain, DNS pinning bypass)
 
 /// DNS rebinding technique variant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

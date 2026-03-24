@@ -354,17 +354,21 @@ fn deep_analyze_schema() -> ToolSchema {
 fn generate_report_schema() -> ToolSchema {
     ToolSchema {
         name: "generate_report".to_string(),
-        description: "Generate a scan report in the specified format. Use when assessment is complete.".to_string(),
-        parameters: vec![
-            ToolParameter {
-                name: "format".to_string(),
-                param_type: ToolParamType::Enum,
-                description: "Report format".to_string(),
-                required: true,
-                default_value: Some("developer".to_string()),
-                enum_values: vec!["developer".to_string(), "security".to_string(), "executive".to_string()],
-            },
-        ],
+        description:
+            "Generate a scan report in the specified format. Use when assessment is complete."
+                .to_string(),
+        parameters: vec![ToolParameter {
+            name: "format".to_string(),
+            param_type: ToolParamType::Enum,
+            description: "Report format".to_string(),
+            required: true,
+            default_value: Some("developer".to_string()),
+            enum_values: vec![
+                "developer".to_string(),
+                "security".to_string(),
+                "executive".to_string(),
+            ],
+        }],
         returns: "Generated report path and summary statistics".to_string(),
     }
 }
@@ -454,11 +458,7 @@ fn get_string(args: &HashMap<String, serde_json::Value>, key: &str) -> Result<St
         .ok_or_else(|| ToolError::MissingParameter(key.to_string()))
 }
 
-fn get_string_or(
-    args: &HashMap<String, serde_json::Value>,
-    key: &str,
-    default: &str,
-) -> String {
+fn get_string_or(args: &HashMap<String, serde_json::Value>, key: &str, default: &str) -> String {
     args.get(key)
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
@@ -517,7 +517,9 @@ fn parse_discovery_technique(s: &str) -> Result<DiscoveryTechnique, ToolError> {
         "waypoint_archive" => Ok(DiscoveryTechnique::WaypointArchive),
         other => Err(ToolError::InvalidParameterType {
             param: "technique".to_string(),
-            expected: format!("one of: directory_bruteforce, javascript_extraction, etc. Got: {other}"),
+            expected: format!(
+                "one of: directory_bruteforce, javascript_extraction, etc. Got: {other}"
+            ),
         }),
     }
 }
@@ -546,7 +548,9 @@ fn parse_auth_method(s: &str) -> Result<AuthMethod, ToolError> {
         "api_key" => Ok(AuthMethod::ApiKey),
         other => Err(ToolError::InvalidParameterType {
             param: "auth_method".to_string(),
-            expected: format!("one of: basic_auth, bearer_token, cookie, oauth2, api_key. Got: {other}"),
+            expected: format!(
+                "one of: basic_auth, bearer_token, cookie, oauth2, api_key. Got: {other}"
+            ),
         }),
     }
 }
@@ -605,10 +609,7 @@ fn parse_chain_findings(
     args: &HashMap<String, serde_json::Value>,
 ) -> Result<AgentAction, ToolError> {
     let id_strings = get_string_array(args, "finding_ids")?;
-    let finding_ids: Vec<u64> = id_strings
-        .iter()
-        .filter_map(|s| s.parse().ok())
-        .collect();
+    let finding_ids: Vec<u64> = id_strings.iter().filter_map(|s| s.parse().ok()).collect();
     let chain_hypothesis = get_string(args, "chain_hypothesis")?;
 
     Ok(AgentAction::ChainFindings {
@@ -617,9 +618,7 @@ fn parse_chain_findings(
     })
 }
 
-fn parse_authenticate(
-    args: &HashMap<String, serde_json::Value>,
-) -> Result<AgentAction, ToolError> {
+fn parse_authenticate(args: &HashMap<String, serde_json::Value>) -> Result<AgentAction, ToolError> {
     let auth_endpoint = get_string(args, "auth_endpoint")?;
     let method_str = get_string(args, "auth_method")?;
     let auth_method = parse_auth_method(&method_str)?;
@@ -642,9 +641,7 @@ fn parse_evade_defense(
     })
 }
 
-fn parse_deep_analyze(
-    args: &HashMap<String, serde_json::Value>,
-) -> Result<AgentAction, ToolError> {
+fn parse_deep_analyze(args: &HashMap<String, serde_json::Value>) -> Result<AgentAction, ToolError> {
     let endpoint = get_string(args, "endpoint")?;
     let type_str = get_string(args, "analysis_type")?;
     let analysis_type = parse_analysis_type(&type_str)?;
@@ -670,19 +667,23 @@ pub fn format_tools_for_prompt(tools: &[ToolSchema]) -> String {
     let mut output = String::from("<available_tools>\n");
     for tool in tools {
         output.push_str(&format!("\n<tool name=\"{}\">\n", tool.name));
-        output.push_str(&format!("  <description>{}</description>\n", tool.description));
+        output.push_str(&format!(
+            "  <description>{}</description>\n",
+            tool.description
+        ));
         output.push_str("  <parameters>\n");
         for param in &tool.parameters {
-            let required_str = if param.required { "required" } else { "optional" };
+            let required_str = if param.required {
+                "required"
+            } else {
+                "optional"
+            };
             output.push_str(&format!(
                 "    <param name=\"{}\" type=\"{}\" {}>{}</param>\n",
                 param.name, param.param_type, required_str, param.description
             ));
             if !param.enum_values.is_empty() {
-                output.push_str(&format!(
-                    "      values: {}\n",
-                    param.enum_values.join(", ")
-                ));
+                output.push_str(&format!("      values: {}\n", param.enum_values.join(", ")));
             }
         }
         output.push_str("  </parameters>\n");

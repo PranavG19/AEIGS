@@ -405,12 +405,16 @@ fn analysis_summary_bypass_mutations_listed() {
     ];
 
     let summary = generate_analysis_summary(&probes);
-    assert!(summary
-        .bypass_mutations
-        .contains(&"url_encoded".to_string()));
-    assert!(summary
-        .bypass_mutations
-        .contains(&"case_toggled".to_string()));
+    assert!(
+        summary
+            .bypass_mutations
+            .contains(&"url_encoded".to_string())
+    );
+    assert!(
+        summary
+            .bypass_mutations
+            .contains(&"case_toggled".to_string())
+    );
 }
 
 #[test]

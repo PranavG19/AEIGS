@@ -215,15 +215,21 @@ fn content_type_confusion_generates_json_xml_multipart() {
                 .map(|(_, v)| v.clone())
         })
         .collect();
-    assert!(content_types
-        .iter()
-        .any(|ct| ct.contains("application/json")));
-    assert!(content_types
-        .iter()
-        .any(|ct| ct.contains("application/xml")));
-    assert!(content_types
-        .iter()
-        .any(|ct| ct.contains("multipart/form-data")));
+    assert!(
+        content_types
+            .iter()
+            .any(|ct| ct.contains("application/json"))
+    );
+    assert!(
+        content_types
+            .iter()
+            .any(|ct| ct.contains("application/xml"))
+    );
+    assert!(
+        content_types
+            .iter()
+            .any(|ct| ct.contains("multipart/form-data"))
+    );
 }
 
 #[test]
@@ -281,9 +287,11 @@ fn path_normalization_includes_encoded_traversal() {
 fn encoding_ladder_generates_url_encoded() {
     let exchange = sample_exchange();
     let mutations = generate_encoding_ladder(&exchange);
-    assert!(mutations
-        .iter()
-        .any(|m| m.description.contains("url-encoded")));
+    assert!(
+        mutations
+            .iter()
+            .any(|m| m.description.contains("url-encoded"))
+    );
 }
 
 #[test]
@@ -369,9 +377,11 @@ fn diff_with_empty_baseline_body_no_panic() {
 fn header_injection_includes_crlf() {
     let exchange = sample_exchange();
     let mutations = generate_header_injection(&exchange);
-    assert!(mutations
-        .iter()
-        .any(|m| { m.headers.iter().any(|(_, v)| v.contains("\r\n")) }));
+    assert!(
+        mutations
+            .iter()
+            .any(|m| { m.headers.iter().any(|(_, v)| v.contains("\r\n")) })
+    );
 }
 
 #[test]

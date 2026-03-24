@@ -191,7 +191,10 @@ fn parse_basic_response_source_tags() {
     let www = subs.iter().find(|s| s.name == "www.example.com").unwrap();
     assert_eq!(www.source, CtSource::CommonName);
 
-    let staging = subs.iter().find(|s| s.name == "staging.example.com").unwrap();
+    let staging = subs
+        .iter()
+        .find(|s| s.name == "staging.example.com")
+        .unwrap();
     assert_eq!(staging.source, CtSource::SubjectAltName);
 }
 
@@ -245,8 +248,7 @@ fn duplicate_entries_deduplicated() {
 #[test]
 fn count_unique_matches_extract_length() {
     let c = CrtShClient::new("example.com");
-    let entries: Vec<CrtShEntry> =
-        serde_json::from_str(fixture_crtsh_duplicates()).unwrap();
+    let entries: Vec<CrtShEntry> = serde_json::from_str(fixture_crtsh_duplicates()).unwrap();
     let count = c.count_unique(&entries);
     let subs = c.extract_subdomains(&entries);
     assert_eq!(count, subs.len());
@@ -386,7 +388,12 @@ fn dns_result_is_resolved_true_when_addresses() {
 
 #[test]
 fn dns_result_is_resolved_false_when_empty() {
-    let r = build_dns_result("bad.example.com", Vec::new(), Vec::new(), Some("NXDOMAIN".into()));
+    let r = build_dns_result(
+        "bad.example.com",
+        Vec::new(),
+        Vec::new(),
+        Some("NXDOMAIN".into()),
+    );
     assert!(!r.is_resolved());
 }
 
@@ -426,7 +433,10 @@ fn takeover_indicator_negative_resolved() {
         vec!["ok.example.com.herokudns.com".into()],
         None,
     );
-    assert!(!r.has_takeover_indicator(), "resolved hosts are not takeover candidates");
+    assert!(
+        !r.has_takeover_indicator(),
+        "resolved hosts are not takeover candidates"
+    );
 }
 
 #[test]
@@ -437,7 +447,10 @@ fn takeover_indicator_negative_no_dangling() {
         vec!["internal.corp.example.com".into()],
         Some("NXDOMAIN".into()),
     );
-    assert!(!r.has_takeover_indicator(), "non-cloud CNAMEs are not takeover candidates");
+    assert!(
+        !r.has_takeover_indicator(),
+        "non-cloud CNAMEs are not takeover candidates"
+    );
 }
 
 #[test]
@@ -526,7 +539,12 @@ fn group_by_cname_clusters_correctly() {
             vec!["lb.heroku.com".into()],
             None,
         ),
-        build_dns_result("d.example.com", Vec::new(), Vec::new(), Some("NXDOMAIN".into())),
+        build_dns_result(
+            "d.example.com",
+            Vec::new(),
+            Vec::new(),
+            Some("NXDOMAIN".into()),
+        ),
     ];
 
     let groups = BulkDnsResolver::group_by_cname(&results);
@@ -586,8 +604,7 @@ async fn resolve_batch_localhost() {
     assert!(results[0].is_resolved(), "localhost should resolve");
     assert!(
         results[0].addresses.iter().any(|a| {
-            *a == IpAddr::V4(Ipv4Addr::LOCALHOST)
-                || *a == IpAddr::V6(Ipv6Addr::LOCALHOST)
+            *a == IpAddr::V4(Ipv4Addr::LOCALHOST) || *a == IpAddr::V6(Ipv6Addr::LOCALHOST)
         }),
         "should contain 127.0.0.1 or ::1"
     );

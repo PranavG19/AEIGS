@@ -204,12 +204,16 @@ fn extract_json_fields_simple() {
     let fields = extract_json_fields(json);
     assert_eq!(fields.len(), 3);
     assert!(fields.iter().any(|f| f.name == "name"));
-    assert!(fields
-        .iter()
-        .any(|f| f.name == "age" && f.inferred_type == InferredType::Integer));
-    assert!(fields
-        .iter()
-        .any(|f| f.name == "active" && f.inferred_type == InferredType::Boolean));
+    assert!(
+        fields
+            .iter()
+            .any(|f| f.name == "age" && f.inferred_type == InferredType::Integer)
+    );
+    assert!(
+        fields
+            .iter()
+            .any(|f| f.name == "active" && f.inferred_type == InferredType::Boolean)
+    );
 }
 
 #[test]
@@ -306,9 +310,10 @@ fn detect_relationships_parent_child() {
     ];
     let rels = detect_relationships(&endpoints);
     assert!(!rels.is_empty());
-    assert!(rels
-        .iter()
-        .any(|r| r.relationship_type == RelationType::ParentChild));
+    assert!(
+        rels.iter()
+            .any(|r| r.relationship_type == RelationType::ParentChild)
+    );
 }
 
 #[test]
@@ -331,9 +336,10 @@ fn detect_relationships_crud_siblings() {
     };
     let endpoints = vec![make_ep("GET"), make_ep("POST")];
     let rels = detect_relationships(&endpoints);
-    assert!(rels
-        .iter()
-        .any(|r| r.relationship_type == RelationType::SiblingCrud));
+    assert!(
+        rels.iter()
+            .any(|r| r.relationship_type == RelationType::SiblingCrud)
+    );
 }
 
 #[test]
