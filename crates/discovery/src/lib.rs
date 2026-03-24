@@ -3,6 +3,7 @@ mod brute_forcer;
 mod graph_ops;
 mod js_extractor;
 mod param_discoverer;
+mod passive_intel;
 mod sitemap_parser;
 mod tech_fingerprinter;
 mod vhost_discoverer;
@@ -13,6 +14,7 @@ pub use brute_forcer::*;
 pub use graph_ops::*;
 pub use js_extractor::*;
 pub use param_discoverer::*;
+pub use passive_intel::*;
 pub use sitemap_parser::*;
 pub use tech_fingerprinter::*;
 pub use vhost_discoverer::*;
@@ -49,6 +51,10 @@ mod tech_fingerprinter_test;
 #[cfg(test)]
 #[path = "vhost_discoverer_test.rs"]
 mod vhost_discoverer_test;
+
+#[cfg(test)]
+#[path = "passive_intel_test.rs"]
+mod passive_intel_test;
 
 #[cfg(test)]
 #[path = "wordlist_test.rs"]

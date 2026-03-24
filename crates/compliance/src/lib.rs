@@ -1,8 +1,13 @@
+pub mod attack_surface_mapper;
 pub mod class_mapper;
 pub mod compliance_mapper;
 pub mod context_adjuster;
 pub mod cvss_scorer;
 pub mod report_generator;
+
+#[cfg(test)]
+#[path = "attack_surface_mapper_test.rs"]
+mod attack_surface_mapper_test;
 
 #[cfg(test)]
 #[path = "cvss_scorer_test.rs"]
