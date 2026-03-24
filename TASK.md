@@ -1,6 +1,6 @@
 # WORKER TASK — Coverage-Guided Response Diffing
 
-## status: IN PROGRESS
+## status: DONE
 
 ## feature
 AFL-style behavioral coverage tracking for black-box web fuzzing.
