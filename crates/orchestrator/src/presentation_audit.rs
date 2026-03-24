@@ -100,3 +100,132 @@ pub fn presentation_to_operations(
         })
         .collect()
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum PresentationSecurityIssue {
+    PresentationDataExfiltration,
+    PresentationCrossOrigin,
+    PresentationSessionHijack,
+    PresentationWithoutConsent,
+    PresentationScreenCapture,
+    PresentationPersistence,
+    PresentationInBackground,
+    PresentationChannelAbuse,
+    PresentationDeviceEnumeration,
+    PresentationContentInjection,
+}
+
+impl std::fmt::Display for PresentationSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PresentationDataExfiltration => write!(f, "presentation_data_exfiltration"),
+            Self::PresentationCrossOrigin => write!(f, "presentation_cross_origin"),
+            Self::PresentationSessionHijack => write!(f, "presentation_session_hijack"),
+            Self::PresentationWithoutConsent => write!(f, "presentation_without_consent"),
+            Self::PresentationScreenCapture => write!(f, "presentation_screen_capture"),
+            Self::PresentationPersistence => write!(f, "presentation_persistence"),
+            Self::PresentationInBackground => write!(f, "presentation_in_background"),
+            Self::PresentationChannelAbuse => write!(f, "presentation_channel_abuse"),
+            Self::PresentationDeviceEnumeration => write!(f, "presentation_device_enumeration"),
+            Self::PresentationContentInjection => write!(f, "presentation_content_injection"),
+        }
+    }
+}
+
+pub fn analyze_presentation_security(body: &str) -> Vec<PresentationSecurityIssue> {
+    if !body.contains("PresentationRequest") && !body.contains("PresentationConnection") {
+        return Vec::new();
+    }
+
+    let mut issues = Vec::new();
+
+    if (body.contains("fetch(") || body.contains("sendBeacon") || body.contains("XMLHttpRequest"))
+        && (body.contains("connection.send") || body.contains("conn.send"))
+    {
+        issues.push(PresentationSecurityIssue::PresentationDataExfiltration);
+    }
+
+    if body.contains("postMessage") && body.contains("PresentationConnection") {
+        issues.push(PresentationSecurityIssue::PresentationCrossOrigin);
+    }
+
+    if body.contains("connection.id") && body.contains("localStorage") {
+        issues.push(PresentationSecurityIssue::PresentationSessionHijack);
+    }
+
+    if body.contains("PresentationRequest")
+        && (body.contains(".start()") || body.contains(".start("))
+        && !body.contains("user activation")
+        && !body.contains("click")
+        && !body.contains("addEventListener")
+    {
+        issues.push(PresentationSecurityIssue::PresentationWithoutConsent);
+    }
+
+    if body.contains("getDisplayMedia") && body.contains("PresentationRequest") {
+        issues.push(PresentationSecurityIssue::PresentationScreenCapture);
+    }
+
+    if (body.contains("sessionStorage") || body.contains("indexedDB"))
+        && (body.contains("connection.id") || body.contains("presentation.id"))
+    {
+        issues.push(PresentationSecurityIssue::PresentationPersistence);
+    }
+
+    if body.contains("visibilityState")
+        && body.contains("hidden")
+        && body.contains("PresentationConnection")
+    {
+        issues.push(PresentationSecurityIssue::PresentationInBackground);
+    }
+
+    if body.contains("MessageChannel") && body.contains("PresentationConnection") {
+        issues.push(PresentationSecurityIssue::PresentationChannelAbuse);
+    }
+
+    if body.contains("getAvailability") && body.contains("monitor") {
+        issues.push(PresentationSecurityIssue::PresentationDeviceEnumeration);
+    }
+
+    if (body.contains("connection.send") || body.contains("conn.send"))
+        && ((body.contains("send(\"<script") || body.contains("send('<script"))
+            || (body.contains("send(payload") && body.contains("\"<script"))
+            || (body.contains("send(payload") && body.contains("'<script")))
+    {
+        issues.push(PresentationSecurityIssue::PresentationContentInjection);
+    }
+
+    issues
+}
+
+pub fn presentation_security_severity(issue: &PresentationSecurityIssue) -> f64 {
+    match issue {
+        PresentationSecurityIssue::PresentationContentInjection => 9.0,
+        PresentationSecurityIssue::PresentationSessionHijack => 8.5,
+        PresentationSecurityIssue::PresentationDataExfiltration => 8.0,
+        PresentationSecurityIssue::PresentationScreenCapture => 7.5,
+        PresentationSecurityIssue::PresentationCrossOrigin => 7.0,
+        PresentationSecurityIssue::PresentationChannelAbuse => 6.5,
+        PresentationSecurityIssue::PresentationPersistence => 6.0,
+        PresentationSecurityIssue::PresentationInBackground => 5.5,
+        PresentationSecurityIssue::PresentationWithoutConsent => 5.0,
+        PresentationSecurityIssue::PresentationDeviceEnumeration => 3.0,
+    }
+}
+
+pub fn presentation_security_to_operations(
+    issues: &[PresentationSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                presentation_security_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}
