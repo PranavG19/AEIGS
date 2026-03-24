@@ -9,16 +9,24 @@ mod sitemap_parser;
 mod tech_fingerprinter;
 mod vhost_discoverer;
 mod wordlist;
+pub mod api_abuse_detector;
+pub mod error_disclosure;
+pub mod smart_brute_forcer;
+pub mod threat_intel_feed;
 
+pub use api_abuse_detector::*;
 pub use backup_scanner::*;
 pub use brute_forcer::*;
 pub use ct_monitor::*;
+pub use error_disclosure::*;
 pub use graph_ops::*;
 pub use js_extractor::*;
 pub use param_discoverer::*;
 pub use passive_intel::*;
 pub use sitemap_parser::*;
+pub use smart_brute_forcer::*;
 pub use tech_fingerprinter::*;
+pub use threat_intel_feed::*;
 pub use vhost_discoverer::*;
 pub use wordlist::*;
 
@@ -65,3 +73,19 @@ mod wordlist_test;
 #[cfg(test)]
 #[path = "ct_monitor_test.rs"]
 mod ct_monitor_test;
+
+#[cfg(test)]
+#[path = "api_abuse_detector_test.rs"]
+mod api_abuse_detector_test;
+
+#[cfg(test)]
+#[path = "error_disclosure_test.rs"]
+mod error_disclosure_test;
+
+#[cfg(test)]
+#[path = "smart_brute_forcer_test.rs"]
+mod smart_brute_forcer_test;
+
+#[cfg(test)]
+#[path = "threat_intel_feed_test.rs"]
+mod threat_intel_feed_test;
