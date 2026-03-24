@@ -15,3 +15,4 @@ SYSTEM_PROMPT.md
 .test-cache/
 .DS_Store
 ~/
+.workers/
