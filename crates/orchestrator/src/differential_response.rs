@@ -15,7 +15,7 @@ use std::fmt;
 /// 3. Send mutations of the payload → classify each as blocked/passed
 /// 4. Analyze the block/pass pattern → infer what the WAF is matching
 /// 5. Generate targeted bypasses based on inferred rules
-
+///
 /// How a WAF responded to a probe.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum WafDecision {
@@ -70,8 +70,13 @@ impl ResponseFingerprint {
             .map(|(_, v)| v.clone());
 
         let waf_header_names = [
-            "x-waf-", "x-cdn-", "cf-ray", "x-sucuri", "x-akamai",
-            "x-powered-by-plesk", "x-firewall",
+            "x-waf-",
+            "x-cdn-",
+            "cf-ray",
+            "x-sucuri",
+            "x-akamai",
+            "x-powered-by-plesk",
+            "x-firewall",
         ];
         let has_waf_headers = headers.iter().any(|(k, _)| {
             let lower = k.to_lowercase();
@@ -163,7 +168,10 @@ pub fn generate_mutations(payload: &str) -> Vec<(MutationType, String)> {
     vec![
         (MutationType::Original, payload.to_string()),
         (MutationType::UrlEncoded, url_encode(payload)),
-        (MutationType::DoubleUrlEncoded, url_encode(&url_encode(payload))),
+        (
+            MutationType::DoubleUrlEncoded,
+            url_encode(&url_encode(payload)),
+        ),
         (MutationType::UnicodeNormalized, unicode_normalize(payload)),
         (MutationType::HtmlEntityEncoded, html_entity_encode(payload)),
         (MutationType::CaseToggled, toggle_case(payload)),
@@ -174,7 +182,10 @@ pub fn generate_mutations(payload: &str) -> Vec<(MutationType, String)> {
         (MutationType::TabVariant, tab_variant(payload)),
         (MutationType::JsonWrapped, json_wrap(payload)),
         (MutationType::XmlWrapped, xml_wrap(payload)),
-        (MutationType::FragmentAppended, format!("{}#fragment", payload)),
+        (
+            MutationType::FragmentAppended,
+            format!("{}#fragment", payload),
+        ),
     ]
 }
 
@@ -205,9 +216,7 @@ pub fn classify_decision(
         return WafDecision::Allowed;
     }
 
-    if probe.status_code == block_pattern.status_code
-        && probe.status_code != baseline.status_code
-    {
+    if probe.status_code == block_pattern.status_code && probe.status_code != baseline.status_code {
         return WafDecision::Blocked;
     }
 
@@ -464,11 +473,10 @@ pub struct AnalysisSummary {
     pub mutation_results: HashMap<String, WafDecision>,
 }
 
-fn is_case_sensitive(
-    allowed: &[&DifferentialProbe],
-    _blocked: &[&DifferentialProbe],
-) -> bool {
-    allowed.iter().any(|p| p.mutation == MutationType::CaseToggled)
+fn is_case_sensitive(allowed: &[&DifferentialProbe], _blocked: &[&DifferentialProbe]) -> bool {
+    allowed
+        .iter()
+        .any(|p| p.mutation == MutationType::CaseToggled)
 }
 
 fn encoding_bypasses_work(allowed: &[&DifferentialProbe]) -> bool {
@@ -480,7 +488,9 @@ fn encoding_bypasses_work(allowed: &[&DifferentialProbe]) -> bool {
 }
 
 fn comment_insertion_bypasses(allowed: &[&DifferentialProbe]) -> bool {
-    allowed.iter().any(|p| p.mutation == MutationType::CommentInserted)
+    allowed
+        .iter()
+        .any(|p| p.mutation == MutationType::CommentInserted)
 }
 
 fn whitespace_variants_work(allowed: &[&DifferentialProbe]) -> bool {
@@ -492,7 +502,9 @@ fn whitespace_variants_work(allowed: &[&DifferentialProbe]) -> bool {
 }
 
 fn json_wrapping_works(allowed: &[&DifferentialProbe]) -> bool {
-    allowed.iter().any(|p| p.mutation == MutationType::JsonWrapped)
+    allowed
+        .iter()
+        .any(|p| p.mutation == MutationType::JsonWrapped)
 }
 
 fn url_encode(s: &str) -> String {

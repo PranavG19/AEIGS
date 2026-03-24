@@ -28,7 +28,7 @@ use std::fmt;
 ///   tick on single-threaded runtimes (Node.js), enabling TOCTOU
 /// - **ACL bypass probing** — batch queries with varying auth tokens
 ///   to map which fields are gated
-
+///
 /// Supported amplification technique.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AmplificationTechnique {
@@ -389,7 +389,7 @@ impl BatchAmplificationEngine {
         let selection = seed.selection_set.join(" ");
         let args = render_arguments(&seed.arguments);
 
-        let directive_stacks = vec![
+        let directive_stacks = [
             r#"@include(if: true) @skip(if: false)"#,
             r#"@skip(if: false) @include(if: true) @skip(if: false)"#,
             r#"@include(if: true) @include(if: true) @include(if: true)"#,
@@ -865,10 +865,9 @@ fn extract_depth_from_error(msg: &str) -> Option<usize> {
         if let Ok(n) = word
             .trim_matches(|c: char| !c.is_ascii_digit())
             .parse::<usize>()
+            && (1..=100).contains(&n)
         {
-            if (1..=100).contains(&n) {
-                return Some(n);
-            }
+            return Some(n);
         }
     }
     None

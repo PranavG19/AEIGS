@@ -20,7 +20,7 @@ use aegis_protocol::finding::VulnerabilityClass;
 ///
 /// Taxonomy based on xsleaks.dev + Sudhodanan et al. (CCS 2020) +
 /// Van Goethem et al. (USENIX 2020).
-
+///
 /// Categories of XS-Leak techniques grouped by observation channel.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum XsLeakCategory {
@@ -1241,7 +1241,7 @@ pub fn detect_defenses(headers: &HashMap<String, String>) -> Vec<XsLeakDefense> 
         .map(|(k, v)| (k.to_lowercase(), v.to_lowercase()))
         .collect();
 
-    if lower.get("x-frame-options").is_some()
+    if lower.contains_key("x-frame-options")
         || lower
             .get("content-security-policy")
             .is_some_and(|v| v.contains("frame-ancestors"))
@@ -1385,7 +1385,7 @@ pub fn analyze_differential(
             } else {
                 1.0
             };
-            let detected = ratio > 1.5 || ratio < 0.67;
+            let detected = !(0.67..=1.5).contains(&ratio);
             let strength = ((ratio - 1.0).abs() / 2.0).min(1.0);
             let desc = format!(
                 "Auth response {}ms, unauth {}ms. Ratio: {:.2}",

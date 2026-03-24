@@ -542,7 +542,7 @@ pub fn apply_encoding_chain(input: &str, steps: &[EncodingStep]) -> String {
             EncodingStep::HexEncode => result.bytes().map(|b| format!("\\x{:02x}", b)).collect(),
             EncodingStep::NullByteInject => format!("{}\x00", result),
             EncodingStep::WhitespaceSubstitution => result.replace(' ', "\t"),
-            EncodingStep::UnicodeNormalization => result.replace('a', "\u{0061}"),
+            EncodingStep::UnicodeNormalization => result.replace('a', "\u{FF41}"),
         };
     }
     result

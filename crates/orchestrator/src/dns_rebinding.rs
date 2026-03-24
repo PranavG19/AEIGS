@@ -20,7 +20,7 @@ use std::net::{IpAddr, Ipv4Addr};
 /// - Race condition timing for DNS cache poisoning
 /// - Integration payloads for SSRF chains (cloud metadata, internal APIs)
 /// - Multiple rebinding techniques (A record flip, CNAME chain, DNS pinning bypass)
-
+///
 /// DNS rebinding technique variant.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RebindingTechnique {

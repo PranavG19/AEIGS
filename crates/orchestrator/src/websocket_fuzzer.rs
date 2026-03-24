@@ -17,7 +17,7 @@ use std::fmt;
 /// The key insight: most WebSocket APIs don't validate state transitions
 /// on the server. They assume the client will follow the expected flow.
 /// We don't follow the expected flow.
-
+///
 /// A unique state in the WebSocket protocol state machine.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WsState {
@@ -204,10 +204,10 @@ impl WsStateMachine {
             visited.insert(current.clone());
 
             let state = self.states.iter().find(|s| s.id == current);
-            if let Some(s) = state {
-                if s.is_authenticated {
-                    continue;
-                }
+            if let Some(s) = state
+                && s.is_authenticated
+            {
+                continue;
             }
 
             for transition in self.transitions.iter().filter(|t| t.from_state == current) {
