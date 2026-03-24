@@ -7,6 +7,7 @@ mod timing_controller;
 mod tls_clienthello;
 mod tls_config;
 mod transport;
+pub mod waf_grammar;
 
 pub use encoding_transformer::*;
 pub use header_transformer::*;
@@ -17,3 +18,4 @@ pub use timing_controller::*;
 pub use tls_clienthello::*;
 pub use tls_config::*;
 pub use transport::*;
+pub use waf_grammar::*;
