@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::coverage_tracker::{duration_to_bucket, CoverageResult, CoverageTracker};
+use crate::coverage_tracker::{CoverageResult, CoverageTracker, duration_to_bucket};
 use crate::executor::FuzzResponse;
 
 fn make_response(
