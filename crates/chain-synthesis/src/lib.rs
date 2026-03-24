@@ -1,6 +1,7 @@
 pub mod attack_graph;
 pub mod business_logic_tester;
 pub mod graph_export;
+pub mod graph_visualizer;
 pub mod network_pivot;
 pub mod path_analysis;
 pub mod probabilistic_chains;
@@ -10,6 +11,7 @@ pub mod ssrf_cloud_pivot;
 pub use attack_graph::*;
 pub use business_logic_tester::*;
 pub use graph_export::*;
+pub use graph_visualizer::*;
 pub use network_pivot::*;
 pub use path_analysis::*;
 pub use probabilistic_chains::*;
@@ -47,3 +49,7 @@ mod redirect_chain_builder_test;
 #[cfg(test)]
 #[path = "ssrf_cloud_pivot_test.rs"]
 mod ssrf_cloud_pivot_test;
+
+#[cfg(test)]
+#[path = "graph_visualizer_test.rs"]
+mod graph_visualizer_test;

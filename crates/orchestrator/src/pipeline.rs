@@ -712,7 +712,7 @@ fn discover_routes_from_source(source_dir: &Path) -> Vec<IntrospectedEndpoint> {
     endpoints
 }
 
-fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTransport {
+pub(crate) fn build_fuzz_transport(ctx: &ScanContext) -> aegis_evasion_engine::EvasionTransport {
     let persona_id = crate::scan_config::resolve_persona_id(&ctx.config.stealth.persona)
         .unwrap_or(aegis_evasion_engine::PersonaId::ChromeDesktop);
     let catalog_path = ctx.config.stealth.persona_catalog.as_deref();

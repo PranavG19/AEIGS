@@ -472,8 +472,10 @@ fn analyze_xfo(value: Option<&String>) -> HeaderAnalysis {
 
 fn analyze_referrer_policy(value: Option<&String>) -> HeaderAnalysis {
     let Some(raw) = value else {
-        return missing_header(HeaderType::ReferrerPolicy,
-            "Add Referrer-Policy: strict-origin-when-cross-origin (or no-referrer for maximum privacy)");
+        return missing_header(
+            HeaderType::ReferrerPolicy,
+            "Add Referrer-Policy: strict-origin-when-cross-origin (or no-referrer for maximum privacy)",
+        );
     };
 
     let lower = raw.trim().to_lowercase();
@@ -711,8 +713,10 @@ fn analyze_coop(value: Option<&String>) -> HeaderAnalysis {
 
 fn analyze_corp(value: Option<&String>) -> HeaderAnalysis {
     let Some(raw) = value else {
-        return missing_header(HeaderType::CrossOriginResourcePolicy,
-            "Add Cross-Origin-Resource-Policy: same-origin (or same-site if cross-subdomain access needed)");
+        return missing_header(
+            HeaderType::CrossOriginResourcePolicy,
+            "Add Cross-Origin-Resource-Policy: same-origin (or same-site if cross-subdomain access needed)",
+        );
     };
 
     let lower = raw.trim().to_lowercase();
@@ -759,8 +763,10 @@ fn analyze_corp(value: Option<&String>) -> HeaderAnalysis {
 
 fn analyze_cache_control(value: Option<&String>) -> HeaderAnalysis {
     let Some(raw) = value else {
-        return missing_header(HeaderType::CacheControl,
-            "Add Cache-Control: no-store for pages with sensitive content; no-cache, private for authenticated pages");
+        return missing_header(
+            HeaderType::CacheControl,
+            "Add Cache-Control: no-store for pages with sensitive content; no-cache, private for authenticated pages",
+        );
     };
 
     let lower = raw.to_lowercase();

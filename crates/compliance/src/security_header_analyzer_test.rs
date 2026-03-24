@@ -147,10 +147,11 @@ fn hsts_short_max_age_penalized() {
         .find(|a| a.header_type == HeaderType::StrictTransportSecurity)
         .unwrap();
     assert!(hsts.grade >= Grade::D);
-    assert!(hsts
-        .findings
-        .iter()
-        .any(|f| f.contains("dangerously short")));
+    assert!(
+        hsts.findings
+            .iter()
+            .any(|f| f.contains("dangerously short"))
+    );
 }
 
 #[test]

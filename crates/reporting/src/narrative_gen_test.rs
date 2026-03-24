@@ -1,8 +1,8 @@
 use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::narrative_gen::{
-    generate_narrative_report, AttackChainNode, AttackChainPath, BaselineFindings, FindingEvidence,
-    NarrativeInput, NarrativeReport, ReportSection, ReportTemplate,
+    AttackChainNode, AttackChainPath, BaselineFindings, FindingEvidence, NarrativeInput,
+    NarrativeReport, ReportSection, ReportTemplate, generate_narrative_report,
 };
 use crate::sarif_emitter::{SarifDefenseContext, SarifFinding, SarifLevel};
 
@@ -568,19 +568,23 @@ fn custom_header_and_footer() {
     template.custom_footer = Some("End of Report".to_string());
     let report = generate_narrative_report(&input, &template);
     assert_eq!(report.sections.first().unwrap().title, "Header");
-    assert!(report
-        .sections
-        .first()
-        .unwrap()
-        .body
-        .contains("CONFIDENTIAL"));
+    assert!(
+        report
+            .sections
+            .first()
+            .unwrap()
+            .body
+            .contains("CONFIDENTIAL")
+    );
     assert_eq!(report.sections.last().unwrap().title, "Footer");
-    assert!(report
-        .sections
-        .last()
-        .unwrap()
-        .body
-        .contains("End of Report"));
+    assert!(
+        report
+            .sections
+            .last()
+            .unwrap()
+            .body
+            .contains("End of Report")
+    );
 }
 
 #[test]

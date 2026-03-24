@@ -1,9 +1,16 @@
+pub mod auth_automator;
 mod crawler;
 mod error;
+pub mod form_autofill;
+pub mod headless_controller;
 pub mod injection_planter;
+pub mod js_executor;
 pub mod js_taint_analyzer;
+pub mod multi_bot_coordinator;
 mod page_fetcher;
+pub mod spa_crawler;
 mod types;
+pub mod visual_regression;
 pub mod wasm_analyzer;
 pub mod websocket_hijack;
 
@@ -15,12 +22,19 @@ mod dom_verifier;
 #[cfg(feature = "katana")]
 pub mod katana_wrapper;
 
+pub use auth_automator::*;
 pub use crawler::Crawler;
 pub use error::*;
+pub use form_autofill::*;
+pub use headless_controller::*;
 pub use injection_planter::*;
+pub use js_executor::*;
 pub use js_taint_analyzer::*;
+pub use multi_bot_coordinator::*;
 pub use page_fetcher::*;
+pub use spa_crawler::*;
 pub use types::*;
+pub use visual_regression::*;
 pub use wasm_analyzer::*;
 pub use websocket_hijack::*;
 

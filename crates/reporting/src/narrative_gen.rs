@@ -3,7 +3,7 @@ use std::fmt::Write;
 
 use aegis_protocol::finding::VulnerabilityClass;
 
-use crate::sarif_emitter::{cwe_for, remediation_for, SarifFinding};
+use crate::sarif_emitter::{SarifFinding, cwe_for, remediation_for};
 
 /// Which sections to include in the generated narrative report.
 #[derive(Debug, Clone)]

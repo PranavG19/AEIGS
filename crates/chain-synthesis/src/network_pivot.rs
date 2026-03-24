@@ -1,7 +1,7 @@
+use petgraph::Direction;
 use petgraph::algo::dijkstra;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{Bfs, EdgeRef};
-use petgraph::Direction;
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 
 /// Unique host identifier within the network topology.

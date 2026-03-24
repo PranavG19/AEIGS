@@ -142,9 +142,11 @@ fn credential_chain_builds_assume_role_requests() {
     let result = resolve_credential_chain(creds, arns, "123456789012");
     assert_eq!(result.assume_role_requests.len(), 1);
     assert!(result.assume_role_requests[0].url.contains("AssumeRole"));
-    assert!(result.assume_role_requests[0]
-        .headers
-        .contains_key("X-Amz-Security-Token"));
+    assert!(
+        result.assume_role_requests[0]
+            .headers
+            .contains_key("X-Amz-Security-Token")
+    );
 }
 
 #[test]
@@ -152,9 +154,11 @@ fn credential_chain_cross_account_flagged_in_description() {
     let creds = make_test_creds();
     let arns = &["arn:aws:iam::999999999999:role/Pivot"];
     let result = resolve_credential_chain(creds, arns, "123456789012");
-    assert!(result.assume_role_requests[0]
-        .description
-        .contains("CROSS-ACCOUNT"));
+    assert!(
+        result.assume_role_requests[0]
+            .description
+            .contains("CROSS-ACCOUNT")
+    );
 }
 
 // =========================================================================
@@ -216,9 +220,11 @@ fn all_cloud_metadata_covers_three_providers() {
 #[test]
 fn aws_metadata_paths_contain_iam_credentials() {
     let paths = cloud_metadata_paths_for(CloudProvider::Aws);
-    assert!(paths
-        .iter()
-        .any(|p| p.path.contains("iam/security-credentials")));
+    assert!(
+        paths
+            .iter()
+            .any(|p| p.path.contains("iam/security-credentials"))
+    );
 }
 
 #[test]

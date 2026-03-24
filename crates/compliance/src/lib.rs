@@ -1,6 +1,7 @@
 pub mod attack_surface_mapper;
 pub mod class_mapper;
 pub mod compliance_mapper;
+pub mod compliance_report;
 pub mod context_adjuster;
 pub mod cvss_scorer;
 pub mod report_generator;
@@ -9,6 +10,7 @@ pub mod security_header_analyzer;
 pub use attack_surface_mapper::*;
 pub use class_mapper::*;
 pub use compliance_mapper::*;
+pub use compliance_report::*;
 pub use context_adjuster::*;
 pub use cvss_scorer::*;
 pub use report_generator::*;
@@ -41,3 +43,7 @@ mod report_generator_test;
 #[cfg(test)]
 #[path = "security_header_analyzer_test.rs"]
 mod security_header_analyzer_test;
+
+#[cfg(test)]
+#[path = "compliance_report_test.rs"]
+mod compliance_report_test;

@@ -198,16 +198,46 @@ const AZURE_METADATA_HEADER: (&str, &str) = ("Metadata", "true");
 const AZURE_API_VERSION: &str = "2021-02-01";
 
 const AZURE_METADATA_PATHS: &[(&str, &str)] = &[
-    ("/metadata/instance?api-version={VERSION}", "Full instance metadata"),
-    ("/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://management.azure.com/", "Azure managed identity token"),
-    ("/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://vault.azure.net", "Key Vault access token"),
-    ("/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://storage.azure.com/", "Storage access token"),
-    ("/metadata/instance/compute/subscriptionId?api-version={VERSION}&format=text", "Subscription ID"),
-    ("/metadata/instance/compute/resourceGroupName?api-version={VERSION}&format=text", "Resource group name"),
-    ("/metadata/instance/compute/name?api-version={VERSION}&format=text", "VM name"),
-    ("/metadata/instance/compute/location?api-version={VERSION}&format=text", "VM region"),
-    ("/metadata/instance/network?api-version={VERSION}", "Network configuration"),
-    ("/metadata/instance/compute/userData?api-version={VERSION}&format=text", "User data (may contain secrets)"),
+    (
+        "/metadata/instance?api-version={VERSION}",
+        "Full instance metadata",
+    ),
+    (
+        "/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://management.azure.com/",
+        "Azure managed identity token",
+    ),
+    (
+        "/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://vault.azure.net",
+        "Key Vault access token",
+    ),
+    (
+        "/metadata/identity/oauth2/token?api-version={VERSION}&resource=https://storage.azure.com/",
+        "Storage access token",
+    ),
+    (
+        "/metadata/instance/compute/subscriptionId?api-version={VERSION}&format=text",
+        "Subscription ID",
+    ),
+    (
+        "/metadata/instance/compute/resourceGroupName?api-version={VERSION}&format=text",
+        "Resource group name",
+    ),
+    (
+        "/metadata/instance/compute/name?api-version={VERSION}&format=text",
+        "VM name",
+    ),
+    (
+        "/metadata/instance/compute/location?api-version={VERSION}&format=text",
+        "VM region",
+    ),
+    (
+        "/metadata/instance/network?api-version={VERSION}",
+        "Network configuration",
+    ),
+    (
+        "/metadata/instance/compute/userData?api-version={VERSION}&format=text",
+        "User data (may contain secrets)",
+    ),
 ];
 
 // ---------------------------------------------------------------------------

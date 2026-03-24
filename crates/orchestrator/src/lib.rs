@@ -33,6 +33,7 @@ pub mod clipboard_audit;
 pub mod comment_leak;
 pub mod compression_stream_audit;
 pub mod compute_pressure_audit;
+pub mod concurrent_scanner;
 pub mod contact_picker_audit;
 pub mod content_disposition_audit;
 pub mod content_index_audit;
@@ -87,7 +88,9 @@ pub mod fetch_credential_audit;
 pub mod file_access_audit;
 pub mod file_handling_audit;
 pub mod file_system_access_audit;
+pub mod finding_correlator;
 pub mod form_audit;
+pub mod full_scan;
 pub mod fullscreen_audit;
 pub mod gamepad_audit;
 pub mod geolocation_audit;
@@ -131,6 +134,7 @@ pub mod meta_tag_audit;
 pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
+pub mod module_selector;
 pub mod mutation_observer_audit;
 pub mod navigation_api_audit;
 pub mod navigator_login_audit;
@@ -187,8 +191,11 @@ pub mod sanitizer_api_audit;
 pub mod scan_config;
 pub mod scan_context_serializer;
 pub mod scan_history;
+pub mod scan_profiles;
+pub mod scan_persistence;
 pub mod scan_regression;
 pub mod scan_strategy;
+pub mod scope_manager;
 pub mod scheduler_api_audit;
 pub mod screen_capture_audit;
 pub mod screen_orientation_audit;
@@ -382,6 +389,7 @@ pub use meta_tag_audit::*;
 pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
+pub use module_selector::*;
 pub use mutation_observer_audit::*;
 pub use navigation_api_audit::*;
 pub use navigator_login_audit::*;
@@ -433,8 +441,10 @@ pub use s3_scanner::*;
 pub use sanitizer_api_audit::*;
 pub use scan_config::*;
 pub use scan_history::*;
+pub use scan_persistence::*;
 pub use scan_regression::*;
 pub use scan_strategy::*;
+pub use scope_manager::*;
 pub use scheduler_api_audit::*;
 pub use screen_capture_audit::*;
 pub use screen_orientation_audit::*;
@@ -511,6 +521,10 @@ pub use xfo_audit::*;
 mod scan_history_test;
 
 #[cfg(test)]
+#[path = "scan_persistence_test.rs"]
+mod scan_persistence_test;
+
+#[cfg(test)]
 #[path = "scan_config_test.rs"]
 mod scan_config_test;
 
@@ -581,6 +595,10 @@ mod fetch_credential_audit_test;
 #[cfg(test)]
 #[path = "file_access_audit_test.rs"]
 mod file_access_audit_test;
+
+#[cfg(test)]
+#[path = "finding_correlator_test.rs"]
+mod finding_correlator_test;
 
 #[cfg(test)]
 #[path = "form_audit_test.rs"]
@@ -1043,6 +1061,10 @@ mod fenced_frame_audit_test;
 mod fullscreen_audit_test;
 
 #[cfg(test)]
+#[path = "full_scan_test.rs"]
+mod full_scan_test;
+
+#[cfg(test)]
 #[path = "file_handling_audit_test.rs"]
 mod file_handling_audit_test;
 
@@ -1461,3 +1483,15 @@ mod token_entropy_scanner_test;
 #[cfg(test)]
 #[path = "graphql_depth_scanner_test.rs"]
 mod graphql_depth_scanner_test;
+
+#[cfg(test)]
+#[path = "scan_profiles_test.rs"]
+mod scan_profiles_test;
+
+#[cfg(test)]
+#[path = "module_selector_test.rs"]
+mod module_selector_test;
+
+#[cfg(test)]
+#[path = "scope_manager_test.rs"]
+mod scope_manager_test;

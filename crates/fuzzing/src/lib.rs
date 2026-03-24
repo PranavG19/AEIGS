@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod bot_detection_probe;
 pub mod cloud_detector;
 pub mod command_injection_gen;
@@ -19,6 +21,7 @@ pub mod mutator;
 pub mod nosql_exploitation;
 pub mod oracle;
 pub mod param_pollution;
+pub mod payload_scorer;
 pub mod payload_selector;
 pub mod prototype_pollution_tester;
 pub mod race_tester;
@@ -53,6 +56,7 @@ pub use mutator::*;
 pub use nosql_exploitation::*;
 pub use oracle::*;
 pub use param_pollution::*;
+pub use payload_scorer::*;
 pub use payload_selector::*;
 pub use prototype_pollution_tester::*;
 pub use race_tester::*;
@@ -189,3 +193,7 @@ mod waf_fingerprinter_test;
 #[cfg(test)]
 #[path = "xxe_engine_test.rs"]
 mod xxe_engine_test;
+
+#[cfg(test)]
+#[path = "payload_scorer_test.rs"]
+mod payload_scorer_test;

@@ -228,9 +228,11 @@ fn oauth_chains_generated_with_callback_endpoint() {
 
     let chains = builder.build_oauth_chains("client-123", "openid");
     assert!(!chains.is_empty());
-    assert!(chains
-        .iter()
-        .all(|c| c.chain_type == RedirectChainType::OAuthTokenTheft));
+    assert!(
+        chains
+            .iter()
+            .all(|c| c.chain_type == RedirectChainType::OAuthTokenTheft)
+    );
     assert!(chains.iter().all(|c| c.severity >= 9.0));
 }
 
@@ -270,9 +272,11 @@ fn csp_chains_generated_across_domains() {
     let chains = builder.build_csp_chains();
 
     assert!(!chains.is_empty());
-    assert!(chains
-        .iter()
-        .all(|c| c.chain_type == RedirectChainType::CspBypass));
+    assert!(
+        chains
+            .iter()
+            .all(|c| c.chain_type == RedirectChainType::CspBypass)
+    );
 
     for chain in &chains {
         let domains: std::collections::HashSet<&str> =
@@ -301,9 +305,11 @@ fn ssrf_chains_target_internal_services() {
     ];
     let chains = builder.build_ssrf_chains(&internal);
     assert!(!chains.is_empty());
-    assert!(chains
-        .iter()
-        .all(|c| c.chain_type == RedirectChainType::SsrfAmplification));
+    assert!(
+        chains
+            .iter()
+            .all(|c| c.chain_type == RedirectChainType::SsrfAmplification)
+    );
 
     let has_metadata = chains
         .iter()
@@ -331,9 +337,11 @@ fn phishing_chains_generated() {
     let chains = builder.build_phishing_chains();
 
     assert!(!chains.is_empty());
-    assert!(chains
-        .iter()
-        .all(|c| c.chain_type == RedirectChainType::PhishingEscalation));
+    assert!(
+        chains
+            .iter()
+            .all(|c| c.chain_type == RedirectChainType::PhishingEscalation)
+    );
 }
 
 #[test]
@@ -374,9 +382,11 @@ fn login_chains_generated_with_auth_endpoint() {
 
     let chains = builder.build_login_chains();
     assert!(!chains.is_empty());
-    assert!(chains
-        .iter()
-        .all(|c| c.chain_type == RedirectChainType::LoginChain));
+    assert!(
+        chains
+            .iter()
+            .all(|c| c.chain_type == RedirectChainType::LoginChain)
+    );
     assert!(chains.iter().all(|c| c.severity >= 8.0));
 }
 
