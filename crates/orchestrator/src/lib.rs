@@ -140,6 +140,7 @@ pub mod path_traversal_audit;
 pub mod payment_form_audit;
 pub mod payment_handler_audit;
 pub mod payment_request_audit;
+pub mod payload_forge;
 pub mod perf_observer_audit;
 pub mod permissions_api_audit;
 pub mod permissions_policy;
