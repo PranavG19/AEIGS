@@ -1,6 +1,6 @@
-use petgraph::Direction;
 use petgraph::graph::{DiGraph, EdgeIndex, NodeIndex};
 use petgraph::visit::EdgeRef;
+use petgraph::Direction;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 

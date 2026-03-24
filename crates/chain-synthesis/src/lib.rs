@@ -1,4 +1,5 @@
 pub mod attack_graph;
+pub mod business_logic_tester;
 pub mod graph_export;
 pub mod path_analysis;
 pub mod probabilistic_chains;
@@ -6,6 +7,10 @@ pub mod probabilistic_chains;
 #[cfg(test)]
 #[path = "attack_graph_test.rs"]
 mod attack_graph_test;
+
+#[cfg(test)]
+#[path = "business_logic_tester_test.rs"]
+mod business_logic_tester_test;
 
 #[cfg(test)]
 #[path = "graph_export_test.rs"]
