@@ -1,6 +1,7 @@
 pub mod abort_controller_audit;
 pub mod actor;
 pub mod agent_loop;
+pub mod agent_tools;
 pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
