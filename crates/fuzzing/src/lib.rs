@@ -8,6 +8,8 @@ pub mod executor;
 pub mod graphql_tester;
 pub mod header_analyzer;
 pub mod idor_tester;
+pub mod jailbreak_mutator;
+pub mod llm_oracle;
 pub mod mass_assignment_tester;
 pub mod mutator;
 pub mod oracle;
@@ -78,3 +80,11 @@ mod race_tester_test;
 #[cfg(test)]
 #[path = "coverage_tracker_test.rs"]
 mod coverage_tracker_test;
+
+#[cfg(test)]
+#[path = "jailbreak_mutator_test.rs"]
+mod jailbreak_mutator_test;
+
+#[cfg(test)]
+#[path = "llm_oracle_test.rs"]
+mod llm_oracle_test;
