@@ -6,6 +6,7 @@ use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 use aegis_protocol::scope_attestation::SignedScopeAttestation;
 
 use crate::header_transformer::HeaderTransformer;
+use crate::http2_fingerprint::{Http2Fingerprint, h2_fingerprint_for_persona};
 use crate::persona::Persona;
 use crate::session_manager::SessionManager;
 use crate::timing_controller::TimingController;
@@ -43,6 +44,7 @@ pub struct EvasionTransport {
     sessions_since_rotation: u32,
     scope_attestation: Option<SignedScopeAttestation>,
     operator_authorized: bool,
+    h2_fingerprint: Http2Fingerprint,
 }
 
 impl EvasionTransport {
@@ -106,6 +108,15 @@ impl EvasionTransport {
         self.session.rotate_session();
     }
 
+    /// Returns the HTTP/2 fingerprint currently in use by this transport.
+    ///
+    /// The fingerprint matches the active persona's browser identity and
+    /// contains SETTINGS, WINDOW_UPDATE, PRIORITY, and pseudo-header ordering
+    /// parameters that should be applied at the HTTP/2 connection level.
+    pub fn h2_fingerprint(&self) -> &Http2Fingerprint {
+        &self.h2_fingerprint
+    }
+
     fn maybe_rotate_persona(&mut self) {
         if let Some(interval) = self.persona_rotation_interval {
             self.sessions_since_rotation += 1;
@@ -116,6 +127,7 @@ impl EvasionTransport {
                 self.persona = self.persona_catalog[self.current_persona_index].clone();
                 self.header_transformer = HeaderTransformer::new();
                 self.timing = TimingController::from_persona(&self.persona, 0);
+                self.h2_fingerprint = h2_fingerprint_for_persona(self.persona.id);
             }
         }
     }
@@ -361,6 +373,7 @@ impl EvasionTransportBuilder {
         let persona = self.persona.unwrap_or_else(|| catalog[0].clone());
 
         let timing = TimingController::from_persona(&persona, self.timing_seed);
+        let h2_fingerprint = h2_fingerprint_for_persona(persona.id);
 
         let client = Client::builder()
             .danger_accept_invalid_certs(self.accept_self_signed)
@@ -379,6 +392,7 @@ impl EvasionTransportBuilder {
             sessions_since_rotation: 0,
             scope_attestation: self.scope_attestation,
             operator_authorized: self.operator_authorized,
+            h2_fingerprint,
         }
     }
 }
