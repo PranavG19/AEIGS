@@ -108,6 +108,7 @@ pub mod iframe_audit;
 pub mod image_capture_audit;
 pub mod import_map_audit;
 pub mod info_disclosure;
+pub mod injection_engine;
 pub mod ink_api_audit;
 pub mod inline_handler_audit;
 pub mod interactive;

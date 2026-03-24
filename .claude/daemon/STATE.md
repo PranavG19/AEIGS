@@ -2,7 +2,7 @@
 
 ## current
 priority: ROI LOOP
-task: Next ROI feature after GraphQL batch amplification
+task: Next ROI feature after Injection Engine
 status: HANDOFF READY
 
 ## phase-status
@@ -15,12 +15,13 @@ status: HANDOFF READY
   - P2c Mission prompt: ✅ COMPLETE (prompts/aegis_mind.md)
   - P2d Memory store: ✅ EXISTS (agent_memory_store.rs)
   - P2e Feedback loop: ✅ COMPLETE (17 tests)
-- PHASE 4 (Arsenal): NEARLY COMPLETE
+- PHASE 4 (Arsenal): ✅ COMPLETE
   - P4a Payload Forge: ✅ COMPLETE (34 tests)
   - P4b Auth Breaker: ✅ COMPLETE (32 tests)
   - P4c Smuggling engine: ✅ COMPLETE (23 tests)
   - P4d Race engine: ✅ COMPLETE (23 tests)
   - P4e SSRF Chain: ✅ COMPLETE (28 tests)
+  - P4f Injection Engine: ✅ COMPLETE (54 tests)
 - PHASE 3 (The Swarm): NOT STARTED
 - PHASE 5 (Nerve Center): NOT STARTED
 - PHASE ∞ (ROI Loop): ACTIVE
@@ -35,7 +36,8 @@ status: HANDOFF READY
 - websocket_fuzzer: 35
 - api_schema_inference: 40
 - graphql_batch_amplification: 51
-- TOTAL NEW THIS SESSION: 362 tests
+- injection_engine: 54
+- TOTAL NEW THIS SESSION: 416 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -70,18 +72,28 @@ status: HANDOFF READY
    - 7 payload purposes: rate-limit bypass, brute force, data exfil, DoS, race condition, ACL probing, cost analysis
    - Behavior analysis: auto-detect batch support, depth limits, alias limits, rate-limit scope
    - Combined amplification detection (batch × alias = critical)
-   - Convenience helpers: brute_force, id_enumeration, race_payload, generate_probes
+
+10. **Injection Engine** (P4f, ROI=56.0) — 54 tests
+    - 7 injection classes: NoSQL, LDAP, SSTI, SpEL, OGNL, Jakarta EL, CRLF
+    - 65+ payloads with oracle signals (math, string, error, timing, status, header, reflected)
+    - SSTI: 10 template engines (Jinja2/Twig/Freemarker/Velocity/Thymeleaf/Mako/Pug/ERB/Smarty/Handlebars)
+    - Polyglot math probes, string concat probes, error-based probes
+    - Evasion variants (levels 0-2): attr() chains, format string, URL encoding
+    - Template engine identification from error responses
+    - Targeted payload generation per identified engine
+    - COMPLETES PHASE 4 ARSENAL
 
 ## ROI ranking (next)
-1. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
-   - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
-2. **DNS rebinding attack automation** — for SSRF chain escalation
+1. **DNS rebinding attack automation** — for SSRF chain escalation
    - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
-3. **Schema→Grammar glue module** — pipe api_schema_inference into grammar_fuzzer
-   - power=6 uniqueness=7 intelligence=8 cost=9 → ROI=37.3
-   - Low cost but compounds two existing engines into autonomous pipeline
+2. **Schema→Grammar glue module** — pipe api_schema_inference into grammar_fuzzer
+   - power=6 uniqueness=7 intelligence=8 cost=9 → ROI=37.3 (but compounds two engines)
+3. **HTTP/2 CONTINUATION flood** — new 2024 protocol DoS technique
+   - power=7 uniqueness=9 intelligence=5 cost=6 → ROI=52.5
+4. **Automated business logic testing** — LLM understands checkout/transfer flows
+   - power=8 uniqueness=9 intelligence=9 cost=3 → ROI=216.0 (high power but high cost)
 
 ## handoff
-Next session: build Injection Engine (P4f) or DNS rebinding.
-Location: crates/orchestrator/src/injection_engine.rs
-The grammar fuzzer + api schema inference glue is cheap and high-compound-value.
+Next session: DNS rebinding or Schema→Grammar glue (cheap, compounds).
+Phase 4 Arsenal is now COMPLETE with Injection Engine (P4f).
+Location: crates/orchestrator/src/dns_rebinding.rs or schema_grammar_pipeline.rs
