@@ -566,3 +566,62 @@ fn replace_endpoints_overwrites_list() {
         panic!("expected EndpointsList");
     }
 }
+
+#[test]
+fn parse_command_with_extra_whitespace() {
+    assert_eq!(
+        parse_command("  pause  ").unwrap(),
+        InteractiveCommand::Pause
+    );
+    assert_eq!(
+        parse_command("  resume  ").unwrap(),
+        InteractiveCommand::Resume
+    );
+    assert_eq!(
+        parse_command("  status  ").unwrap(),
+        InteractiveCommand::Status
+    );
+}
+
+#[test]
+fn parse_command_case_insensitive() {
+    assert_eq!(parse_command("PAUSE").unwrap(), InteractiveCommand::Pause);
+    assert_eq!(parse_command("Quit").unwrap(), InteractiveCommand::Quit);
+    assert_eq!(parse_command("STATUS").unwrap(), InteractiveCommand::Status);
+}
+
+#[test]
+fn double_pause_is_idempotent() {
+    let mut session = InteractiveSession::new();
+    let resp1 = session.handle_command(&InteractiveCommand::Pause);
+    let resp2 = session.handle_command(&InteractiveCommand::Pause);
+    assert!(matches!(resp1, InteractiveResponse::Acknowledged(_)));
+    assert!(matches!(resp2, InteractiveResponse::Acknowledged(_)));
+    assert!(session.is_paused());
+}
+
+#[test]
+fn resume_without_pause_acknowledged() {
+    let mut session = InteractiveSession::new();
+    let resp = session.handle_command(&InteractiveCommand::Resume);
+    assert!(matches!(resp, InteractiveResponse::Acknowledged(_)));
+    assert!(!session.is_paused());
+}
+
+#[test]
+fn add_many_findings() {
+    let mut session = InteractiveSession::new();
+    for i in 0..100 {
+        session.add_finding(sample_finding(i));
+    }
+    assert_eq!(session.findings_count(), 100);
+}
+
+#[test]
+fn add_many_endpoints() {
+    let mut session = InteractiveSession::new();
+    for i in 0..100 {
+        session.add_endpoint(format!("/endpoint-{i}"));
+    }
+    assert_eq!(session.endpoints_count(), 100);
+}

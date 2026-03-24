@@ -2,8 +2,8 @@
 mod tests {
     use crate::attack_graph::{AttackGraph, AttackNodeType};
     use crate::path_analysis::{
-        MAX_TOTAL_PATHS, all_simple_paths, betweenness_centrality, critical_fix_targets,
-        graph_influence_ranking, reachable_assets, shortest_attack_path,
+        all_simple_paths, betweenness_centrality, critical_fix_targets, graph_influence_ranking,
+        reachable_assets, shortest_attack_path, MAX_TOTAL_PATHS,
     };
 
     fn linear_graph() -> AttackGraph {

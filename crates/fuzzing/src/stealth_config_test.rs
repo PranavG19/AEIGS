@@ -465,4 +465,76 @@ mod tests {
             .with_max_requests_per_second(15.0);
         assert!((config.max_requests_per_second - 15.0).abs() < f64::EPSILON);
     }
+
+    #[test]
+    fn zero_max_requests_per_second() {
+        let config = StealthConfig::default().with_max_requests_per_second(0.0);
+        assert!((config.max_requests_per_second - 0.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn negative_max_requests_per_second_accepted() {
+        let config = StealthConfig::default().with_max_requests_per_second(-1.0);
+        assert!(config.max_requests_per_second < 0.0);
+    }
+
+    #[test]
+    fn infinity_max_requests_stored() {
+        let config = StealthConfig::default().with_max_requests_per_second(f64::INFINITY);
+        assert!(config.max_requests_per_second.is_infinite());
+    }
+
+    #[test]
+    fn nan_max_requests_stored() {
+        let config = StealthConfig::default().with_max_requests_per_second(f64::NAN);
+        assert!(config.max_requests_per_second.is_nan());
+    }
+
+    #[test]
+    fn max_session_rotation_interval() {
+        let config = StealthConfig::default().with_session_rotation_interval(u64::MAX);
+        assert_eq!(config.session_rotation_interval, u64::MAX);
+    }
+
+    #[test]
+    fn jitter_range_min_greater_than_max() {
+        let config = StealthConfig::default().with_jitter_range_ms(500, 100);
+        assert_eq!(config.jitter_range_ms, (500, 100));
+    }
+
+    #[test]
+    fn all_presets_have_different_values() {
+        let default = StealthConfig::default();
+        let aggressive = StealthConfig::aggressive();
+        let paranoid = StealthConfig::paranoid();
+        let benchmark = StealthConfig::benchmark();
+
+        assert_ne!(default, aggressive);
+        assert_ne!(default, paranoid);
+        assert_ne!(default, benchmark);
+        assert_ne!(aggressive, paranoid);
+        assert_ne!(aggressive, benchmark);
+        assert_ne!(paranoid, benchmark);
+    }
+
+    #[test]
+    fn benchmark_has_no_stealth_overhead() {
+        let config = StealthConfig::benchmark();
+        assert_eq!(config.min_delay_ms, 0);
+        assert_eq!(config.max_delay_ms, 0);
+        assert_eq!(config.jitter_range_ms, (0, 0));
+        assert_eq!(config.session_rotation_interval, 0);
+        assert!(!config.prefer_blind_payloads);
+        assert!(!config.avoid_signature_payloads);
+    }
+
+    #[test]
+    fn paranoid_has_max_stealth() {
+        let config = StealthConfig::paranoid();
+        assert!(config.prefer_blind_payloads);
+        assert!(config.avoid_signature_payloads);
+        assert!(config.min_delay_ms > 0);
+        assert!(config.max_delay_ms > config.min_delay_ms);
+        assert!(config.session_rotation_interval > 0);
+    }
 }

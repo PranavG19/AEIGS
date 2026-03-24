@@ -1,6 +1,6 @@
 use super::*;
-use aegis_knowledge_graph::GraphStore;
 use aegis_knowledge_graph::graph::GraphError;
+use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::defense_context::DefenseContext;
 use aegis_protocol::finding::{EvidenceLevel, FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};
@@ -142,11 +142,9 @@ fn defense_section_renders_waf_details() {
     assert!(briefing.markdown.contains("SQL Injection"));
     assert!(briefing.markdown.contains("Cross-Site Scripting"));
     assert!(briefing.markdown.contains("rate limit: 10.0 req/s"));
-    assert!(
-        briefing
-            .markdown
-            .contains("bot detection: present (NOT evaded)")
-    );
+    assert!(briefing
+        .markdown
+        .contains("bot detection: present (NOT evaded)"));
 }
 
 #[test]
@@ -261,11 +259,9 @@ fn endpoints_listed_with_methods_and_params() {
         &BriefingConfig::default(),
     );
 
-    assert!(
-        briefing
-            .markdown
-            .contains("## ATTACK SURFACE (2 endpoints)")
-    );
+    assert!(briefing
+        .markdown
+        .contains("## ATTACK SURFACE (2 endpoints)"));
     assert!(briefing.markdown.contains("GET /api/users [id,name,role]"));
     assert!(briefing.markdown.contains("POST /api/login"));
     assert!(briefing.markdown.contains("(auth:false)"));
@@ -363,11 +359,9 @@ fn findings_capped_with_overflow_note() {
     );
 
     assert!(briefing.markdown.contains("10 total"));
-    assert!(
-        briefing
-            .markdown
-            .contains("+7 lower-severity findings omitted")
-    );
+    assert!(briefing
+        .markdown
+        .contains("+7 lower-severity findings omitted"));
 }
 
 #[test]
@@ -563,11 +557,9 @@ fn bot_detection_evaded_status() {
         &BriefingConfig::default(),
     );
 
-    assert!(
-        briefing
-            .markdown
-            .contains("bot detection: present (evaded)")
-    );
+    assert!(briefing
+        .markdown
+        .contains("bot detection: present (evaded)"));
 }
 
 #[test]

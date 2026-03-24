@@ -135,3 +135,81 @@ fn process_set_cookie_trims_whitespace() {
     let cookie = headers.iter().find(|(k, _)| k == "Cookie").unwrap();
     assert_eq!(cookie.1, "name=value");
 }
+
+#[test]
+fn max_requests_one_rotates_every_request() {
+    let mut manager = SessionManager::new(1);
+    manager.record_request("https://example.com/a");
+    assert_eq!(manager.session_id(), 1);
+    manager.record_request("https://example.com/b");
+    assert_eq!(manager.session_id(), 2);
+    manager.record_request("https://example.com/c");
+    assert_eq!(manager.session_id(), 3);
+}
+
+#[test]
+fn cookie_with_equals_in_value() {
+    let mut manager = SessionManager::new(50);
+    manager.process_set_cookie("token=abc=def=ghi; Path=/");
+    let headers = manager.session_headers();
+    let cookie = headers.iter().find(|(k, _)| k == "Cookie").unwrap();
+    assert_eq!(cookie.1, "token=abc=def=ghi");
+}
+
+#[test]
+fn rotation_clears_cookies_but_increments_id() {
+    let mut manager = SessionManager::new(50);
+    manager.process_set_cookie("session=abc");
+    manager.process_set_cookie("token=xyz");
+    assert_eq!(manager.session_id(), 0);
+    manager.rotate_session();
+    assert_eq!(manager.session_id(), 1);
+    assert!(manager.session_headers().is_empty());
+}
+
+#[test]
+fn multiple_rotations_increment_session_id() {
+    let mut manager = SessionManager::new(50);
+    for i in 0..10 {
+        assert_eq!(manager.session_id(), i as u64);
+        manager.rotate_session();
+    }
+    assert_eq!(manager.session_id(), 10);
+}
+
+#[test]
+fn referer_and_cookie_together_in_headers() {
+    let mut manager = SessionManager::new(50);
+    manager.record_request("https://example.com/origin");
+    manager.process_set_cookie("session=abc");
+    let headers = manager.session_headers();
+    assert!(headers.iter().any(|(k, _)| k == "Cookie"));
+    assert!(headers.iter().any(|(k, _)| k == "Referer"));
+    assert_eq!(headers.len(), 2);
+}
+
+#[test]
+fn process_set_cookie_empty_string() {
+    let mut manager = SessionManager::new(50);
+    manager.process_set_cookie("");
+    assert!(manager.session_headers().is_empty());
+}
+
+#[test]
+fn process_set_cookie_only_semicolons() {
+    let mut manager = SessionManager::new(50);
+    manager.process_set_cookie(";;;");
+    assert!(manager.session_headers().is_empty());
+}
+
+#[test]
+fn auto_rotation_clears_cookies() {
+    let mut manager = SessionManager::new(2);
+    manager.process_set_cookie("session=abc");
+    manager.record_request("https://example.com/1");
+    let headers = manager.session_headers();
+    assert!(headers.iter().any(|(k, _)| k == "Cookie"));
+    manager.record_request("https://example.com/2");
+    assert_eq!(manager.session_id(), 1);
+    assert!(manager.session_headers().is_empty());
+}

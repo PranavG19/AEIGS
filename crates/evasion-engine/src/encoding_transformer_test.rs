@@ -380,3 +380,99 @@ fn mixed_case_preserves_non_alpha() {
     assert!(mixed.encoded.contains('1'));
     assert!(mixed.encoded.contains('2'));
 }
+
+#[test]
+fn encode_empty_payload_returns_empty_for_all_classes() {
+    let transformer = EncodingTransformer::new();
+    let classes = vec![
+        VulnerabilityClass::SqlInjection,
+        VulnerabilityClass::CrossSiteScripting,
+        VulnerabilityClass::PathTraversal,
+        VulnerabilityClass::CommandInjection,
+    ];
+    for class in classes {
+        let results = transformer.encode("", class);
+        assert!(
+            results.is_empty(),
+            "empty payload should produce no encodings for {class:?}"
+        );
+    }
+}
+
+#[test]
+fn encoded_payload_preserves_original_field() {
+    let transformer = EncodingTransformer::new();
+    let payload = "SELECT * FROM users";
+    let results = transformer.encode(payload, VulnerabilityClass::SqlInjection);
+    for encoded in &results {
+        assert_eq!(encoded.original, payload);
+    }
+}
+
+#[test]
+fn encode_returns_one_result_per_strategy() {
+    let transformer = EncodingTransformer::new();
+    let strategies = transformer.applicable_strategies(VulnerabilityClass::SqlInjection);
+    let results = transformer.encode("test", VulnerabilityClass::SqlInjection);
+    assert_eq!(results.len(), strategies.len());
+}
+
+#[test]
+fn double_url_encoding_encodes_special_chars_only() {
+    let transformer = EncodingTransformer::new();
+    let payload = "' OR 1=1";
+    let results = transformer.encode(payload, VulnerabilityClass::SqlInjection);
+    let double_encoded = results
+        .iter()
+        .find(|r| r.strategy == EncodingStrategy::DoubleUrlEncoding)
+        .unwrap();
+    assert!(
+        double_encoded.encoded.contains("%2527"),
+        "single quote should be double-encoded to %2527"
+    );
+    assert!(
+        double_encoded.encoded.contains("%2520"),
+        "space should be double-encoded to %2520"
+    );
+}
+
+#[test]
+fn encoding_strategy_serialization_roundtrip() {
+    let strategies = vec![
+        EncodingStrategy::DoubleUrlEncoding,
+        EncodingStrategy::UnicodeNormalization,
+        EncodingStrategy::MixedCase,
+        EncodingStrategy::CommentInsertion,
+        EncodingStrategy::WhitespaceVariation,
+        EncodingStrategy::NullByteInsertion,
+        EncodingStrategy::HtmlEntityEncoding,
+        EncodingStrategy::ConcatenationSplitting,
+    ];
+    for strategy in strategies {
+        let json = serde_json::to_string(&strategy).unwrap();
+        let deserialized: EncodingStrategy = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, strategy);
+    }
+}
+
+#[test]
+fn default_encoding_transformer() {
+    let transformer = EncodingTransformer::default();
+    let strategies = transformer.applicable_strategies(VulnerabilityClass::SqlInjection);
+    assert!(!strategies.is_empty());
+}
+
+#[test]
+fn null_byte_insertion_appends_percent_00() {
+    let transformer = EncodingTransformer::new();
+    let payload = "../../etc/passwd";
+    let results = transformer.encode(payload, VulnerabilityClass::PathTraversal);
+    let null_byte = results
+        .iter()
+        .find(|r| r.strategy == EncodingStrategy::NullByteInsertion)
+        .unwrap();
+    assert!(
+        null_byte.encoded.contains("%00"),
+        "should contain null byte encoding"
+    );
+}

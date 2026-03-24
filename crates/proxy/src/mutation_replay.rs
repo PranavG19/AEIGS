@@ -58,13 +58,7 @@ pub struct ResponseDiff {
 
 impl ResponseDiff {
     /// Compute diff between a mutation response and the baseline recorded exchange.
-    pub fn compute(
-        baseline: &RecordedExchange,
-        mutation_status: u16,
-        mutation_headers: &[(String, String)],
-        mutation_body_len: usize,
-        mutation_duration_ms: u64,
-    ) -> Self {
+    pub fn compute(baseline: &RecordedExchange, mutation_status: u16, mutation_headers: &[(String, String)], mutation_body_len: usize, mutation_duration_ms: u64) -> Self {
         let status_code_changed = baseline.response_status != mutation_status;
 
         let baseline_len = baseline.response_body.len().max(1) as f64;
@@ -187,22 +181,11 @@ fn generate_parameter_pollution(exchange: &RecordedExchange) -> Vec<MutatedReque
     let mut out = Vec::new();
     let (base_url, params) = extract_query_params(&exchange.request_url);
 
-    let conflicting_values = [
-        "1",
-        "0",
-        "true",
-        "null",
-        "admin",
-        "../etc/passwd",
-        "<script>",
-        "' OR 1=1--",
-    ];
+    let conflicting_values = ["1", "0", "true", "null", "admin", "../etc/passwd", "<script>", "' OR 1=1--"];
 
     if params.is_empty() {
         // No existing params — inject synthetic ones
-        let synthetic_params = [
-            "id", "page", "debug", "admin", "redirect", "callback", "token",
-        ];
+        let synthetic_params = ["id", "page", "debug", "admin", "redirect", "callback", "token"];
         for param in synthetic_params {
             for val in &conflicting_values[..3] {
                 let new_url = if base_url.contains('?') {
@@ -246,9 +229,7 @@ fn generate_parameter_pollution(exchange: &RecordedExchange) -> Vec<MutatedReque
 // Verb tampering: cycle through HTTP methods
 // ---------------------------------------------------------------------------
 
-const VERBS: &[&str] = &[
-    "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE",
-];
+const VERBS: &[&str] = &["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD", "TRACE"];
 
 fn generate_verb_tampering(exchange: &RecordedExchange) -> Vec<MutatedRequest> {
     let original = exchange.request_method.to_uppercase();
@@ -347,7 +328,8 @@ fn set_content_type(headers: &[(String, String)], ct: &str) -> Vec<(String, Stri
 
 fn generate_content_type_confusion(exchange: &RecordedExchange) -> Vec<MutatedRequest> {
     let mut out = Vec::new();
-    let json_str = body_as_json_string(&exchange.request_body).unwrap_or_else(|| "{}".to_string());
+    let json_str = body_as_json_string(&exchange.request_body)
+        .unwrap_or_else(|| "{}".to_string());
 
     // → JSON
     out.push(MutatedRequest {
@@ -440,14 +422,8 @@ fn generate_path_normalization(exchange: &RecordedExchange) -> Vec<MutatedReques
     let traversal_payloads = [
         ("..;/ traversal", insert_traversal(url, "..;/")),
         ("/./ self-reference", insert_traversal(url, "/./")),
-        (
-            "%2e%2e/ encoded traversal",
-            insert_traversal(url, "%2e%2e/"),
-        ),
-        (
-            "%2e%2e%2f double-encoded",
-            insert_traversal(url, "%2e%2e%2f"),
-        ),
+        ("%2e%2e/ encoded traversal", insert_traversal(url, "%2e%2e/")),
+        ("%2e%2e%2f double-encoded", insert_traversal(url, "%2e%2e%2f")),
         ("..%00/ null byte", insert_traversal(url, "..%00/")),
         ("..%5c/ backslash", insert_traversal(url, "..%5c/")),
         (".%2e/ mixed encoding", insert_traversal(url, ".%2e/")),
@@ -473,10 +449,7 @@ fn generate_path_normalization(exchange: &RecordedExchange) -> Vec<MutatedReques
 
 fn insert_traversal(url: &str, payload: &str) -> String {
     // Insert traversal sequence after the host/path boundary
-    if let Some(path_start) = url
-        .find("//")
-        .and_then(|i| url[i + 2..].find('/').map(|j| i + 2 + j))
-    {
+    if let Some(path_start) = url.find("//").and_then(|i| url[i + 2..].find('/').map(|j| i + 2 + j)) {
         let (prefix, suffix) = url.split_at(path_start + 1);
         format!("{prefix}{payload}{suffix}")
     } else if let Some(idx) = url.rfind('/') {
@@ -518,27 +491,11 @@ fn add_trailing(url: &str, suffix: &str) -> String {
 
 fn generate_header_injection(exchange: &RecordedExchange) -> Vec<MutatedRequest> {
     let crlf_payloads = [
-        (
-            "CRLF in X-Custom header",
-            "X-Custom",
-            "value\r\nInjected-Header: pwned",
-        ),
-        (
-            "CRLF in Referer",
-            "Referer",
-            "http://example.com\r\nX-Injected: true",
-        ),
+        ("CRLF in X-Custom header", "X-Custom", "value\r\nInjected-Header: pwned"),
+        ("CRLF in Referer", "Referer", "http://example.com\r\nX-Injected: true"),
         ("CRLF newline only", "X-Test", "value\nInjected: yes"),
-        (
-            "CRLF carriage return only",
-            "X-Test",
-            "value\rInjected: yes",
-        ),
-        (
-            "CRLF double inject",
-            "X-Probe",
-            "a\r\nSet-Cookie: evil=1\r\nX-End: b",
-        ),
+        ("CRLF carriage return only", "X-Test", "value\rInjected: yes"),
+        ("CRLF double inject", "X-Probe", "a\r\nSet-Cookie: evil=1\r\nX-End: b"),
         ("Host header override", "Host", "evil.com"),
         ("X-Forwarded-For spoofing", "X-Forwarded-For", "127.0.0.1"),
         ("X-Original-URL override", "X-Original-URL", "/admin"),
@@ -585,10 +542,7 @@ fn double_url_encode(input: &str) -> String {
 }
 
 fn unicode_encode(input: &str) -> String {
-    input
-        .chars()
-        .map(|c| format!("\\u{:04x}", c as u32))
-        .collect()
+    input.chars().map(|c| format!("\\u{:04x}", c as u32)).collect()
 }
 
 fn hex_encode(input: &str) -> String {

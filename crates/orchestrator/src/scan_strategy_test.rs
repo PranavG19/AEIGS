@@ -366,3 +366,115 @@ fn exploitation_uses_first_tool_and_first_finding() {
         }
     );
 }
+
+#[test]
+fn zero_endpoints_triggers_discovery() {
+    let mut state = base_state();
+    state.endpoints_discovered = 0;
+
+    let action = ScanStrategy::suggest_next_action(&state);
+    assert_eq!(
+        action,
+        StrategyAction::DiscoverMore {
+            discovery_type: DiscoveryType::DirectoryBruteForce,
+        }
+    );
+}
+
+#[test]
+fn boundary_10_endpoints_no_discovery() {
+    let mut state = base_state();
+    state.endpoints_discovered = 10;
+
+    let action = ScanStrategy::suggest_next_action(&state);
+    assert_ne!(
+        action,
+        StrategyAction::DiscoverMore {
+            discovery_type: DiscoveryType::DirectoryBruteForce,
+        }
+    );
+}
+
+#[test]
+fn boundary_9_endpoints_triggers_discovery() {
+    let mut state = base_state();
+    state.endpoints_discovered = 9;
+
+    let action = ScanStrategy::suggest_next_action(&state);
+    assert_eq!(
+        action,
+        StrategyAction::DiscoverMore {
+            discovery_type: DiscoveryType::DirectoryBruteForce,
+        }
+    );
+}
+
+#[test]
+fn empty_scan_state_defaults_to_discovery() {
+    let state = ScanState {
+        target: "http://localhost".to_string(),
+        tech_stack: Vec::new(),
+        endpoints_discovered: 0,
+        findings_count: 0,
+        findings_by_severity: HashMap::new(),
+        phases_completed: Vec::new(),
+        iterations_remaining: 0,
+        defense_profile: "none".to_string(),
+        last_iteration_new_findings: false,
+        consecutive_zero_finding_rounds: 0,
+        exploitation_tools: Vec::new(),
+        critical_finding_ids: Vec::new(),
+    };
+
+    let action = ScanStrategy::suggest_next_action(&state);
+    assert_eq!(
+        action,
+        StrategyAction::DiscoverMore {
+            discovery_type: DiscoveryType::DirectoryBruteForce,
+        }
+    );
+}
+
+#[test]
+fn context_large_endpoint_count() {
+    let mut state = base_state();
+    state.endpoints_discovered = 999_999;
+
+    let context = ScanStrategy::build_strategy_context(&state);
+    assert!(context.contains("<endpoints_discovered>999999</endpoints_discovered>"));
+}
+
+#[test]
+fn scan_state_debug_format() {
+    let state = base_state();
+    let debug = format!("{state:?}");
+    assert!(debug.contains("ScanState"));
+    assert!(debug.contains("localhost"));
+}
+
+#[test]
+fn discovery_type_serialization_roundtrip() {
+    let types = vec![
+        DiscoveryType::DirectoryBruteForce,
+        DiscoveryType::ParameterDiscovery,
+        DiscoveryType::JavaScriptAnalysis,
+        DiscoveryType::VhostDiscovery,
+    ];
+    for dt in types {
+        let json = serde_json::to_string(&dt).unwrap();
+        let deserialized: DiscoveryType = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, dt);
+    }
+}
+
+#[test]
+fn generate_report_when_zero_iterations_and_no_findings() {
+    let mut state = base_state();
+    state.iterations_remaining = 0;
+    state.last_iteration_new_findings = false;
+    state.findings_count = 0;
+    state.findings_by_severity = HashMap::new();
+
+    let action = ScanStrategy::suggest_next_action(&state);
+    assert_eq!(action, StrategyAction::GenerateReport);
+}

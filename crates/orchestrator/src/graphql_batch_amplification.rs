@@ -1,33 +1,33 @@
 use std::collections::HashMap;
 use std::fmt;
 
-// GraphQL batch query amplification engine.
-//
-// GraphQL endpoints commonly support two amplification vectors that
-// bypass server-side rate limiting and authentication controls:
-//
-// 1. **Array batching** — send `[{query1}, {query2}, ...]` as the POST
-//    body. Many frameworks (Apollo, graphql-yoga, Hasura) process the
-//    entire array in a single HTTP request, so N operations cost one
-//    rate-limit token.
-//
-// 2. **Alias amplification** — a single query document can repeat the
-//    same field with different aliases:
-//    ```graphql
-//    { a0: login(u:"a",p:"0") { ok } a1: login(u:"a",p:"1") { ok } ... }
-//    ```
-//    The server resolves every alias. One HTTP request, N resolver calls.
-//    Rate limiters that count HTTP requests see 1; the actual load is N.
-//
-// Offensive applications:
-// - **Brute-force** login / OTP / reset-token behind rate limits
-// - **Data exfiltration** — batch `user(id:N)` across thousands of IDs
-// - **Denial of service** — deeply nested or heavily aliased queries
-//   that multiply resolver cost (N aliases × M depth)
-// - **Race conditions** — all aliases resolve in the same event-loop
-//   tick on single-threaded runtimes (Node.js), enabling TOCTOU
-// - **ACL bypass probing** — batch queries with varying auth tokens
-//   to map which fields are gated
+/// GraphQL batch query amplification engine.
+///
+/// GraphQL endpoints commonly support two amplification vectors that
+/// bypass server-side rate limiting and authentication controls:
+///
+/// 1. **Array batching** — send `[{query1}, {query2}, ...]` as the POST
+///    body. Many frameworks (Apollo, graphql-yoga, Hasura) process the
+///    entire array in a single HTTP request, so N operations cost one
+///    rate-limit token.
+///
+/// 2. **Alias amplification** — a single query document can repeat the
+///    same field with different aliases:
+///    ```graphql
+///    { a0: login(u:"a",p:"0") { ok } a1: login(u:"a",p:"1") { ok } ... }
+///    ```
+///    The server resolves every alias. One HTTP request, N resolver calls.
+///    Rate limiters that count HTTP requests see 1; the actual load is N.
+///
+/// Offensive applications:
+/// - **Brute-force** login / OTP / reset-token behind rate limits
+/// - **Data exfiltration** — batch `user(id:N)` across thousands of IDs
+/// - **Denial of service** — deeply nested or heavily aliased queries
+///   that multiply resolver cost (N aliases × M depth)
+/// - **Race conditions** — all aliases resolve in the same event-loop
+///   tick on single-threaded runtimes (Node.js), enabling TOCTOU
+/// - **ACL bypass probing** — batch queries with varying auth tokens
+///   to map which fields are gated
 
 /// Supported amplification technique.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -389,7 +389,7 @@ impl BatchAmplificationEngine {
         let selection = seed.selection_set.join(" ");
         let args = render_arguments(&seed.arguments);
 
-        let directive_stacks = [
+        let directive_stacks = vec![
             r#"@include(if: true) @skip(if: false)"#,
             r#"@skip(if: false) @include(if: true) @skip(if: false)"#,
             r#"@include(if: true) @include(if: true) @include(if: true)"#,
@@ -865,9 +865,10 @@ fn extract_depth_from_error(msg: &str) -> Option<usize> {
         if let Ok(n) = word
             .trim_matches(|c: char| !c.is_ascii_digit())
             .parse::<usize>()
-            && (1..=100).contains(&n)
         {
-            return Some(n);
+            if (1..=100).contains(&n) {
+                return Some(n);
+            }
         }
     }
     None

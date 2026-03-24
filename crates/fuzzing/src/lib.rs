@@ -14,7 +14,6 @@ pub mod mass_assignment_tester;
 pub mod mutator;
 pub mod oracle;
 pub mod payload_selector;
-pub mod prototype_pollution_tester;
 pub mod race_tester;
 pub mod rate_limit_detector;
 pub mod request_patterns;
@@ -22,6 +21,7 @@ pub mod scheduler;
 pub mod stealth_config;
 pub mod streaming_fuzzer;
 pub mod subdomain_takeover;
+pub mod prototype_pollution_tester;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;

@@ -363,11 +363,9 @@ fn test_endpoint_finds_pollution() {
     );
     assert_eq!(findings.len(), 1);
     assert!(findings[0].severity > 5.0);
-    assert!(
-        findings[0]
-            .evidence
-            .contains("Prototype pollution detected")
-    );
+    assert!(findings[0]
+        .evidence
+        .contains("Prototype pollution detected"));
 }
 
 #[test]

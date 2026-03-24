@@ -118,4 +118,125 @@ mod tests {
         assert_eq!(selector.known_payload_count(), 3);
         assert_eq!(selector.total_attempts(), 60);
     }
+
+    #[test]
+    fn select_payloads_count_greater_than_candidates() {
+        let selector = PayloadSelector::new(vec![]);
+        let candidates: Vec<String> = vec!["a".into(), "b".into()];
+        let selected = selector.select_payloads(&candidates, 10);
+        assert_eq!(selected.len(), 2);
+    }
+
+    #[test]
+    fn select_payloads_count_zero_returns_empty() {
+        let selector = PayloadSelector::new(vec![]);
+        let candidates: Vec<String> = vec!["a".into(), "b".into()];
+        let selected = selector.select_payloads(&candidates, 0);
+        assert!(selected.is_empty());
+    }
+
+    #[test]
+    fn rank_payloads_empty_candidates() {
+        let selector = PayloadSelector::new(vec![make_stats("a", 10, 5)]);
+        let candidates: Vec<String> = vec![];
+        let ranked = selector.rank_payloads(&candidates);
+        assert!(ranked.is_empty());
+    }
+
+    #[test]
+    fn ucb1_score_novel_payload_is_infinite() {
+        let history = vec![make_stats("known", 10, 5)];
+        let selector = PayloadSelector::new(history);
+        let score = selector.ucb1_score("never-seen");
+        assert!(score.is_infinite());
+    }
+
+    #[test]
+    fn identical_success_rates_fewer_attempts_ranked_higher() {
+        let history = vec![
+            make_stats("many-attempts", 1000, 500),
+            make_stats("few-attempts", 10, 5),
+        ];
+        let selector = PayloadSelector::new(history);
+        let candidates: Vec<String> = vec!["many-attempts".into(), "few-attempts".into()];
+        let ranked = selector.rank_payloads(&candidates);
+        assert_eq!(
+            ranked[0], "few-attempts",
+            "fewer attempts should rank higher due to UCB1 exploration bonus"
+        );
+    }
+
+    #[test]
+    fn all_novel_payloads_preserve_order() {
+        let selector = PayloadSelector::new(vec![]);
+        let candidates: Vec<String> = vec!["c".into(), "a".into(), "b".into()];
+        let ranked = selector.rank_payloads(&candidates);
+        assert_eq!(ranked, vec!["c", "a", "b"]);
+    }
+
+    #[test]
+    fn new_with_empty_history() {
+        let selector = PayloadSelector::new(vec![]);
+        assert_eq!(selector.known_payload_count(), 0);
+        assert_eq!(selector.total_attempts(), 0);
+    }
+
+    #[test]
+    fn ucb1_score_all_successes() {
+        let history = vec![make_stats("perfect", 100, 100)];
+        let selector = PayloadSelector::new(history);
+        let score = selector.ucb1_score("perfect");
+        assert!(
+            score >= 1.0,
+            "perfect success rate should yield score >= 1.0, got {score}"
+        );
+        assert!(score.is_finite());
+    }
+
+    #[test]
+    fn ucb1_score_all_failures() {
+        let history = vec![make_stats("terrible", 100, 0)];
+        let selector = PayloadSelector::new(history);
+        let score = selector.ucb1_score("terrible");
+        assert!(
+            score >= 0.0,
+            "score should be non-negative even with zero successes"
+        );
+        assert!(
+            score < 1.0,
+            "score with zero successes should be less than 1.0, got {score}"
+        );
+    }
+
+    #[test]
+    fn duplicate_payloads_in_history_last_wins() {
+        let history = vec![make_stats("dup", 10, 2), make_stats("dup", 100, 80)];
+        let selector = PayloadSelector::new(history);
+        let score = selector.ucb1_score("dup");
+        assert!(score.is_finite());
+    }
+
+    #[test]
+    fn select_payloads_returns_top_ranked() {
+        let history = vec![make_stats("high", 100, 90), make_stats("low", 100, 10)];
+        let selector = PayloadSelector::new(history);
+        let candidates: Vec<String> = vec!["novel".into(), "high".into(), "low".into()];
+        let selected = selector.select_payloads(&candidates, 2);
+        assert_eq!(selected.len(), 2);
+        assert_eq!(
+            selected[0], "novel",
+            "novel payload should be selected first"
+        );
+    }
+
+    #[test]
+    fn single_payload_in_history() {
+        let history = vec![make_stats("only", 50, 25)];
+        let selector = PayloadSelector::new(history);
+        assert_eq!(selector.known_payload_count(), 1);
+        assert_eq!(selector.total_attempts(), 50);
+        let score = selector.ucb1_score("only");
+        assert!(score.is_finite());
+        assert!(score > 0.0);
+    }
 }

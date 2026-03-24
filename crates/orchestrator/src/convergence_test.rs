@@ -71,3 +71,106 @@ fn default_tracker_is_empty() {
     assert_eq!(tracker.refuted_count(), 0);
     assert!(!tracker.is_refuted("anything"));
 }
+
+#[test]
+fn empty_string_key_is_valid() {
+    let mut tracker = RefutedTracker::new();
+    tracker.record_refuted(String::new());
+    assert!(tracker.is_refuted(""));
+    assert_eq!(tracker.refuted_count(), 1);
+}
+
+#[test]
+fn unicode_keys_stored_correctly() {
+    let mut tracker = RefutedTracker::new();
+    tracker.record_refuted("xss:/api/日本語:🎯".to_string());
+    assert!(tracker.is_refuted("xss:/api/日本語:🎯"));
+    assert!(!tracker.is_refuted("xss:/api/日本語:🎯x"));
+}
+
+#[test]
+fn very_long_key_stored_correctly() {
+    let mut tracker = RefutedTracker::new();
+    let long_key = "a".repeat(10_000);
+    tracker.record_refuted(long_key.clone());
+    assert!(tracker.is_refuted(&long_key));
+    assert_eq!(tracker.refuted_count(), 1);
+}
+
+#[test]
+fn large_number_of_refuted_keys() {
+    let mut tracker = RefutedTracker::new();
+    for i in 0..5000 {
+        tracker.record_refuted(format!("hypothesis-{i}"));
+    }
+    assert_eq!(tracker.refuted_count(), 5000);
+    assert!(tracker.is_refuted("hypothesis-0"));
+    assert!(tracker.is_refuted("hypothesis-4999"));
+    assert!(!tracker.is_refuted("hypothesis-5000"));
+}
+
+#[test]
+fn convergence_guaranteed_both_zero_is_true() {
+    assert!(RefutedTracker::convergence_guaranteed(0, 0));
+}
+
+#[test]
+fn convergence_guaranteed_large_values() {
+    assert!(RefutedTracker::convergence_guaranteed(u32::MAX, u32::MAX));
+    assert!(RefutedTracker::convergence_guaranteed(u32::MAX, 0));
+    assert!(!RefutedTracker::convergence_guaranteed(0, u32::MAX));
+}
+
+#[test]
+fn is_refuted_case_sensitive() {
+    let mut tracker = RefutedTracker::new();
+    tracker.record_refuted("SqlInjection:/api".to_string());
+    assert!(tracker.is_refuted("SqlInjection:/api"));
+    assert!(!tracker.is_refuted("sqlinjection:/api"));
+    assert!(!tracker.is_refuted("SQLINJECTION:/API"));
+}
+
+#[test]
+fn record_refuted_with_whitespace_key() {
+    let mut tracker = RefutedTracker::new();
+    tracker.record_refuted("  spaces  ".to_string());
+    assert!(tracker.is_refuted("  spaces  "));
+    assert!(!tracker.is_refuted("spaces"));
+}
+
+#[test]
+fn separate_trackers_are_independent() {
+    let mut tracker_a = RefutedTracker::new();
+    let mut tracker_b = RefutedTracker::new();
+    tracker_a.record_refuted("shared-key".to_string());
+    assert!(tracker_a.is_refuted("shared-key"));
+    assert!(!tracker_b.is_refuted("shared-key"));
+    tracker_b.record_refuted("other-key".to_string());
+    assert!(!tracker_a.is_refuted("other-key"));
+}
+
+#[test]
+fn monotonic_count_never_decreases() {
+    let mut tracker = RefutedTracker::new();
+    let mut prev_count = 0;
+    for i in 0..100 {
+        tracker.record_refuted(format!("key-{i}"));
+        let count = tracker.refuted_count();
+        assert!(
+            count >= prev_count,
+            "count decreased from {prev_count} to {count}"
+        );
+        prev_count = count;
+    }
+}
+
+#[test]
+fn duplicate_then_new_increments_correctly() {
+    let mut tracker = RefutedTracker::new();
+    tracker.record_refuted("dup".to_string());
+    tracker.record_refuted("dup".to_string());
+    tracker.record_refuted("dup".to_string());
+    assert_eq!(tracker.refuted_count(), 1);
+    tracker.record_refuted("new".to_string());
+    assert_eq!(tracker.refuted_count(), 2);
+}

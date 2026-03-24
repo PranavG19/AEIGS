@@ -1,7 +1,7 @@
 use crate::distributed::{
+    create_assignments, default_distributed_config, describe_assignments, partition_endpoints,
     AssignmentStrategy, CoordinatorState, DistributedConfig, DistributedError, WorkAssignment,
-    WorkerId, WorkerRole, WorkerState, WorkerStatus, create_assignments,
-    default_distributed_config, describe_assignments, partition_endpoints,
+    WorkerId, WorkerRole, WorkerState, WorkerStatus,
 };
 
 fn worker_id(name: &str) -> WorkerId {
@@ -538,4 +538,52 @@ fn worker_id_hash_works_in_collections() {
     set.insert(worker_id("b"));
     set.insert(worker_id("a"));
     assert_eq!(set.len(), 2);
+}
+
+#[test]
+fn partition_single_endpoint_single_worker() {
+    let eps = sample_endpoints(1);
+    let parts = partition_endpoints(&eps, 1, AssignmentStrategy::RoundRobin);
+    assert_eq!(parts.len(), 1);
+    assert_eq!(parts[0].len(), 1);
+}
+
+#[test]
+fn partition_zero_endpoints() {
+    let eps: Vec<String> = Vec::new();
+    let parts = partition_endpoints(&eps, 3, AssignmentStrategy::RoundRobin);
+    assert_eq!(parts.len(), 3);
+    for part in &parts {
+        assert!(part.is_empty());
+    }
+}
+
+#[test]
+fn worker_id_empty_string() {
+    let wid = worker_id("");
+    assert_eq!(format!("{wid}"), "");
+    assert_eq!(wid, worker_id(""));
+}
+
+#[test]
+fn worker_id_unicode() {
+    let wid = WorkerId {
+        id: "ワーカー-1".to_string(),
+    };
+    assert_eq!(format!("{wid}"), "ワーカー-1");
+}
+
+#[test]
+fn coordinator_state_new_has_zero_active_workers() {
+    let config = default_distributed_config(1);
+    let state = CoordinatorState::new(&config);
+    assert_eq!(state.active_worker_count(), 0);
+}
+
+#[test]
+fn distributed_config_roundtrip_json() {
+    let config = default_distributed_config(3);
+    let json = serde_json::to_string(&config).unwrap();
+    let deserialized: DistributedConfig = serde_json::from_str(&json).unwrap();
+    assert_eq!(deserialized.worker_count, config.worker_count);
 }

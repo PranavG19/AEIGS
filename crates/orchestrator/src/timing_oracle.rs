@@ -234,17 +234,19 @@ pub fn generate_timing_payloads(
         }],
         BlindVulnType::BlindXxe => vec![
             TimingPayloadPair {
-                treatment: "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \
+                treatment: format!(
+                    "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \
                      \"http://nonexistent-xxe-timing-probe.invalid/\">]>\
                      <foo>&xxe;</foo>"
-                    .to_string(),
+                ),
                 control: "<?xml version=\"1.0\"?><foo>bar</foo>".to_string(),
                 label: "XXE external entity DNS".to_string(),
             },
             TimingPayloadPair {
-                treatment: "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \
+                treatment: format!(
+                    "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \
                      \"http://240.0.0.1:1234/\">]><foo>&xxe;</foo>"
-                    .to_string(),
+                ),
                 control: "<?xml version=\"1.0\"?><foo>bar</foo>".to_string(),
                 label: "XXE non-routable IP".to_string(),
             },
@@ -322,7 +324,7 @@ impl TimingDistribution {
 
         let mut sorted = raw.to_vec();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-        let median = if sorted.len().is_multiple_of(2) {
+        let median = if sorted.len() % 2 == 0 {
             (sorted[sorted.len() / 2 - 1] + sorted[sorted.len() / 2]) / 2.0
         } else {
             sorted[sorted.len() / 2]
@@ -670,9 +672,9 @@ fn compute_confidence(
         (1.0 - t_test.p_value).clamp(0.0, 1.0)
     };
 
-    let magnitude_match = if (0.8..=1.3).contains(&delay_ratio) {
+    let magnitude_match = if delay_ratio >= 0.8 && delay_ratio <= 1.3 {
         1.0
-    } else if (0.5..=2.0).contains(&delay_ratio) {
+    } else if delay_ratio >= 0.5 && delay_ratio <= 2.0 {
         0.7
     } else if delay_ratio > 0.0 {
         0.3

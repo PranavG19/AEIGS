@@ -338,12 +338,10 @@ fn test_analyze_docker_severity_critical() {
 
     let findings = engine.analyze_results(&results);
     assert_eq!(findings[0].severity, RebindSeverity::Critical);
-    assert!(
-        findings[0]
-            .chain_potential
-            .iter()
-            .any(|c| c.contains("Docker"))
-    );
+    assert!(findings[0]
+        .chain_potential
+        .iter()
+        .any(|c| c.contains("Docker")));
 }
 
 #[test]
@@ -497,11 +495,9 @@ fn test_chain_potential_k8s() {
     };
 
     let chains = chain_potential(&result);
-    assert!(
-        chains
-            .iter()
-            .any(|c| c.contains("kubelet") || c.contains("pod"))
-    );
+    assert!(chains
+        .iter()
+        .any(|c| c.contains("kubelet") || c.contains("pod")));
 }
 
 #[test]

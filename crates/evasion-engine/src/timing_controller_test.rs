@@ -169,4 +169,92 @@ mod tests {
             assert_eq!(ctrl.compute_delay_ms(), 300);
         }
     }
+
+    #[test]
+    fn zero_min_zero_max_returns_zero_after_record() {
+        let mut ctrl = TimingController::new(0, 0, JitterDistribution::Uniform, 42);
+        ctrl.record_request();
+        for _ in 0..50 {
+            assert_eq!(ctrl.compute_delay_ms(), 0);
+        }
+    }
+
+    #[test]
+    fn zero_min_positive_max_uniform() {
+        let mut ctrl = TimingController::new(0, 100, JitterDistribution::Uniform, 42);
+        ctrl.record_request();
+        for _ in 0..200 {
+            let delay = ctrl.compute_delay_ms();
+            assert!(delay <= 100, "delay {delay} above max 100");
+        }
+    }
+
+    #[test]
+    fn multiple_records_before_compute() {
+        let mut ctrl = make_controller(JitterDistribution::Uniform);
+        ctrl.record_request();
+        ctrl.record_request();
+        ctrl.record_request();
+        let delay = ctrl.compute_delay_ms();
+        assert!(delay >= 100 && delay <= 500, "delay {delay} not in range");
+    }
+
+    #[test]
+    fn seed_zero_produces_valid_delays() {
+        let mut ctrl = TimingController::new(100, 500, JitterDistribution::Uniform, 0);
+        ctrl.record_request();
+        for _ in 0..50 {
+            let delay = ctrl.compute_delay_ms();
+            assert!(
+                delay >= 100 && delay <= 500,
+                "delay {delay} out of range with seed 0"
+            );
+        }
+    }
+
+    #[test]
+    fn seed_max_produces_valid_delays() {
+        let mut ctrl = TimingController::new(100, 500, JitterDistribution::Uniform, u64::MAX);
+        ctrl.record_request();
+        for _ in 0..50 {
+            let delay = ctrl.compute_delay_ms();
+            assert!(
+                delay >= 100 && delay <= 500,
+                "delay {delay} out of range with max seed"
+            );
+        }
+    }
+
+    #[test]
+    fn many_resets_and_resumes() {
+        let mut ctrl = make_controller(JitterDistribution::Uniform);
+        for _ in 0..20 {
+            ctrl.record_request();
+            let delay = ctrl.compute_delay_ms();
+            assert!(delay > 0);
+            ctrl.reset();
+            assert_eq!(ctrl.compute_delay_ms(), 0);
+        }
+    }
+
+    #[test]
+    fn all_distributions_produce_valid_ranges() {
+        let dists = vec![
+            JitterDistribution::Uniform,
+            JitterDistribution::Exponential,
+            JitterDistribution::Normal,
+        ];
+        for dist in dists {
+            let mut ctrl = TimingController::new(50, 200, dist, 42);
+            ctrl.record_request();
+            for _ in 0..100 {
+                let delay = ctrl.compute_delay_ms();
+                assert!(
+                    delay >= 50 && delay <= 200,
+                    "delay {delay} out of range for {:?}",
+                    dist
+                );
+            }
+        }
+    }
 }

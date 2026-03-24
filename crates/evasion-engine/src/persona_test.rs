@@ -400,18 +400,14 @@ fn load_persona_catalog_empty_accept_header_returns_error() {
 #[test]
 fn catalog_error_display_variants() {
     let io_err = CatalogError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "gone"));
-    assert!(
-        io_err
-            .to_string()
-            .contains("failed to read persona catalog")
-    );
+    assert!(io_err
+        .to_string()
+        .contains("failed to read persona catalog"));
 
     let parse_err = CatalogError::Parse(serde_json::from_str::<Vec<Persona>>("bad").unwrap_err());
-    assert!(
-        parse_err
-            .to_string()
-            .contains("failed to parse persona catalog")
-    );
+    assert!(parse_err
+        .to_string()
+        .contains("failed to parse persona catalog"));
 
     let empty_err = CatalogError::EmptyCatalog;
     assert!(empty_err.to_string().contains("at least one persona"));
@@ -473,4 +469,72 @@ fn default_catalog_json_matches_persona_catalog() {
         assert_eq!(a.accept_header, b.accept_header);
         assert_eq!(a.header_order, b.header_order);
     }
+}
+
+#[test]
+fn persona_catalog_has_10_personas() {
+    let catalog = persona_catalog();
+    assert_eq!(
+        catalog.len(),
+        10,
+        "expected 10 persona variants, got {}",
+        catalog.len()
+    );
+}
+
+#[test]
+fn all_persona_ids_unique() {
+    let catalog = persona_catalog();
+    let ids: Vec<PersonaId> = catalog.iter().map(|p| p.id).collect();
+    let unique: std::collections::HashSet<PersonaId> = ids.iter().copied().collect();
+    assert_eq!(
+        unique.len(),
+        ids.len(),
+        "duplicate PersonaId found in catalog"
+    );
+}
+
+#[test]
+fn all_personas_have_nonempty_header_order() {
+    let catalog = persona_catalog();
+    for persona in &catalog {
+        assert!(
+            !persona.header_order.is_empty(),
+            "{:?} has empty header_order",
+            persona.id
+        );
+    }
+}
+
+#[test]
+fn persona_id_debug_all_variants() {
+    let variants = vec![
+        PersonaId::ChromeDesktop,
+        PersonaId::FirefoxDesktop,
+        PersonaId::SafariDesktop,
+        PersonaId::ChromeMobile,
+        PersonaId::Googlebot,
+        PersonaId::EdgeDesktop,
+        PersonaId::OperaDesktop,
+        PersonaId::SafariMobile,
+        PersonaId::CurlClient,
+        PersonaId::PythonRequests,
+    ];
+    for variant in &variants {
+        let debug = format!("{variant:?}");
+        assert!(!debug.is_empty(), "{variant:?} has empty Debug");
+    }
+}
+
+#[test]
+fn persona_custom_builder_minimal() {
+    let persona = Persona::custom(PersonaId::ChromeDesktop)
+        .with_user_agent("test-agent")
+        .with_accept_header("text/html")
+        .with_request_interval(100, 200)
+        .with_jitter_distribution(JitterDistribution::Uniform)
+        .build();
+    assert_eq!(persona.id, PersonaId::ChromeDesktop);
+    assert_eq!(persona.user_agent, "test-agent");
+    assert_eq!(persona.accept_header, "text/html");
 }

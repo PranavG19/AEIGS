@@ -357,11 +357,9 @@ fn tool_error_display() {
         ToolError::MissingParameter("bar".to_string()).to_string(),
         "missing required parameter: bar"
     );
-    assert!(
-        ToolError::ExecutionFailed("oops".to_string())
-            .to_string()
-            .contains("oops")
-    );
+    assert!(ToolError::ExecutionFailed("oops".to_string())
+        .to_string()
+        .contains("oops"));
 }
 
 #[test]

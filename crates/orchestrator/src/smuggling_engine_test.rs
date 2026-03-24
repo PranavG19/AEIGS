@@ -6,18 +6,14 @@ fn cl_te_probes_generated() {
     assert_eq!(probes.len(), 2);
     assert_eq!(probes[0].technique, SmugglingTechnique::ClTe);
     assert_eq!(probes[0].name, "CL.TE basic");
-    assert!(
-        probes[0]
-            .treatment_headers
-            .iter()
-            .any(|(k, _)| k == "Transfer-Encoding")
-    );
-    assert!(
-        probes[0]
-            .treatment_headers
-            .iter()
-            .any(|(k, _)| k == "Content-Length")
-    );
+    assert!(probes[0]
+        .treatment_headers
+        .iter()
+        .any(|(k, _)| k == "Transfer-Encoding"));
+    assert!(probes[0]
+        .treatment_headers
+        .iter()
+        .any(|(k, _)| k == "Content-Length"));
     assert!(!probes[0].treatment_body.is_empty());
     assert!(probes[0].control_body.is_empty());
 }

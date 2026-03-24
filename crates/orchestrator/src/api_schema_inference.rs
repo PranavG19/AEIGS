@@ -16,6 +16,7 @@ use std::fmt;
 ///
 /// The inferred schema feeds directly into the grammar fuzzer for
 /// intelligent test case generation.
+
 /// An observed HTTP request/response pair.
 #[derive(Debug, Clone)]
 pub struct ObservedRequest {
@@ -127,16 +128,19 @@ pub fn infer_type(value: &str) -> InferredType {
 
     let parts: Vec<&str> = value.split('.').collect();
     if parts.len() == 3
-        && parts.iter().all(|p| {
-            p.chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
-        })
+        && parts
+            .iter()
+            .all(|p| p.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
         && parts[0].len() > 10
     {
         return InferredType::JwtToken;
     }
 
-    if value.len() >= 16 && value.chars().all(|c| c.is_ascii_hexdigit()) {
+    if value.len() >= 16
+        && value
+            .chars()
+            .all(|c| c.is_ascii_hexdigit())
+    {
         return InferredType::HexString;
     }
 
@@ -144,7 +148,7 @@ pub fn infer_type(value: &str) -> InferredType {
         && value
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=')
-        && (value.ends_with('=') || value.len().is_multiple_of(4))
+        && (value.ends_with('=') || value.len() % 4 == 0)
     {
         return InferredType::Base64;
     }
@@ -179,11 +183,7 @@ impl fmt::Display for InferredPathTemplate {
 #[derive(Debug, Clone)]
 pub enum PathSegment {
     Literal(String),
-    Parameter {
-        name: String,
-        inferred_type: InferredType,
-        observed_values: Vec<String>,
-    },
+    Parameter { name: String, inferred_type: InferredType, observed_values: Vec<String> },
 }
 
 /// A JSON field extracted from request/response bodies.
@@ -260,10 +260,7 @@ pub fn detect_auth_type(headers: &HashMap<String, String>) -> Option<AuthType> {
         }
     }
 
-    if lower.contains_key("x-api-key")
-        || lower.contains_key("api-key")
-        || lower.contains_key("apikey")
-    {
+    if lower.contains_key("x-api-key") || lower.contains_key("api-key") || lower.contains_key("apikey") {
         return Some(AuthType::ApiKey);
     }
 
@@ -284,7 +281,10 @@ pub fn infer_path_templates(paths: &[String]) -> Vec<InferredPathTemplate> {
 
     for path in paths {
         let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
-        let pattern: Vec<bool> = segments.iter().map(|s| is_likely_variable(s)).collect();
+        let pattern: Vec<bool> = segments
+            .iter()
+            .map(|s| is_likely_variable(s))
+            .collect();
         groups
             .entry((segments.len(), pattern))
             .or_default()
@@ -317,8 +317,7 @@ pub fn infer_path_templates(paths: &[String]) -> Vec<InferredPathTemplate> {
                     .collect();
 
                 let inferred = if !values.is_empty() {
-                    let types: HashSet<InferredType> =
-                        values.iter().map(|v| infer_type(v)).collect();
+                    let types: HashSet<InferredType> = values.iter().map(|v| infer_type(v)).collect();
                     if types.len() == 1 {
                         *types.iter().next().unwrap()
                     } else if types.contains(&InferredType::Integer) {
@@ -365,7 +364,10 @@ fn is_likely_variable(segment: &str) -> bool {
     let t = infer_type(segment);
     matches!(
         t,
-        InferredType::Integer | InferredType::Uuid | InferredType::HexString | InferredType::Base64
+        InferredType::Integer
+            | InferredType::Uuid
+            | InferredType::HexString
+            | InferredType::Base64
     )
 }
 
@@ -572,12 +574,10 @@ pub fn detect_relationships(endpoints: &[InferredEndpoint]) -> Vec<EndpointRelat
             }
 
             if parent == child && endpoints[i].method != endpoints[j].method {
-                let methods = [&endpoints[i].method, &endpoints[j].method];
+                let methods = vec![&endpoints[i].method, &endpoints[j].method];
                 if (methods.contains(&&"GET".to_string()) && methods.contains(&&"POST".to_string()))
-                    || (methods.contains(&&"GET".to_string())
-                        && methods.contains(&&"PUT".to_string()))
-                    || (methods.contains(&&"GET".to_string())
-                        && methods.contains(&&"DELETE".to_string()))
+                    || (methods.contains(&&"GET".to_string()) && methods.contains(&&"PUT".to_string()))
+                    || (methods.contains(&&"GET".to_string()) && methods.contains(&&"DELETE".to_string()))
                 {
                     relationships.push(EndpointRelationship {
                         parent: format!("{} {}", endpoints[i].method, parent),
@@ -606,7 +606,10 @@ pub struct InferredApiSchema {
 pub fn infer_schema(exchanges: &[ObservedExchange]) -> InferredApiSchema {
     let mut endpoint_map: HashMap<(String, String), Vec<&ObservedExchange>> = HashMap::new();
 
-    let paths: Vec<String> = exchanges.iter().map(|e| e.request.path.clone()).collect();
+    let paths: Vec<String> = exchanges
+        .iter()
+        .map(|e| e.request.path.clone())
+        .collect();
     let templates = infer_path_templates(&paths);
 
     for exchange in exchanges {
@@ -643,10 +646,7 @@ pub fn infer_schema(exchanges: &[ObservedExchange]) -> InferredApiSchema {
 
         for ex in exs {
             for (k, v) in &ex.request.query_params {
-                query_params_map
-                    .entry(k.clone())
-                    .or_default()
-                    .push(v.clone());
+                query_params_map.entry(k.clone()).or_default().push(v.clone());
             }
             response_codes.insert(ex.response.status_code);
             if let Some(ct) = &ex.response.content_type {

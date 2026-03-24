@@ -1,22 +1,22 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 
-// WebSocket state machine fuzzer.
-//
-// WebSocket-based applications maintain server-side state that changes
-// as messages flow. This module models the state machine from observed
-// message sequences, then systematically probes for:
-//
-// 1. Invalid state transitions (send a message that shouldn't be
-//    allowed in the current state — e.g., "place_order" before "login")
-// 2. Out-of-order message sequences that bypass business logic
-// 3. Race conditions from parallel messages
-// 4. Message mutation (valid structure, malicious content)
-// 5. Authentication bypass via reconnection or session replay
-//
-// The key insight: most WebSocket APIs don't validate state transitions
-// on the server. They assume the client will follow the expected flow.
-// We don't follow the expected flow.
+/// WebSocket state machine fuzzer.
+///
+/// WebSocket-based applications maintain server-side state that changes
+/// as messages flow. This module models the state machine from observed
+/// message sequences, then systematically probes for:
+///
+/// 1. Invalid state transitions (send a message that shouldn't be
+///    allowed in the current state — e.g., "place_order" before "login")
+/// 2. Out-of-order message sequences that bypass business logic
+/// 3. Race conditions from parallel messages
+/// 4. Message mutation (valid structure, malicious content)
+/// 5. Authentication bypass via reconnection or session replay
+///
+/// The key insight: most WebSocket APIs don't validate state transitions
+/// on the server. They assume the client will follow the expected flow.
+/// We don't follow the expected flow.
 
 /// A unique state in the WebSocket protocol state machine.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -204,10 +204,10 @@ impl WsStateMachine {
             visited.insert(current.clone());
 
             let state = self.states.iter().find(|s| s.id == current);
-            if let Some(s) = state
-                && s.is_authenticated
-            {
-                continue;
+            if let Some(s) = state {
+                if s.is_authenticated {
+                    continue;
+                }
             }
 
             for transition in self.transitions.iter().filter(|t| t.from_state == current) {

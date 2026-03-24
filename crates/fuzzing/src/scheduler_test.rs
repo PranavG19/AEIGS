@@ -3,7 +3,7 @@ mod tests {
     use aegis_protocol::finding::VulnerabilityClass;
     use aegis_protocol::request::ParameterLocation;
 
-    use crate::scheduler::{FuzzScheduler, FuzzTarget, is_fuzzable};
+    use crate::scheduler::{is_fuzzable, FuzzScheduler, FuzzTarget};
     use crate::stealth_config::StealthConfig;
 
     fn target(endpoint: &str, priority: f64) -> FuzzTarget {
@@ -580,5 +580,62 @@ mod tests {
             max_attempts: 3,
         };
         assert_eq!(target.parameter_location, ParameterLocation::Body);
+    }
+
+    #[test]
+    fn negative_priority_enqueues_and_dequeues() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/negative", -5.0));
+        scheduler.enqueue(target("/positive", 1.0));
+
+        let first = scheduler.next_target().unwrap();
+        assert_eq!(first.endpoint, "/positive");
+        let second = scheduler.next_target().unwrap();
+        assert_eq!(second.endpoint, "/negative");
+        assert_eq!(second.priority_score, -5.0);
+    }
+
+    #[test]
+    fn very_large_number_of_targets() {
+        let mut scheduler = FuzzScheduler::new();
+        for i in 0..500 {
+            scheduler.enqueue(target(&format!("/endpoint-{i}"), i as f64));
+        }
+        assert_eq!(scheduler.pending_count(), 500);
+
+        let first = scheduler.next_target().unwrap();
+        assert_eq!(first.endpoint, "/endpoint-499");
+        assert_eq!(first.priority_score, 499.0);
+    }
+
+    #[test]
+    fn enqueue_empty_batch() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue_batch(vec![]);
+        assert!(scheduler.is_empty());
+        assert_eq!(scheduler.pending_count(), 0);
+    }
+
+    #[test]
+    fn zero_priority_target() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/zero", 0.0));
+        let t = scheduler.next_target().unwrap();
+        assert_eq!(t.priority_score, 0.0);
+        assert_eq!(t.endpoint, "/zero");
+    }
+
+    #[test]
+    fn equal_priority_both_dequeued() {
+        let mut scheduler = FuzzScheduler::new();
+        scheduler.enqueue(target("/a", 5.0));
+        scheduler.enqueue(target("/b", 5.0));
+        assert_eq!(scheduler.pending_count(), 2);
+
+        let first = scheduler.next_target().unwrap();
+        let second = scheduler.next_target().unwrap();
+        let endpoints: Vec<String> = vec![first.endpoint, second.endpoint];
+        assert!(endpoints.contains(&"/a".to_string()));
+        assert!(endpoints.contains(&"/b".to_string()));
     }
 }
