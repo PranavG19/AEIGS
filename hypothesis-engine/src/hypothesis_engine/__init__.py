@@ -14,6 +14,13 @@ from hypothesis_engine.uncertainty import (
     extract_uncertainty_score,
     prioritize_hypotheses,
 )
+from hypothesis_engine.adversarial_compiler import (
+    AdversarialCompiler,
+    AdversarialCompilationResult,
+    BypassStrategy,
+    FailureAnalysis,
+    ReformulatedHypothesis,
+)
 
 __all__ = [
     "HypothesisGenerator",
@@ -34,4 +41,9 @@ __all__ = [
     "adjust_confidence",
     "extract_uncertainty_score",
     "prioritize_hypotheses",
+    "AdversarialCompiler",
+    "AdversarialCompilationResult",
+    "BypassStrategy",
+    "FailureAnalysis",
+    "ReformulatedHypothesis",
 ]
