@@ -1,6 +1,6 @@
 # WORKER TASK — Adaptive WAF Grammar Inference
 
-## status: IN PROGRESS
+## status: DONE
 
 ## feature
 Adaptive WAF Grammar Inference Engine — reverse-engineers WAF rule grammars in real-time.

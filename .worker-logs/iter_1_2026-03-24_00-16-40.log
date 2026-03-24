@@ -3306,3 +3306,31 @@ Use the Task tool to have explore agent process this file with Grep and Read (wi
 The fmt diff is only in orchestrator and other crates, not in my evasion-engine code. My files are clean. Let me verify:
 [0m$ [0mcargo fmt -p aegis-evasion-engine --check 2>&1
 My crate is fmt-clean. Now commit, write HEARTBEAT, and mark DONE:
+[0m
+[0m$ [0mdate > HEARTBEAT && git add -A && git commit -m '[evasion-engine] add adaptive WAF grammar inference engine'
+[feat/waf-grammar 9cdc6b9] [evasion-engine] add adaptive WAF grammar inference engine
+ 8 files changed, 4803 insertions(+)
+ create mode 100644 .worker-logs/iter_1_2026-03-24_00-16-40.log
+ create mode 100755 .worker_loop.sh
+ create mode 100644 HEARTBEAT
+ create mode 100644 TASK.md
+ create mode 100644 crates/evasion-engine/src/waf_grammar.rs
+ create mode 100644 crates/evasion-engine/src/waf_grammar_test.rs
+[0m
+Now mark TASK.md DONE:
+[0m← [0mEdit TASK.md
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
++++ /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
+@@ -1,7 +1,7 @@
+ # WORKER TASK — Adaptive WAF Grammar Inference
+ 
+-## status: IN PROGRESS
++## status: DONE
+ 
+ ## feature
+ Adaptive WAF Grammar Inference Engine — reverse-engineers WAF rule grammars in real-time.
+ 
+
+[0m
