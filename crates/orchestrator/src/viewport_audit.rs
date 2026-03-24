@@ -137,3 +137,147 @@ pub fn viewport_to_operations(issues: &[ViewportIssue], seq: &mut u64) -> Vec<Op
         })
         .collect()
 }
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum ViewportSecurityIssue {
+    ViewportExfiltration,
+    ViewportFingerprinting,
+    ViewportPhishingRisk,
+    ViewportTrackingPersistence,
+    ViewportCrossOrigin,
+    ViewportKeyloggerRisk,
+    ViewportClickjacking,
+    ViewportScreenCapture,
+    ViewportOrientationTracking,
+    ViewportResizeSpying,
+}
+
+impl std::fmt::Display for ViewportSecurityIssue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ViewportExfiltration => write!(f, "viewport_exfiltration"),
+            Self::ViewportFingerprinting => write!(f, "viewport_fingerprinting"),
+            Self::ViewportPhishingRisk => write!(f, "viewport_phishing_risk"),
+            Self::ViewportTrackingPersistence => write!(f, "viewport_tracking_persistence"),
+            Self::ViewportCrossOrigin => write!(f, "viewport_cross_origin"),
+            Self::ViewportKeyloggerRisk => write!(f, "viewport_keylogger_risk"),
+            Self::ViewportClickjacking => write!(f, "viewport_clickjacking"),
+            Self::ViewportScreenCapture => write!(f, "viewport_screen_capture"),
+            Self::ViewportOrientationTracking => write!(f, "viewport_orientation_tracking"),
+            Self::ViewportResizeSpying => write!(f, "viewport_resize_spying"),
+        }
+    }
+}
+
+pub fn analyze_viewport_security(body: &str) -> Vec<ViewportSecurityIssue> {
+    let lower = body.to_ascii_lowercase();
+    if !lower.contains("viewport")
+        && !lower.contains("innerwidth")
+        && !lower.contains("innerheight")
+        && !lower.contains("screen.width")
+    {
+        return Vec::new();
+    }
+
+    let mut issues = Vec::new();
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && (lower.contains("fetch(")
+            || lower.contains("xmlhttprequest")
+            || lower.contains("sendbeacon"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportExfiltration);
+    }
+
+    if (lower.contains("viewport")
+        || lower.contains("innerwidth")
+        || lower.contains("innerheight")
+        || lower.contains("screen.width")
+        || lower.contains("screen.height"))
+        && (lower.contains("useragent") || lower.contains("navigator"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportFingerprinting);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && (lower.contains("position:") || lower.contains("z-index") || lower.contains("overlay"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportPhishingRisk);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && (lower.contains("localstorage") || lower.contains("sessionstorage"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportTrackingPersistence);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && lower.contains("postmessage")
+    {
+        issues.push(ViewportSecurityIssue::ViewportCrossOrigin);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && (lower.contains("keydown") || lower.contains("keypress") || lower.contains("keyup"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportKeyloggerRisk);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && (lower.contains("iframe")
+            || lower.contains("opacity")
+            || lower.contains("pointer-events"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportClickjacking);
+    }
+
+    if (lower.contains("viewport") || lower.contains("screen.width"))
+        && (lower.contains("getdisplaymedia") || lower.contains("capturestream"))
+    {
+        issues.push(ViewportSecurityIssue::ViewportScreenCapture);
+    }
+
+    if lower.contains("screen.orientation") && lower.contains("addeventlistener") {
+        issues.push(ViewportSecurityIssue::ViewportOrientationTracking);
+    }
+
+    if (lower.contains("viewport") || lower.contains("innerwidth") || lower.contains("innerheight"))
+        && lower.contains("resizeobserver")
+    {
+        issues.push(ViewportSecurityIssue::ViewportResizeSpying);
+    }
+
+    issues
+}
+
+pub fn viewport_security_severity(issue: &ViewportSecurityIssue) -> f64 {
+    match issue {
+        ViewportSecurityIssue::ViewportExfiltration => 7.5,
+        ViewportSecurityIssue::ViewportKeyloggerRisk => 7.0,
+        ViewportSecurityIssue::ViewportClickjacking => 6.5,
+        ViewportSecurityIssue::ViewportScreenCapture => 6.5,
+        ViewportSecurityIssue::ViewportFingerprinting => 6.0,
+        ViewportSecurityIssue::ViewportPhishingRisk => 6.0,
+        ViewportSecurityIssue::ViewportCrossOrigin => 5.5,
+        ViewportSecurityIssue::ViewportTrackingPersistence => 5.0,
+        ViewportSecurityIssue::ViewportOrientationTracking => 4.5,
+        ViewportSecurityIssue::ViewportResizeSpying => 4.0,
+    }
+}
+
+pub fn viewport_security_to_operations(
+    issues: &[ViewportSecurityIssue],
+    seq: &mut u64,
+) -> Vec<OperationLogEntry> {
+    issues
+        .iter()
+        .map(|issue| {
+            recon_client::finding_entry(
+                seq,
+                VulnerabilityClass::InformationDisclosure,
+                viewport_security_severity(issue),
+                0.5,
+            )
+        })
+        .collect()
+}

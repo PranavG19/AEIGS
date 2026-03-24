@@ -6,12 +6,12 @@ task: adding new scanner features
 status: in-progress
 
 ## test-results
-- cargo test -p aegis-orchestrator: 10435 lib, 0 failed
+- cargo test -p aegis-orchestrator: 10541 lib, 0 failed
 - cargo clippy -p aegis-orchestrator: 0 warnings
 
 ## priority-clearance
 - P0-P7: CLEAR (P7 BLOCKED Docker)
-- P8: 290 features shipped
+- P8: 293 features shipped
 - P9: COMPLETE (helper consolidation)
 - P10: COMPLETE (fetch-once pattern)
 - P11: COMPLETE (coverage expansion, 1708→1784)
@@ -90,6 +90,7 @@ status: in-progress
 283. Drag Drop (16→57), 284. File Handling (16→65), 285. Geolocation (16→51)
 286. Launch Handler (16→73), 287. Media Session (16→67), 288. Network Info (16→50)
 289. Payment Request (16→60), 290. Presentation (16→49)
+291. SSE Audit (16→61), 292. Storage Bucket (16→55), 293. Viewport (16→52)
 
 ## handoff
-Continue P8. Next: improve more scanners with low test counts.
+P8 CONTINUOUS_IMPROVEMENT. 293 features shipped. 10541 tests green. READY TO MERGE.
