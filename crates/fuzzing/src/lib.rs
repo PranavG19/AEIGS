@@ -2,6 +2,7 @@ pub mod bot_detection_probe;
 pub mod cloud_detector;
 pub mod confirmation;
 pub mod cors_detector;
+pub mod coverage_tracker;
 pub mod defense_profile;
 pub mod executor;
 pub mod graphql_tester;
@@ -73,3 +74,7 @@ mod confirmation_test;
 #[cfg(test)]
 #[path = "race_tester_test.rs"]
 mod race_tester_test;
+
+#[cfg(test)]
+#[path = "coverage_tracker_test.rs"]
+mod coverage_tracker_test;
