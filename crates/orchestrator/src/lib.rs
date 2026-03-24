@@ -173,6 +173,7 @@ pub mod robots_parser;
 pub mod s3_scanner;
 pub mod sanitizer_api_audit;
 pub mod scan_config;
+pub mod scan_context_serializer;
 pub mod scan_history;
 pub mod scan_strategy;
 pub mod scheduler_api_audit;
