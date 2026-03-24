@@ -2,33 +2,25 @@
 
 ## current
 priority: PHASE 1 — GHOST PROTOCOL (Browser Identity Synthesis)
-task: P1b — TLS ClientHello full synthesis
+task: P1c — Header ordering engine
 status: NOT STARTED
 
-## g1-roi-ranking (P1a — COMPLETED)
-Option 1: HTTP/2 fingerprint engine (P1a) ✅ SHIPPED
-  - offensive_power: 9 (Akamai/Cloudflare use HTTP/2 SETTINGS fingerprinting to detect bots — this is the #1 reason automated scanners get blocked)
-  - uniqueness: 10 (no open-source scanner has this; even Burp sends default h2 frames)
-  - intelligence_multiplier: 7 (enables all subsequent evasion; every scan benefits)
-  - cost: 8 (single file, well-scoped data structures, ~200 lines)
-  - ROI = (9 × 10 × 7) / 8 = 78.75
-
-## g1-roi-ranking (P1b — NEXT)
-Option 1: TLS ClientHello full synthesis (P1b)
-  - offensive_power: 8, uniqueness: 8, intelligence: 6, cost: 5
-  - ROI = (8 × 8 × 6) / 5 = 76.8
-Option 2: Header ordering engine (P1c)
+## g1-roi-ranking (P1c — NEXT)
+Option 1: Header ordering engine (P1c)
   - offensive_power: 6, uniqueness: 5, intelligence: 4, cost: 9
   - ROI = (6 × 5 × 4) / 9 = 13.3
-Option 3: Navigator property synthesis (P1d)
+Option 2: Navigator property synthesis (P1d)
   - offensive_power: 5, uniqueness: 6, intelligence: 3, cost: 7
   - ROI = (5 × 6 × 3) / 7 = 12.9
-WINNER: P1b — TLS ClientHello full synthesis (ROI 76.8)
+Option 3: Canvas/WebGL/Audio fingerprint (P1e)
+  - offensive_power: 4, uniqueness: 5, intelligence: 2, cost: 4
+  - ROI = (4 × 5 × 2) / 4 = 10.0
+WINNER: P1c — Header ordering engine (ROI 13.3)
 
 ## phase-status
 - PHASE 1 (Ghost Protocol): IN PROGRESS
-  - P1a HTTP/2 fingerprint engine: ✅ COMPLETE
-  - P1b TLS ClientHello synthesis: NOT STARTED
+  - P1a HTTP/2 fingerprint engine: ✅ COMPLETE (28 tests)
+  - P1b TLS ClientHello synthesis: ✅ COMPLETE (43 tests)
   - P1c Header ordering engine: NOT STARTED
   - P1d Navigator properties: NOT STARTED
   - P1e Canvas/WebGL/Audio: NOT STARTED
@@ -40,7 +32,7 @@ WINNER: P1b — TLS ClientHello full synthesis (ROI 76.8)
 - PHASE ∞ (ROI Loop): WAITING
 
 ## test-baseline
-- cargo test -p aegis-evasion-engine: 267 lib + 25 integration, 0 failed
+- cargo test -p aegis-evasion-engine: 310 lib + 25 integration, 0 failed
 - cargo clippy -p aegis-evasion-engine: 0 warnings
 - total workspace: ~4485+ tests (from prior daemon run)
 
@@ -70,29 +62,49 @@ Files:
 
 Capabilities:
 - 7 browser HTTP/2 fingerprint profiles: Chrome 120-125, Firefox 120-125, Safari 17+, Edge 120-125, curl, Go net/http, Python httpx
-- SETTINGS frame values + ordering per browser (HeaderTableSize, EnablePush, MaxConcurrentStreams, InitialWindowSize, MaxFrameSize, MaxHeaderListSize)
-- WINDOW_UPDATE sizes unique per browser (Chrome=15663105, Firefox=12517377, Safari=10485760, curl=33488897, Go=1073741824)
-- PRIORITY frame patterns per browser (Chrome: 3 frames with exclusive deps, Firefox: 5 frames with group deps, Safari: 1 frame)
-- Pseudo-header ordering: Chromium m/a/s/p, Mozilla m/p/a/s, WebKit m/s/p/a
+- SETTINGS frame values + ordering, WINDOW_UPDATE sizes, PRIORITY frames, pseudo-header ordering
 - Akamai fingerprint format serialization
-- Client identification via observed parameters matching (weighted scoring: 40% settings, 20% window_update, 15% settings_order, 15% pseudo-headers, 10% priority)
+- Client identification via weighted scoring (40% settings, 20% WINDOW_UPDATE, 15% order, 15% pseudo-headers, 10% priority)
 - Persona-to-H2-fingerprint mapping for all 10 personas
-- Transport layer integration: h2_fingerprint field auto-set on build, rotated with persona
+- Transport layer integration
+
+### P1b — TLS ClientHello Full Synthesis
+Files:
+- crates/evasion-engine/src/tls_clienthello.rs (new, ~820 lines)
+- crates/evasion-engine/src/tls_clienthello_test.rs (new, 43 tests)
+- crates/evasion-engine/src/lib.rs (wired module)
+
+Capabilities:
+- 7 full TLS ClientHello profiles: Chrome 120, Chrome 125, Firefox 121, Firefox 125, Safari 17, Edge 120, curl
+- Complete cipher suite ordering per browser (15 ciphers each, order-sensitive)
+- Extension ordering per browser (10-16 extensions each, distinct ordering)
+- Supported groups: Chrome has X25519_Kyber768 (post-quantum), Firefox has FFDHE groups, Safari has no PQ
+- Signature algorithms per browser (8-11 each)
+- ALPN protocol ordering
+- PSK key exchange modes
+- Key share groups (subset validation against supported_groups)
+- Compressed certificate support (Chrome only, brotli)
+- Delegated credentials + post-handshake auth (Firefox only)
+- Record size limit (Firefox only, 16385)
+- Encrypt-then-MAC (Safari only)
+- JA3 string + hash computation (custom MD5 implementation, zero dependencies)
+- JA4 fingerprint computation (simplified format)
+- Cipher-order-based client identification
+- Profile validation (internal consistency checks)
+- TlsFingerprint → ClientHello mapping
+- Persona → ClientHello mapping
 
 ## handoff
 PHASE 1 CONTINUE — GHOST PROTOCOL
-Next task: P1b — TLS ClientHello full synthesis
+Next task: P1c — Header ordering engine
 
-Build full TLS ClientHello profiles beyond JA3 hash matching:
-- Extension ordering per browser (SNI, supported_groups, signature_algorithms, ALPN, key_share, psk_key_exchange_modes, etc.)
-- JA3, JA3S, JA4, JA4H fingerprint computation + matching
-- Supported groups (curves): Chrome uses x25519/P-256/P-384, Firefox adds x25519_kyber768
-- Signature algorithms per browser
-- ALPN protocol list ordering
-- Each identity = coherent browser TLS + HTTP/2 + headers
+Build browser-specific HTTP header ordering:
+- Chrome sends: Host, Connection, Upgrade-Insecure-Requests, User-Agent, Accept, ...
+- Firefox sends: Host, User-Agent, Accept, Accept-Language, Accept-Encoding, ...
+- Safari sends: yet different order
+- The existing header_transformer.rs has persona-based ordering but it's basic
+- Enhance to use precise per-version header orderings captured from real traffic
+- Integrate with the existing Persona struct (header_order field already exists)
 
-Location: crates/evasion-engine/src/ — new files:
-- tls_clienthello.rs (full ClientHello synthesis database)
-- tls_clienthello_test.rs (verify profiles match real browser captures)
-
-Wire into: tls_config.rs (extend existing TLS config with full ClientHello parameters)
+Location: Enhance existing crates/evasion-engine/src/header_transformer.rs
+Add data to: crates/evasion-engine/data/default_personas.json (header_order field)
