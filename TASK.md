@@ -1,6 +1,6 @@
 # WORKER TASK — Probabilistic Attack Chain Synthesis
 
-## status: IN PROGRESS
+## status: DONE
 
 ## feature
 Extend the existing petgraph attack graph in chain-synthesis with Bayesian probability propagation.

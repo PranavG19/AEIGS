@@ -613,3 +613,39 @@ test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fin
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 [0m
 All 113 tests pass. Now commit, write heartbeat, and mark DONE:
+[0m$ [0mcd /Users/pranavgk/Documents/temp/adver/.workers/w1 && git add -A && git commit -m '[chain-synthesis] add probabilistic attack chain engine with Bayesian probability propagation' 2>&1
+[feat/probabilistic-chains 2d16cf9] [chain-synthesis] add probabilistic attack chain engine with Bayesian probability propagation
+ 8 files changed, 1846 insertions(+)
+ create mode 100644 .worker-logs/iter_1_2026-03-24_00-27-05.log
+ create mode 100644 .worker-logs/iter_2_2026-03-24_00-30-16.log
+ create mode 100755 .worker_loop.sh
+ create mode 100644 HEARTBEAT
+ create mode 100644 TASK.md
+ create mode 100644 crates/chain-synthesis/src/probabilistic_chains.rs
+ create mode 100644 crates/chain-synthesis/src/probabilistic_chains_test.rs
+[0m
+[0m$ [0mcd /Users/pranavgk/Documents/temp/adver/.workers/w1 && date > HEARTBEAT
+Now mark DONE in TASK.md:
+[0m
+[0m← [0mEdit TASK.md
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
++++ /Users/pranavgk/Documents/temp/adver/.workers/w1/TASK.md
+@@ -1,7 +1,7 @@
+ # WORKER TASK — Probabilistic Attack Chain Synthesis
+ 
+-## status: IN PROGRESS
++## status: DONE
+ 
+ ## feature
+ Extend the existing petgraph attack graph in chain-synthesis with Bayesian probability propagation.
+ 
+
+[0m
+Run clippy one final time to confirm zero warnings:
+[0m$ [0mcd /Users/pranavgk/Documents/temp/adver/.workers/w1 && cargo clippy -p aegis-chain-synthesis -- -D warnings 2>&1 | tail -3
+Checking aegis-chain-synthesis v0.1.0 (/Users/pranavgk/Documents/temp/adver/.workers/w1/crates/chain-synthesis)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.40s
+[0m
+Zero clippy warnings. Final commit for the DONE status + heartbeat:
