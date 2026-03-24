@@ -1,5 +1,6 @@
 mod crawler;
 mod error;
+pub mod js_taint_analyzer;
 mod page_fetcher;
 mod types;
 
