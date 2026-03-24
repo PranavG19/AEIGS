@@ -2,7 +2,7 @@
 
 ## current
 priority: ROI LOOP
-task: Authentication Breaker — COMPLETE
+task: SSRF Chain Automation — COMPLETE
 status: MOVING TO NEXT
 
 ## phase-status
@@ -16,10 +16,11 @@ status: MOVING TO NEXT
   - P2d Memory store: ✅ EXISTS (agent_memory_store.rs)
   - P2e Feedback loop: ✅ COMPLETE (17 tests)
 - PHASE 4 (Arsenal):
-  - P4a Payload Forge: ✅ COMPLETE (34 tests) — XSS/SQLi/SSTI/CMDi/SSRF + WAF evasion
-  - P4b Auth Breaker: ✅ COMPLETE (32 tests) — JWT attacks + session analysis + OAuth redirect
-  - P4c Smuggling engine: ✅ COMPLETE (23 tests) — CL.TE/TE.CL/TE.TE + counterfactual
-  - P4d Race engine: ✅ COMPLETE (23 tests) — single-packet/last-byte/burst + TOCTOU
+  - P4a Payload Forge: ✅ COMPLETE (34 tests)
+  - P4b Auth Breaker: ✅ COMPLETE (32 tests)
+  - P4c Smuggling engine: ✅ COMPLETE (23 tests)
+  - P4d Race engine: ✅ COMPLETE (23 tests)
+  - P4e SSRF Chain: ✅ COMPLETE (28 tests) — 7 cloud providers + IP bypasses + credential extraction
 - PHASE 3 (The Swarm): NOT STARTED
 - PHASE 5 (Nerve Center): NOT STARTED
 - PHASE ∞ (ROI Loop): ACTIVE
@@ -27,40 +28,42 @@ status: MOVING TO NEXT
 ## test counts this session
 - timing_oracle: 44
 - auth_breaker: 32
-- TOTAL NEW THIS SESSION: 76 tests
+- ssrf_chain: 28
+- TOTAL NEW THIS SESSION: 104 tests
 
 ## completed this session
-1. **Timing Oracle Detection** (ROI=126.0) — Statistical response time analysis
-   - Welch's t-test, outlier removal, Cohen's d, Pearson correlation confirmation
-   - 8 blind vuln types, 30+ timing payloads, 4-level verdict system
+1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
+   - Welch's t-test, Cohen's d, Pearson correlation, outlier removal
+   - 8 blind vuln types, 30+ payloads, 4-level verdict
 
-2. **Authentication Breaker** (P4b, ROI=75.6) — Active JWT/Session/OAuth attack suite
-   - JWT alg:none (5 case variants × 3 signature styles = 15 payloads)
-   - JWT alg confusion (RS256→HS256, ES→HS, PS→HS — 9 pairs)
-   - JWT claim tampering (10 privilege escalation injections)
-   - JWT exp bypass (removal, far future, zero, negative)
-   - JWT kid injection (path traversal, SQLi, CMDi, URL injection — 8 payloads)
-   - JWT jku spoofing (attacker JWKS, SSRF variants — 5 payloads)
-   - JWT null signature (empty, null bytes — 4 variants)
-   - Session token analysis (Shannon entropy, sequential detection, common prefix/suffix)
-   - OAuth redirect_uri manipulation (9 bypass techniques)
-   - 50+ total attack payloads from a single JWT token
+2. **Authentication Breaker** (P4b, ROI=75.6) — 32 tests
+   - JWT alg:none/confusion/tampering/exp/kid/jku/null-sig (50+ payloads)
+   - Session entropy + sequential analysis
+   - OAuth redirect_uri manipulation (9 techniques)
+
+3. **SSRF Chain Automation** (P4e, ROI=84.0) — 28 tests
+   - 7 cloud providers: AWS/GCP/Azure/DO/Alibaba/Oracle/Kubernetes
+   - 30+ metadata endpoint payloads with required headers
+   - IP bypass generation: decimal/hex/octal/IPv6/mixed (12 variants)
+   - URL scheme bypasses: http/https/gopher/dict/file
+   - Credential extraction: AWS IAM, GCP access token, Azure managed identity
+   - Internal service probing: 17 common services
+   - Discovery chain with automatic cloud provider detection
 
 ## ROI ranking (next)
-1. **SSRF chain automation** (P4e) — SSRF → metadata → creds → lateral movement
-   - power=9 uniqueness=8 intelligence=7 cost=6 → ROI=84.0
-2. **Differential response analysis** — WAF rule detection via response diffing
+1. **Differential response analysis** — WAF rule inference by response diffing
    - power=7 uniqueness=9 intelligence=8 cost=4 → ROI=126.0
-3. **Grammar-based generative fuzzing** — API grammar inference + malicious input generation
+2. **Grammar-based generative fuzzing** — API grammar inference + malicious generation
    - power=8 uniqueness=8 intelligence=9 cost=7 → ROI=82.3
+3. **XS-Leaks taxonomy engine** — Cross-origin info leakage via timing/cache/error
+   - power=7 uniqueness=9 intelligence=7 cost=5 → ROI=88.2
 
 ## handoff
-Next session: build SSRF chain automation (P4e).
-Location: crates/orchestrator/src/ssrf_chain.rs (new file)
+Next session: build differential response analysis engine.
+Location: crates/orchestrator/src/differential_response.rs (new file)
 Module covers:
-- Cloud metadata endpoint enumeration (AWS/GCP/Azure/DigitalOcean/Alibaba)
-- Credential extraction from metadata responses (IAM roles, access keys)
-- URL scheme bypass: gopher://, dict://, file://, http://[::1]
-- IP representation bypass: decimal, hex, octal, IPv6-mapped, DNS rebinding
-- Response analysis: JSON credential parsing, token extraction
-- Chain orchestration: SSRF → metadata → creds → authenticated API calls
+- Send identical requests through different paths/encodings
+- Compare response bodies, headers, status codes, timing
+- Infer WAF rules from which mutations get blocked vs pass
+- Adaptive: learn the WAF's pattern matching rules in real-time
+- Build a bypass strategy based on discovered rule gaps

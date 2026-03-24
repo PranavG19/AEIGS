@@ -202,6 +202,7 @@ pub mod speculation_rules_audit;
 pub mod speech_api_audit;
 pub mod sri_checker;
 pub mod sse_audit;
+pub mod ssrf_chain;
 pub mod ssrf_redirect_audit;
 pub mod storage_access_audit;
 pub mod storage_audit;
