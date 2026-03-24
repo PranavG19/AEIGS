@@ -401,3 +401,37 @@ tests/test_prompt_regression.py::TestParsingRobustness::test_parse_fallback_brac
 ======================= 574 passed, 20 warnings in 1.15s =======================
 [0m
 574 passed, 0 failed. All existing tests still green. Now commit:
+[0m$ [0mdate > HEARTBEAT && git add -A && git commit -m '[hypothesis-engine] add adversarial prompt compiler for bypass-aware hypothesis reformulation'
+[feat/adversarial-compiler 089aa73] [hypothesis-engine] add adversarial prompt compiler for bypass-aware hypothesis reformulation
+ 7 files changed, 1839 insertions(+)
+ create mode 100644 .worker-logs/iter_1_2026-03-24_00-27-07.log
+ create mode 100755 .worker_loop.sh
+ create mode 100644 HEARTBEAT
+ create mode 100644 TASK.md
+ create mode 100644 hypothesis-engine/src/hypothesis_engine/adversarial_compiler.py
+ create mode 100644 hypothesis-engine/tests/test_adversarial_compiler.py
+[0m
+Now let me run the Python linting check (equivalent to clippy for Python) and mark DONE:
+[0m$ [0mcd hypothesis-engine && uv run python -m py_compile src/hypothesis_engine/adversarial_compiler.py && echo "OK: no compile errors"
+OK: no compile errors
+[0m
+[0m$ [0mcd hypothesis-engine && uv run python -c "from hypothesis_engine import AdversarialCompiler, AdversarialCompilationResult, BypassStrategy, FailureAnalysis, ReformulatedHypothesis; print('All exports work')"
+All exports work
+[0m
+Now mark TASK.md as DONE:
+[0m← [0mEdit TASK.md
+Index: /Users/pranavgk/Documents/temp/adver/.workers/w2/TASK.md
+===================================================================
+--- /Users/pranavgk/Documents/temp/adver/.workers/w2/TASK.md
++++ /Users/pranavgk/Documents/temp/adver/.workers/w2/TASK.md
+@@ -1,7 +1,7 @@
+ # WORKER TASK — Adversarial Prompt Compiler
+ 
+-## status: IN PROGRESS
++## status: DONE
+ 
+ ## feature
+ Meta-reasoning layer that takes failed hypotheses + defense context and generates adversarial reformulations.
+ 
+
+[0m

@@ -1,6 +1,6 @@
 # WORKER TASK — Adversarial Prompt Compiler
 
-## status: IN PROGRESS
+## status: DONE
 
 ## feature
 Meta-reasoning layer that takes failed hypotheses + defense context and generates adversarial reformulations.
