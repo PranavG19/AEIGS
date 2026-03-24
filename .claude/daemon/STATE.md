@@ -2,8 +2,8 @@
 
 ## current
 priority: ROI LOOP
-task: SESSION COMPLETE — 5 major modules shipped
-status: HANDOFF READY
+task: Timing Oracle Detection — COMPLETE
+status: MOVING TO NEXT
 
 ## phase-status
 - PHASE 1 (Ghost Protocol): PARTIAL (P1a+P1b done)
@@ -24,27 +24,36 @@ status: HANDOFF READY
 - PHASE ∞ (ROI Loop): ACTIVE
 
 ## test counts this session
-- scan_context_serializer: 18
-- opencode_bridge: 18
-- brain_loop: 17
-- smuggling_engine: 23
-- payload_forge: 34
-- race_engine: 23
-- TOTAL NEW THIS SESSION: 133 tests
+- timing_oracle: 44
+- TOTAL NEW THIS SESSION: 44 tests
 
-## ROI ranking (next session)
-1. **Authentication breaker** (P4b) — JWT alg:none, key confusion, OAuth redirect
+## completed this session
+- **Timing Oracle Detection** (ROI=126.0) — Statistical response time analysis for blind vuln detection
+  - Welch's t-test with regularized incomplete beta function for p-value calculation
+  - 8 blind vuln types: SQLi, CMDi, SSRF, SSTI, LDAP, XXE, XPath, NoSQL
+  - 30+ timing payloads across all DB/OS/framework variants (MySQL SLEEP, MSSQL WAITFOR, pg_sleep, Oracle DBMS_PIPE, Unix sleep, Windows timeout, MongoDB $where, Jinja2 loops, etc.)
+  - Outlier removal via IQR method
+  - Cohen's d effect size for practical significance
+  - Pearson correlation for confirmation probing (inject different delays, verify linear relationship)
+  - Adaptive sample count calculation based on pilot variance
+  - 4-level verdict system: Confirmed / Suspicious / Inconclusive / NotVulnerable
+  - Composite confidence score: 40% statistical strength + 40% magnitude match + 20% consistency
+
+## ROI ranking (next)
+1. **Authentication breaker** (P4b) — JWT alg:none, key confusion, OAuth redirect, SAML
    - power=9 uniqueness=7 intelligence=6 cost=5 → ROI=75.6
 2. **SSRF chain automation** (P4e) — SSRF → metadata → creds → lateral movement
    - power=9 uniqueness=8 intelligence=7 cost=6 → ROI=84.0
-3. **Timing oracle detection** (ROI loop) — statistical response time analysis
-   - power=7 uniqueness=8 intelligence=9 cost=4 → ROI=126.0
+3. **Differential response analysis** — send identical requests through different paths, detect WAF rules by diff
+   - power=7 uniqueness=9 intelligence=8 cost=4 → ROI=126.0
+4. **Grammar-based generative fuzzing** — learn API grammar from OpenAPI spec, generate valid-but-malicious inputs
+   - power=8 uniqueness=8 intelligence=9 cost=7 → ROI=82.3
 
 ## handoff
-Next session: build timing oracle detection (highest ROI at 126.0).
-Location: crates/orchestrator/src/timing_oracle.rs
-Module uses statistical analysis of response times to detect blind vulns:
-- Paired t-test between treatment (malicious) and control (benign) requests
-- Handles network jitter via N-sample averaging
-- Detects: blind SQLi (SLEEP), blind CMDi (sleep), blind SSRF (DNS timing)
-- Integrates with payload_forge for payload generation
+Next session: build authentication breaker (P4b).
+Location: crates/orchestrator/src/auth_breaker.rs (new file)
+Module covers:
+- JWT manipulation: alg:none, RS256→HS256 key confusion, claim tampering, exp bypass, kid injection
+- Session token analysis: entropy measurement, predictability detection, fixation testing
+- OAuth flow abuse: redirect_uri manipulation, state parameter omission, scope escalation
+- SAML assertion forging: signature wrapping, comment injection, entity expansion

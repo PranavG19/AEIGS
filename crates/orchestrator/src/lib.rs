@@ -213,6 +213,7 @@ pub mod template_injection_audit;
 pub mod text_fragment_audit;
 pub mod third_party_script_audit;
 pub mod timing_allow_origin_audit;
+pub mod timing_oracle;
 pub mod tls_scanner;
 pub mod token_entropy_scanner;
 pub mod topics_api_audit;
