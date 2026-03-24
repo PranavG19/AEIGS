@@ -132,6 +132,7 @@ pub mod oauth_misconfig_scanner;
 pub mod object_url_audit;
 pub mod observable_audit;
 pub mod open_redirect_param_audit;
+pub mod opencode_bridge;
 pub mod opener_audit;
 pub mod page_lifecycle_audit;
 pub mod path_traversal_audit;
