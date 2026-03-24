@@ -250,6 +250,7 @@ pub mod webhid_audit;
 pub mod webnn_audit;
 pub mod webrtc_audit;
 pub mod websocket_audit;
+pub mod websocket_fuzzer;
 pub mod webusb_audit;
 pub mod window_controls_overlay_audit;
 pub mod window_management_audit;

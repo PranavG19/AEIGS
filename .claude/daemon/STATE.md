@@ -2,8 +2,8 @@
 
 ## current
 priority: ROI LOOP
-task: WebSocket state machine fuzzer
-status: NOT STARTED
+task: Next ROI feature
+status: HANDOFF READY
 
 ## phase-status
 - PHASE 1 (Ghost Protocol): PARTIAL (P1a+P1b done)
@@ -32,7 +32,8 @@ status: NOT STARTED
 - differential_response: 31
 - xs_leaks: 54
 - grammar_fuzzer: 47
-- TOTAL NEW THIS SESSION: 236 tests
+- websocket_fuzzer: 35
+- TOTAL NEW THIS SESSION: 271 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -59,30 +60,30 @@ status: NOT STARTED
 
 6. **Grammar-Based Generative Fuzzing** (ROI=82.3) — 47 tests
    - API grammar extraction from OpenAPI endpoints with production rules
-   - 13 slot types with type-aware boundary values (15-20+ per type)
-   - 9 mutation strategies: boundary, type confusion, constraint violation,
-     payload injection, null injection, overflow, format string, param duplication, negative
-   - Attack payload catalog: SQLi, XSS, SSTI, CMDi, NoSQL per slot type
-   - Constraint violation engine: min/max length, min/max value, enum, required, nullable
-   - Format string payloads: printf, EL, SpEL, OGNL, ERB, Jinja2, Twig
-   - Body field injection for POST endpoints with JSON serialization
-   - Generation summary with strategy/param/endpoint statistics
+   - 13 slot types, 9 mutation strategies, attack payload catalog
+   - Constraint violation engine, format string payloads, body injection
+
+7. **WebSocket State Machine Fuzzer** (ROI=84.0) — 35 tests
+   - State machine inference from observed message sequences
+   - 10 fuzz categories: invalid transition, sequence skip, message replay,
+     race condition, session replay, message injection, frame type confusion,
+     protocol abuse, connection manipulation, authorization bypass
+   - BFS path finding, unauthenticated reachability analysis
+   - 9 injection payload types per message, protocol abuse suite (ping flood,
+     oversized frames, orphan continuations)
+   - Severity-ranked case generation with analysis report
 
 ## ROI ranking (next)
-1. **WebSocket state machine fuzzer** — model state machine, find impossible transitions
-   - power=7 uniqueness=9 intelligence=8 cost=6 → ROI=84.0
-2. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
+1. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
    - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
-3. **DNS rebinding attack automation** — for SSRF chain escalation
+2. **DNS rebinding attack automation** — for SSRF chain escalation
    - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
+3. **API schema inference** — no docs? Infer from observed traffic
+   - power=7 uniqueness=8 intelligence=9 cost=7 → ROI=72.0
 
 ## handoff
-Next session: build WebSocket state machine fuzzer.
-Location: crates/orchestrator/src/websocket_fuzzer.rs (new file)
-Module covers:
-- State machine inference from observed WebSocket message sequences
-- State transition graph construction (states × message types)
-- Invalid transition probing: send messages that shouldn't be allowed in current state
-- Message mutation: valid structure, invalid content (type confusion, injection payloads)
-- Race condition detection: parallel messages that violate state ordering
-- Authentication bypass: reconnect without auth, reuse old session tokens
+Next session: build injection engine (P4f) or API schema inference.
+Re-rank on session start. Consider:
+- API schema inference: higher intelligence multiplier, complements grammar fuzzer
+- DNS rebinding: unique capability, amplifies SSRF chain
+- Injection engine: fills P4f gap, lots of payload types
