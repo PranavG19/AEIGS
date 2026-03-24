@@ -1,5 +1,6 @@
 pub mod abort_controller_audit;
 pub mod actor;
+pub mod agent_loop;
 pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
 pub mod api_version_audit;
@@ -84,6 +85,7 @@ pub mod fullscreen_audit;
 pub mod gamepad_audit;
 pub mod geolocation_audit;
 mod graph_persistence;
+pub mod graphql_depth_scanner;
 pub mod graphql_introspection_audit;
 pub mod hardware_api_audit;
 pub mod header_audit;
@@ -107,6 +109,7 @@ pub mod js_library_scanner;
 pub mod jsonp_audit;
 pub mod jwt_header_audit;
 pub mod launch_handler_audit;
+pub mod ldap_injection_scanner;
 pub mod link_header_audit;
 pub mod local_font_audit;
 pub mod mass_assign_audit;
@@ -124,6 +127,7 @@ pub mod navigator_login_audit;
 pub mod nel_audit;
 pub mod network_info_audit;
 pub mod notification_audit;
+pub mod oauth_misconfig_scanner;
 pub mod object_url_audit;
 pub mod observable_audit;
 pub mod open_redirect_param_audit;
@@ -203,6 +207,7 @@ pub mod text_fragment_audit;
 pub mod third_party_script_audit;
 pub mod timing_allow_origin_audit;
 pub mod tls_scanner;
+pub mod token_entropy_scanner;
 pub mod topics_api_audit;
 pub mod trusted_types_audit;
 pub mod update_db;
@@ -240,6 +245,7 @@ pub mod window_name_audit;
 pub mod wireless_api_audit;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
+pub mod xxe_scanner;
 
 pub use abort_controller_audit::*;
 pub use actor::*;
@@ -322,6 +328,7 @@ pub use fullscreen_audit::*;
 pub use gamepad_audit::*;
 pub use geolocation_audit::*;
 pub use graph_persistence::*;
+pub use graphql_depth_scanner::*;
 pub use graphql_introspection_audit::*;
 pub use hardware_api_audit::*;
 pub use header_audit::*;
@@ -343,6 +350,7 @@ pub use js_library_scanner::*;
 pub use jsonp_audit::*;
 pub use jwt_header_audit::*;
 pub use launch_handler_audit::*;
+pub use ldap_injection_scanner::*;
 pub use link_header_audit::*;
 pub use local_font_audit::*;
 pub use mass_assign_audit::*;
@@ -439,6 +447,7 @@ pub use text_fragment_audit::*;
 pub use third_party_script_audit::*;
 pub use timing_allow_origin_audit::*;
 pub use tls_scanner::*;
+pub use token_entropy_scanner::*;
 pub use topics_api_audit::*;
 pub use trusted_types_audit::*;
 pub use update_db::*;
@@ -1423,3 +1432,11 @@ mod page_lifecycle_audit_test;
 #[cfg(test)]
 #[path = "event_source_audit_test.rs"]
 mod event_source_audit_test;
+
+#[cfg(test)]
+#[path = "token_entropy_scanner_test.rs"]
+mod token_entropy_scanner_test;
+
+#[cfg(test)]
+#[path = "graphql_depth_scanner_test.rs"]
+mod graphql_depth_scanner_test;

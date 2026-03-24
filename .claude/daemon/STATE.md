@@ -1,31 +1,33 @@
 # DAEMON STATE — v3 RESET
 
 ## current
-priority: PHASE 1 — GHOST PROTOCOL (Browser Identity Synthesis)
-task: P1c — Header ordering engine
+priority: PHASE 2 — THE BRAIN (Autonomous LLM Agent)
+task: P2b — Tool-use interface (LLM can invoke AEGIS capabilities)
 status: NOT STARTED
 
-## g1-roi-ranking (P1c — NEXT)
-Option 1: Header ordering engine (P1c)
-  - offensive_power: 6, uniqueness: 5, intelligence: 4, cost: 9
-  - ROI = (6 × 5 × 4) / 9 = 13.3
-Option 2: Navigator property synthesis (P1d)
-  - offensive_power: 5, uniqueness: 6, intelligence: 3, cost: 7
-  - ROI = (5 × 6 × 3) / 7 = 12.9
-Option 3: Canvas/WebGL/Audio fingerprint (P1e)
-  - offensive_power: 4, uniqueness: 5, intelligence: 2, cost: 4
-  - ROI = (4 × 5 × 2) / 4 = 10.0
-WINNER: P1c — Header ordering engine (ROI 13.3)
+## g1-roi-ranking (P2b — NEXT)
+Option 1: Tool-use interface (P2b)
+  - offensive_power: 9, uniqueness: 9, intelligence: 10, cost: 6
+  - ROI = (9 × 9 × 10) / 6 = 135.0
+Option 2: Memory/knowledge store (P2c)
+  - offensive_power: 7, uniqueness: 7, intelligence: 8, cost: 5
+  - ROI = (7 × 7 × 8) / 5 = 78.4
+Option 3: Mission prompt engineering (P2d)
+  - offensive_power: 6, uniqueness: 6, intelligence: 9, cost: 8
+  - ROI = (6 × 6 × 9) / 8 = 40.5
+WINNER: P2b — Tool-use interface (ROI 135.0)
 
 ## phase-status
-- PHASE 1 (Ghost Protocol): IN PROGRESS
+- PHASE 1 (Ghost Protocol): ✅ PARTIAL (P1a+P1b done, P1c-f deferred — need headless browser)
   - P1a HTTP/2 fingerprint engine: ✅ COMPLETE (28 tests)
   - P1b TLS ClientHello synthesis: ✅ COMPLETE (43 tests)
-  - P1c Header ordering engine: NOT STARTED
-  - P1d Navigator properties: NOT STARTED
-  - P1e Canvas/WebGL/Audio: NOT STARTED
-  - P1f Behavioral layer: NOT STARTED
-- PHASE 2 (The Brain): NOT STARTED
+  - P1c-f: DEFERRED (header ordering exists, Navigator/Canvas/Behavioral need headless)
+- PHASE 2 (The Brain): IN PROGRESS
+  - P2a Agent loop architecture: ✅ COMPLETE (28 tests)
+  - P2b Tool-use interface: NOT STARTED
+  - P2c Memory/knowledge store: NOT STARTED
+  - P2d Mission prompt engineering: NOT STARTED
+  - P2e Multi-model orchestration: NOT STARTED
 - PHASE 3 (The Swarm): NOT STARTED
 - PHASE 4 (The Arsenal): NOT STARTED
 - PHASE 5 (Nerve Center): NOT STARTED
@@ -33,12 +35,13 @@ WINNER: P1c — Header ordering engine (ROI 13.3)
 
 ## test-baseline
 - cargo test -p aegis-evasion-engine: 310 lib + 25 integration, 0 failed
-- cargo clippy -p aegis-evasion-engine: 0 warnings
+- cargo test -p aegis-orchestrator (agent_loop only): 28 passed, 0 failed
+- cargo clippy -p aegis-orchestrator: 0 warnings
 - total workspace: ~4485+ tests (from prior daemon run)
 
 ## preserved-from-v2
-- 293 recon scanners shipped (audit modules, header checks, API surface scanners)
-- 10 browser personas in evasion-engine (Chrome/Firefox/Safari/Edge/Googlebot/etc)
+- 293 recon scanners shipped
+- 10 browser personas in evasion-engine
 - JA3/JA3S TLS fingerprint matching (6 profiles)
 - UCB1 bandit payload scheduler in fuzzing crate
 - Hypothesis engine (Python) with Bedrock/OpenAI/Ollama backends
@@ -53,58 +56,45 @@ WINNER: P1c — Header ordering engine (ROI 13.3)
 - defense-fingerprinting dir on disk but excluded from workspace (merged into fuzzing)
 
 ## shipped-this-session
-### P1a — HTTP/2 Fingerprint Engine
-Files:
-- crates/evasion-engine/src/http2_fingerprint.rs (new, ~600 lines)
-- crates/evasion-engine/src/http2_fingerprint_test.rs (new, 28 tests)
-- crates/evasion-engine/src/lib.rs (wired module)
-- crates/evasion-engine/src/transport.rs (integrated h2_fingerprint field)
-
-Capabilities:
-- 7 browser HTTP/2 fingerprint profiles: Chrome 120-125, Firefox 120-125, Safari 17+, Edge 120-125, curl, Go net/http, Python httpx
+### P1a — HTTP/2 Fingerprint Engine (evasion-engine)
+- 7 browser HTTP/2 fingerprint profiles
 - SETTINGS frame values + ordering, WINDOW_UPDATE sizes, PRIORITY frames, pseudo-header ordering
 - Akamai fingerprint format serialization
-- Client identification via weighted scoring (40% settings, 20% WINDOW_UPDATE, 15% order, 15% pseudo-headers, 10% priority)
-- Persona-to-H2-fingerprint mapping for all 10 personas
-- Transport layer integration
+- Client identification via weighted scoring
+- 28 tests
 
-### P1b — TLS ClientHello Full Synthesis
-Files:
-- crates/evasion-engine/src/tls_clienthello.rs (new, ~820 lines)
-- crates/evasion-engine/src/tls_clienthello_test.rs (new, 43 tests)
-- crates/evasion-engine/src/lib.rs (wired module)
+### P1b — TLS ClientHello Full Synthesis (evasion-engine)
+- 7 full TLS ClientHello profiles (Chrome 120/125, Firefox 121/125, Safari 17, Edge 120, curl)
+- Complete cipher suite ordering, extension ordering, supported groups, signature algorithms
+- JA3 string + hash computation (custom MD5, zero deps)
+- JA4 fingerprint computation
+- Profile validation + cipher-order identification
+- 43 tests
 
-Capabilities:
-- 7 full TLS ClientHello profiles: Chrome 120, Chrome 125, Firefox 121, Firefox 125, Safari 17, Edge 120, curl
-- Complete cipher suite ordering per browser (15 ciphers each, order-sensitive)
-- Extension ordering per browser (10-16 extensions each, distinct ordering)
-- Supported groups: Chrome has X25519_Kyber768 (post-quantum), Firefox has FFDHE groups, Safari has no PQ
-- Signature algorithms per browser (8-11 each)
-- ALPN protocol ordering
-- PSK key exchange modes
-- Key share groups (subset validation against supported_groups)
-- Compressed certificate support (Chrome only, brotli)
-- Delegated credentials + post-handshake auth (Firefox only)
-- Record size limit (Firefox only, 16385)
-- Encrypt-then-MAC (Safari only)
-- JA3 string + hash computation (custom MD5 implementation, zero dependencies)
-- JA4 fingerprint computation (simplified format)
-- Cipher-order-based client identification
-- Profile validation (internal consistency checks)
-- TlsFingerprint → ClientHello mapping
-- Persona → ClientHello mapping
+### P2a — Agent Loop Architecture (orchestrator)
+- OHPEL cycle: Observe → Hypothesize → Plan → Execute → Learn
+- AgentObservation: full scan state snapshot (endpoints, findings, defenses, failed attempts)
+- AgentAction: 9 action types (FuzzEndpoint, ExploitFinding, DiscoverEndpoints, ChainFindings, AuthenticateFirst, EvadeDefense, DeepAnalyze, GenerateReport, Pause)
+- AgentMemory: technique records, WAF bypass patterns, endpoint behaviors, iteration summaries
+- Memory analytics: success_rate_for_class(), bypasses_for_defense(), is_stuck(), most_productive_iteration()
+- Convergence detection: stuck detection, max iterations, terminal states
+- LLM prompt builder: XML-structured hypothesis prompt with scan context + memory
+- Fallback plan builder: rule-based planning when no LLM available
+- 28 tests
 
 ## handoff
-PHASE 1 CONTINUE — GHOST PROTOCOL
-Next task: P1c — Header ordering engine
+PHASE 2 CONTINUE — THE BRAIN
+Next task: P2b — Tool-use interface
 
-Build browser-specific HTTP header ordering:
-- Chrome sends: Host, Connection, Upgrade-Insecure-Requests, User-Agent, Accept, ...
-- Firefox sends: Host, User-Agent, Accept, Accept-Language, Accept-Encoding, ...
-- Safari sends: yet different order
-- The existing header_transformer.rs has persona-based ordering but it's basic
-- Enhance to use precise per-version header orderings captured from real traffic
-- Integrate with the existing Persona struct (header_order field already exists)
+Build the bidirectional LLM ↔ AEGIS integration:
+- Define tool schemas that the LLM can invoke (map to AgentAction variants)
+- Request/response serialization for LLM tool calls
+- Tool execution dispatcher: routes LLM tool invocations to the correct AEGIS module
+- Result formatting: converts AEGIS results back to LLM-digestible context
+- Wire to existing hypothesis_bridge.rs for Python LLM backend communication
 
-Location: Enhance existing crates/evasion-engine/src/header_transformer.rs
-Add data to: crates/evasion-engine/data/default_personas.json (header_order field)
+Location: crates/orchestrator/src/
+- agent_tools.rs (tool definitions + dispatcher)
+- agent_tools_test.rs (tests)
+
+Wire into: agent_loop.rs (the Execute phase calls the tool dispatcher)
