@@ -256,6 +256,7 @@ pub mod window_name_audit;
 pub mod wireless_api_audit;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
+pub mod xs_leaks;
 pub mod xxe_scanner;
 
 pub use abort_controller_audit::*;

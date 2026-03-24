@@ -2,8 +2,8 @@
 
 ## current
 priority: ROI LOOP
-task: Differential Response Analysis — COMPLETE
-status: HANDOFF READY
+task: Grammar-based generative fuzzing
+status: NOT STARTED
 
 ## phase-status
 - PHASE 1 (Ghost Protocol): PARTIAL (P1a+P1b done)
@@ -30,7 +30,8 @@ status: HANDOFF READY
 - auth_breaker: 32
 - ssrf_chain: 28
 - differential_response: 31
-- TOTAL NEW THIS SESSION: 135 tests
+- xs_leaks: 54
+- TOTAL NEW THIS SESSION: 189 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -56,22 +57,32 @@ status: HANDOFF READY
    - Rule inference engine: case-sensitive, encoding-unaware, token-based, whitespace-strict, content-type-blind
    - Analysis summary with WAF strictness score and bypass mutation list
 
+5. **XS-Leaks Taxonomy Engine** (ROI=88.2) — 54 tests
+   - 12 leak categories: frame counting, error event, cache timing, redirect counting,
+     content-type sniffing, performance API, postMessage, window properties, size-based,
+     service worker, text fragment, connection pool
+   - 17 concrete probes with HTML/JS payloads per category
+   - 9 defense types with header detection (XFO, COOP, CORP, COEP, SameSite, Cache-Control, etc.)
+   - Defense-aware viability scoring: which categories survive which defenses
+   - Differential analysis engine: compare auth vs unauth observations per channel
+   - Probe ranking by bypass probability given detected defenses
+   - Full target analysis report with risk scoring and summary
+
 ## ROI ranking (next)
-1. **XS-Leaks taxonomy engine** — Cross-origin info leakage via timing/cache/error
-   - power=7 uniqueness=9 intelligence=7 cost=5 → ROI=88.2
-2. **Grammar-based generative fuzzing** — API grammar inference + malicious generation
+1. **Grammar-based generative fuzzing** — API grammar inference + malicious generation
    - power=8 uniqueness=8 intelligence=9 cost=7 → ROI=82.3
-3. **WebSocket state machine fuzzer** — model state machine, find impossible transitions
+2. **WebSocket state machine fuzzer** — model state machine, find impossible transitions
    - power=7 uniqueness=9 intelligence=8 cost=6 → ROI=84.0
+3. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
+   - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
 
 ## handoff
-Next session: build XS-Leaks taxonomy engine.
-Location: crates/orchestrator/src/xs_leaks.rs (new file)
+Next session: build grammar-based generative fuzzing engine.
+Location: crates/orchestrator/src/grammar_fuzzer.rs (new file)
 Module covers:
-- Frame counting leaks (window.length after cross-origin navigation)
-- Error event detection (onerror/onload timing for resource existence)
-- Cache timing probes (is resource cached → has user visited?)
-- Redirect counting (follow redirect chain, count hops)
-- Content-Type sniffing leaks
-- Performance API timing leaks (PerformanceObserver)
-- postMessage information leakage
+- API grammar inference from OpenAPI/GraphQL specs + observed traffic
+- Production rule extraction: path templates, parameter types, value constraints
+- Malicious input generation: boundary values, type confusion, constraint violations
+- Context-free grammar mutation: rule expansion with attack payloads
+- Grammar crossover: combine valid API patterns with injection payloads
+- Coverage tracking: which grammar rules have been exercised
