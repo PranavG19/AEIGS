@@ -88,6 +88,7 @@ pub mod form_audit;
 pub mod fullscreen_audit;
 pub mod gamepad_audit;
 pub mod geolocation_audit;
+pub mod grammar_fuzzer;
 mod graph_persistence;
 pub mod graphql_depth_scanner;
 pub mod graphql_introspection_audit;

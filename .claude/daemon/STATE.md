@@ -2,7 +2,7 @@
 
 ## current
 priority: ROI LOOP
-task: Grammar-based generative fuzzing
+task: WebSocket state machine fuzzer
 status: NOT STARTED
 
 ## phase-status
@@ -31,7 +31,8 @@ status: NOT STARTED
 - ssrf_chain: 28
 - differential_response: 31
 - xs_leaks: 54
-- TOTAL NEW THIS SESSION: 189 tests
+- grammar_fuzzer: 47
+- TOTAL NEW THIS SESSION: 236 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -49,40 +50,39 @@ status: NOT STARTED
    - Credential extraction (AWS/GCP/Azure)
 
 4. **Differential Response Analysis** (ROI=126.0) — 31 tests
-   - 14 mutation types: URL encode, double encode, Unicode, HTML entity, case toggle,
-     comment insertion, whitespace, null byte, newline, tab, JSON wrap, XML wrap, fragment
-   - Response fingerprinting: status, body hash, body length, headers, WAF detection
-   - Fingerprint similarity scoring (weighted: status 3x, body 2x, content-type 1x, headers 1x)
-   - WAF decision classification: Allowed/Blocked/RateLimited/Challenged/Unknown
-   - Rule inference engine: case-sensitive, encoding-unaware, token-based, whitespace-strict, content-type-blind
-   - Analysis summary with WAF strictness score and bypass mutation list
+   - 14 mutation types, response fingerprinting, WAF rule inference
 
 5. **XS-Leaks Taxonomy Engine** (ROI=88.2) — 54 tests
-   - 12 leak categories: frame counting, error event, cache timing, redirect counting,
-     content-type sniffing, performance API, postMessage, window properties, size-based,
-     service worker, text fragment, connection pool
-   - 17 concrete probes with HTML/JS payloads per category
-   - 9 defense types with header detection (XFO, COOP, CORP, COEP, SameSite, Cache-Control, etc.)
-   - Defense-aware viability scoring: which categories survive which defenses
-   - Differential analysis engine: compare auth vs unauth observations per channel
-   - Probe ranking by bypass probability given detected defenses
-   - Full target analysis report with risk scoring and summary
+   - 12 leak categories, 17+ concrete probes with JS/HTML payloads
+   - 9 defense types with header detection
+   - Differential analysis, probe ranking, risk scoring
+
+6. **Grammar-Based Generative Fuzzing** (ROI=82.3) — 47 tests
+   - API grammar extraction from OpenAPI endpoints with production rules
+   - 13 slot types with type-aware boundary values (15-20+ per type)
+   - 9 mutation strategies: boundary, type confusion, constraint violation,
+     payload injection, null injection, overflow, format string, param duplication, negative
+   - Attack payload catalog: SQLi, XSS, SSTI, CMDi, NoSQL per slot type
+   - Constraint violation engine: min/max length, min/max value, enum, required, nullable
+   - Format string payloads: printf, EL, SpEL, OGNL, ERB, Jinja2, Twig
+   - Body field injection for POST endpoints with JSON serialization
+   - Generation summary with strategy/param/endpoint statistics
 
 ## ROI ranking (next)
-1. **Grammar-based generative fuzzing** — API grammar inference + malicious generation
-   - power=8 uniqueness=8 intelligence=9 cost=7 → ROI=82.3
-2. **WebSocket state machine fuzzer** — model state machine, find impossible transitions
+1. **WebSocket state machine fuzzer** — model state machine, find impossible transitions
    - power=7 uniqueness=9 intelligence=8 cost=6 → ROI=84.0
-3. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
+2. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
    - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
+3. **DNS rebinding attack automation** — for SSRF chain escalation
+   - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
 
 ## handoff
-Next session: build grammar-based generative fuzzing engine.
-Location: crates/orchestrator/src/grammar_fuzzer.rs (new file)
+Next session: build WebSocket state machine fuzzer.
+Location: crates/orchestrator/src/websocket_fuzzer.rs (new file)
 Module covers:
-- API grammar inference from OpenAPI/GraphQL specs + observed traffic
-- Production rule extraction: path templates, parameter types, value constraints
-- Malicious input generation: boundary values, type confusion, constraint violations
-- Context-free grammar mutation: rule expansion with attack payloads
-- Grammar crossover: combine valid API patterns with injection payloads
-- Coverage tracking: which grammar rules have been exercised
+- State machine inference from observed WebSocket message sequences
+- State transition graph construction (states × message types)
+- Invalid transition probing: send messages that shouldn't be allowed in current state
+- Message mutation: valid structure, invalid content (type confusion, injection payloads)
+- Race condition detection: parallel messages that violate state ordering
+- Authentication bypass: reconnect without auth, reuse old session tokens
