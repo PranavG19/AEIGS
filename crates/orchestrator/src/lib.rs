@@ -4,6 +4,7 @@ pub mod agent_loop;
 pub mod agent_tools;
 pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
+pub mod api_schema_inference;
 pub mod api_version_audit;
 pub mod attest;
 pub mod attribution_reporting_audit;

@@ -33,7 +33,8 @@ status: HANDOFF READY
 - xs_leaks: 54
 - grammar_fuzzer: 47
 - websocket_fuzzer: 35
-- TOTAL NEW THIS SESSION: 271 tests
+- api_schema_inference: 40
+- TOTAL NEW THIS SESSION: 311 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -42,48 +43,44 @@ status: HANDOFF READY
 
 2. **Authentication Breaker** (P4b, ROI=75.6) — 32 tests
    - JWT alg:none/confusion/tampering/exp/kid/jku/null-sig (50+ payloads)
-   - Session entropy + sequential analysis
-   - OAuth redirect_uri manipulation (9 techniques)
+   - Session entropy + sequential analysis, OAuth redirect_uri manipulation
 
 3. **SSRF Chain Automation** (P4e, ROI=84.0) — 28 tests
-   - 7 cloud providers with metadata endpoints + required headers
-   - IP bypass (12 variants) + URL scheme bypasses
-   - Credential extraction (AWS/GCP/Azure)
+   - 7 cloud providers, IP bypass (12 variants), credential extraction
 
 4. **Differential Response Analysis** (ROI=126.0) — 31 tests
    - 14 mutation types, response fingerprinting, WAF rule inference
 
 5. **XS-Leaks Taxonomy Engine** (ROI=88.2) — 54 tests
-   - 12 leak categories, 17+ concrete probes with JS/HTML payloads
-   - 9 defense types with header detection
-   - Differential analysis, probe ranking, risk scoring
+   - 12 leak categories, 17+ probes, 9 defense types, differential analysis
 
 6. **Grammar-Based Generative Fuzzing** (ROI=82.3) — 47 tests
-   - API grammar extraction from OpenAPI endpoints with production rules
-   - 13 slot types, 9 mutation strategies, attack payload catalog
-   - Constraint violation engine, format string payloads, body injection
+   - API grammar extraction, 13 slot types, 9 mutation strategies
 
 7. **WebSocket State Machine Fuzzer** (ROI=84.0) — 35 tests
-   - State machine inference from observed message sequences
-   - 10 fuzz categories: invalid transition, sequence skip, message replay,
-     race condition, session replay, message injection, frame type confusion,
-     protocol abuse, connection manipulation, authorization bypass
-   - BFS path finding, unauthenticated reachability analysis
-   - 9 injection payload types per message, protocol abuse suite (ping flood,
-     oversized frames, orphan continuations)
-   - Severity-ranked case generation with analysis report
+   - State machine inference, 10 fuzz categories, BFS path finding
+
+8. **API Schema Inference Engine** (ROI=72.0) — 40 tests
+   - Path template inference (collapse /users/1 + /users/2 → /users/{id})
+   - 12 type inference heuristics: int, float, uuid, email, date, datetime,
+     boolean, slug, hex, jwt, base64, string
+   - Authentication pattern detection: Bearer, Basic, API key, Cookie
+   - JSON schema extraction: field names, types, nullable, arrays, nesting
+   - Query parameter type inference with required/optional detection
+   - Endpoint relationship detection: parent-child, CRUD siblings
+   - Full schema assembly from raw observed traffic
 
 ## ROI ranking (next)
-1. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
-   - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
-2. **DNS rebinding attack automation** — for SSRF chain escalation
+1. **DNS rebinding attack automation** — for SSRF chain escalation
    - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
-3. **API schema inference** — no docs? Infer from observed traffic
-   - power=7 uniqueness=8 intelligence=9 cost=7 → ROI=72.0
+2. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
+   - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
+3. **GraphQL batch query amplification** — bypass rate limits
+   - power=7 uniqueness=7 intelligence=7 cost=5 → ROI=68.6
 
 ## handoff
-Next session: build injection engine (P4f) or API schema inference.
-Re-rank on session start. Consider:
-- API schema inference: higher intelligence multiplier, complements grammar fuzzer
-- DNS rebinding: unique capability, amplifies SSRF chain
-- Injection engine: fills P4f gap, lots of payload types
+Next session: build DNS rebinding or GraphQL batch amplification.
+Location: crates/orchestrator/src/dns_rebinding.rs or graphql_batch_amplification.rs
+Consider also: the grammar fuzzer + api schema inference now complement each other.
+A glue module that pipes schema inference output into grammar fuzzer input
+would be high-ROI with minimal code.
