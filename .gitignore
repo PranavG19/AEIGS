@@ -13,3 +13,5 @@ node_modules/
 .claude/ralph-loop.local.md
 SYSTEM_PROMPT.md
 .test-cache/
+.DS_Store
+~/

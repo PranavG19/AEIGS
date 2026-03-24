@@ -198,11 +198,7 @@ fn check_redirect_param(
     if !(300..400).contains(&status) {
         return Vec::new();
     }
-    let Some(location) = resp
-        .headers()
-        .get("location")
-        .and_then(|v| v.to_str().ok())
-    else {
+    let Some(location) = resp.headers().get("location").and_then(|v| v.to_str().ok()) else {
         return Vec::new();
     };
     analyze_redirect_location(location, param)

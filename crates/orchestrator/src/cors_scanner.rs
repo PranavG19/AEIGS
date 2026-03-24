@@ -168,22 +168,28 @@ pub fn scan_cors(target: &str) -> Vec<CorsIssue> {
     let mut findings = Vec::new();
 
     if let Some(headers) = fetch_cors_headers(&client, target, None) {
-        let refs: Vec<(&str, &str)> =
-            headers.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        let refs: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
         findings.extend(analyze_cors_headers(&refs, "", &domain));
     }
 
     let evil_origin = "https://evil.example.com";
     if let Some(headers) = fetch_cors_headers(&client, target, Some(evil_origin)) {
-        let refs: Vec<(&str, &str)> =
-            headers.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        let refs: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
         findings.extend(analyze_cors_headers(&refs, evil_origin, &domain));
     }
 
     let subdomain_origin = format!("https://evil.{domain}");
     if let Some(headers) = fetch_cors_headers(&client, target, Some(&subdomain_origin)) {
-        let refs: Vec<(&str, &str)> =
-            headers.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+        let refs: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.as_str()))
+            .collect();
         findings.extend(analyze_cors_headers(&refs, &subdomain_origin, &domain));
     }
 

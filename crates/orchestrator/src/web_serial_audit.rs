@@ -225,10 +225,7 @@ pub fn analyze_web_serial_security(body: &str) -> Vec<WebSerialSecurityIssue> {
     }
 
     // SerialDeviceFingerprinting: fingerprinting via serial device info
-    if body.contains("getInfo()")
-        || body.contains("usbVendorId")
-        || body.contains("usbProductId")
-    {
+    if body.contains("getInfo()") || body.contains("usbVendorId") || body.contains("usbProductId") {
         issues.push(WebSerialSecurityIssue::SerialDeviceFingerprinting);
     }
 

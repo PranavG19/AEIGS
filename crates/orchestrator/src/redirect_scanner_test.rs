@@ -412,13 +412,16 @@ fn analyze_http_downgrade() {
 fn analyze_http_evil_produces_two_issues() {
     let issues = analyze_redirect_location("http://evil.example.com/phish", "url");
     assert_eq!(issues.len(), 2);
-    assert!(issues.iter().any(|i| matches!(
-        i,
-        RedirectIssue::HttpToHttpsDowngrade { .. }
-    )));
-    assert!(issues
-        .iter()
-        .any(|i| matches!(i, RedirectIssue::OpenRedirect { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, RedirectIssue::HttpToHttpsDowngrade { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, RedirectIssue::OpenRedirect { .. }))
+    );
 }
 
 #[test]

@@ -48,10 +48,7 @@ fn display_location_header_injection() {
     let issue = CrlfIssue::LocationHeaderInjection {
         parameter: "return".to_string(),
     };
-    assert_eq!(
-        issue.to_string(),
-        "crlf_location_header_injection:return"
-    );
+    assert_eq!(issue.to_string(), "crlf_location_header_injection:return");
 }
 
 #[test]
@@ -91,66 +88,80 @@ fn severity_response_splitting_higher_than_header_injection() {
 
 #[test]
 fn severity_header_injection() {
-    assert!((crlf_severity(&CrlfIssue::HeaderInjection {
-        parameter: "a".to_string()
-    }) - 7.5)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::HeaderInjection {
+            parameter: "a".to_string()
+        }) - 7.5)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_response_splitting() {
-    assert!((crlf_severity(&CrlfIssue::ResponseSplitting {
-        parameter: "a".to_string()
-    }) - 8.5)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::ResponseSplitting {
+            parameter: "a".to_string()
+        }) - 8.5)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_encoded_crlf() {
-    assert!((crlf_severity(&CrlfIssue::EncodedCrlf {
-        parameter: "a".to_string(),
-        encoding: "url".to_string(),
-    }) - 7.0)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::EncodedCrlf {
+            parameter: "a".to_string(),
+            encoding: "url".to_string(),
+        }) - 7.0)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_unicode_crlf() {
-    assert!((crlf_severity(&CrlfIssue::UnicodeCrlf {
-        parameter: "a".to_string()
-    }) - 7.0)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::UnicodeCrlf {
+            parameter: "a".to_string()
+        }) - 7.0)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_set_cookie_injection() {
-    assert!((crlf_severity(&CrlfIssue::SetCookieInjection {
-        parameter: "a".to_string()
-    }) - 8.0)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::SetCookieInjection {
+            parameter: "a".to_string()
+        }) - 8.0)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_location_header_injection() {
-    assert!((crlf_severity(&CrlfIssue::LocationHeaderInjection {
-        parameter: "a".to_string()
-    }) - 7.5)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::LocationHeaderInjection {
+            parameter: "a".to_string()
+        }) - 7.5)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
 fn severity_content_type_injection() {
-    assert!((crlf_severity(&CrlfIssue::ContentTypeInjection {
-        parameter: "a".to_string()
-    }) - 6.5)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::ContentTypeInjection {
+            parameter: "a".to_string()
+        }) - 6.5)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
@@ -160,11 +171,13 @@ fn severity_crlf_in_user_agent() {
 
 #[test]
 fn severity_partial_header_injection() {
-    assert!((crlf_severity(&CrlfIssue::PartialHeaderInjection {
-        parameter: "a".to_string()
-    }) - 4.0)
-        .abs()
-        < f64::EPSILON);
+    assert!(
+        (crlf_severity(&CrlfIssue::PartialHeaderInjection {
+            parameter: "a".to_string()
+        }) - 4.0)
+            .abs()
+            < f64::EPSILON
+    );
 }
 
 #[test]
@@ -184,10 +197,7 @@ fn severity_partial_is_lowest() {
     let partial = crlf_severity(&CrlfIssue::PartialHeaderInjection {
         parameter: "x".to_string(),
     });
-    assert!(
-        partial
-            < crlf_severity(&CrlfIssue::CrlfInUserAgent)
-    );
+    assert!(partial < crlf_severity(&CrlfIssue::CrlfInUserAgent));
 }
 
 // --- analyze_crlf_response tests ---
@@ -229,22 +239,37 @@ fn analyze_header_injection_suppresses_response_splitting() {
     let headers = vec![("x-aegis-crlf-test".to_string(), "canary123".to_string())];
     let body = "X-Aegis-Crlf-Test:canary123";
     let result = analyze_crlf_response(&headers, body, "q");
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::HeaderInjection { .. })));
-    assert!(!result.iter().any(|i| matches!(i, CrlfIssue::ResponseSplitting { .. })));
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::HeaderInjection { .. }))
+    );
+    assert!(
+        !result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::ResponseSplitting { .. }))
+    );
 }
 
 #[test]
 fn analyze_case_insensitive_header_name() {
     let headers = vec![("X-AEGIS-CRLF-TEST".to_string(), "canary123".to_string())];
     let result = analyze_crlf_response(&headers, "", "q");
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::HeaderInjection { .. })));
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::HeaderInjection { .. }))
+    );
 }
 
 #[test]
 fn analyze_set_cookie_injection() {
     let headers = vec![
         ("content-type".to_string(), "text/html".to_string()),
-        ("set-cookie".to_string(), "session=canary123; Path=/".to_string()),
+        (
+            "set-cookie".to_string(),
+            "session=canary123; Path=/".to_string(),
+        ),
     ];
     let result = analyze_crlf_response(&headers, "", "redirect");
     assert!(result.contains(&CrlfIssue::SetCookieInjection {
@@ -254,18 +279,21 @@ fn analyze_set_cookie_injection() {
 
 #[test]
 fn analyze_set_cookie_case_insensitive() {
-    let headers = vec![
-        ("Set-Cookie".to_string(), "tok=canary123".to_string()),
-    ];
+    let headers = vec![("Set-Cookie".to_string(), "tok=canary123".to_string())];
     let result = analyze_crlf_response(&headers, "", "next");
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::SetCookieInjection { .. })));
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::SetCookieInjection { .. }))
+    );
 }
 
 #[test]
 fn analyze_location_header_injection() {
-    let headers = vec![
-        ("location".to_string(), "https://evil.com/canary123".to_string()),
-    ];
+    let headers = vec![(
+        "location".to_string(),
+        "https://evil.com/canary123".to_string(),
+    )];
     let result = analyze_crlf_response(&headers, "", "url");
     assert!(result.contains(&CrlfIssue::LocationHeaderInjection {
         parameter: "url".to_string()
@@ -274,18 +302,24 @@ fn analyze_location_header_injection() {
 
 #[test]
 fn analyze_location_header_no_canary() {
-    let headers = vec![
-        ("location".to_string(), "https://example.com/home".to_string()),
-    ];
+    let headers = vec![(
+        "location".to_string(),
+        "https://example.com/home".to_string(),
+    )];
     let result = analyze_crlf_response(&headers, "", "url");
-    assert!(!result.iter().any(|i| matches!(i, CrlfIssue::LocationHeaderInjection { .. })));
+    assert!(
+        !result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::LocationHeaderInjection { .. }))
+    );
 }
 
 #[test]
 fn analyze_content_type_injection() {
-    let headers = vec![
-        ("content-type".to_string(), "text/html; canary123".to_string()),
-    ];
+    let headers = vec![(
+        "content-type".to_string(),
+        "text/html; canary123".to_string(),
+    )];
     let result = analyze_crlf_response(&headers, "", "path");
     assert!(result.contains(&CrlfIssue::ContentTypeInjection {
         parameter: "path".to_string()
@@ -294,11 +328,13 @@ fn analyze_content_type_injection() {
 
 #[test]
 fn analyze_content_type_normal_not_flagged() {
-    let headers = vec![
-        ("content-type".to_string(), "application/json".to_string()),
-    ];
+    let headers = vec![("content-type".to_string(), "application/json".to_string())];
     let result = analyze_crlf_response(&headers, "{}", "q");
-    assert!(!result.iter().any(|i| matches!(i, CrlfIssue::ContentTypeInjection { .. })));
+    assert!(
+        !result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::ContentTypeInjection { .. }))
+    );
 }
 
 #[test]
@@ -326,7 +362,11 @@ fn analyze_partial_not_triggered_when_header_injection_found() {
     let headers = vec![("x-aegis-crlf-test".to_string(), "canary123".to_string())];
     let body = "some\r\ncanary123 data";
     let result = analyze_crlf_response(&headers, body, "q");
-    assert!(!result.iter().any(|i| matches!(i, CrlfIssue::PartialHeaderInjection { .. })));
+    assert!(
+        !result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::PartialHeaderInjection { .. }))
+    );
 }
 
 #[test]
@@ -334,13 +374,28 @@ fn analyze_multiple_issues_from_one_response() {
     let headers = vec![
         ("x-aegis-crlf-test".to_string(), "canary123".to_string()),
         ("set-cookie".to_string(), "evil=canary123".to_string()),
-        ("location".to_string(), "http://evil.com/canary123".to_string()),
+        (
+            "location".to_string(),
+            "http://evil.com/canary123".to_string(),
+        ),
     ];
     let result = analyze_crlf_response(&headers, "", "url");
     assert!(result.len() >= 3);
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::HeaderInjection { .. })));
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::SetCookieInjection { .. })));
-    assert!(result.iter().any(|i| matches!(i, CrlfIssue::LocationHeaderInjection { .. })));
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::HeaderInjection { .. }))
+    );
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::SetCookieInjection { .. }))
+    );
+    assert!(
+        result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::LocationHeaderInjection { .. }))
+    );
 }
 
 #[test]
@@ -351,11 +406,13 @@ fn analyze_empty_headers_and_body() {
 
 #[test]
 fn analyze_canary_value_partial_match_in_header() {
-    let headers = vec![
-        ("x-aegis-crlf-test".to_string(), "notcanary".to_string()),
-    ];
+    let headers = vec![("x-aegis-crlf-test".to_string(), "notcanary".to_string())];
     let result = analyze_crlf_response(&headers, "", "q");
-    assert!(!result.iter().any(|i| matches!(i, CrlfIssue::HeaderInjection { .. })));
+    assert!(
+        !result
+            .iter()
+            .any(|i| matches!(i, CrlfIssue::HeaderInjection { .. }))
+    );
 }
 
 #[test]

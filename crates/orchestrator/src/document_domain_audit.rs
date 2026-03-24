@@ -106,11 +106,7 @@ pub fn find_document_domain(html: &str) -> Vec<DocumentDomainIssue> {
     issues
 }
 
-fn classify_usages(
-    script_lower: &str,
-    original: &str,
-    issues: &mut Vec<DocumentDomainIssue>,
-) {
+fn classify_usages(script_lower: &str, original: &str, issues: &mut Vec<DocumentDomainIssue>) {
     let mut pos = 0;
     while let Some(idx) = script_lower[pos..].find("document.domain") {
         let abs = pos + idx;

@@ -1906,6 +1906,56 @@ fn run_body_analyzers(
         crate::encoding_api_audit::encoding_api_to_operations
     );
 
+    // OAuth misconfiguration audit
+    let oauth_issues = crate::oauth_misconfig_scanner::analyze_oauth_misconfig(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        oauth_issues,
+        crate::oauth_misconfig_scanner::oauth_misconfig_to_operations
+    );
+
+    // XXE indicator detection
+    let xxe_issues = crate::xxe_scanner::analyze_xxe_indicators(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        xxe_issues,
+        crate::xxe_scanner::xxe_to_operations
+    );
+
+    // GraphQL depth/complexity audit
+    let gql_issues = crate::graphql_depth_scanner::analyze_graphql_depth(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        gql_issues,
+        crate::graphql_depth_scanner::graphql_depth_to_operations
+    );
+
+    // Token entropy analysis
+    let token_issues = crate::token_entropy_scanner::analyze_token_entropy(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        token_issues,
+        crate::token_entropy_scanner::token_entropy_to_operations
+    );
+
+    // LDAP injection indicator detection
+    let ldap_issues = crate::ldap_injection_scanner::analyze_ldap_indicators(body);
+    collect_ops!(
+        seq,
+        fc,
+        entries,
+        ldap_issues,
+        crate::ldap_injection_scanner::ldap_indicator_to_operations
+    );
+
     // Technology detection (needs both headers + body)
     let header_pairs: Vec<(String, String)> = resp
         .headers

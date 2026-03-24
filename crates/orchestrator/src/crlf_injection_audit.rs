@@ -124,9 +124,7 @@ pub fn analyze_crlf_response(
         }
     }
 
-    if !has_canary_header
-        && body.contains(&format!("{CRLF_CANARY_HEADER}:{CRLF_CANARY_VALUE}"))
-    {
+    if !has_canary_header && body.contains(&format!("{CRLF_CANARY_HEADER}:{CRLF_CANARY_VALUE}")) {
         issues.push(CrlfIssue::ResponseSplitting {
             parameter: parameter.to_string(),
         });
@@ -160,10 +158,8 @@ pub fn analyze_crlf_response(
     }
 
     if issues.is_empty() {
-        let has_partial = body.contains("\r\n")
-            && body.contains(CRLF_CANARY_VALUE)
-            || body.contains("%0d%0a")
-                && body.contains(CRLF_CANARY_VALUE);
+        let has_partial = body.contains("\r\n") && body.contains(CRLF_CANARY_VALUE)
+            || body.contains("%0d%0a") && body.contains(CRLF_CANARY_VALUE);
         if has_partial {
             issues.push(CrlfIssue::PartialHeaderInjection {
                 parameter: parameter.to_string(),

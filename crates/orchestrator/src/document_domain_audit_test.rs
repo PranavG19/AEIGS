@@ -6,21 +6,31 @@ use crate::document_domain_audit::*;
 fn detects_assignment_with_double_quotes() {
     let html = r#"<script>document.domain = "example.com";</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::Assignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+    );
 }
 
 #[test]
 fn detects_assignment_with_single_quotes() {
     let html = "<script>document.domain = 'example.com';</script>";
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::Assignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+    );
 }
 
 #[test]
 fn assignment_snippet_contains_domain() {
     let html = r#"<script>document.domain = "example.com";</script>"#;
     let issues = find_document_domain(html);
-    let assign = issues.iter().find(|i| matches!(i, DocumentDomainIssue::Assignment { .. }));
+    let assign = issues
+        .iter()
+        .find(|i| matches!(i, DocumentDomainIssue::Assignment { .. }));
     assert!(assign.is_some());
     if let DocumentDomainIssue::Assignment { snippet } = assign.unwrap() {
         assert!(snippet.contains("document.domain"));
@@ -33,21 +43,31 @@ fn assignment_snippet_contains_domain() {
 fn detects_dynamic_assignment_variable() {
     let html = r#"<script>document.domain = myVar;</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. }))
+    );
 }
 
 #[test]
 fn detects_dynamic_assignment_location_hostname() {
     let html = r#"<script>document.domain = location.hostname;</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. }))
+    );
 }
 
 #[test]
 fn dynamic_assignment_snippet_present() {
     let html = r#"<script>document.domain = location.hostname;</script>"#;
     let issues = find_document_domain(html);
-    let dyn_issue = issues.iter().find(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. }));
+    let dyn_issue = issues
+        .iter()
+        .find(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. }));
     assert!(dyn_issue.is_some());
     if let DocumentDomainIssue::DynamicAssignment { snippet } = dyn_issue.unwrap() {
         assert!(snippet.contains("document.domain"));
@@ -60,14 +80,22 @@ fn dynamic_assignment_snippet_present() {
 fn always_emits_deprecated_api_usage() {
     let html = r#"<script>document.domain = "x";</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DeprecatedApiUsage)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DeprecatedApiUsage))
+    );
 }
 
 #[test]
 fn deprecated_api_on_read_only() {
     let html = r#"<script>if (document.domain == "x") {}</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DeprecatedApiUsage)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DeprecatedApiUsage))
+    );
 }
 
 // --- Detection: DocumentDomainInEval ---
@@ -76,21 +104,31 @@ fn deprecated_api_on_read_only() {
 fn detects_eval_in_same_block() {
     let html = r#"<script>document.domain = "x"; eval("alert(1)");</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. }))
+    );
 }
 
 #[test]
 fn no_eval_when_eval_absent() {
     let html = r#"<script>document.domain = "x";</script>"#;
     let issues = find_document_domain(html);
-    assert!(!issues.iter().any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. }))
+    );
 }
 
 #[test]
 fn eval_snippet_contains_eval() {
     let html = r#"<script>document.domain = "x"; eval("code");</script>"#;
     let issues = find_document_domain(html);
-    let eval_issue = issues.iter().find(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. }));
+    let eval_issue = issues
+        .iter()
+        .find(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. }));
     assert!(eval_issue.is_some());
     if let DocumentDomainIssue::DocumentDomainInEval { snippet } = eval_issue.unwrap() {
         assert!(snippet.contains("eval("));
@@ -103,14 +141,22 @@ fn eval_snippet_contains_eval() {
 fn detects_read_with_equality_check() {
     let html = r#"<script>if (document.domain == "x") {}</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DocumentDomainRead)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DocumentDomainRead))
+    );
 }
 
 #[test]
 fn detects_read_with_inequality_check() {
     let html = r#"<script>if (document.domain != "x") {}</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DocumentDomainRead)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DocumentDomainRead))
+    );
 }
 
 // --- Detection: ConditionalAssignment ---
@@ -119,33 +165,47 @@ fn detects_read_with_inequality_check() {
 fn detects_conditional_with_if() {
     let html = r#"<script>if (cond) document.domain = "x";</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. }))
+    );
 }
 
 #[test]
 fn detects_conditional_with_ternary() {
     let html = r#"<script>cond ? document.domain = "a" : null;</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. }))
+    );
 }
 
 // --- Display ---
 
 #[test]
 fn display_assignment() {
-    let issue = DocumentDomainIssue::Assignment { snippet: "doc".into() };
+    let issue = DocumentDomainIssue::Assignment {
+        snippet: "doc".into(),
+    };
     assert_eq!(format!("{issue}"), "assignment: doc");
 }
 
 #[test]
 fn display_dynamic_assignment() {
-    let issue = DocumentDomainIssue::DynamicAssignment { snippet: "dyn".into() };
+    let issue = DocumentDomainIssue::DynamicAssignment {
+        snippet: "dyn".into(),
+    };
     assert_eq!(format!("{issue}"), "dynamic_assignment: dyn");
 }
 
 #[test]
 fn display_parent_domain_relaxation() {
-    let issue = DocumentDomainIssue::ParentDomainRelaxation { snippet: "parent".into() };
+    let issue = DocumentDomainIssue::ParentDomainRelaxation {
+        snippet: "parent".into(),
+    };
     assert_eq!(format!("{issue}"), "parent_domain_relaxation: parent");
 }
 
@@ -157,7 +217,9 @@ fn display_deprecated_api_usage() {
 
 #[test]
 fn display_document_domain_in_eval() {
-    let issue = DocumentDomainIssue::DocumentDomainInEval { snippet: "ev".into() };
+    let issue = DocumentDomainIssue::DocumentDomainInEval {
+        snippet: "ev".into(),
+    };
     assert_eq!(format!("{issue}"), "document_domain_in_eval: ev");
 }
 
@@ -169,7 +231,9 @@ fn display_document_domain_read() {
 
 #[test]
 fn display_conditional_assignment() {
-    let issue = DocumentDomainIssue::ConditionalAssignment { snippet: "cond".into() };
+    let issue = DocumentDomainIssue::ConditionalAssignment {
+        snippet: "cond".into(),
+    };
     assert_eq!(format!("{issue}"), "conditional_assignment: cond");
 }
 
@@ -177,19 +241,25 @@ fn display_conditional_assignment() {
 
 #[test]
 fn severity_assignment() {
-    let v = document_domain_severity(&DocumentDomainIssue::Assignment { snippet: String::new() });
+    let v = document_domain_severity(&DocumentDomainIssue::Assignment {
+        snippet: String::new(),
+    });
     assert!((v - 5.0).abs() < f64::EPSILON);
 }
 
 #[test]
 fn severity_dynamic_assignment() {
-    let v = document_domain_severity(&DocumentDomainIssue::DynamicAssignment { snippet: String::new() });
+    let v = document_domain_severity(&DocumentDomainIssue::DynamicAssignment {
+        snippet: String::new(),
+    });
     assert!((v - 6.5).abs() < f64::EPSILON);
 }
 
 #[test]
 fn severity_parent_domain_relaxation() {
-    let v = document_domain_severity(&DocumentDomainIssue::ParentDomainRelaxation { snippet: String::new() });
+    let v = document_domain_severity(&DocumentDomainIssue::ParentDomainRelaxation {
+        snippet: String::new(),
+    });
     assert!((v - 7.0).abs() < f64::EPSILON);
 }
 
@@ -201,7 +271,9 @@ fn severity_deprecated_api_usage() {
 
 #[test]
 fn severity_document_domain_in_eval() {
-    let v = document_domain_severity(&DocumentDomainIssue::DocumentDomainInEval { snippet: String::new() });
+    let v = document_domain_severity(&DocumentDomainIssue::DocumentDomainInEval {
+        snippet: String::new(),
+    });
     assert!((v - 7.5).abs() < f64::EPSILON);
 }
 
@@ -213,7 +285,9 @@ fn severity_document_domain_read() {
 
 #[test]
 fn severity_conditional_assignment() {
-    let v = document_domain_severity(&DocumentDomainIssue::ConditionalAssignment { snippet: String::new() });
+    let v = document_domain_severity(&DocumentDomainIssue::ConditionalAssignment {
+        snippet: String::new(),
+    });
     assert!((v - 5.5).abs() < f64::EPSILON);
 }
 
@@ -231,7 +305,9 @@ fn operations_empty_on_no_issues() {
 fn operations_one_per_issue() {
     let issues = vec![
         DocumentDomainIssue::DeprecatedApiUsage,
-        DocumentDomainIssue::Assignment { snippet: "x".into() },
+        DocumentDomainIssue::Assignment {
+            snippet: "x".into(),
+        },
     ];
     let mut seq = 0;
     let ops = document_domain_to_operations(&issues, &mut seq);
@@ -244,7 +320,9 @@ fn operations_sequence_increments() {
     let issues = vec![
         DocumentDomainIssue::DeprecatedApiUsage,
         DocumentDomainIssue::DocumentDomainRead,
-        DocumentDomainIssue::Assignment { snippet: "s".into() },
+        DocumentDomainIssue::Assignment {
+            snippet: "s".into(),
+        },
     ];
     let mut seq = 10;
     let ops = document_domain_to_operations(&issues, &mut seq);
@@ -288,7 +366,11 @@ fn ignores_external_scripts() {
 fn case_insensitive_tag() {
     let html = r#"<SCRIPT>document.domain = "foo";</SCRIPT>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::Assignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+    );
 }
 
 #[test]
@@ -298,7 +380,10 @@ fn multiple_script_blocks_separate_issues() {
         r#"<script>document.domain = "b.com";</script>"#,
     );
     let issues = find_document_domain(html);
-    let assignments: Vec<_> = issues.iter().filter(|i| matches!(i, DocumentDomainIssue::Assignment { .. })).collect();
+    let assignments: Vec<_> = issues
+        .iter()
+        .filter(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+        .collect();
     assert_eq!(assignments.len(), 2);
 }
 
@@ -323,7 +408,9 @@ fn snippet_truncated_at_120_chars() {
         "a".repeat(200)
     );
     let issues = find_document_domain(&long_line);
-    let assign = issues.iter().find(|i| matches!(i, DocumentDomainIssue::Assignment { .. }));
+    let assign = issues
+        .iter()
+        .find(|i| matches!(i, DocumentDomainIssue::Assignment { .. }));
     assert!(assign.is_some());
     if let DocumentDomainIssue::Assignment { snippet } = assign.unwrap() {
         assert!(snippet.len() <= 120);
@@ -335,14 +422,21 @@ fn snippet_truncated_at_120_chars() {
 fn eval_in_separate_block_no_detection() {
     let html = r#"<script>document.domain = "x";</script><script>eval("y");</script>"#;
     let issues = find_document_domain(html);
-    assert!(!issues.iter().any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DocumentDomainInEval { .. }))
+    );
 }
 
 #[test]
 fn multiple_assignments_same_block() {
     let html = "<script>\ndocument.domain = \"a\";\ndocument.domain = \"b\";\n</script>";
     let issues = find_document_domain(html);
-    let assignments: Vec<_> = issues.iter().filter(|i| matches!(i, DocumentDomainIssue::Assignment { .. })).collect();
+    let assignments: Vec<_> = issues
+        .iter()
+        .filter(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+        .collect();
     assert_eq!(assignments.len(), 2);
 }
 
@@ -353,14 +447,30 @@ fn dynamic_vs_static_distinguished() {
         r#"<script>document.domain = someVar;</script>"#,
     );
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::Assignment { .. })));
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::DynamicAssignment { .. }))
+    );
 }
 
 #[test]
 fn conditional_also_counts_as_assignment() {
     let html = r#"<script>if (cond) document.domain = "x";</script>"#;
     let issues = find_document_domain(html);
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. })));
-    assert!(issues.iter().any(|i| matches!(i, DocumentDomainIssue::Assignment { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::ConditionalAssignment { .. }))
+    );
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, DocumentDomainIssue::Assignment { .. }))
+    );
 }

@@ -89,8 +89,7 @@ pub fn analyze_iframes(html: &str) -> Vec<IframeIssue> {
     let mut findings = Vec::new();
 
     for tag in TagIter::new(html, "iframe") {
-        let src = html_parser::extract_attr(tag.original, &tag.lower, "src")
-            .unwrap_or_default();
+        let src = html_parser::extract_attr(tag.original, &tag.lower, "src").unwrap_or_default();
         let src_lower = src.to_ascii_lowercase();
 
         if src_lower.starts_with("data:") {
@@ -140,12 +139,8 @@ pub fn analyze_iframes(html: &str) -> Vec<IframeIssue> {
         }
 
         if let Some(srcdoc_val) = html_parser::extract_attr_lower(&tag.lower, "srcdoc") {
-            let has_script = srcdoc_val.contains("<script")
-                || srcdoc_val.contains("&lt;script");
-            if has_script
-                || srcdoc_val.contains("onerror=")
-                || srcdoc_val.contains("onload=")
-            {
+            let has_script = srcdoc_val.contains("<script") || srcdoc_val.contains("&lt;script");
+            if has_script || srcdoc_val.contains("onerror=") || srcdoc_val.contains("onload=") {
                 findings.push(IframeIssue::SrcdocWithScript);
             }
         }

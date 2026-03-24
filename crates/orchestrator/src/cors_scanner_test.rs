@@ -30,7 +30,9 @@ fn analyze_reflected_origin() {
         ("Vary", "Origin"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
-    assert!(issues.iter().any(|i| matches!(i, CorsIssue::ReflectedOrigin { origin } if origin == "https://evil.com")));
+    assert!(issues.iter().any(
+        |i| matches!(i, CorsIssue::ReflectedOrigin { origin } if origin == "https://evil.com")
+    ));
 }
 
 #[test]
@@ -52,7 +54,11 @@ fn analyze_credentials_with_wildcard() {
         ("Access-Control-Allow-Methods", "GET"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
-    assert!(issues.iter().any(|i| *i == CorsIssue::CredentialsWithWildcard));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == CorsIssue::CredentialsWithWildcard)
+    );
     assert!(issues.iter().any(|i| *i == CorsIssue::WildcardOrigin));
 }
 
@@ -66,7 +72,11 @@ fn analyze_credentials_with_reflection() {
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
     assert!(issues.iter().any(|i| matches!(i, CorsIssue::CredentialsWithReflection { origin } if origin == "https://evil.com")));
-    assert!(issues.iter().any(|i| matches!(i, CorsIssue::ReflectedOrigin { .. })));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CorsIssue::ReflectedOrigin { .. }))
+    );
 }
 
 #[test]
@@ -117,7 +127,11 @@ fn analyze_excessive_max_age() {
         ("Access-Control-Allow-Methods", "GET"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
-    assert!(issues.iter().any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { seconds } if *seconds == 86401)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { seconds } if *seconds == 86401))
+    );
 }
 
 #[test]
@@ -128,9 +142,11 @@ fn analyze_max_age_at_boundary_ok() {
         ("Access-Control-Allow-Methods", "GET"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { .. }))
+    );
 }
 
 #[test]
@@ -223,10 +239,18 @@ fn analyze_multiple_issues_single_response() {
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
     assert!(issues.iter().any(|i| *i == CorsIssue::WildcardOrigin));
-    assert!(issues.iter().any(|i| *i == CorsIssue::CredentialsWithWildcard));
+    assert!(
+        issues
+            .iter()
+            .any(|i| *i == CorsIssue::CredentialsWithWildcard)
+    );
     assert!(issues.iter().any(|i| *i == CorsIssue::WildcardMethods));
     assert!(issues.iter().any(|i| *i == CorsIssue::WildcardHeaders));
-    assert!(issues.iter().any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { seconds } if *seconds == 100000)));
+    assert!(
+        issues
+            .iter()
+            .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { seconds } if *seconds == 100000))
+    );
 }
 
 #[test]
@@ -237,9 +261,11 @@ fn analyze_max_age_non_numeric_ignored() {
         ("Access-Control-Allow-Methods", "GET"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
-    assert!(!issues
-        .iter()
-        .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { .. })));
+    assert!(
+        !issues
+            .iter()
+            .any(|i| matches!(i, CorsIssue::ExcessiveMaxAge { .. }))
+    );
 }
 
 #[test]
@@ -256,7 +282,10 @@ fn analyze_specific_methods_not_wildcard() {
 fn analyze_specific_headers_not_wildcard() {
     let headers = vec![
         ("Access-Control-Allow-Origin", "*"),
-        ("Access-Control-Allow-Headers", "Content-Type, Authorization"),
+        (
+            "Access-Control-Allow-Headers",
+            "Content-Type, Authorization",
+        ),
         ("Access-Control-Allow-Methods", "GET"),
     ];
     let issues = analyze_cors_headers(&headers, "https://evil.com", "example.com");
@@ -317,10 +346,7 @@ fn display_credentials_with_null() {
 
 #[test]
 fn display_preflight_missing() {
-    assert_eq!(
-        CorsIssue::PreflightMissing.to_string(),
-        "preflight_missing"
-    );
+    assert_eq!(CorsIssue::PreflightMissing.to_string(), "preflight_missing");
 }
 
 #[test]
