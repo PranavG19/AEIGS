@@ -21,6 +21,7 @@ pub mod scheduler;
 pub mod stealth_config;
 pub mod streaming_fuzzer;
 pub mod subdomain_takeover;
+pub mod prototype_pollution_tester;
 pub mod waf_fingerprinter;
 
 pub use bot_detection_probe::*;
@@ -32,6 +33,7 @@ pub use graphql_tester::*;
 pub use header_analyzer::*;
 pub use idor_tester::*;
 pub use mass_assignment_tester::*;
+pub use prototype_pollution_tester::*;
 pub use race_tester::*;
 pub use rate_limit_detector::*;
 pub use subdomain_takeover::*;
@@ -88,3 +90,7 @@ mod jailbreak_mutator_test;
 #[cfg(test)]
 #[path = "llm_oracle_test.rs"]
 mod llm_oracle_test;
+
+#[cfg(test)]
+#[path = "prototype_pollution_tester_test.rs"]
+mod prototype_pollution_tester_test;
