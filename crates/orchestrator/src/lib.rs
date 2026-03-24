@@ -192,6 +192,7 @@ pub mod shape_detection_audit;
 pub mod shared_buffer_audit;
 pub mod shared_worker_audit;
 pub mod shodan_lookup;
+pub mod smuggling_engine;
 pub mod sourcemap_detector;
 pub mod sourcemap_header_audit;
 pub mod speculation_rules_audit;
