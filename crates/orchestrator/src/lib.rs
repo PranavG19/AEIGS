@@ -91,6 +91,7 @@ pub mod gamepad_audit;
 pub mod geolocation_audit;
 pub mod grammar_fuzzer;
 mod graph_persistence;
+pub mod graphql_batch_amplification;
 pub mod graphql_depth_scanner;
 pub mod graphql_introspection_audit;
 pub mod hardware_api_audit;

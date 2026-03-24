@@ -2,7 +2,7 @@
 
 ## current
 priority: ROI LOOP
-task: Next ROI feature
+task: Next ROI feature after GraphQL batch amplification
 status: HANDOFF READY
 
 ## phase-status
@@ -34,7 +34,8 @@ status: HANDOFF READY
 - grammar_fuzzer: 47
 - websocket_fuzzer: 35
 - api_schema_inference: 40
-- TOTAL NEW THIS SESSION: 311 tests
+- graphql_batch_amplification: 51
+- TOTAL NEW THIS SESSION: 362 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
@@ -61,26 +62,26 @@ status: HANDOFF READY
    - State machine inference, 10 fuzz categories, BFS path finding
 
 8. **API Schema Inference Engine** (ROI=72.0) — 40 tests
-   - Path template inference (collapse /users/1 + /users/2 → /users/{id})
-   - 12 type inference heuristics: int, float, uuid, email, date, datetime,
-     boolean, slug, hex, jwt, base64, string
-   - Authentication pattern detection: Bearer, Basic, API key, Cookie
-   - JSON schema extraction: field names, types, nullable, arrays, nesting
-   - Query parameter type inference with required/optional detection
-   - Endpoint relationship detection: parent-child, CRUD siblings
-   - Full schema assembly from raw observed traffic
+   - Path template inference, 12 type heuristics, auth pattern detection
+   - JSON schema extraction, endpoint relationship detection
+
+9. **GraphQL Batch Query Amplification** (ROI=68.6) — 51 tests
+   - 5 techniques: array batch, alias duplication, nested fragment, directive overload, variable batch
+   - 7 payload purposes: rate-limit bypass, brute force, data exfil, DoS, race condition, ACL probing, cost analysis
+   - Behavior analysis: auto-detect batch support, depth limits, alias limits, rate-limit scope
+   - Combined amplification detection (batch × alias = critical)
+   - Convenience helpers: brute_force, id_enumeration, race_payload, generate_probes
 
 ## ROI ranking (next)
-1. **DNS rebinding attack automation** — for SSRF chain escalation
-   - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
-2. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
+1. **Injection Engine** (P4f) — NoSQL/LDAP/SSTI/SpEL/OGNL/EL/CRLF
    - power=8 uniqueness=6 intelligence=7 cost=6 → ROI=56.0
-3. **GraphQL batch query amplification** — bypass rate limits
-   - power=7 uniqueness=7 intelligence=7 cost=5 → ROI=68.6
+2. **DNS rebinding attack automation** — for SSRF chain escalation
+   - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
+3. **Schema→Grammar glue module** — pipe api_schema_inference into grammar_fuzzer
+   - power=6 uniqueness=7 intelligence=8 cost=9 → ROI=37.3
+   - Low cost but compounds two existing engines into autonomous pipeline
 
 ## handoff
-Next session: build DNS rebinding or GraphQL batch amplification.
-Location: crates/orchestrator/src/dns_rebinding.rs or graphql_batch_amplification.rs
-Consider also: the grammar fuzzer + api schema inference now complement each other.
-A glue module that pipes schema inference output into grammar fuzzer input
-would be high-ROI with minimal code.
+Next session: build Injection Engine (P4f) or DNS rebinding.
+Location: crates/orchestrator/src/injection_engine.rs
+The grammar fuzzer + api schema inference glue is cheap and high-compound-value.
