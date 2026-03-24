@@ -163,6 +163,7 @@ pub mod presentation_audit;
 pub mod priority_hints_audit;
 pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
+pub mod race_engine;
 pub mod rate_limit_detector;
 pub mod recon_client;
 pub mod redirect_scanner;
