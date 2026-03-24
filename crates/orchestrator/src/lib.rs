@@ -67,6 +67,7 @@ pub mod distributed;
 pub mod distributed_transport;
 pub mod dns_enumerator;
 pub mod dns_prefetch_control_audit;
+pub mod dns_rebinding;
 pub mod doctor;
 pub mod document_domain_audit;
 pub mod document_pip_audit;

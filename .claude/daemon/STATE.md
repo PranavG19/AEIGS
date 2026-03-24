@@ -2,7 +2,7 @@
 
 ## current
 priority: ROI LOOP
-task: Next ROI feature after Injection Engine
+task: Next ROI feature
 status: HANDOFF READY
 
 ## phase-status
@@ -37,63 +37,38 @@ status: HANDOFF READY
 - api_schema_inference: 40
 - graphql_batch_amplification: 51
 - injection_engine: 54
-- TOTAL NEW THIS SESSION: 416 tests
+- dns_rebinding: 39
+- TOTAL NEW THIS SESSION: 455 tests
 
 ## completed this session
 1. **Timing Oracle Detection** (ROI=126.0) — 44 tests
-   - Welch's t-test, Cohen's d, Pearson correlation, outlier removal
-   - 8 blind vuln types, 30+ timing payloads, 4-level verdict
-
 2. **Authentication Breaker** (P4b, ROI=75.6) — 32 tests
-   - JWT alg:none/confusion/tampering/exp/kid/jku/null-sig (50+ payloads)
-   - Session entropy + sequential analysis, OAuth redirect_uri manipulation
-
 3. **SSRF Chain Automation** (P4e, ROI=84.0) — 28 tests
-   - 7 cloud providers, IP bypass (12 variants), credential extraction
-
 4. **Differential Response Analysis** (ROI=126.0) — 31 tests
-   - 14 mutation types, response fingerprinting, WAF rule inference
-
 5. **XS-Leaks Taxonomy Engine** (ROI=88.2) — 54 tests
-   - 12 leak categories, 17+ probes, 9 defense types, differential analysis
-
 6. **Grammar-Based Generative Fuzzing** (ROI=82.3) — 47 tests
-   - API grammar extraction, 13 slot types, 9 mutation strategies
-
 7. **WebSocket State Machine Fuzzer** (ROI=84.0) — 35 tests
-   - State machine inference, 10 fuzz categories, BFS path finding
-
 8. **API Schema Inference Engine** (ROI=72.0) — 40 tests
-   - Path template inference, 12 type heuristics, auth pattern detection
-   - JSON schema extraction, endpoint relationship detection
-
 9. **GraphQL Batch Query Amplification** (ROI=68.6) — 51 tests
-   - 5 techniques: array batch, alias duplication, nested fragment, directive overload, variable batch
-   - 7 payload purposes: rate-limit bypass, brute force, data exfil, DoS, race condition, ACL probing, cost analysis
-   - Behavior analysis: auto-detect batch support, depth limits, alias limits, rate-limit scope
-   - Combined amplification detection (batch × alias = critical)
-
 10. **Injection Engine** (P4f, ROI=56.0) — 54 tests
-    - 7 injection classes: NoSQL, LDAP, SSTI, SpEL, OGNL, Jakarta EL, CRLF
-    - 65+ payloads with oracle signals (math, string, error, timing, status, header, reflected)
-    - SSTI: 10 template engines (Jinja2/Twig/Freemarker/Velocity/Thymeleaf/Mako/Pug/ERB/Smarty/Handlebars)
-    - Polyglot math probes, string concat probes, error-based probes
-    - Evasion variants (levels 0-2): attr() chains, format string, URL encoding
-    - Template engine identification from error responses
-    - Targeted payload generation per identified engine
-    - COMPLETES PHASE 4 ARSENAL
+    - 7 injection classes, 65+ payloads, 10 template engines, evasion levels 0-2
+11. **DNS Rebinding Attack Automation** (ROI=67.2) — 39 tests
+    - 6 techniques: A-record flip, CNAME chain, multiple-A, IPv6 mapped, time-based, wildcard subdomain
+    - 6 target services: AWS IMDS, GCP metadata, Azure IMDS, Docker API, K8s API, localhost
+    - DNS zone record generation, race condition payloads, pinning bypass
+    - Internal IP detection (v4/v6 mapped), chain potential analysis
+    - Integrates with SSRF chain module for full SSRF→rebind→credential extraction
 
 ## ROI ranking (next)
-1. **DNS rebinding attack automation** — for SSRF chain escalation
-   - power=7 uniqueness=8 intelligence=6 cost=5 → ROI=67.2
-2. **Schema→Grammar glue module** — pipe api_schema_inference into grammar_fuzzer
-   - power=6 uniqueness=7 intelligence=8 cost=9 → ROI=37.3 (but compounds two engines)
-3. **HTTP/2 CONTINUATION flood** — new 2024 protocol DoS technique
+1. **Schema→Grammar pipeline** — glue api_schema_inference → grammar_fuzzer
+   - power=6 uniqueness=7 intelligence=8 cost=9 → ROI=37.3 (compounds two engines, very cheap)
+2. **HTTP/2 CONTINUATION flood** — 2024 protocol DoS technique
    - power=7 uniqueness=9 intelligence=5 cost=6 → ROI=52.5
-4. **Automated business logic testing** — LLM understands checkout/transfer flows
-   - power=8 uniqueness=9 intelligence=9 cost=3 → ROI=216.0 (high power but high cost)
+3. **Cache poisoning automation** — Web cache deception + key normalization
+   - power=7 uniqueness=8 intelligence=7 cost=5 → ROI=78.4
+4. **Prototype pollution scanner** — deep Node.js __proto__ injection
+   - power=7 uniqueness=7 intelligence=6 cost=7 → ROI=42.0
 
 ## handoff
-Next session: DNS rebinding or Schema→Grammar glue (cheap, compounds).
-Phase 4 Arsenal is now COMPLETE with Injection Engine (P4f).
-Location: crates/orchestrator/src/dns_rebinding.rs or schema_grammar_pipeline.rs
+Next session: Cache poisoning (ROI=78.4) or Schema→Grammar glue (cheap compound).
+Location: crates/orchestrator/src/cache_poisoning.rs or schema_grammar_pipeline.rs
