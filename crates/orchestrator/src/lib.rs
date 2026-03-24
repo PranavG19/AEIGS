@@ -60,6 +60,7 @@ pub mod deserialization_audit;
 pub mod device_memory_audit;
 pub mod device_motion_audit;
 pub mod dialog_element_audit;
+pub mod differential_response;
 pub mod digital_goods_audit;
 pub mod distributed;
 pub mod distributed_transport;
