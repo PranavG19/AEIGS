@@ -17,6 +17,7 @@ pub mod base_tag_audit;
 pub mod battery_audit;
 pub mod beacon_api_audit;
 pub mod benchmark;
+pub mod brain_loop;
 pub mod broadcast_channel_audit;
 pub mod cache_audit;
 pub mod cache_poison_audit;

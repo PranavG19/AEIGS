@@ -2,39 +2,42 @@
 
 ## current
 priority: PHASE 2 — THE BRAIN (opencode as Autonomous Agent)
-task: P2e — Feedback loop (brain_loop.rs)
-status: IN PROGRESS
+task: PHASE 2 COMPLETE
+status: COMPLETE — entering ROI ranking for next priority
 
 ## phase-status
 - PHASE 1 (Ghost Protocol): PARTIAL (P1a+P1b done, P1c-f deferred — low ROI)
   - P1a HTTP/2 fingerprint engine: ✅ COMPLETE (28 tests)
   - P1b TLS ClientHello synthesis: ✅ COMPLETE (43 tests)
-- PHASE 2 (The Brain — opencode integration): IN PROGRESS
-  - P2a Scan context serializer: ✅ COMPLETE (18 tests)
-  - P2b opencode bridge: ✅ COMPLETE (18 tests)
-  - P2c Mission prompt file: ✅ COMPLETE (prompts/aegis_mind.md)
-  - P2d Memory/knowledge store: ✅ EXISTS (agent_memory_store.rs from prior session, 890 lines)
-  - P2e Feedback loop: IN PROGRESS
+- PHASE 2 (The Brain — opencode integration): ✅ COMPLETE
+  - P2a Scan context serializer: ✅ COMPLETE (18 tests) — scan_context_serializer.rs
+  - P2b opencode bridge: ✅ COMPLETE (18 tests) — opencode_bridge.rs
+  - P2c Mission prompt file: ✅ COMPLETE — prompts/aegis_mind.md
+  - P2d Memory/knowledge store: ✅ EXISTS — agent_memory_store.rs (890 lines, prior session)
+  - P2e Feedback loop: ✅ COMPLETE (17 tests) — brain_loop.rs
 - PHASE 3 (The Swarm): NOT STARTED
 - PHASE 4 (The Arsenal): NOT STARTED
 - PHASE 5 (Nerve Center): NOT STARTED
-- PHASE ∞ (ROI Loop): WAITING
+- PHASE ∞ (ROI Loop): READY
 
 ## test-baseline
 - cargo test -p aegis-orchestrator scan_context_serializer: 18 passed
 - cargo test -p aegis-orchestrator opencode_bridge: 18 passed
-- cargo test -p aegis-evasion-engine: 310 lib + 25 integration, 0 failed
+- cargo test -p aegis-orchestrator brain_loop: 17 passed
+
+## ROI ranking (top 3 next features)
+1. **Payload Forge — polyglot/WAF-bypass generator** (P4a)
+   - power=9 uniqueness=8 intelligence=7 cost=5 → ROI=100.8
+   - The Brain generates hypotheses but needs creative payloads. This makes every hypothesis more likely to succeed.
+2. **Protocol attacks — HTTP request smuggling engine** (P4c)
+   - power=9 uniqueness=9 intelligence=5 cost=4 → ROI=101.25
+   - Nobody automates CL.TE/TE.CL/H2.CL detection with counterfactual validation.
+3. **Adaptive rate intelligence** (P3d)
+   - power=7 uniqueness=7 intelligence=8 cost=6 → ROI=65.3
+   - Push right to detection threshold without triggering rate limits.
 
 ## handoff
-P2e — Feedback loop orchestrator (brain_loop.rs).
-This wires P2a + P2b + P2c + P2d together:
-1. serialize scan state → briefing (P2a)
-2. load mission prompt (P2c)
-3. invoke brain (P2b) with briefing + prompt
-4. parse response → hypotheses
-5. feed hypotheses to fuzzer → record results
-6. update memory store (P2d)
-7. repeat until convergence
-
-Location: crates/orchestrator/src/brain_loop.rs + brain_loop_test.rs
-After P2e → Phase 2 COMPLETE, enter Phase 3 or ROI loop.
+Phase 2 complete. Next session: build P4a (Payload Forge) or P4c (Request Smuggling).
+Both are high-ROI offensive capabilities the Brain needs.
+P4a location: crates/orchestrator/src/payload_forge.rs
+P4c location: crates/orchestrator/src/smuggling_detector.rs
