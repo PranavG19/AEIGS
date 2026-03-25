@@ -81,10 +81,7 @@ impl CrtShClient {
 
     /// Build the crt.sh query URL for this domain.
     pub fn query_url(&self) -> String {
-        format!(
-            "https://crt.sh/?q=%.{}&output=json",
-            self.base_domain
-        )
+        format!("https://crt.sh/?q=%.{}&output=json", self.base_domain)
     }
 
     /// Parse raw JSON from crt.sh into a deduplicated set of subdomains.
@@ -292,7 +289,10 @@ impl BulkDnsResolver {
 
     /// Filter results to only those with takeover indicators.
     pub fn find_takeover_candidates(results: &[DnsResult]) -> Vec<&DnsResult> {
-        results.iter().filter(|r| r.has_takeover_indicator()).collect()
+        results
+            .iter()
+            .filter(|r| r.has_takeover_indicator())
+            .collect()
     }
 
     pub fn max_concurrency(&self) -> usize {
@@ -420,7 +420,10 @@ fn is_valid_subdomain(candidate: &str, base_domain: &str) -> bool {
     }
 
     // Reject whitespace, control characters
-    if candidate.chars().any(|c| c.is_whitespace() || c.is_control()) {
+    if candidate
+        .chars()
+        .any(|c| c.is_whitespace() || c.is_control())
+    {
         return false;
     }
 
@@ -428,9 +431,7 @@ fn is_valid_subdomain(candidate: &str, base_domain: &str) -> bool {
     candidate.split('.').all(|label| {
         !label.is_empty()
             && label.len() <= 63
-            && label
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '-')
+            && label.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
             && !label.starts_with('-')
             && !label.ends_with('-')
     })

@@ -411,9 +411,11 @@ fn test_batch_extraction() {
     assert!(report.items.len() >= 3);
     assert!(!report.items_by_category(IntelCategory::LeakedIp).is_empty());
     assert!(!report.items_by_category(IntelCategory::Email).is_empty());
-    assert!(!report
-        .items_by_category(IntelCategory::VersionString)
-        .is_empty());
+    assert!(
+        !report
+            .items_by_category(IntelCategory::VersionString)
+            .is_empty()
+    );
 }
 
 #[test]

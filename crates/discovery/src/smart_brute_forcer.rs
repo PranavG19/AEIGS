@@ -434,11 +434,7 @@ impl SmartBruteForcer {
             let end = (start + self.config.max_number_iteration).min(start + 100);
             for n in 1..=end {
                 let label = format!("{base}{n}");
-                let distance_from_known = if n > *max_seen {
-                    n - max_seen
-                } else {
-                    0
-                };
+                let distance_from_known = if n > *max_seen { n - max_seen } else { 0 };
                 let score = 8.0 / (1.0 + distance_from_known as f64);
                 candidates.push(ScoredCandidate {
                     subdomain: format!("{label}.{domain}"),

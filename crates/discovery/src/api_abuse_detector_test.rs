@@ -387,35 +387,43 @@ fn test_graphql_deep_nesting() {
 #[test]
 fn test_idor_detect_sequential_integer() {
     let indicators = ApiAbuseDetector::detect_idor_indicators("/api/users/42");
-    assert!(indicators
-        .iter()
-        .any(|i| i.pattern == IdorPattern::SequentialInteger && i.value == "42"));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.pattern == IdorPattern::SequentialInteger && i.value == "42")
+    );
 }
 
 #[test]
 fn test_idor_detect_uuid_v1() {
     let indicators =
         ApiAbuseDetector::detect_idor_indicators("/api/users/6ba7b810-9dad-11d1-80b4-00c04fd430c8");
-    assert!(indicators
-        .iter()
-        .any(|i| i.pattern == IdorPattern::PredictableUuidV1));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.pattern == IdorPattern::PredictableUuidV1)
+    );
 }
 
 #[test]
 fn test_idor_detect_uuid_v4() {
     let indicators =
         ApiAbuseDetector::detect_idor_indicators("/api/users/550e8400-e29b-41d4-a716-446655440000");
-    assert!(indicators
-        .iter()
-        .any(|i| i.pattern == IdorPattern::RandomUuidV4));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.pattern == IdorPattern::RandomUuidV4)
+    );
 }
 
 #[test]
 fn test_idor_detect_short_hash() {
     let indicators = ApiAbuseDetector::detect_idor_indicators("/api/commits/a1b2c3d4e5");
-    assert!(indicators
-        .iter()
-        .any(|i| i.pattern == IdorPattern::ShortHash));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.pattern == IdorPattern::ShortHash)
+    );
 }
 
 #[test]

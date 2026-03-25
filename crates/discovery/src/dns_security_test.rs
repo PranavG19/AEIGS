@@ -84,7 +84,7 @@ fn parse_axfr_response_handles_zero_records() {
     let mut header = [0u8; 12];
     header[2] = 0x84; // QR=1, AA=1
     header[3] = 0x00; // RCODE=0
-                      // QDCOUNT=0, ANCOUNT=0
+    // QDCOUNT=0, ANCOUNT=0
     let records = parse_axfr_response(&header, "example.com").unwrap();
     assert!(records.is_empty());
 }
@@ -508,9 +508,11 @@ fn generate_findings_zone_transfer() {
     };
     let findings = generate_findings(&audit);
     assert!(!findings.is_empty());
-    assert!(findings
-        .iter()
-        .any(|f| f.check_type == DnsCheckType::ZoneTransfer));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.check_type == DnsCheckType::ZoneTransfer)
+    );
     assert!(findings.iter().any(|f| f.severity == DnsSeverity::Critical));
 }
 

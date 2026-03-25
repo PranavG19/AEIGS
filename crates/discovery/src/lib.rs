@@ -1,33 +1,47 @@
+pub mod api_abuse_detector;
+pub mod attack_surface_mapper;
 mod backup_scanner;
 mod brute_forcer;
 pub mod ct_monitor;
+pub mod dns_security;
+pub mod domain_impersonation;
+pub mod email_infra;
+pub mod error_disclosure;
 mod graph_ops;
 mod js_extractor;
+pub mod osint_gatherer;
 mod param_discoverer;
 mod passive_intel;
+pub mod phishing_analyzer;
 mod sitemap_parser;
-mod tech_fingerprinter;
-mod vhost_discoverer;
-mod wordlist;
-pub mod api_abuse_detector;
-pub mod error_disclosure;
 pub mod smart_brute_forcer;
+mod tech_fingerprinter;
 pub mod threat_intel_feed;
+mod vhost_discoverer;
+pub mod vuln_intelligence;
+mod wordlist;
 
 pub use api_abuse_detector::*;
+pub use attack_surface_mapper::*;
 pub use backup_scanner::*;
 pub use brute_forcer::*;
 pub use ct_monitor::*;
+pub use dns_security::*;
+pub use domain_impersonation::*;
+pub use email_infra::*;
 pub use error_disclosure::*;
 pub use graph_ops::*;
 pub use js_extractor::*;
+pub use osint_gatherer::*;
 pub use param_discoverer::*;
 pub use passive_intel::*;
+pub use phishing_analyzer::*;
 pub use sitemap_parser::*;
 pub use smart_brute_forcer::*;
 pub use tech_fingerprinter::*;
 pub use threat_intel_feed::*;
 pub use vhost_discoverer::*;
+pub use vuln_intelligence::*;
 pub use wordlist::*;
 
 #[cfg(test)]
@@ -89,3 +103,19 @@ mod smart_brute_forcer_test;
 #[cfg(test)]
 #[path = "threat_intel_feed_test.rs"]
 mod threat_intel_feed_test;
+
+#[cfg(test)]
+#[path = "dns_security_test.rs"]
+mod dns_security_test;
+
+#[cfg(test)]
+#[path = "vuln_intelligence_test.rs"]
+mod vuln_intelligence_test;
+
+#[cfg(test)]
+#[path = "attack_surface_mapper_test.rs"]
+mod attack_surface_mapper_test;
+
+#[cfg(test)]
+#[path = "osint_gatherer_test.rs"]
+mod osint_gatherer_test;

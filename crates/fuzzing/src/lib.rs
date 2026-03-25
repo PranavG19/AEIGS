@@ -1,10 +1,13 @@
 #![allow(ambiguous_glob_reexports)]
 
 pub mod bot_detection_probe;
+pub mod campaign_manager;
 pub mod cloud_detector;
 pub mod command_injection_gen;
+pub mod comparative_fuzzer;
 pub mod confirmation;
 pub mod cors_detector;
+pub mod coverage_guided_fuzzer;
 pub mod coverage_tracker;
 pub mod defense_profile;
 pub mod deserialization_attacks;
@@ -17,13 +20,14 @@ pub mod idor_tester;
 pub mod jailbreak_mutator;
 pub mod llm_oracle;
 pub mod mass_assignment_tester;
+pub mod mutation_strategy;
 pub mod mutator;
 pub mod nosql_exploitation;
 pub mod oracle;
 pub mod param_pollution;
 pub mod payload_scorer;
 pub mod payload_selector;
-pub mod prototype_pollution_tester;
+pub mod protocol_fuzzer;
 pub mod race_tester;
 pub mod rate_limit_detector;
 pub mod request_patterns;
@@ -33,11 +37,22 @@ pub mod stealth_config;
 pub mod streaming_fuzzer;
 pub mod subdomain_takeover;
 pub mod waf_fingerprinter;
+pub mod websocket_binary_fuzzer;
 pub mod xxe_engine;
 
+pub mod anomaly_detector;
+pub mod input_validation_bypass;
+pub mod prototype_pollution_tester;
+pub mod redos_engine;
+pub mod sqli_second_order;
+
+pub use anomaly_detector::*;
 pub use bot_detection_probe::*;
+pub use campaign_manager::*;
 pub use cloud_detector::*;
 pub use command_injection_gen::*;
+pub use comparative_fuzzer::*;
+pub use coverage_guided_fuzzer::*;
 pub use confirmation::*;
 pub use cors_detector::*;
 pub use coverage_tracker::*;
@@ -49,30 +64,48 @@ pub use h2_protocol_attacks::*;
 pub use header_analyzer::*;
 pub use header_smuggling::*;
 pub use idor_tester::*;
+pub use input_validation_bypass::*;
 pub use jailbreak_mutator::*;
 pub use llm_oracle::*;
 pub use mass_assignment_tester::*;
+pub use mutation_strategy::*;
 pub use mutator::*;
 pub use nosql_exploitation::*;
 pub use oracle::*;
 pub use param_pollution::*;
 pub use payload_scorer::*;
 pub use payload_selector::*;
+pub use protocol_fuzzer::*;
 pub use prototype_pollution_tester::*;
 pub use race_tester::*;
 pub use rate_limit_detector::*;
+pub use redos_engine::*;
 pub use request_patterns::*;
 pub use scheduler::*;
 pub use smuggling_detector::*;
+pub use sqli_second_order::*;
 pub use stealth_config::*;
 pub use streaming_fuzzer::*;
 pub use subdomain_takeover::*;
 pub use waf_fingerprinter::*;
+pub use websocket_binary_fuzzer::*;
 pub use xxe_engine::*;
+
+#[cfg(test)]
+#[path = "anomaly_detector_test.rs"]
+mod anomaly_detector_test;
 
 #[cfg(test)]
 #[path = "bot_detection_probe_test.rs"]
 mod bot_detection_probe_test;
+
+#[cfg(test)]
+#[path = "campaign_manager_test.rs"]
+mod campaign_manager_test;
+
+#[cfg(test)]
+#[path = "comparative_fuzzer_test.rs"]
+mod comparative_fuzzer_test;
 
 #[cfg(test)]
 #[path = "command_injection_gen_test.rs"]
@@ -85,6 +118,10 @@ mod confirmation_test;
 #[cfg(test)]
 #[path = "cors_detector_test.rs"]
 mod cors_detector_test;
+
+#[cfg(test)]
+#[path = "coverage_guided_fuzzer_test.rs"]
+mod coverage_guided_fuzzer_test;
 
 #[cfg(test)]
 #[path = "coverage_tracker_test.rs"]
@@ -139,6 +176,10 @@ mod mass_assignment_tester_test;
 mod mutator_test;
 
 #[cfg(test)]
+#[path = "mutation_strategy_test.rs"]
+mod mutation_strategy_test;
+
+#[cfg(test)]
 #[path = "nosql_exploitation_test.rs"]
 mod nosql_exploitation_test;
 
@@ -157,6 +198,10 @@ mod payload_selector_test;
 #[cfg(test)]
 #[path = "prototype_pollution_tester_test.rs"]
 mod prototype_pollution_tester_test;
+
+#[cfg(test)]
+#[path = "protocol_fuzzer_test.rs"]
+mod protocol_fuzzer_test;
 
 #[cfg(test)]
 #[path = "race_tester_test.rs"]
@@ -197,3 +242,19 @@ mod xxe_engine_test;
 #[cfg(test)]
 #[path = "payload_scorer_test.rs"]
 mod payload_scorer_test;
+
+#[cfg(test)]
+#[path = "input_validation_bypass_test.rs"]
+mod input_validation_bypass_test;
+
+#[cfg(test)]
+#[path = "redos_engine_test.rs"]
+mod redos_engine_test;
+
+#[cfg(test)]
+#[path = "sqli_second_order_test.rs"]
+mod sqli_second_order_test;
+
+#[cfg(test)]
+#[path = "websocket_binary_fuzzer_test.rs"]
+mod websocket_binary_fuzzer_test;
