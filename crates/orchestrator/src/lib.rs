@@ -571,12 +571,17 @@ pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
 pub use xml_injection_suite::*;
 
+pub mod adaptive_defense_planner;
 pub mod alert_rules;
 pub mod attack_scenario;
 pub mod change_detector;
 pub mod continuous_scheduler;
 pub mod evidence_chain;
+pub mod exploit_compiler;
+pub mod multi_vector_coordinator;
 pub mod notifications;
+pub mod novel_vuln_reasoner;
+pub mod persistence_manager;
 pub mod playbook_engine;
 pub mod scan_comparison_intel;
 pub mod scan_diff_reporter;
@@ -1858,3 +1863,23 @@ mod xs_leaks_test;
 #[cfg(test)]
 #[path = "xxe_scanner_test.rs"]
 mod xxe_scanner_test;
+
+#[cfg(test)]
+#[path = "exploit_compiler_test.rs"]
+mod exploit_compiler_test;
+
+#[cfg(test)]
+#[path = "adaptive_defense_planner_test.rs"]
+mod adaptive_defense_planner_test;
+
+#[cfg(test)]
+#[path = "multi_vector_coordinator_test.rs"]
+mod multi_vector_coordinator_test;
+
+#[cfg(test)]
+#[path = "novel_vuln_reasoner_test.rs"]
+mod novel_vuln_reasoner_test;
+
+#[cfg(test)]
+#[path = "persistence_manager_test.rs"]
+mod persistence_manager_test;

@@ -22,6 +22,12 @@ pub use git_analyzer::*;
 pub use har_analyzer::*;
 pub use service_fingerprinter::*;
 pub use subdomain_enum::*;
+pub mod temporal_correlator;
+pub use temporal_correlator::*;
+pub mod financial_footprint;
+pub use financial_footprint::*;
+pub mod supply_chain_shadow;
+pub use supply_chain_shadow::*;
 
 #[cfg(test)]
 #[path = "git_analyzer_test.rs"]
@@ -66,3 +72,15 @@ mod secret_scanner_test;
 #[cfg(test)]
 #[path = "subdomain_enum_test.rs"]
 mod subdomain_enum_test;
+
+#[cfg(test)]
+#[path = "temporal_correlator_test.rs"]
+mod temporal_correlator_test;
+
+#[cfg(test)]
+#[path = "financial_footprint_test.rs"]
+mod financial_footprint_test;
+
+#[cfg(test)]
+#[path = "supply_chain_shadow_test.rs"]
+mod supply_chain_shadow_test;

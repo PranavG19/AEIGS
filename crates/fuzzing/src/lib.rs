@@ -40,6 +40,9 @@ pub mod waf_fingerprinter;
 pub mod websocket_binary_fuzzer;
 pub mod xxe_engine;
 
+pub mod graphql_deep_exploit;
+pub mod single_packet_race;
+
 pub mod anomaly_detector;
 pub mod cmdi_payloads_v2;
 pub mod dictionary_manager;
@@ -67,6 +70,7 @@ pub use defense_profile::*;
 pub use deserialization_attacks::*;
 pub use dictionary_manager::*;
 pub use executor::*;
+pub use graphql_deep_exploit::*;
 pub use graphql_tester::*;
 pub use h2_protocol_attacks::*;
 pub use header_analyzer::*;
@@ -85,6 +89,7 @@ pub use payload_scorer::*;
 pub use payload_selector::*;
 pub use protocol_fuzzer::*;
 pub use prototype_pollution_tester::*;
+pub use single_packet_race::*;
 pub use race_tester::*;
 pub use rate_limit_detector::*;
 pub use redos_engine::*;
@@ -302,3 +307,11 @@ mod cloud_detector_test;
 #[cfg(test)]
 #[path = "smuggling_detector_test.rs"]
 mod smuggling_detector_test;
+
+#[cfg(test)]
+#[path = "single_packet_race_test.rs"]
+mod single_packet_race_test;
+
+#[cfg(test)]
+#[path = "graphql_deep_exploit_test.rs"]
+mod graphql_deep_exploit_test;

@@ -67,6 +67,11 @@ pub mod ephemeral_infra;
 pub mod forensic_countermeasures;
 pub mod identity_rotation;
 pub mod opsec_validator;
+pub mod baseline_mimicry;
+pub mod encrypted_channel_blend;
+pub mod lotl_protocol;
+pub mod ml_adversarial;
+pub mod saas_dead_drops;
 
 pub use adaptive_evasion::*;
 pub use desync_library::*;
@@ -85,6 +90,11 @@ pub use ephemeral_infra::*;
 pub use forensic_countermeasures::*;
 pub use identity_rotation::*;
 pub use opsec_validator::*;
+pub use baseline_mimicry::*;
+pub use encrypted_channel_blend::*;
+pub use lotl_protocol::*;
+pub use ml_adversarial::*;
+pub use saas_dead_drops::*;
 
 #[cfg(test)]
 #[path = "adaptive_evasion_test.rs"]
@@ -253,3 +263,23 @@ mod identity_rotation_test;
 #[cfg(test)]
 #[path = "opsec_validator_test.rs"]
 mod opsec_validator_test;
+
+#[cfg(test)]
+#[path = "baseline_mimicry_test.rs"]
+mod baseline_mimicry_test;
+
+#[cfg(test)]
+#[path = "encrypted_channel_blend_test.rs"]
+mod encrypted_channel_blend_test;
+
+#[cfg(test)]
+#[path = "lotl_protocol_test.rs"]
+mod lotl_protocol_test;
+
+#[cfg(test)]
+#[path = "ml_adversarial_test.rs"]
+mod ml_adversarial_test;
+
+#[cfg(test)]
+#[path = "saas_dead_drops_test.rs"]
+mod saas_dead_drops_test;

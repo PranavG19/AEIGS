@@ -82,6 +82,27 @@ pub use social_engineering_profile::*;
 pub use infra_footprint::*;
 pub use target_dossier::*;
 
+pub mod exposed_db_scanner;
+pub use exposed_db_scanner::*;
+
+pub mod cloud_storage_scanner;
+pub use cloud_storage_scanner::*;
+
+pub mod api_secret_exposure;
+pub use api_secret_exposure::*;
+
+#[cfg(test)]
+#[path = "exposed_db_scanner_test.rs"]
+mod exposed_db_scanner_test;
+
+#[cfg(test)]
+#[path = "cloud_storage_scanner_test.rs"]
+mod cloud_storage_scanner_test;
+
+#[cfg(test)]
+#[path = "api_secret_exposure_test.rs"]
+mod api_secret_exposure_test;
+
 #[cfg(test)]
 #[path = "canary_scanner_test.rs"]
 mod canary_scanner_test;
