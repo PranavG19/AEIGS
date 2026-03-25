@@ -63,12 +63,24 @@ pub mod deception_mapper;
 pub mod honeypot_detector;
 pub mod ids_detector;
 pub mod stealth_assessment;
+pub mod person_profiler;
+pub mod org_mapper;
+pub mod credential_intel;
+pub mod social_engineering_profile;
+pub mod infra_footprint;
+pub mod target_dossier;
 
 pub use canary_scanner::*;
 pub use deception_mapper::*;
 pub use honeypot_detector::*;
 pub use ids_detector::*;
 pub use stealth_assessment::*;
+pub use person_profiler::*;
+pub use org_mapper::*;
+pub use credential_intel::*;
+pub use social_engineering_profile::*;
+pub use infra_footprint::*;
+pub use target_dossier::*;
 
 #[cfg(test)]
 #[path = "canary_scanner_test.rs"]
@@ -193,3 +205,27 @@ mod phishing_analyzer_test;
 #[cfg(test)]
 #[path = "subdomain_takeover_v2_test.rs"]
 mod subdomain_takeover_v2_test;
+
+#[cfg(test)]
+#[path = "person_profiler_test.rs"]
+mod person_profiler_test;
+
+#[cfg(test)]
+#[path = "org_mapper_test.rs"]
+mod org_mapper_test;
+
+#[cfg(test)]
+#[path = "credential_intel_test.rs"]
+mod credential_intel_test;
+
+#[cfg(test)]
+#[path = "social_engineering_profile_test.rs"]
+mod social_engineering_profile_test;
+
+#[cfg(test)]
+#[path = "infra_footprint_test.rs"]
+mod infra_footprint_test;
+
+#[cfg(test)]
+#[path = "target_dossier_test.rs"]
+mod target_dossier_test;

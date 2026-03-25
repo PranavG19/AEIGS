@@ -61,6 +61,12 @@ pub mod network_discovery;
 pub mod tls_attacks;
 pub mod waf_fingerprinter_v2;
 pub mod waf_rule_reverser;
+pub mod multi_hop_proxy;
+pub mod traffic_camouflage;
+pub mod ephemeral_infra;
+pub mod forensic_countermeasures;
+pub mod identity_rotation;
+pub mod opsec_validator;
 
 pub use adaptive_evasion::*;
 pub use desync_library::*;
@@ -73,6 +79,12 @@ pub use network_discovery::*;
 pub use tls_attacks::*;
 pub use waf_fingerprinter_v2::*;
 pub use waf_rule_reverser::*;
+pub use multi_hop_proxy::*;
+pub use traffic_camouflage::*;
+pub use ephemeral_infra::*;
+pub use forensic_countermeasures::*;
+pub use identity_rotation::*;
+pub use opsec_validator::*;
 
 #[cfg(test)]
 #[path = "adaptive_evasion_test.rs"]
@@ -217,3 +229,27 @@ mod waf_evasion_orchestrator_test;
 #[cfg(test)]
 #[path = "waf_grammar_test.rs"]
 mod waf_grammar_test;
+
+#[cfg(test)]
+#[path = "multi_hop_proxy_test.rs"]
+mod multi_hop_proxy_test;
+
+#[cfg(test)]
+#[path = "traffic_camouflage_test.rs"]
+mod traffic_camouflage_test;
+
+#[cfg(test)]
+#[path = "ephemeral_infra_test.rs"]
+mod ephemeral_infra_test;
+
+#[cfg(test)]
+#[path = "forensic_countermeasures_test.rs"]
+mod forensic_countermeasures_test;
+
+#[cfg(test)]
+#[path = "identity_rotation_test.rs"]
+mod identity_rotation_test;
+
+#[cfg(test)]
+#[path = "opsec_validator_test.rs"]
+mod opsec_validator_test;

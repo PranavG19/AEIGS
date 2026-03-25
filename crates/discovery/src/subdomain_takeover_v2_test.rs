@@ -14,8 +14,8 @@ fn make_chain(links: Vec<(&str, &str)>, is_dangling: bool) -> CnameChain {
     }
 }
 
-fn make_dns_result(subdomain: &str, chain: CnameChain, a_records: Vec<&str>) -> DnsResult {
-    DnsResult {
+fn make_dns_result(subdomain: &str, chain: CnameChain, a_records: Vec<&str>) -> TakeoverDnsResult {
+    TakeoverDnsResult {
         subdomain: subdomain.to_string(),
         cname_chain: chain,
         a_records: a_records.into_iter().map(String::from).collect(),

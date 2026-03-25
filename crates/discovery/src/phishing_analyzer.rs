@@ -426,7 +426,7 @@ fn assess_resource_count_factor(html: &str) -> ClonabilityFactor {
     }
 }
 
-fn classify_form_action(page_url: &str, action: &str) -> FormActionType {
+pub(crate) fn classify_form_action(page_url: &str, action: &str) -> FormActionType {
     let trimmed = action.trim();
 
     if trimmed.is_empty() {
@@ -796,7 +796,7 @@ fn extract_brand_terms(html: &str) -> Vec<String> {
         .collect()
 }
 
-fn resolve_url(base_url: &str, relative: &str) -> String {
+pub(crate) fn resolve_url(base_url: &str, relative: &str) -> String {
     if relative.starts_with("http://") || relative.starts_with("https://") {
         return relative.to_string();
     }
