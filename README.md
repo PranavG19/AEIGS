@@ -1,626 +1,218 @@
-# AEGIS - Adversarial Vulnerability Discovery Framework
+# AEGIS — Autonomous Adversarial Intelligence Platform
 
-An automated security scanner for web applications. AEGIS systematically discovers vulnerabilities by sending crafted malicious inputs to your app's endpoints, using controlled experiment testing to eliminate false positives, and generating detailed reports with provenance-tracked confidence scores.
+The most comprehensive AI-powered offensive security framework ever built. 18 Rust crates + 1 Python package. **1,489 Rust source files. 24,601+ tests. 0 clippy warnings.**
 
-**15 Rust crates + 1 Python package. 4,073 Rust tests, 511 Python tests. 34 vulnerability classes.**
+AEGIS doesn't just scan for vulnerabilities — it thinks like a nation-state red team operator. An LLM-powered brain reasons about targets, chains findings into multi-step exploits, adapts to defenses in real-time, and generates proof-of-concept exploits autonomously.
 
-> **Safety:** AEGIS only targets `localhost` by default. Remote targets require either `--i-am-authorized` (for authorized pentesting) or a cryptographically signed scope attestation (see [Remote Scanning](#remote-scanning-scope-attestation)).
-
----
-
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [Architecture Overview](#architecture-overview)
-- [The Scan Pipeline](#the-scan-pipeline)
-- [Features In Depth](#features-in-depth)
-  - [Knowledge Graph](#1-knowledge-graph)
-  - [Passive Recon](#2-passive-recon)
-  - [Crawler](#3-crawler)
-  - [Fingerprinting / Enumeration](#4-fingerprinting--enumeration)
-  - [Fuzzing Engine](#5-fuzzing-engine)
-  - [Vulnerability Confirmation](#6-vulnerability-confirmation)
-  - [DOM Verification](#7-dom-verification)
-  - [Chain Synthesis](#8-chain-synthesis)
-  - [Reporting](#9-reporting)
-  - [Evasion Engine](#10-evasion-engine)
-  - [Audit Log](#11-audit-log)
-  - [Distributed Scanning](#12-distributed-scanning)
-  - [LLM Hypothesis Engine](#13-llm-hypothesis-engine-python)
-  - [Checkpoints and Resume](#14-checkpoints--resume)
-  - [Benchmarking and Ground Truth](#15-benchmarking--ground-truth)
-- [Remote Scanning (Scope Attestation)](#remote-scanning-scope-attestation)
-- [Testing](#testing)
-- [Commands](#commands)
-- [Project Structure](#project-structure)
-- [Key Dependencies](#key-dependencies)
+> **Safety:** AEGIS only targets `localhost` by default. Remote targets require `--i-am-authorized` or a cryptographically signed scope attestation. This tool is for authorized security testing only.
 
 ---
 
-## Quick Start
+## Architecture
 
-```bash
-# Quick scan (no LLM, 1 iteration)
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset quick
-
-# Thorough scan with LLM hypothesis generation (3 iterations, convergence detection)
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset thorough --graph-db scan.json
-
-# Paranoid stealth scan (5 iterations, evasion mode)
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --preset paranoid --graph-db scan.json
-
-# Without presets (full control)
-cargo run -p aegis-orchestrator -- --target http://localhost:3000 --graph-db scan.json --no-llm
-
-# Scan a remote target you own (requires attestation)
-cargo run -p aegis-orchestrator -- \
-  --target http://your-server:3000 \
-  --graph-db scan.json \
-  --scope-attestation scope-attestation.json
+```
+orchestrator        CLI binary + full scan pipeline + LLM autonomous agent brain
+├─ knowledge-graph  Arena Vec storage + parking_lot::RwLock; semantic edge validation
+│  ├─ audit-log     SHA3-256 hash-chain + HMAC + CBOR event sourcing
+│  │  └─ supervisor Process lifecycle + capability tokens
+│  ├─ passive-recon Dependency parsing, SQLite vuln DB, filesystem walk, temporal correlation
+│  ├─ enumeration   OpenAPI/GraphQL/gRPC route discovery, OAuth attacks, API security suite
+│  ├─ crawler       BFS web crawler + headless browser + SPA crawler + multi-bot coordinator
+│  ├─ fuzzing       UCB1 scheduler, coverage-guided, grammar-aware, payload encyclopedias
+│  ├─ chain-synthesis  petgraph attack graph, probabilistic chains, kill chain mapping
+│  ├─ reporting     SARIF 2.1.0, HTML reports, executive summaries, attack narratives
+│  ├─ evasion-engine   Ghost Protocol (TLS/HTTP2/browser fingerprinting), WAF bypass, anti-attribution
+│  ├─ discovery     OSINT, subdomain enum, CT monitor, honeypot detection, data sinkholes
+│  ├─ exploiter     70+ exploit modules, cloud security, AD attacks, post-exploitation
+│  ├─ compliance    CVSS, OWASP, PCI-DSS, STRIDE threat modeling, regulatory compliance
+│  ├─ proxy         Recording proxy, intruder, repeater, mutation replay
+│  ├─ proxy-tui     ratatui TUI binary (6 tabs)
+│  └─ test-support  Mock infrastructure, vulnerable apps, benchmark suite
+hypothesis-engine   LLM hypothesis generation (Bedrock/OpenAI/Ollama), adversarial compiler
 ```
 
 ---
 
-## Architecture Overview
-
-```
-                    CLI (clap)
-                        |
-                   orchestrator
-                   /    |    \
-           pipeline   config  audit-log
-           /  |  \              |
-     recon crawl fingerprint  supervisor
-              |
-         fuzz <-> analyze (iterative loop)
-              |
-        knowledge-graph  <-- shared by all phases
-              |
-         dom_verify (headless Chrome)
-              |
-           report -> SARIF / Executive / Security
-              |
-     hypothesis-engine (Python, via Unix socket IPC)
-```
-
-All pipeline phases share a central **knowledge graph** -- a thread-safe, in-memory graph database. Each phase reads context from previous phases and writes its discoveries back. Every action is recorded in a tamper-evident **audit log**.
-
----
-
-## The Scan Pipeline
-
-AEGIS runs a multi-phase pipeline where each phase feeds into the next:
-
-```
-recon -> crawl -> fingerprint -> (fuzz -> analyze)* -> dom_verify -> report
-```
-
-1. **Recon** -- scans your project's dependency files for known vulnerable libraries (no network requests)
-2. **Crawl** -- visits pages and follows links to discover endpoints
-3. **Fingerprint** -- maps your API surface (OpenAPI, GraphQL, auth matrix) and detects defenses (WAFs, rate limiters)
-4. **Fuzz -> Analyze** -- sends malicious payloads and uses counterfactual testing to confirm vulnerabilities. Repeats iteratively until convergence.
-5. **DOM Verify** -- uses headless Chrome to confirm browser-based vulnerabilities (XSS)
-6. **Report** -- generates SARIF, security, or executive reports with risk scoring
-
-The fuzz/analyze loop supports `--max-iterations` (default 1) and `--convergence-threshold` (default 2, consecutive rounds with zero new findings before stopping).
-
----
-
-## Features In Depth
-
-### 1. Knowledge Graph
-
-The backbone of AEGIS. All phases read from and write to this shared graph.
-
-**What it stores:**
-
-```
-[Endpoint: /api/search]  --HasParameter-->  [Parameter: q]
-        |                                        |
-   ProtectedBy                              VulnerableTo
-        |                                        |
-[Defense: ModSecurity WAF]              [Finding: SQL Injection, severity 8.5]
-```
-
-**9 node types:** Endpoint, Parameter, DataStore, Function, Defense, Finding, Dependency, Service, EntryPoint
-
-**8 edge types:** HasParameter, Calls, ReadsFrom, WritesTo, ProtectedBy, DependsOn, ExposesTo, VulnerableTo
-
-28 valid (source, edge, target) combinations are enforced -- nonsensical edges like `DataStore --Calls--> Function` are rejected at insertion time.
-
-**Implementation:** Arena-style `Vec` storage with `u64` indices for O(1) lookup. Thread-safe via `parking_lot::RwLock` with upgradable read locks for atomic validate-then-apply (no TOCTOU gaps).
-
----
-
-### 2. Passive Recon
-
-Scans dependency lock files for known vulnerable libraries. **No network requests** -- purely file analysis.
-
-**Supported formats:** `Cargo.lock`, `package-lock.json`, `Gemfile.lock`, `poetry.lock`
-
-**How it works:**
-1. Filesystem walker recursively finds lock files
-2. Dependency parser extracts (package, version) tuples
-3. SQLite in-memory vulnerability database checks for known CVEs
-4. Outputs `AddNode` (Dependency) and `AddFinding` operations to the graph
-
----
-
-### 3. Crawler
-
-BFS (breadth-first search) web crawler that discovers endpoints by following links.
-
-- Starts at the target URL seed
-- Extracts links from HTML (`<a href>`, `<form action>`) and JavaScript (`fetch()`, `XMLHttpRequest`)
-- Respects depth limits and same-origin policy
-- Outputs discovered endpoints as graph operations
-
----
-
-### 4. Fingerprinting / Enumeration
-
-Maps your app's API surface in detail.
-
-#### OpenAPI Discovery
-Parses Swagger/OpenAPI specs to extract every endpoint, method, and parameter automatically.
-
-#### GraphQL Introspection
-Sends introspection queries to discover the full schema. When introspection is disabled:
-- **Error-based discovery** -- sends malformed queries and parses leaked field names from error messages
-- **Common field brute-force** -- tries 21 query fields and 13 mutation fields
-
-#### Auth Matrix Analysis
-Sends requests at different privilege levels (none, low, admin) to map authentication requirements per endpoint. Flags anomalies like admin-only endpoints returning 200 to unauthenticated requests.
-
-#### Auth Flow Modeling
-Models multi-step login flows with template-based request rendering (`{{variable}}` interpolation). Detects session fixation, weak session IDs, and insecure cookies.
-
----
-
-### 5. Fuzzing Engine
-
-The core attack system. Sends malicious inputs to endpoints and observes what happens.
-
-#### Priority Scheduler
-A binary heap of fuzz targets, each with:
-- Target endpoint, method, parameter
-- Vulnerability class to test
-- Priority score (influenced by severity, UCB1 bandit scores, similar endpoint results)
-
-#### Payload Mutator
-Generates payloads tagged with their origin:
-
-| Origin | Description | Example |
-|---|---|---|
-| Template | Predefined attack patterns | `' OR 1=1--`, `<script>alert(1)</script>` |
-| Generative | LLM-generated hypotheses | Context-specific payloads |
-| BitFlip | Random mutations of working payloads | Variations of confirmed attacks |
-| Boundary | Edge-case values | Empty strings, very long strings, null bytes |
-| BypassCorpus | Known WAF bypass techniques | Encoding tricks, alternate syntax |
-
-#### Counterfactual Oracle (Anomaly Detection)
-
-The key innovation for reducing false positives:
-
-```
-1. Send: GET /api/search?q=' OR 1=1--     (treatment -- attack payload)
-2. Send: GET /api/search?q=normal_search   (control -- benign input)
-3. Compare responses
-```
-
-**Anomaly types detected:**
-- **StatusCodeAnomaly** -- treatment returns 500, control returns 200
-- **TimingAnomaly** -- treatment takes 5 seconds, control takes 50ms
-- **ReflectionDetected** -- attack payload appears in response body
-- **BodySizeAnomaly** -- dramatically different response size
-- **HeaderAnomaly** -- unexpected header differences
-
-**Why counterfactual matters:** If BOTH treatment and control return 500, the endpoint is simply broken (a "flaky endpoint"), not vulnerable. This eliminates false positives. Exception: ReflectionDetected is always preserved because reflecting user input is inherently dangerous.
-
-#### UCB1 Payload Selector
-Multi-armed bandit algorithm for adaptive payload selection:
-
-```
-score = success_rate + C * sqrt(ln(total_pulls) / this_payload_pulls)
-```
-
-- First term: exploit historically effective payloads
-- Second term: explore untried payloads (bonus for rarely-tested ones)
-- Novel payloads get `INFINITY` score -- always tried first
-
-#### Defense Detection
-Before fuzzing, AEGIS detects:
-- **WAFs** -- identifies vendor (ModSecurity, Cloudflare, etc.) and adjusts payloads
-- **Rate limits** -- measures threshold and throttles accordingly
-- **Bot detection** -- probes with varying "humanness" levels
-
-#### Streaming Fuzzer
-Protocol-aware fuzzing for **WebSocket** and **Server-Sent Events** connections -- understands message framing, not just HTTP request/response.
-
----
-
-### 6. Vulnerability Confirmation
-
-After the fuzzer flags potential vulnerabilities, class-specific confirmation functions verify them:
-
-| Class | Confirmation Method |
-|---|---|
-| SQL Injection | Tautology (`' OR 1=1--`) vs contradiction (`' AND 1=0--`). More data from tautology = confirmed. |
-| XSS | Sends `<script>` tag, checks if it appears unescaped in response |
-| Command Injection | Sends `; echo UNIQUE_MARKER`, checks for marker in response |
-| Path Traversal | Sends `../../etc/passwd`, checks for `root:` in response |
-| SSTI | Sends `{{7*7}}`, checks if response contains `49` |
-
-Findings get an **evidence level**: Statistical -> Counterfactual -> Confirmed -> Chained (increasing confidence).
-
----
-
-### 7. DOM Verification
-
-Some vulnerabilities (especially XSS) can only be confirmed in a real browser. A reflected `<script>` tag might be inside an HTML comment and never execute.
-
-AEGIS uses **headless Chrome** via CDP (Chrome DevTools Protocol) to:
-1. Navigate to the page with the payload
-2. Intercept JavaScript execution
-3. Verify the payload actually runs in the DOM
-
----
-
-### 8. Chain Synthesis
-
-Individual vulnerabilities are concerning. **Chains** of vulnerabilities are catastrophic.
-
-```
-[SQLi on /search] --leaks_data--> [Credentials in DB]
-                                          |
-                                   enables_access
-                                          |
-                                  [Admin Panel /admin]
-                                          |
-                                     leads_to
-                                          |
-                               [CmdInj on /admin/exec]
-```
-
-Built on `petgraph` DiGraph. Analysis includes:
-- **Shortest paths** from entry points to high-value targets
-- **Centrality analysis** to find critical nodes (appear in most attack paths)
-- **Mitigation impact estimation** -- "if we fix node X, how many attack paths break?"
-- **Defense gap analysis** -- finds unprotected entry points and assets
-- **DOT/Graphviz export** for visual attack graph diagrams
-
----
-
-### 9. Reporting
-
-Three output formats for different audiences:
-
-#### Developer (SARIF)
-Standard JSON format that IDEs understand. VS Code, GitHub, Azure DevOps display vulnerabilities inline:
-```json
-{
-  "ruleId": "AEGIS-SQL-001",
-  "message": { "text": "SQL Injection on /api/search parameter q" },
-  "level": "error",
-  "vulnerabilityClass": "SqlInjection",
-  "evidenceLevel": "Confirmed",
-  "confidence_score": 0.92
-}
-```
-
-#### Security (ATT&CK-enriched)
-SARIF enriched with MITRE ATT&CK framework mappings and CWE references.
-
-#### Executive (Summary JSON)
-High-level summary: total findings by severity, top risks, recommended mitigations.
-
-**Risk scoring** is defense-aware and confidence-weighted:
-- Base severity score (0-10)
-- Adjusted down if defenses are present (WAF blocking that vulnerability category)
-- Weighted by confidence (a `Statistical` finding at 0.4 confidence scores lower than `Confirmed` at 0.95)
-
----
-
-### 10. Evasion Engine
-
-Real apps have defenses. AEGIS must avoid getting blocked before it can test anything.
-
-#### 10 Browser Personas
-Each mimics a real browser's full HTTP fingerprint:
-
-| Persona | Key Characteristics |
-|---|---|
-| ChromeDesktop | Chrome User-Agent, Sec-Fetch headers, Chromium TLS fingerprint |
-| FirefoxDesktop | Firefox User-Agent, different header order, Firefox TLS fingerprint |
-| Googlebot | Googlebot User-Agent, no Sec-Fetch headers |
-| CurlClient | curl User-Agent, minimal headers |
-| ... | 6 more variants |
-
-Bot detectors check header order, Sec-Fetch presence, User-Agent consistency, and TLS fingerprints. Each persona matches all of these signals.
-
-#### TLS Fingerprinting
-Every TLS client has a unique "fingerprint" (JA3 hash) from its cipher suite and extension offerings. AEGIS maps each persona to the correct JA3 hash so the TLS handshake matches the claimed User-Agent.
-
-#### Timing Controller
-Randomized delays between requests:
-- **Uniform** -- equal probability of any delay in [min, max]
-- **Exponential** -- skews toward shorter delays (most fast, occasional long pause)
-- **Normal** -- clusters around the midpoint (mimics human browsing)
-
-Deterministic given the same seed for reproducible scans.
-
-#### Stealth Presets
-| Preset | Behavior |
-|---|---|
-| `default()` | Moderate delays, Chrome persona |
-| `aggressive()` | Minimal delays, fast scanning |
-| `paranoid()` | Long delays, randomized personas, cover traffic |
-| `benchmark()` | No delays, for performance testing |
-
----
-
-### 11. Audit Log
-
-Every action during a scan is recorded in a tamper-evident log.
-
-**Hash chain:** Each entry includes the hash of the previous entry. Modifying any entry breaks the chain.
-```
-Entry 0: hash = SHA3-256(event_data_0)
-Entry 1: hash = SHA3-256(entry_0.hash + event_data_1)
-Entry 2: hash = SHA3-256(entry_1.hash + event_data_2)
-```
-
-**HMAC signing:** Each entry is signed with a keyed hash. Even recalculating the chain requires the secret key.
-
-**Serialization:** CBOR (binary, ~40% smaller than JSON).
-
-**Event sourcing:** `replay_from_entries()` reconstructs the entire scan state from the audit log alone. `diff_snapshots()` compares two scan states. Enables post-hoc forensic analysis.
-
-Mandatory by default. `--no-audit` for explicit opt-out.
-
----
-
-### 12. Distributed Scanning
-
-For large targets, distribute work across multiple machines.
-
-```
-Coordinator (TCP server)
-    |-- Worker 1 -- fuzzes endpoints A-M
-    |-- Worker 2 -- fuzzes endpoints N-Z
-    +-- Worker 3 -- spare / rebalancing target
-```
-
-**Wire protocol:** JSON over TCP -- Heartbeat, WorkAssignment, FindingsReport, Pause/Resume/Shutdown.
-
-**Partitioning strategies:**
-- `RoundRobin` -- endpoints distributed evenly
-- `PriorityBased` -- high-priority endpoints to fastest workers
-- `VulnerabilityClass` -- group by vulnerability type
-
-**Failure handling:** Heartbeat-based detection with automatic rebalancing when workers go down.
-
----
-
-### 13. LLM Hypothesis Engine (Python)
-
-Makes fuzzing smarter by using LLMs to generate targeted attack hypotheses.
-
-```
-Scan context (endpoints, findings so far)
-  -> LLM: "What vulnerabilities might exist here?"
-  -> Hypotheses with reasoning traces
-  -> Compiled into fuzz payloads
-  -> Results fed back for next round
-```
-
-**Backends:** AWS Bedrock (Claude), OpenAI-compatible APIs, local ollama.
-
-**Feedback loop:** Confirmed findings lead to more targeted hypotheses. Refuted hypotheses are tracked and never re-tested.
-
-**Uncertainty quantification:** Analyzes LLM reasoning for hedging ("might", "possibly") vs confidence ("clearly", "confirms") and adjusts scores.
-
-Communication with Rust via **Unix Domain Socket IPC** (`BridgeRequest`/`BridgeResponse` JSON messages).
-
----
-
-### 14. Checkpoints & Resume
-
-Long scans can be interrupted. Checkpoints save progress:
-
-```rust
-ScanCheckpoint {
-    completed_phases: ["recon", "crawl", "fingerprint", "fuzz:0", "analyze:0"],
-    current_iteration: 1,
-    total_operations: 42,
-    total_findings: 7,
-}
-```
-
-Saved as JSON alongside the graph database. On `--resume`, completed phases are skipped. Checkpoint is deleted on successful scan completion.
-
-```bash
-# Resume an interrupted scan
-cargo run -p aegis-orchestrator -- \
-  --target http://localhost:3000 \
-  --graph-db scan.json \
-  --resume
-```
-
----
-
-### 15. Benchmarking & Ground Truth
-
-AEGIS includes intentionally vulnerable web apps with documented vulnerability lists for validation.
-
-**Defense stacks** (`defense-stacks/`):
-- Express.js app -- 17 vulnerable endpoints covering all 16 vulnerability classes
-- Flask app -- 8 endpoints (SQLi, XSS, CmdInj, PathTraversal, SSTI, Misconfig, OpenRedirect)
-- GraphQL app -- SQLi, XSS, PathTraversal, BrokenAuth, with toggleable introspection
-
-Each has a `ground-truth.json`:
-```json
-[
-  {"endpoint": "/api/search?q=", "vulnerability_class": "SqlInjection"},
-  {"endpoint": "/api/comments", "vulnerability_class": "CrossSiteScripting"}
-]
-```
-
-AEGIS computes:
-- **Precision** = true positives / (true positives + false positives) -- "of what we flagged, how much was real?"
-- **Recall** = true positives / (true positives + false negatives) -- "of what existed, how much did we find?"
-- **F1 score** = harmonic mean of precision and recall
-
-Per-class metrics track which vulnerability types are detected well and which need improvement.
-
----
-
-## Remote Scanning (Scope Attestation)
-
-By default, AEGIS only targets localhost. To scan a remote target you own:
-
-**Step 1: Generate a scope attestation**
-```bash
-aegis-orchestrator attest \
-  --target "http://your-server:3000" \
-  --authorized-by "your-name@example.com" \
-  --valid-days 30 \
-  --key signing.key \
-  --output scope-attestation.json
-```
-
-This creates an Ed25519-signed document binding your identity, the target URL, and an expiry date. The signing key is generated automatically (stored with 0600 permissions).
-
-**Step 2: Run the scan**
-```bash
-aegis-orchestrator \
-  --target "http://your-server:3000" \
-  --scope-attestation scope-attestation.json \
-  --graph-db scan.json
-```
-
-The transport layer verifies the signature, checks the target URL matches, and confirms the attestation hasn't expired before allowing any requests.
-
----
-
-## Testing
-
-### Test Tiers
-
-**Tier 1 -- Unit Tests (CI on every PR):**
-```bash
-cargo test --workspace                                                # 2,917 Rust tests
-cargo clippy --workspace -- -D warnings                               # zero warnings policy
-cargo fmt --all --check                                               # formatting gate
-cd hypothesis-engine && uv run pytest src/hypothesis_engine/ tests/ -v  # 511 Python tests
-```
-
-**Tier 2 -- Docker Integration (CI on main):**
-```bash
-AEGIS_INTEGRATION_TESTS=1 cargo test -p aegis-orchestrator \
-  --test docker_integration -- --test-threads=1
-```
-34 tests spinning up real vulnerable apps in Docker and scanning them end-to-end.
-
-**Ground Truth Validation (manual dispatch):**
-```bash
-scripts/validate-ground-truth.sh
-```
-
-### What's Tested
-
-| Area | What's Verified |
-|---|---|
-| Knowledge graph | CRUD operations, 28 semantic edge rules, concurrency (10 threads x 100 ops), persistence roundtrips |
-| Controlled experiment oracle | Flaky endpoint filtering, reflection preservation, all anomaly types |
-| Fuzzing | Scheduler priority ordering, payload mutation, UCB1 bandit convergence |
-| Evasion | All 10 personas, timing distributions, TLS fingerprint mapping, localhost enforcement |
-| SARIF output | Field extraction, vuln class mapping, empty result handling |
-| Checkpoints | Save/load roundtrip, resume skip logic, deletion on completion |
-| Benchmarks | Precision/recall/F1 computation, per-class metrics, edge cases (all miss, all match) |
-| Audit log | Hash chain integrity, HMAC verification, event sourcing replay |
-| Distributed | Full lifecycle, failure detection, rebalancing, wire protocol, pause/resume |
-| Docker E2E | Express (8 tests), Flask (4), GraphQL (4), cross-scan (4), report formats (3), stealth (3), audit (2) |
-
-### Test Organization
-
-Every source file `foo.rs` has an adjacent `foo_test.rs`, included via `#[path = "foo_test.rs"]` attribute.
+## Capability Inventory (~200+ modules across 18 crates)
+
+### Scan Pipeline (orchestrator)
+- **Full Scan Entrypoint** — Single URL → complete vulnerability assessment
+- **Auto-Module Selection** — Tech stack detection → appropriate attack module activation
+- **Concurrent Scanner** — 50+ simultaneous endpoint testing with priority queue
+- **LLM Autonomous Brain** — opencode-powered agent that reasons about targets like a human pentester
+- **Multi-Vector Attack Coordinator** — Chains findings into compound exploit paths autonomously
+- **Novel Vulnerability Reasoner** — First-principles logic flaw detection beyond known CWE patterns
+- **Adaptive Defense Planner** — Real-time WAF/rate-limit evasion strategy adaptation
+- **Autonomous Exploit Compiler** — LLM generates working target-specific PoC exploits
+- **Distributed Scanning** — Coordinator/worker architecture for multi-node scanning
+- **Continuous Monitoring** — Scheduled recurring scans with change detection and alerting
+- **Pentest Playbook Engine** — Automated pentesting workflows with conditional logic
+- **Scan Profiles** — Quick/Standard/Deep/Stealth presets
+- **Persistence Manager** — Post-exploitation persistence mechanism deployment
+- **Evidence Chain Builder** — Forensic-quality evidence for every finding
+- **293 Browser API Audit Scanners** — Comprehensive browser security surface analysis
+
+### Ghost Protocol — Anti-Detection (evasion-engine, 47 modules)
+- **HTTP/2 Fingerprint Engine** — 7 browser profiles with SETTINGS/WINDOW_UPDATE/PRIORITY frames
+- **TLS ClientHello Synthesis** — Full extension ordering, JA3/JA4/JA4H fingerprint matching
+- **JA4+ Fingerprint Database** — 50+ real browser fingerprint entries
+- **Browser Fingerprint Rotator** — Internally consistent identity rotation per-session
+- **WAF Grammar Inference** — Reverse-engineer WAF rules via binary search probing
+- **Adaptive Evasion Controller** — Real-time learning of which techniques work
+- **105-Technique Evasion Catalogue** — Tagged by vendor, payload type, stealth level
+- **Proxy Chain Manager** — SOCKS5/HTTP/Tor multi-hop chains with failover
+- **Traffic Camouflage** — Domain fronting, Encrypted SNI, cover story traffic
+- **Baseline Traffic Mimicry** — Learn normal traffic patterns, scan within statistical norms
+- **ML Adversarial Perturbation** — Attack NDR classifier feature vectors directly
+- **Living-off-the-Land Protocols** — Embed payloads in LDAP/SMB/WinRM enterprise traffic
+- **Encrypted Channel Blending** — Tunnel via DoH/DoT/ECH to trusted providers
+- **SaaS Dead Drops** — C2/exfil via Slack/Teams/S3/Sheets/Discord/Telegram
+- **Anti-Forensics** — Minimize forensic evidence, memory-only operations
+- **Identity Rotation Engine** — Full-stack identity lifecycle management
+- **OPSEC Validator** — Pre-scan checklist (DNS leaks, WebRTC, IPv6, kill switch)
+- **Ephemeral Infrastructure Generator** — Terraform configs for disposable scan nodes
+- **Payload Obfuscator** — 10+ composable encoding/obfuscation transforms
+- **Rate Limit Bypass** — 10+ header rotation and endpoint aliasing techniques
+- **CORS/CSP/CSRF Bypass Engines** — Active exploitation of browser security mechanisms
+
+### Exploitation Arsenal (exploiter, 70 modules)
+- **JWT Attack Suite** — alg:none, key confusion, JWK injection, kid injection, claim tampering
+- **SAML Attack Engine** — Signature wrapping, exclusion, comment injection, replay
+- **OAuth/OIDC Flow Attacks** — 9 attack categories covering the full 47-page RFC
+- **MFA Bypass Engine** — OTP brute-force, push fatigue, backup code enumeration
+- **Active Directory Suite** — Kerberoasting, AS-REP roasting, DCSync, golden/silver ticket, ACL abuse, cert abuse
+- **Database Exploiter** — MySQL UDF, PostgreSQL COPY, MSSQL xp_cmdshell, Oracle UTL_HTTP, MongoDB $where, Redis SLAVEOF
+- **Container & K8s Attacks** — Docker socket exploitation, pod escape, RBAC abuse, registry attacks
+- **CI/CD Exploitation** — GitHub Actions injection, GitLab CI include injection, Jenkins Groovy, build poisoning
+- **Cloud Security Suite** — AWS S3/Lambda, Azure AD/Entra, GCP service accounts, K8s, cloud metadata
+- **Post-Exploitation Framework** — Persistence, privilege escalation, data harvesting, C2 beacons, cleanup
+- **LLM Deep Exploiter** — Prompt injection chains, training data extraction, tool-use hijacking
+- **MCP Schema Exploiter** — Model Context Protocol tool hijacking, parameter injection, confused deputy
+- **AI Coding Agent Exploiter** — Poisoned repo artifacts that hijack Claude Code/Cursor/Copilot
+- **Reverse Shell Generator** — 9 languages × 3+ techniques × 4 encodings
+- **File Upload Exploitation** — Extension bypass, magic bytes, polyglot files, web shells
+- **Email System Exploitation** — Exchange ProxyLogon/ProxyShell, O365 attacks, SMTP exploitation
+- **WiFi Attack Library** — WPA2 handshake, PMKID, evil twin, karma, deauth, WPS, captive portal
+- **IoT Attack Library** — UPnP, MQTT, CoAP, Zigbee/Z-Wave, IP cameras, SCADA/Modbus
+- **VPN Attack Library** — IKE aggressive mode, OpenVPN audit, tunnel escape, SSL VPN CVEs
+- **Physical Access Payloads** — BadUSB, HID injection, WiFi Pineapple, rogue devices
+- **Signal Intelligence** — WiFi probe analysis, BLE tracking, SDR commands, traffic analysis
+- **Padding Oracle Engine** — CBC padding oracle byte-by-byte decryption
+- **Credential Testing** — Default creds, password spray, lockout-aware, multi-protocol
+
+### Fuzzing Engine (fuzzing, 54 modules)
+- **Coverage-Guided HTTP Fuzzer** — AFL-style behavioral coverage for black-box web testing
+- **Grammar-Aware Protocol Fuzzer** — HTTP/1.1, HTTP/2, WebSocket, TLS record fuzzing
+- **UCB1 Bandit Payload Scheduler** — Exploration/exploitation balance for payload selection
+- **Jailbreak Tournament** — UCB1-driven evolutionary LLM jailbreak discovery
+- **Payload Encyclopedias** — XSS (50+), SQLi (200+), SSTI (10 engines), SSRF (100+), CmdI (200+)
+- **Single-Packet Race Engine** — HTTP/2 single-frame race condition exploitation
+- **GraphQL Deep Exploit Suite** — Batch cost attacks, field auth bypass, subscription SSRF
+- **Prototype Pollution Gadget Scanner** — Trace __proto__ taint to child_process/eval sinks
+- **ReDoS Engine** — Detect catastrophic backtracking via timing analysis
+- **HTTP/2 Protocol Attacks** — CONTINUATION flood, Rapid Reset, SETTINGS flood, HPACK bombing
+- **Deserialization Attacks** — Java/Python/PHP/.NET/Ruby/Node.js gadget chains
+- **Campaign Manager** — Save/resume fuzzing campaigns, corpus evolution, plateau detection
+
+### Intelligence & Reconnaissance (discovery + passive-recon, 61 modules)
+- **Person Profiler** — 500+ platform username correlation, breach check, social graph
+- **Organization Mapper** — Domain, IP range, employee, vendor, subsidiary discovery
+- **Target Dossier Generator** — Combined actionable intelligence report
+- **Temporal Infrastructure Correlator** — Cross-time DNS/WHOIS/CT/BGP correlation
+- **Financial Footprint Mapper** — Payment processor, crypto wallet, merchant ID extraction
+- **Supply Chain Shadow Mapper** — Build plugins, CI/CD deps, Docker lineage, maintainer trust chains
+- **Credential Intelligence** — Breach databases, API key search, cloud credential patterns
+- **Social Engineering Profile Builder** — Interests, communication style, phishing templates
+- **CT Monitor & Bulk DNS** — Certificate transparency + concurrent async resolution
+- **Subdomain Takeover at Scale** — CNAME chain analysis, 10+ cloud service signatures
+- **Honeypot/IDS/Canary Detection** — Identify deception infrastructure before scanning
+- **Data Sinkhole Detector** — Find exposed Elasticsearch, Redis, Firebase, K8s dashboards
+- **Exposed Database Scanner** — MongoDB, Redis, Elasticsearch, CouchDB, Memcached
+- **Cloud Storage Scanner** — S3, Azure Blob, GCP bucket misconfiguration
+- **API Secret Exposure** — GitHub, GitLab, Pastebin, Docker Hub, Postman, npm secrets
+- **Threat Intelligence Feed** — CVE/Exploit-DB/CISA KEV correlation with discovered tech
+
+### Chain Synthesis & Attack Graphs (chain-synthesis, 23 modules)
+- **Probabilistic Attack Chains** — Bayesian probability propagation on attack graph
+- **Kill Chain Mapper** — Map findings to Cyber Kill Chain phases
+- **Attack Tree Generator** — AND/OR attack trees with minimum cost paths
+- **Impact Propagation** — Cascading compromise modeling
+- **SSRF Cloud Pivoting** — AWS/GCP/Azure credential chain resolution
+- **DNS Exfiltration** — Data encoding in DNS queries for firewalled environments
+- **Business Logic Tester** — State machine inference, workflow skip attacks
+- **Credential Harvesting Coordinator** — Aggregate all credential sources
+- **Remediation Prioritizer** — Fix ranking by maximum risk reduction on graph
+
+### Compliance & Reporting (compliance + reporting, 30 modules)
+- **STRIDE Threat Model Generator** — Automated threat modeling from discovered architecture
+- **Risk Quantification** — Monte Carlo probability × impact with confidence intervals
+- **Regulatory Compliance** — SOC2, ISO 27001, GDPR, HIPAA, FedRAMP mapping
+- **MITRE ATT&CK Mapper** — Technique/tactic mapping with navigator layer export
+- **HTML Report Template** — Dark theme, collapsible sections, embedded attack diagrams
+- **Executive Report** — Risk score 0-100, top findings, remediation roadmap
+- **Attack Narrative Generator** — Human-readable exploit chain stories
+- **SARIF 2.1.0** — CWE + ATT&CK enriched standard output
+
+### API Security Suite (enumeration, 24 modules)
+- **OpenAPI Security Analyzer** — Auth gaps, validation gaps, rate limit gaps, schema bypass
+- **gRPC Security Tester** — Reflection enumeration, auth testing, metadata injection
+- **GraphQL Full Stack** — Introspection, field auth, mutations, persisted queries, subscriptions
+- **OAuth/OIDC Flow Attacks** — Redirect manipulation, PKCE bypass, scope escalation
+- **API Gateway Bypass** — Direct backend access, path normalization, rate limit circumvention
+- **Webhook Security** — SSRF, replay, signature bypass, callback manipulation
+- **API Version Diffing** — Security regression detection across API versions
+
+### Browser Automation (crawler, 22 modules)
+- **Headless Browser Controller** — Chrome/Firefox with custom fingerprint profiles
+- **SPA Crawler** — React/Angular/Vue/Svelte detection and dynamic content discovery
+- **Multi-Bot Coordinator** — Distributed browser instances with shared state
+- **Form Auto-Filler** — Context-aware field filling with CAPTCHA detection
+- **JS Executor** — Static + dynamic JavaScript analysis, source map deobfuscation
+- **Authentication Automator** — Multi-protocol auth handling with session management
+- **DOM XSS Detection** — postMessage attacks, DOM clobbering, client-side template injection
+
+### Autonomous AI Agent (hypothesis-engine + orchestrator)
+- **opencode Integration** — Spawn opencode as autonomous pentester brain
+- **AEGIS-MIND Mission Prompt** — Red team operator persona with OWASP/CWE knowledge
+- **Agent Memory Database** — Cross-session learning with temporal decay
+- **Multi-Model Router** — Claude for reasoning, GPT-4 for breadth, Ollama for speed
+- **Feedback Loop** — Brief → reason → test → learn → repeat with convergence detection
+- **Adversarial Prompt Compiler** — Defense-aware hypothesis reformulation
+- **Counter-Intelligence** — Detect if scanner is being monitored, honeypot detection
 
 ---
 
 ## Commands
 
 ```bash
-# Full scan
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json
-
-# Recon only (no network)
-aegis-orchestrator recon --source-dir ./my-project
-
-# Generate scope attestation
-aegis-orchestrator attest --target http://example.com --authorized-by you@email.com \
-  --valid-days 30 --key signing.key
-
-# Resume interrupted scan
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json --resume
-
-# Scan with stealth mode
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json --stealth paranoid
-
-# Skip LLM hypothesis generation
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json --no-llm
-
-# Disable audit logging
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json --no-audit
-
-# Verbose output
-aegis-orchestrator --target http://localhost:3000 --graph-db scan.json --verbose
+cargo test --workspace                              # all Rust tests (~24,601)
+cargo clippy --workspace -- -D warnings             # zero warnings
+cargo fmt --all --check                             # formatting gate
+cd hypothesis-engine && uv run pytest -v            # Python tests
 ```
 
----
+## Safety
 
-## Project Structure
+- Target validation at 3 layers: protocol, evasion-engine transport, fuzzing executor
+- `localhost`/`127.0.0.1`/`::1` only by default
+- `--i-am-authorized` flag for remote scanning; logged to audit trail
+- `--no-audit` to disable mandatory audit log
+- Ed25519-signed scope attestation for authorized engagements
+- **This tool is for authorized security testing and research only**
 
-```
-crates/
-  protocol/           Shared types (VulnerabilityClass, NodeType, EdgeLabel, etc.)
-  knowledge-graph/    In-memory graph engine (arena storage, RwLock concurrency)
-  audit-log/          SHA3-256 hash-chained, HMAC-signed audit events (CBOR)
-  supervisor/         Process lifecycle + capability tokens
-  passive-recon/      Lock file parsing + vulnerability database (SQLite)
-  enumeration/        Route discovery, OpenAPI, GraphQL, auth matrix
-  crawler/            BFS web crawler with DOM extraction
-  fuzzing/            Scheduler, mutator, oracle, WAF/rate-limit/bot detection
-  chain-synthesis/    Attack graph (petgraph), path analysis, DOT export
-  reporting/          SARIF 2.1.0, risk scoring, narratives, CBOR certificates
-  evasion-engine/     Persona rotation, TLS fingerprints, timing jitter
-  orchestrator/       CLI, pipeline, distributed coordination, benchmarks
+## Development Stats
 
-hypothesis-engine/    Python LLM hypothesis generation (Bedrock, OpenAI, ollama)
-
-defense-stacks/       Docker fixture apps for integration testing
-  express-vuln-app/   17 vulnerable endpoints
-  flask-vuln-app/     8 vulnerable endpoints
-  graphql-vuln-app/   GraphQL with toggleable introspection
-  bot-detection/      Bot detection proxy
-  modsecurity/        WAF configuration
-  compose/            Docker Compose stacks + nginx configs
-```
-
----
-
-## Key Dependencies
-
-| Crate | Notable Dependencies |
-|---|---|
-| protocol | serde, sha3, ed25519-dalek |
-| knowledge-graph | parking_lot, proptest (dev) |
-| audit-log | sha3, hmac, ciborium |
-| fuzzing | rand, reqwest, uuid, regex |
-| chain-synthesis | petgraph |
-| reporting | sarif_rust, ciborium |
-| evasion-engine | reqwest, rand |
-| orchestrator | clap, tracing, tokio, rusqlite |
-| hypothesis-engine | boto3, pydantic |
-
-Rust edition 2024. Python >= 3.12 via `uv`.
+| Metric | Count |
+|--------|-------|
+| Rust source files | 1,489 |
+| Python files | 847 |
+| Test files | 693 |
+| Tests passing | 24,601+ |
+| Clippy warnings | 0 |
+| Crates | 18 |
+| Attack modules | 200+ |
+| Vulnerability classes | 34 |
+| Browser API auditors | 293 |
+| Evasion techniques | 105+ |
+| Payload templates | 1,000+ |
+| Mega merges | 10 |

@@ -1,6 +1,7 @@
-# AEGIS — Adversarial Vulnerability Discovery Framework
+# AEGIS — Autonomous Adversarial Intelligence Platform
 
-18 Rust crates + 1 Python package. ~4,485 Rust tests, ~423 Python tests.
+18 Rust crates + 1 Python package. **1,489 Rust files. ~24,601 tests. 0 clippy warnings.**
+200+ attack modules. 105+ evasion techniques. 1,000+ payload templates. LLM-powered autonomous agent brain.
 
 ## Commands
 
