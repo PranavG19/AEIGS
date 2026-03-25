@@ -91,6 +91,21 @@ pub use cloud_storage_scanner::*;
 pub mod api_secret_exposure;
 pub use api_secret_exposure::*;
 
+pub mod platform_checker;
+pub use platform_checker::*;
+
+pub mod github_harvester;
+pub use github_harvester::*;
+
+pub mod email_intelligence;
+pub use email_intelligence::*;
+
+pub mod web_intel_scraper;
+pub use web_intel_scraper::*;
+
+pub mod realtime_intel;
+pub use realtime_intel::*;
+
 #[cfg(test)]
 #[path = "exposed_db_scanner_test.rs"]
 mod exposed_db_scanner_test;
@@ -102,6 +117,26 @@ mod cloud_storage_scanner_test;
 #[cfg(test)]
 #[path = "api_secret_exposure_test.rs"]
 mod api_secret_exposure_test;
+
+#[cfg(test)]
+#[path = "platform_checker_test.rs"]
+mod platform_checker_test;
+
+#[cfg(test)]
+#[path = "github_harvester_test.rs"]
+mod github_harvester_test;
+
+#[cfg(test)]
+#[path = "email_intelligence_test.rs"]
+mod email_intelligence_test;
+
+#[cfg(test)]
+#[path = "web_intel_scraper_test.rs"]
+mod web_intel_scraper_test;
+
+#[cfg(test)]
+#[path = "realtime_intel_test.rs"]
+mod realtime_intel_test;
 
 #[cfg(test)]
 #[path = "canary_scanner_test.rs"]
