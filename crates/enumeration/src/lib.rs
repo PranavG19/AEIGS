@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod api_auth_tester;
 pub mod api_doc_discovery;
 pub mod api_version_attack;
@@ -14,6 +16,9 @@ pub mod openapi_security;
 pub mod rest_abuse_patterns;
 pub mod route_parser;
 pub mod session_exploitation;
+pub mod graphql_field_auth;
+pub mod graphql_mutation_abuse;
+pub mod graphql_persisted_queries;
 
 pub use api_auth_tester::*;
 pub use api_doc_discovery::*;
@@ -31,6 +36,9 @@ pub use openapi_security::*;
 pub use rest_abuse_patterns::*;
 pub use route_parser::*;
 pub use session_exploitation::*;
+pub use graphql_field_auth::*;
+pub use graphql_mutation_abuse::*;
+pub use graphql_persisted_queries::*;
 
 #[cfg(test)]
 #[path = "auth_flow_test.rs"]
@@ -95,3 +103,11 @@ mod api_doc_discovery_test;
 #[cfg(test)]
 #[path = "api_version_diff_test.rs"]
 mod api_version_diff_test;
+
+#[cfg(test)]
+#[path = "graphql_field_auth_test.rs"]
+mod graphql_field_auth_test;
+
+#[cfg(test)]
+#[path = "graphql_persisted_queries_test.rs"]
+mod graphql_persisted_queries_test;

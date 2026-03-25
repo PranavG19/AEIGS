@@ -4,6 +4,8 @@ pub mod filesystem_walker;
 pub mod supply_chain_monitor;
 pub mod tls_scanner;
 pub mod vuln_database;
+pub mod secret_scanner;
+pub mod subdomain_enum;
 
 pub use dep_confusion::*;
 pub use dependency_parser::*;
@@ -11,6 +13,8 @@ pub use filesystem_walker::*;
 pub use supply_chain_monitor::*;
 pub use tls_scanner::*;
 pub use vuln_database::*;
+pub use secret_scanner::*;
+pub use subdomain_enum::*;
 
 #[cfg(test)]
 #[path = "dependency_parser_test.rs"]
@@ -35,3 +39,11 @@ mod supply_chain_monitor_test;
 #[cfg(test)]
 #[path = "tls_scanner_test.rs"]
 mod tls_scanner_test;
+
+#[cfg(test)]
+#[path = "secret_scanner_test.rs"]
+mod secret_scanner_test;
+
+#[cfg(test)]
+#[path = "subdomain_enum_test.rs"]
+mod subdomain_enum_test;

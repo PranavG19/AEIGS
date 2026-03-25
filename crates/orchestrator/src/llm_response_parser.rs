@@ -236,16 +236,14 @@ fn try_multi_block_merge(raw: &str, warnings: &mut Vec<ParseWarning>) -> Option<
 
     for block in &blocks {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(block) {
-            if let Some(hyps) = val.get("hypotheses") {
-                if let Ok(h) = serde_json::from_value::<Vec<ParsedHypothesis>>(hyps.clone()) {
+            if let Some(hyps) = val.get("hypotheses")
+                && let Ok(h) = serde_json::from_value::<Vec<ParsedHypothesis>>(hyps.clone()) {
                     all_hypotheses.extend(h);
                 }
-            }
-            if let Some(acts) = val.get("actions") {
-                if let Ok(a) = serde_json::from_value::<Vec<ParsedAction>>(acts.clone()) {
+            if let Some(acts) = val.get("actions")
+                && let Ok(a) = serde_json::from_value::<Vec<ParsedAction>>(acts.clone()) {
                     all_actions.extend(a);
                 }
-            }
             if let Some(rs) = val
                 .get("reasoning_summary")
                 .or_else(|| val.get("reasoning"))

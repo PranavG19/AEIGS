@@ -356,12 +356,12 @@ impl ApiVersionDiffer {
 
     fn extract_param_names(operation: Option<&serde_json::Value>) -> HashSet<String> {
         let mut names = HashSet::new();
-        if let Some(op) = operation {
-            if let Some(params) = op.get("parameters").and_then(|p| p.as_array()) {
-                for param in params {
-                    if let Some(name) = param.get("name").and_then(|n| n.as_str()) {
-                        names.insert(name.to_string());
-                    }
+        if let Some(op) = operation
+            && let Some(params) = op.get("parameters").and_then(|p| p.as_array())
+        {
+            for param in params {
+                if let Some(name) = param.get("name").and_then(|n| n.as_str()) {
+                    names.insert(name.to_string());
                 }
             }
         }
@@ -372,19 +372,18 @@ impl ApiVersionDiffer {
         operation: Option<&serde_json::Value>,
     ) -> HashMap<String, serde_json::Value> {
         let mut fields = HashMap::new();
-        if let Some(op) = operation {
-            if let Some(body) = op.get("requestBody") {
-                if let Some(content) = body.get("content").and_then(|c| c.as_object()) {
-                    for (_media, media_obj) in content {
-                        if let Some(props) = media_obj
-                            .get("schema")
-                            .and_then(|s| s.get("properties"))
-                            .and_then(|p| p.as_object())
-                        {
-                            for (name, schema) in props {
-                                fields.insert(name.clone(), schema.clone());
-                            }
-                        }
+        if let Some(op) = operation
+            && let Some(body) = op.get("requestBody")
+            && let Some(content) = body.get("content").and_then(|c| c.as_object())
+        {
+            for (_media, media_obj) in content {
+                if let Some(props) = media_obj
+                    .get("schema")
+                    .and_then(|s| s.get("properties"))
+                    .and_then(|p| p.as_object())
+                {
+                    for (name, schema) in props {
+                        fields.insert(name.clone(), schema.clone());
                     }
                 }
             }
@@ -434,14 +433,14 @@ impl ApiVersionDiffer {
         let operation = Self::get_operation(spec, path, method);
         let global_security = spec.get("security");
 
-        if let Some(op) = operation {
-            if let Some(sec) = op.get("security").and_then(|s| s.as_array()) {
-                return sec
-                    .iter()
-                    .filter_map(|s| s.as_object())
-                    .flat_map(|o| o.keys().cloned())
-                    .collect();
-            }
+        if let Some(op) = operation
+            && let Some(sec) = op.get("security").and_then(|s| s.as_array())
+        {
+            return sec
+                .iter()
+                .filter_map(|s| s.as_object())
+                .flat_map(|o| o.keys().cloned())
+                .collect();
         }
 
         if let Some(sec) = global_security.and_then(|s| s.as_array()) {
@@ -463,20 +462,19 @@ impl ApiVersionDiffer {
             for (path, path_item) in paths {
                 if let Some(obj) = path_item.as_object() {
                     for method in &http_methods {
-                        if let Some(op) = obj.get(*method) {
-                            if op
+                        if let Some(op) = obj.get(*method)
+                            && op
                                 .get("deprecated")
                                 .and_then(|d| d.as_bool())
                                 .unwrap_or(false)
-                            {
-                                deprecated.push(DeprecatedEndpoint {
-                                    path: path.clone(),
-                                    method: method.to_uppercase(),
-                                    deprecated_in_version: version.to_string(),
-                                    still_accessible: true,
-                                    security_impact: SecurityImpact::Medium,
-                                });
-                            }
+                        {
+                            deprecated.push(DeprecatedEndpoint {
+                                path: path.clone(),
+                                method: method.to_uppercase(),
+                                deprecated_in_version: version.to_string(),
+                                still_accessible: true,
+                                security_impact: SecurityImpact::Medium,
+                            });
                         }
                     }
                 }
@@ -535,7 +533,7 @@ impl ApiVersionDiffer {
                         "salary",
                     ];
 
-                    let potential_data_leak = old_responses.get(status).is_some()
+                    let potential_data_leak = old_responses.contains_key(status)
                         && !added.is_empty()
                         && added.iter().any(|f| {
                             let lower = f.to_lowercase();

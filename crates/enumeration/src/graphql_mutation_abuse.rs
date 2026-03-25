@@ -484,7 +484,7 @@ pub struct MassAssignmentPayload {
 }
 
 /// Classification of mass-assignment fields by risk.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MassAssignmentCategory {
     /// Privilege escalation fields (role, isAdmin, permissions).
     PrivilegeEscalation,
@@ -773,18 +773,9 @@ pub fn generate_nested_mutation_payloads(
 
     let mut inner = "id __typename".to_string();
     let mut chain = Vec::new();
-    for (level, name) in mutation_names
-        .iter()
-        .cycle()
-        .take(effective_depth)
-        .enumerate()
-    {
+    for name in mutation_names.iter().cycle().take(effective_depth) {
         chain.push(name.to_string());
-        if level == 0 {
-            inner = format!("{name} {{ {inner} }}");
-        } else {
-            inner = format!("{name} {{ {inner} }}");
-        }
+        inner = format!("{name} {{ {inner} }}");
     }
     let query = format!("mutation CascadeProbe {{ {inner} }}");
     payloads.push(NestedMutationPayload {

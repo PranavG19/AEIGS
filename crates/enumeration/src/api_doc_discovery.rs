@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DocType {
     OpenApiJson,

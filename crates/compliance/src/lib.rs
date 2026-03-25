@@ -6,6 +6,7 @@ pub mod context_adjuster;
 pub mod cvss_scorer;
 pub mod report_generator;
 pub mod security_header_analyzer;
+pub mod sensitive_data_detector;
 
 pub use attack_surface_mapper::*;
 pub use class_mapper::*;
@@ -15,6 +16,7 @@ pub use context_adjuster::*;
 pub use cvss_scorer::*;
 pub use report_generator::*;
 pub use security_header_analyzer::*;
+pub use sensitive_data_detector::*;
 
 #[cfg(test)]
 #[path = "attack_surface_mapper_test.rs"]
@@ -47,3 +49,7 @@ mod security_header_analyzer_test;
 #[cfg(test)]
 #[path = "compliance_report_test.rs"]
 mod compliance_report_test;
+
+#[cfg(test)]
+#[path = "sensitive_data_detector_test.rs"]
+mod sensitive_data_detector_test;

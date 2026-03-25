@@ -196,11 +196,12 @@ impl ContainerEscapeScanner {
         let services = extract_compose_services(&lines);
 
         for (service_name, service_lines) in &services {
-            self.check_compose_privileged(service_lines, service_name);
-            self.check_compose_volumes(service_lines, service_name);
-            self.check_compose_cap_add(service_lines, service_name);
-            self.check_compose_pid_network(service_lines, service_name);
-            self.check_compose_security_opt(service_lines, service_name);
+            let refs: Vec<&str> = service_lines.iter().map(|s| s.as_str()).collect();
+            self.check_compose_privileged(&refs, service_name);
+            self.check_compose_volumes(&refs, service_name);
+            self.check_compose_cap_add(&refs, service_name);
+            self.check_compose_pid_network(&refs, service_name);
+            self.check_compose_security_opt(&refs, service_name);
         }
 
         self.check_known_cves(doc, &None);
@@ -470,14 +471,14 @@ impl ContainerEscapeScanner {
             let has_spec = lines.iter().any(|l| l.trim().starts_with("spec:"));
             let is_pod_or_deployment = lines.iter().any(|l| {
                 let t = l.trim();
-                (t.starts_with("kind:")
+                t.starts_with("kind:")
                     && (t.contains("Pod")
                         || t.contains("Deployment")
                         || t.contains("StatefulSet")
                         || t.contains("DaemonSet")
                         || t.contains("ReplicaSet")
                         || t.contains("Job")
-                        || t.contains("CronJob")))
+                        || t.contains("CronJob"))
             });
             if has_spec && is_pod_or_deployment {
                 self.findings.push(ContainerEscapeFinding {
@@ -606,17 +607,17 @@ impl ContainerEscapeScanner {
                     remediation: "Remove --privileged from RUN instructions".to_string(),
                 });
             }
-            if trimmed.starts_with("COPY") || trimmed.starts_with("ADD") {
-                if trimmed.contains("/var/run/docker.sock") {
-                    self.findings.push(ContainerEscapeFinding {
-                        category: EscapeCategory::MountedDockerSocket,
-                        description: "Dockerfile copies Docker socket into image".to_string(),
-                        severity: 9.5,
-                        container_name: None,
-                        resource_name: None,
-                        remediation: "Do not copy the Docker socket into images".to_string(),
-                    });
-                }
+            if (trimmed.starts_with("COPY") || trimmed.starts_with("ADD"))
+                && trimmed.contains("/var/run/docker.sock")
+            {
+                self.findings.push(ContainerEscapeFinding {
+                    category: EscapeCategory::MountedDockerSocket,
+                    description: "Dockerfile copies Docker socket into image".to_string(),
+                    severity: 9.5,
+                    container_name: None,
+                    resource_name: None,
+                    remediation: "Do not copy the Docker socket into images".to_string(),
+                });
             }
             if trimmed.starts_with("ENV")
                 && (trimmed.contains("PASSWORD")
@@ -634,17 +635,17 @@ impl ContainerEscapeScanner {
                             .to_string(),
                 });
             }
-            if trimmed.starts_with("EXPOSE") {
-                if trimmed.contains("10250") || trimmed.contains("10255") {
-                    self.findings.push(ContainerEscapeFinding {
-                        category: EscapeCategory::ExposedKubeletApi,
-                        description: "Dockerfile exposes kubelet API port".to_string(),
-                        severity: 8.0,
-                        container_name: None,
-                        resource_name: None,
-                        remediation: "Do not expose kubelet ports in Dockerfiles".to_string(),
-                    });
-                }
+            if trimmed.starts_with("EXPOSE")
+                && (trimmed.contains("10250") || trimmed.contains("10255"))
+            {
+                self.findings.push(ContainerEscapeFinding {
+                    category: EscapeCategory::ExposedKubeletApi,
+                    description: "Dockerfile exposes kubelet API port".to_string(),
+                    severity: 8.0,
+                    container_name: None,
+                    resource_name: None,
+                    remediation: "Do not expose kubelet ports in Dockerfiles".to_string(),
+                });
             }
         }
         let has_user_switch = content.lines().any(|l| {

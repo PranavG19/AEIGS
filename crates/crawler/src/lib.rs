@@ -13,6 +13,8 @@ mod types;
 pub mod visual_regression;
 pub mod wasm_analyzer;
 pub mod websocket_hijack;
+pub mod browser_ext_analyzer;
+pub mod postmessage_attack;
 
 #[cfg(feature = "browser")]
 mod browser_fetcher;
@@ -37,6 +39,8 @@ pub use types::*;
 pub use visual_regression::*;
 pub use wasm_analyzer::*;
 pub use websocket_hijack::*;
+pub use browser_ext_analyzer::*;
+pub use postmessage_attack::*;
 
 #[cfg(feature = "browser")]
 pub use browser_fetcher::*;
@@ -65,3 +69,55 @@ mod wasm_analyzer_test;
 #[cfg(all(test, feature = "katana"))]
 #[path = "katana_wrapper_test.rs"]
 mod katana_wrapper_test;
+
+#[cfg(test)]
+#[path = "auth_automator_test.rs"]
+mod auth_automator_test;
+
+#[cfg(test)]
+#[path = "browser_ext_analyzer_test.rs"]
+mod browser_ext_analyzer_test;
+
+#[cfg(test)]
+#[path = "crawler_test.rs"]
+mod crawler_test;
+
+#[cfg(test)]
+#[path = "dom_verifier_test.rs"]
+mod dom_verifier_test;
+
+#[cfg(test)]
+#[path = "form_autofill_test.rs"]
+mod form_autofill_test;
+
+#[cfg(test)]
+#[path = "headless_controller_test.rs"]
+mod headless_controller_test;
+
+#[cfg(test)]
+#[path = "injection_planter_test.rs"]
+mod injection_planter_test;
+
+#[cfg(test)]
+#[path = "js_executor_test.rs"]
+mod js_executor_test;
+
+#[cfg(test)]
+#[path = "multi_bot_coordinator_test.rs"]
+mod multi_bot_coordinator_test;
+
+#[cfg(test)]
+#[path = "postmessage_attack_test.rs"]
+mod postmessage_attack_test;
+
+#[cfg(test)]
+#[path = "spa_crawler_test.rs"]
+mod spa_crawler_test;
+
+#[cfg(test)]
+#[path = "visual_regression_test.rs"]
+mod visual_regression_test;
+
+#[cfg(test)]
+#[path = "websocket_hijack_test.rs"]
+mod websocket_hijack_test;

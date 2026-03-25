@@ -13,6 +13,7 @@ reqwest = { workspace = true }
 tokio = { workspace = true }
 openapiv3 = { workspace = true }
 graphql-parser = { workspace = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
 aegis-test-support = { path = "../test-support" }

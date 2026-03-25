@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Duration;
 
 use crate::executor::FuzzResponse;
 
@@ -419,17 +418,16 @@ impl AnomalyDetector {
             .headers
             .iter()
             .find(|(n, _)| n.to_lowercase() == "content-type")
+            .filter(|(_, v)| !baseline.content_types.contains_key(v))
         {
-            if !baseline.content_types.contains_key(&ct.1) {
-                anomalies.push(Anomaly {
-                    anomaly_type: AnomalyType::ContentTypeChange,
-                    description: format!("Unexpected content-type: {}", ct.1),
-                    deviation_score: 0.4,
-                    exploit_potential: ExploitPotential::Suspicious,
-                    payload: payload.to_string(),
-                });
-                score += 0.4;
-            }
+            anomalies.push(Anomaly {
+                anomaly_type: AnomalyType::ContentTypeChange,
+                description: format!("Unexpected content-type: {}", ct.1),
+                deviation_score: 0.4,
+                exploit_potential: ExploitPotential::Suspicious,
+                payload: payload.to_string(),
+            });
+            score += 0.4;
         }
 
         let error_patterns = [

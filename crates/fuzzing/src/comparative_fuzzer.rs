@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Duration;
 
 use crate::executor::FuzzResponse;
 
@@ -328,6 +327,7 @@ fn check_body_length(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn check_validation(
     payload: &str,
     endpoint_a: &str,

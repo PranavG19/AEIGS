@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use rand::Rng;
 
-use crate::coverage_tracker::{BehavioralSignature, CoverageResult, CoverageTracker};
+use crate::coverage_tracker::{CoverageResult, CoverageTracker};
 use crate::executor::FuzzResponse;
 
 /// A minimized input that triggered novel behavioral coverage.

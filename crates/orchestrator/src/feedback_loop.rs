@@ -3,8 +3,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::llm_response_parser::{
-    parse_llm_response, validate_hypothesis, normalize_hypothesis, ParseMethod, ParsedHypothesis,
-    ParsedResponse,
+    normalize_hypothesis, parse_llm_response, validate_hypothesis, ParsedHypothesis, ParsedResponse,
 };
 use crate::scan_briefing::FailedAttemptSummary;
 
@@ -63,9 +62,18 @@ impl TestOutcome {
 
     pub fn vulnerability_class(&self) -> &str {
         match self {
-            Self::Confirmed { vulnerability_class, .. }
-            | Self::Refuted { vulnerability_class, .. }
-            | Self::Partial { vulnerability_class, .. } => vulnerability_class,
+            Self::Confirmed {
+                vulnerability_class,
+                ..
+            }
+            | Self::Refuted {
+                vulnerability_class,
+                ..
+            }
+            | Self::Partial {
+                vulnerability_class,
+                ..
+            } => vulnerability_class,
         }
     }
 
@@ -119,7 +127,10 @@ impl FeedbackLoopState {
 
     /// Total hypothesis tests across all iterations.
     pub fn total_tested(&self) -> usize {
-        self.iteration_results.iter().map(|r| r.hypotheses_tested).sum()
+        self.iteration_results
+            .iter()
+            .map(|r| r.hypotheses_tested)
+            .sum()
     }
 
     /// Total iterations completed.
@@ -177,13 +188,11 @@ pub fn prepare_hypotheses(
     }
 
     valid.sort_by(|a, b| {
-        a.priority
-            .cmp(&b.priority)
-            .then_with(|| {
-                b.confidence
-                    .partial_cmp(&a.confidence)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
+        a.priority.cmp(&b.priority).then_with(|| {
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     });
 
     valid.truncate(config.max_hypotheses_per_round);
@@ -226,10 +235,7 @@ pub fn outcome_to_failed_attempt(outcome: &TestOutcome) -> Option<FailedAttemptS
 
 /// Check convergence: returns true if the last N iterations produced
 /// zero new confirmed findings.
-pub fn check_convergence(
-    iteration_results: &[IterationResult],
-    threshold: u32,
-) -> Option<String> {
+pub fn check_convergence(iteration_results: &[IterationResult], threshold: u32) -> Option<String> {
     if (iteration_results.len() as u32) < threshold {
         return None;
     }
@@ -334,7 +340,8 @@ where
             .extend(result.new_failed_attempts.clone());
         state.iteration_results.push(result);
 
-        if let Some(reason) = check_convergence(&state.iteration_results, config.convergence_threshold)
+        if let Some(reason) =
+            check_convergence(&state.iteration_results, config.convergence_threshold)
         {
             state.converged = true;
             state.convergence_reason = Some(reason);

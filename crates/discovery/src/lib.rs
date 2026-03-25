@@ -20,6 +20,10 @@ pub mod threat_intel_feed;
 mod vhost_discoverer;
 pub mod vuln_intelligence;
 mod wordlist;
+pub mod container_escape;
+pub mod ldap_enumeration;
+pub mod logging_detection;
+pub mod subdomain_takeover_v2;
 
 pub use api_abuse_detector::*;
 pub use attack_surface_mapper::*;
@@ -43,6 +47,10 @@ pub use threat_intel_feed::*;
 pub use vhost_discoverer::*;
 pub use vuln_intelligence::*;
 pub use wordlist::*;
+pub use container_escape::*;
+pub use ldap_enumeration::*;
+pub use logging_detection::*;
+pub use subdomain_takeover_v2::*;
 
 #[cfg(test)]
 #[path = "backup_scanner_test.rs"]
@@ -119,3 +127,23 @@ mod attack_surface_mapper_test;
 #[cfg(test)]
 #[path = "osint_gatherer_test.rs"]
 mod osint_gatherer_test;
+
+#[cfg(test)]
+#[path = "container_escape_test.rs"]
+mod container_escape_test;
+
+#[cfg(test)]
+#[path = "ldap_enumeration_test.rs"]
+mod ldap_enumeration_test;
+
+#[cfg(test)]
+#[path = "logging_detection_test.rs"]
+mod logging_detection_test;
+
+#[cfg(test)]
+#[path = "phishing_analyzer_test.rs"]
+mod phishing_analyzer_test;
+
+#[cfg(test)]
+#[path = "subdomain_takeover_v2_test.rs"]
+mod subdomain_takeover_v2_test;

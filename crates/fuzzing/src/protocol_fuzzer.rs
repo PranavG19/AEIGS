@@ -261,7 +261,7 @@ fn gen_oversized_header(max_size: usize) -> FuzzedMessage {
     let header_size = max_size.min(32768);
     let mut payload = Vec::new();
     payload.extend_from_slice(b"GET / HTTP/1.1\r\nHost: localhost\r\nX-Large: ");
-    payload.extend(std::iter::repeat(b'A').take(header_size));
+    payload.extend(std::iter::repeat_n(b'A', header_size));
     payload.extend_from_slice(b"\r\n\r\n");
     FuzzedMessage {
         layer: ProtocolLayer::Http1,
@@ -406,7 +406,7 @@ fn gen_control_frame_payload(_max_size: usize) -> FuzzedMessage {
     frame.push(126);
     let payload_len: u16 = 200;
     frame.extend_from_slice(&payload_len.to_be_bytes());
-    frame.extend(std::iter::repeat(b'P').take(200));
+    frame.extend(std::iter::repeat_n(b'P', 200));
     FuzzedMessage {
         layer: ProtocolLayer::WebSocket,
         raw_bytes: frame,
@@ -517,7 +517,7 @@ fn gen_record_overflow(_max_size: usize) -> FuzzedMessage {
     record.extend_from_slice(&[0x03, 0x03]);
     record.extend_from_slice(&[0xFF, 0xFF]);
     let payload_size = _max_size.min(16384);
-    record.extend(std::iter::repeat(b'X').take(payload_size));
+    record.extend(std::iter::repeat_n(b'X', payload_size));
     FuzzedMessage {
         layer: ProtocolLayer::Tls,
         raw_bytes: record,

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use aegis_knowledge_graph::GraphStore;
 use aegis_protocol::defense_context::DefenseContext;
 use aegis_protocol::finding::{FindingData, VulnerabilityClass};
-use aegis_protocol::node::{NodeData, NodeType};
+use aegis_protocol::node::NodeType;
 
 /// A complete scan briefing document ready for LLM consumption.
 ///
@@ -278,8 +278,9 @@ pub fn generate_recommendations(
     if untested_count > 0 {
         recs.push(RecommendedAction {
             action: format!("Fuzz {untested_count} untested endpoints"),
-            rationale: "Endpoints exist in the graph with no associated findings or failed attempts"
-                .to_string(),
+            rationale:
+                "Endpoints exist in the graph with no associated findings or failed attempts"
+                    .to_string(),
             priority: 1,
         });
     }
@@ -459,7 +460,11 @@ fn build_attack_surface_section(graph: &dyn GraphStore, max_endpoints: usize) ->
                     .cloned()
                     .unwrap_or_else(|| format!("endpoint-{}", node.id));
                 let method = node.properties.get("method").cloned().unwrap_or_default();
-                let params = node.properties.get("parameters").cloned().unwrap_or_default();
+                let params = node
+                    .properties
+                    .get("parameters")
+                    .cloned()
+                    .unwrap_or_default();
                 let auth = node.properties.get("auth_required").cloned();
 
                 let mut line = format!("- {} {}", method, path);
@@ -549,10 +554,7 @@ fn build_findings_section(graph: &dyn GraphStore, max_findings: usize) -> Briefi
     }
 }
 
-fn build_failed_attempts_section(
-    failed: &[FailedAttemptSummary],
-    max: usize,
-) -> BriefingSection {
+fn build_failed_attempts_section(failed: &[FailedAttemptSummary], max: usize) -> BriefingSection {
     let mut content = String::new();
     let _ = writeln!(content, "## FAILED ATTEMPTS ({} total)", failed.len());
     let _ = writeln!(content, "Do NOT retry these without a new approach:");
@@ -634,10 +636,7 @@ fn extract_tech_stack(graph: &dyn GraphStore) -> Vec<TechComponent> {
     result
 }
 
-fn extract_endpoints(
-    graph: &dyn GraphStore,
-    max: usize,
-) -> (usize, Vec<EndpointSummary>) {
+fn extract_endpoints(graph: &dyn GraphStore, max: usize) -> (usize, Vec<EndpointSummary>) {
     let ids = graph.nodes_by_type(NodeType::Endpoint).unwrap_or_default();
     let total = ids.len();
     let endpoints: Vec<EndpointSummary> = ids
@@ -676,16 +675,15 @@ fn extract_endpoints(
 
 fn resolve_finding_endpoint(graph: &dyn GraphStore, finding: &FindingData) -> String {
     for id in &finding.linked_node_ids {
-        if let Ok(Some(node)) = graph.get_node(*id) {
-            if let Some(path) = node
+        if let Ok(Some(node)) = graph.get_node(*id)
+            && let Some(path) = node
                 .properties
                 .get("path")
                 .or_else(|| node.properties.get("url"))
                 .or_else(|| node.properties.get("name"))
-            {
+        {
                 return path.clone();
             }
-        }
     }
     format!("node-ids:{:?}", finding.linked_node_ids)
 }

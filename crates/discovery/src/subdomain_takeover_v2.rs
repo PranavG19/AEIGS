@@ -485,7 +485,7 @@ pub fn compute_priority(confidence: TakeoverConfidence, service: &CloudService) 
 
 /// Analyze a single DNS result for potential subdomain takeover.
 pub fn analyze_dns_result(
-    dns_result: &DnsResult,
+    dns_result: &TakeoverDnsResult,
     signatures: &[TakeoverSignature],
     http_body: Option<&str>,
 ) -> Option<TakeoverFinding> {
@@ -517,7 +517,7 @@ pub fn analyze_dns_result(
 
 /// Batch analyze multiple DNS results.
 pub fn analyze_batch(
-    dns_results: &[DnsResult],
+    dns_results: &[TakeoverDnsResult],
     signatures: &[TakeoverSignature],
     http_bodies: &HashMap<String, String>,
 ) -> Vec<TakeoverFinding> {

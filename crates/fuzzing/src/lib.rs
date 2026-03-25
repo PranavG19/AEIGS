@@ -258,3 +258,11 @@ mod sqli_second_order_test;
 #[cfg(test)]
 #[path = "websocket_binary_fuzzer_test.rs"]
 mod websocket_binary_fuzzer_test;
+
+#[cfg(test)]
+#[path = "cloud_detector_test.rs"]
+mod cloud_detector_test;
+
+#[cfg(test)]
+#[path = "smuggling_detector_test.rs"]
+mod smuggling_detector_test;

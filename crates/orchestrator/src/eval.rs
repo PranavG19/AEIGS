@@ -2,12 +2,101 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use clap::Parser;
+/// Ground-truth entry loaded from a JSON file.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct GroundTruthFileEntry {
+    pub endpoint: String,
+    pub vulnerability_class: String,
+}
 
-use crate::benchmark::{
-    ComparisonResult, GroundTruthFileEntry, compare_findings, extract_sarif_findings_from_file,
-    load_ground_truth_file,
-};
+/// Result of comparing scan findings against ground truth.
+#[derive(Debug, Clone)]
+pub struct ComparisonResult {
+    pub true_positives: usize,
+    pub false_positives: usize,
+    pub false_negatives: usize,
+    pub precision: f64,
+    pub recall: f64,
+    pub f1: f64,
+}
+
+/// Load ground-truth entries from a JSON file.
+fn load_ground_truth_file(path: &Path) -> Result<Vec<GroundTruthFileEntry>, String> {
+    let data = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    serde_json::from_str(&data).map_err(|e| e.to_string())
+}
+
+/// Extract `(endpoint, vulnerability_class)` pairs from a SARIF file.
+fn extract_sarif_findings_from_file(path: &Path) -> Result<HashSet<(String, String)>, String> {
+    let data = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let v: serde_json::Value = serde_json::from_str(&data).map_err(|e| e.to_string())?;
+    let mut set = HashSet::new();
+    if let Some(runs) = v.get("runs").and_then(|r| r.as_array()) {
+        for run in runs {
+            if let Some(results) = run.get("results").and_then(|r| r.as_array()) {
+                for result in results {
+                    let rule_id = result
+                        .get("ruleId")
+                        .and_then(|r| r.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    let uri = result
+                        .get("locations")
+                        .and_then(|l| l.as_array())
+                        .and_then(|l| l.first())
+                        .and_then(|loc| loc.get("physicalLocation"))
+                        .and_then(|pl| pl.get("artifactLocation"))
+                        .and_then(|al| al.get("uri"))
+                        .and_then(|u| u.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    set.insert((uri, rule_id));
+                }
+            }
+        }
+    }
+    Ok(set)
+}
+
+/// Compare scan findings against ground-truth entries.
+fn compare_findings(
+    gt_entries: &[GroundTruthFileEntry],
+    sarif_findings: &HashSet<(String, String)>,
+) -> ComparisonResult {
+    let gt_set: HashSet<(String, String)> = gt_entries
+        .iter()
+        .map(|e| (e.endpoint.clone(), e.vulnerability_class.clone()))
+        .collect();
+
+    let true_positives = sarif_findings.intersection(&gt_set).count();
+    let false_positives = sarif_findings.difference(&gt_set).count();
+    let false_negatives = gt_set.difference(sarif_findings).count();
+
+    let precision = if true_positives + false_positives > 0 {
+        true_positives as f64 / (true_positives + false_positives) as f64
+    } else {
+        0.0
+    };
+    let recall = if true_positives + false_negatives > 0 {
+        true_positives as f64 / (true_positives + false_negatives) as f64
+    } else {
+        0.0
+    };
+    let f1 = if precision + recall > 0.0 {
+        2.0 * precision * recall / (precision + recall)
+    } else {
+        0.0
+    };
+
+    ComparisonResult {
+        true_positives,
+        false_positives,
+        false_negatives,
+        precision,
+        recall,
+        f1,
+    }
+}
 
 pub struct EvalArgs {
     pub fixture: String,
@@ -280,12 +369,11 @@ fn run_scan_for_eval(port: u16, sarif_path: &Path, verbose: bool) -> Result<(), 
         cli_args.push("-v".to_string());
     }
 
-    let config = crate::scan_config::ScanConfig::try_parse_from(&cli_args)
-        .map_err(|e| EvalError::ScanFailed(e.to_string()))?;
-    let mut config = config;
-    if let Some(preset) = config.preset {
-        preset.apply(&mut config);
-    }
+    let mut config = crate::scan_config::ScanConfig::parse_and_apply_preset();
+    // Override target and output from the CLI args we built
+    config.target = format!("http://localhost:{port}");
+    config.output = sarif_path.to_path_buf();
+    config.audit.no_audit = true;
 
     let rt = tokio::runtime::Runtime::new().map_err(|e| EvalError::ScanFailed(e.to_string()))?;
     rt.block_on(crate::pipeline::run_scan(config))

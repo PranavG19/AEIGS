@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 mod diff;
 mod graph_sync;
 mod grep;
@@ -71,3 +73,27 @@ mod repeater_test;
 #[cfg(test)]
 #[path = "scope_test.rs"]
 mod scope_test;
+
+#[cfg(test)]
+#[path = "mutation_replay_test.rs"]
+mod mutation_replay_test;
+
+#[cfg(test)]
+#[path = "path_traversal_engine_test.rs"]
+mod path_traversal_engine_test;
+
+#[cfg(test)]
+#[path = "preflight_cache_abuse_test.rs"]
+mod preflight_cache_abuse_test;
+
+#[cfg(test)]
+#[path = "response_tampering_test.rs"]
+mod response_tampering_test;
+
+#[cfg(test)]
+#[path = "session_test.rs"]
+mod session_test;
+
+#[cfg(test)]
+#[path = "types_test.rs"]
+mod types_test;

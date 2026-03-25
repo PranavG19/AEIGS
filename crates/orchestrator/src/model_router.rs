@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
@@ -147,10 +145,7 @@ impl CostTracker {
         self.total_input_tokens += input_tokens;
         self.total_output_tokens += output_tokens;
         self.total_cost_usd += cost_usd;
-        *self
-            .cost_by_model
-            .entry(model_id.to_string())
-            .or_default() += cost_usd;
+        *self.cost_by_model.entry(model_id.to_string()).or_default() += cost_usd;
         *self
             .cost_by_task_type
             .entry(task_type.to_string())
@@ -232,14 +227,13 @@ impl ModelRouter {
 
     /// Route a task to the best available model.
     pub fn route(&self, task_type: TaskType) -> Result<RoutingDecision, RouterError> {
-        if let Some(budget) = self.config.cost_budget {
-            if self.cost_tracker.is_over_budget(budget) {
+        if let Some(budget) = self.config.cost_budget
+            && self.cost_tracker.is_over_budget(budget) {
                 return Err(RouterError::BudgetExceeded {
                     budget,
                     spent: self.cost_tracker.total_cost_usd,
                 });
             }
-        }
 
         let preferred_tier = self
             .config
@@ -279,18 +273,16 @@ impl ModelRouter {
                 });
             }
             ModelTier::Powerful => {
-                candidates.sort_by(|a, b| {
-                    b.max_context_tokens.cmp(&a.max_context_tokens)
-                });
+                candidates.sort_by(|a, b| b.max_context_tokens.cmp(&a.max_context_tokens));
             }
             _ => {}
         }
 
-        let selected = candidates
-            .first()
-            .ok_or_else(|| RouterError::NoAvailableModel(format!(
+        let selected = candidates.first().ok_or_else(|| {
+            RouterError::NoAvailableModel(format!(
                 "no model available for tier={preferred_tier}, json_required={json_required}"
-            )))?;
+            ))
+        })?;
 
         let fallback_models: Vec<String> = self
             .config
@@ -335,8 +327,13 @@ impl ModelRouter {
             })
             .unwrap_or(0.0);
 
-        self.cost_tracker
-            .record(model_id, &task_type.to_string(), input_tokens, output_tokens, cost);
+        self.cost_tracker.record(
+            model_id,
+            &task_type.to_string(),
+            input_tokens,
+            output_tokens,
+            cost,
+        );
     }
 
     /// Get the current cost tracker state.
@@ -422,12 +419,18 @@ pub fn classify_task(prompt: &str) -> TaskType {
         return TaskType::QuickClassification;
     }
 
-    if lower.contains("fingerprint") || lower.contains("tech stack") || lower.contains("detect technology") {
+    if lower.contains("fingerprint")
+        || lower.contains("tech stack")
+        || lower.contains("detect technology")
+    {
         return TaskType::TechStackFingerprinting;
     }
 
-    if lower.contains("payload") || lower.contains("bypass") || lower.contains("evasion")
-        || lower.contains("encode") || lower.contains("mutation")
+    if lower.contains("payload")
+        || lower.contains("bypass")
+        || lower.contains("evasion")
+        || lower.contains("encode")
+        || lower.contains("mutation")
     {
         return TaskType::PayloadGeneration;
     }
@@ -436,14 +439,19 @@ pub fn classify_task(prompt: &str) -> TaskType {
         return TaskType::ReportSynthesis;
     }
 
-    if lower.contains("vulnerability") || lower.contains("hypothesis")
-        || lower.contains("attack surface") || lower.contains("exploit")
+    if lower.contains("vulnerability")
+        || lower.contains("hypothesis")
+        || lower.contains("attack surface")
+        || lower.contains("exploit")
     {
         return TaskType::VulnerabilityAnalysis;
     }
 
-    if len > 4000 || lower.contains("analyze") || lower.contains("reason")
-        || lower.contains("chain") || lower.contains("deep")
+    if len > 4000
+        || lower.contains("analyze")
+        || lower.contains("reason")
+        || lower.contains("chain")
+        || lower.contains("deep")
     {
         return TaskType::DeepReasoning;
     }

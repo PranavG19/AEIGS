@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::distributed::{WorkerId, WorkerState};
-use crate::worker_node::{Region, WorkerCapability, WorkerNode, WorkerNodeManager};
+use crate::distributed::WorkerState;
+use crate::worker_node::{WorkerNode, WorkerNodeManager};
 
 /// Strategy for distributing tasks across workers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

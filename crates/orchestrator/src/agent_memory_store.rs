@@ -1,11 +1,10 @@
-use std::collections::HashMap;
 use std::path::Path;
 
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
 use crate::agent_loop::{
-    AgentMemory, EndpointBehavior, IterationSummary, TechniqueRecord, WafBypassRecord,
+    AgentMemory, EndpointBehavior, TechniqueRecord, WafBypassRecord,
 };
 
 /// Persistent cross-session memory store for the autonomous agent.
@@ -238,6 +237,7 @@ impl AgentMemoryStore {
     }
 
     /// Records a WAF bypass attempt with defense context.
+    #[allow(clippy::too_many_arguments)]
     pub fn record_bypass(
         &self,
         defense_type: &str,

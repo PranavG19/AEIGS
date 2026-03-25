@@ -636,11 +636,7 @@ pub fn build_blind_payload(attribute: &str, prefix: &str, next_char: char) -> St
 /// Evaluates whether two response sizes differ enough to indicate a boolean
 /// true/false split in blind LDAP injection. Uses a tolerance threshold.
 pub fn blind_response_differs(baseline_size: usize, test_size: usize, tolerance: usize) -> bool {
-    let diff = if baseline_size > test_size {
-        baseline_size - test_size
-    } else {
-        test_size - baseline_size
-    };
+    let diff = baseline_size.abs_diff(test_size);
     diff > tolerance
 }
 

@@ -210,21 +210,19 @@ pub fn assemble_prompt(
     // Build user prompt (briefing + context)
     let mut user = String::with_capacity(4096);
 
-    if let Some(mem) = memory_context {
-        if config.include_memory_context {
+    if let Some(mem) = memory_context
+        && config.include_memory_context {
             let _ = write!(user, "{}", format_memory_context(mem));
             sections.push("MEMORY_CONTEXT".to_string());
         }
-    }
 
-    if let Some(dmap) = defense_map {
-        if config.include_defense_map {
+    if let Some(dmap) = defense_map
+        && config.include_defense_map {
             let _ = writeln!(user, "## DEFENSE MAP");
             let _ = writeln!(user, "{}", dmap);
             let _ = writeln!(user);
             sections.push("DEFENSE_MAP".to_string());
         }
-    }
 
     let _ = write!(user, "{}", scan_briefing);
     sections.push("SCAN_BRIEFING".to_string());

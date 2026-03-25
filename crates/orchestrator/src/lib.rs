@@ -280,6 +280,21 @@ pub mod www_authenticate_audit;
 pub mod xfo_audit;
 pub mod xs_leaks;
 pub mod xxe_scanner;
+pub mod agent_memory_store;
+pub mod cache_poisoning_engine;
+pub mod clickjacking_engine;
+pub mod cors_scanner_v2;
+pub mod distributed_rate_limiter;
+pub mod eval;
+pub mod idor_detector;
+pub mod result_aggregator;
+pub mod scan_coordinator;
+pub mod scan_protocol;
+pub mod security_misconfig;
+pub mod ssti_polyglot;
+pub mod task_distributor;
+pub mod worker_node;
+pub mod xml_injection_suite;
 
 pub use abort_controller_audit::*;
 pub use actor::*;
@@ -522,6 +537,21 @@ pub use window_name_audit::*;
 pub use wireless_api_audit::*;
 pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
+pub use agent_memory_store::*;
+pub use cache_poisoning_engine::*;
+pub use clickjacking_engine::*;
+pub use cors_scanner_v2::*;
+pub use distributed_rate_limiter::*;
+pub use eval::*;
+pub use idor_detector::*;
+pub use result_aggregator::*;
+pub use scan_coordinator::*;
+pub use scan_protocol::*;
+pub use security_misconfig::*;
+pub use ssti_polyglot::*;
+pub use task_distributor::*;
+pub use worker_node::*;
+pub use xml_injection_suite::*;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]
@@ -1502,3 +1532,219 @@ mod module_selector_test;
 #[cfg(test)]
 #[path = "scope_manager_test.rs"]
 mod scope_manager_test;
+
+#[cfg(test)]
+#[path = "aegis_mind_prompt_test.rs"]
+mod aegis_mind_prompt_test;
+
+#[cfg(test)]
+#[path = "agent_executor_test.rs"]
+mod agent_executor_test;
+
+#[cfg(test)]
+#[path = "agent_loop_test.rs"]
+mod agent_loop_test;
+
+#[cfg(test)]
+#[path = "agent_memory_db_test.rs"]
+mod agent_memory_db_test;
+
+#[cfg(test)]
+#[path = "agent_memory_store_test.rs"]
+mod agent_memory_store_test;
+
+#[cfg(test)]
+#[path = "agent_tools_test.rs"]
+mod agent_tools_test;
+
+#[cfg(test)]
+#[path = "api_schema_inference_test.rs"]
+mod api_schema_inference_test;
+
+#[cfg(test)]
+#[path = "attest_test.rs"]
+mod attest_test;
+
+#[cfg(test)]
+#[path = "auth_breaker_test.rs"]
+mod auth_breaker_test;
+
+#[cfg(test)]
+#[path = "benchmark_test.rs"]
+mod benchmark_test;
+
+#[cfg(test)]
+#[path = "brain_loop_test.rs"]
+mod brain_loop_test;
+
+#[cfg(test)]
+#[path = "cache_poisoning_engine_test.rs"]
+mod cache_poisoning_engine_test;
+
+#[cfg(test)]
+#[path = "calibration_test.rs"]
+mod calibration_test;
+
+#[cfg(test)]
+#[path = "clickjacking_engine_test.rs"]
+mod clickjacking_engine_test;
+
+#[cfg(test)]
+#[path = "concurrent_scanner_test.rs"]
+mod concurrent_scanner_test;
+
+#[cfg(test)]
+#[path = "cors_scanner_v2_test.rs"]
+mod cors_scanner_v2_test;
+
+#[cfg(test)]
+#[path = "differential_response_test.rs"]
+mod differential_response_test;
+
+#[cfg(test)]
+#[path = "distributed_rate_limiter_test.rs"]
+mod distributed_rate_limiter_test;
+
+#[cfg(test)]
+#[path = "dns_rebinding_test.rs"]
+mod dns_rebinding_test;
+
+#[cfg(test)]
+#[path = "doctor_test.rs"]
+mod doctor_test;
+
+#[cfg(test)]
+#[path = "eval_test.rs"]
+mod eval_test;
+
+#[cfg(test)]
+#[path = "feedback_loop_test.rs"]
+mod feedback_loop_test;
+
+#[cfg(test)]
+#[path = "grammar_fuzzer_test.rs"]
+mod grammar_fuzzer_test;
+
+#[cfg(test)]
+#[path = "graphql_batch_amplification_test.rs"]
+mod graphql_batch_amplification_test;
+
+#[cfg(test)]
+#[path = "host_header_audit_test.rs"]
+mod host_header_audit_test;
+
+#[cfg(test)]
+#[path = "idor_detector_test.rs"]
+mod idor_detector_test;
+
+#[cfg(test)]
+#[path = "injection_engine_test.rs"]
+mod injection_engine_test;
+
+#[cfg(test)]
+#[path = "ldap_injection_scanner_test.rs"]
+mod ldap_injection_scanner_test;
+
+#[cfg(test)]
+#[path = "llm_response_parser_test.rs"]
+mod llm_response_parser_test;
+
+#[cfg(test)]
+#[path = "model_router_test.rs"]
+mod model_router_test;
+
+#[cfg(test)]
+#[path = "oauth_misconfig_scanner_test.rs"]
+mod oauth_misconfig_scanner_test;
+
+#[cfg(test)]
+#[path = "opencode_bridge_test.rs"]
+mod opencode_bridge_test;
+
+#[cfg(test)]
+#[path = "opencode_spawner_test.rs"]
+mod opencode_spawner_test;
+
+#[cfg(test)]
+#[path = "payload_forge_test.rs"]
+mod payload_forge_test;
+
+#[cfg(test)]
+#[path = "race_engine_test.rs"]
+mod race_engine_test;
+
+#[cfg(test)]
+#[path = "result_aggregator_test.rs"]
+mod result_aggregator_test;
+
+#[cfg(test)]
+#[path = "scan_briefing_test.rs"]
+mod scan_briefing_test;
+
+#[cfg(test)]
+#[path = "scan_context_serializer_test.rs"]
+mod scan_context_serializer_test;
+
+#[cfg(test)]
+#[path = "scan_coordinator_test.rs"]
+mod scan_coordinator_test;
+
+#[cfg(test)]
+#[path = "scan_protocol_test.rs"]
+mod scan_protocol_test;
+
+#[cfg(test)]
+#[path = "scan_regression_test.rs"]
+mod scan_regression_test;
+
+#[cfg(test)]
+#[path = "security_misconfig_test.rs"]
+mod security_misconfig_test;
+
+#[cfg(test)]
+#[path = "smuggling_engine_test.rs"]
+mod smuggling_engine_test;
+
+#[cfg(test)]
+#[path = "ssrf_chain_test.rs"]
+mod ssrf_chain_test;
+
+#[cfg(test)]
+#[path = "ssti_polyglot_test.rs"]
+mod ssti_polyglot_test;
+
+#[cfg(test)]
+#[path = "task_distributor_test.rs"]
+mod task_distributor_test;
+
+#[cfg(test)]
+#[path = "telemetry_test.rs"]
+mod telemetry_test;
+
+#[cfg(test)]
+#[path = "timing_oracle_test.rs"]
+mod timing_oracle_test;
+
+#[cfg(test)]
+#[path = "update_db_test.rs"]
+mod update_db_test;
+
+#[cfg(test)]
+#[path = "websocket_fuzzer_test.rs"]
+mod websocket_fuzzer_test;
+
+#[cfg(test)]
+#[path = "worker_node_test.rs"]
+mod worker_node_test;
+
+#[cfg(test)]
+#[path = "xml_injection_suite_test.rs"]
+mod xml_injection_suite_test;
+
+#[cfg(test)]
+#[path = "xs_leaks_test.rs"]
+mod xs_leaks_test;
+
+#[cfg(test)]
+#[path = "xxe_scanner_test.rs"]
+mod xxe_scanner_test;

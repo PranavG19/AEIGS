@@ -1,5 +1,3 @@
-use std::collections::{HashMap, HashSet};
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuthSchemeType {
     ApiKey,
@@ -260,13 +258,13 @@ impl OpenApiSecurityAnalyzer {
                 }
                 "oauth2" => {
                     let mut issues = Vec::new();
-                    if let Some(flows) = scheme.get("flows") {
-                        if flows.get("implicit").is_some() {
-                            issues.push(
-                                "Implicit flow is deprecated — use authorization code with PKCE"
-                                    .to_string(),
-                            );
-                        }
+                    if let Some(flows) = scheme.get("flows")
+                        && flows.get("implicit").is_some()
+                    {
+                        issues.push(
+                            "Implicit flow is deprecated — use authorization code with PKCE"
+                                .to_string(),
+                        );
                     }
                     (AuthSchemeType::OAuth2, AuthStrength::Strong, None, issues)
                 }
@@ -414,12 +412,12 @@ impl OpenApiSecurityAnalyzer {
                     }
                 }
 
-                if let Some(body) = operation.get("requestBody") {
-                    if let Some(content) = body.get("content").and_then(|c| c.as_object()) {
-                        for (_media_type, media_obj) in content {
-                            if let Some(schema) = media_obj.get("schema") {
-                                Self::check_body_schema_params(schema, path, method, &mut issues);
-                            }
+                if let Some(body) = operation.get("requestBody")
+                    && let Some(content) = body.get("content").and_then(|c| c.as_object())
+                {
+                    for (_media_type, media_obj) in content {
+                        if let Some(schema) = media_obj.get("schema") {
+                            Self::check_body_schema_params(schema, path, method, &mut issues);
                         }
                     }
                 }
@@ -613,19 +611,19 @@ impl OpenApiSecurityAnalyzer {
                     None => continue,
                 };
 
-                if let Some(body) = operation.get("requestBody") {
-                    if let Some(content) = body.get("content").and_then(|c| c.as_object()) {
-                        for (_media, media_obj) in content {
-                            if let Some(schema) = media_obj.get("schema") {
-                                let allows = Self::allows_additional_properties(schema);
-                                if allows {
-                                    risks.push(SchemaBypassRisk {
-                                        path: path.clone(),
-                                        method: method.to_uppercase(),
-                                        allows_additional_properties: true,
-                                        schema_location: "requestBody".to_string(),
-                                    });
-                                }
+                if let Some(body) = operation.get("requestBody")
+                    && let Some(content) = body.get("content").and_then(|c| c.as_object())
+                {
+                    for (_media, media_obj) in content {
+                        if let Some(schema) = media_obj.get("schema") {
+                            let allows = Self::allows_additional_properties(schema);
+                            if allows {
+                                risks.push(SchemaBypassRisk {
+                                    path: path.clone(),
+                                    method: method.to_uppercase(),
+                                    allows_additional_properties: true,
+                                    schema_location: "requestBody".to_string(),
+                                });
                             }
                         }
                     }
@@ -640,13 +638,7 @@ impl OpenApiSecurityAnalyzer {
         if schema.get("properties").is_some() {
             match schema.get("additionalProperties") {
                 None => true,
-                Some(v) => {
-                    if let Some(b) = v.as_bool() {
-                        b
-                    } else {
-                        true
-                    }
-                }
+                Some(v) => v.as_bool().unwrap_or(true)
             }
         } else {
             false

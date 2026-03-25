@@ -189,14 +189,13 @@ pub fn spawn_opencode(
                 truncated,
             };
 
-            if let Some(code) = exit_code {
-                if code != 0 {
+            if let Some(code) = exit_code
+                && code != 0 {
                     return Err(SpawnerError::ProcessFailed {
                         exit_code: code,
                         stderr: output.stderr.clone(),
                     });
                 }
-            }
 
             if truncated {
                 return Err(SpawnerError::OutputTruncated { output });
@@ -223,11 +222,10 @@ pub fn parse_structured_output(output: &SpawnerOutput) -> Result<serde_json::Val
         return Ok(val);
     }
 
-    if let Some(block) = extract_json_block(&output.stdout) {
-        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&block) {
+    if let Some(block) = extract_json_block(&output.stdout)
+        && let Ok(val) = serde_json::from_str::<serde_json::Value>(&block) {
             return Ok(val);
         }
-    }
 
     Err(SpawnerError::Io(std::io::Error::new(
         std::io::ErrorKind::InvalidData,
@@ -291,7 +289,7 @@ fn read_capped<R: Read>(reader: Option<R>, max_bytes: usize) -> (String, bool) {
     loop {
         let available = reader.fill_buf();
         match available {
-            Ok(data) if data.is_empty() => break,
+            Ok([]) => break,
             Ok(data) => {
                 let remaining = max_bytes.saturating_sub(buf.len());
                 if remaining == 0 {
