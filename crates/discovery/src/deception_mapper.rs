@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
 use crate::canary_scanner::{CanaryRisk, CanaryToken};
-use crate::honeypot_detector::{
-    HoneypotDetectorResult, HoneypotIndicator, HoneypotType, IndicatorType,
-};
+use crate::honeypot_detector::{HoneypotDetectorResult, HoneypotType, IndicatorType};
 use crate::ids_detector::IdsDetectorResult;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -109,6 +107,12 @@ impl std::fmt::Debug for DeceptionMapper {
     }
 }
 
+impl Default for DeceptionMapper {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DeceptionMapper {
     pub fn new() -> Self {
         Self
@@ -159,18 +163,18 @@ impl DeceptionMapper {
             });
         }
 
-        if let Some(hp) = honeypot_result {
-            if hp.is_honeypot {
-                honeypot_services.push(HoneypotService {
-                    service_type: hp.honeypot_type.unwrap_or(HoneypotType::Unknown),
-                    indicators: hp
-                        .indicators
-                        .iter()
-                        .map(|i| i.description.clone())
-                        .collect(),
-                    confidence: hp.confidence,
-                });
-            }
+        if let Some(hp) = honeypot_result
+            && hp.is_honeypot
+        {
+            honeypot_services.push(HoneypotService {
+                service_type: hp.honeypot_type.unwrap_or(HoneypotType::Unknown),
+                indicators: hp
+                    .indicators
+                    .iter()
+                    .map(|i| i.description.clone())
+                    .collect(),
+                confidence: hp.confidence,
+            });
         }
 
         let coverage = compute_coverage(&endpoints);
@@ -199,7 +203,7 @@ fn classify_endpoint(
     if canary_locations.contains_key(path) {
         classification = EndpointType::CanaryProtected;
         confidence = 0.9;
-        evidence.push(format!("Canary token detected at this path"));
+        evidence.push("Canary token detected at this path".to_string());
     }
 
     if honeypot_paths.iter().any(|hp| path.contains(hp.as_str())) {
@@ -208,19 +212,18 @@ fn classify_endpoint(
         evidence.push("Path matches honeypot indicator".to_string());
     }
 
-    if let Some(hp) = honeypot_result {
-        if hp.is_honeypot {
-            for ind in &hp.indicators {
-                if matches!(
-                    ind.indicator_type,
-                    IndicatorType::DecoyEndpoint | IndicatorType::TooPermissive
-                ) {
-                    if classification == EndpointType::Unknown {
-                        classification = EndpointType::Decoy;
-                        confidence = hp.confidence * 0.7;
-                        evidence.push(format!("Honeypot detection: {}", ind.description));
-                    }
-                }
+    if let Some(hp) = honeypot_result
+        && hp.is_honeypot
+    {
+        for ind in &hp.indicators {
+            if matches!(
+                ind.indicator_type,
+                IndicatorType::DecoyEndpoint | IndicatorType::TooPermissive
+            ) && classification == EndpointType::Unknown
+            {
+                classification = EndpointType::Decoy;
+                confidence = hp.confidence * 0.7;
+                evidence.push(format!("Honeypot detection: {}", ind.description));
             }
         }
     }
@@ -248,11 +251,11 @@ fn extract_honeypot_paths(honeypot_result: Option<&HoneypotDetectorResult>) -> V
                 IndicatorType::FakeLoginPage | IndicatorType::DecoyEndpoint
             ) {
                 let desc = &ind.description;
-                if let Some(start) = desc.find('\'') {
-                    if let Some(end) = desc[start + 1..].find('\'') {
-                        let path = &desc[start + 1..start + 1 + end];
-                        paths.push(path.to_string());
-                    }
+                if let Some(start) = desc.find('\'')
+                    && let Some(end) = desc[start + 1..].find('\'')
+                {
+                    let path = &desc[start + 1..start + 1 + end];
+                    paths.push(path.to_string());
                 }
             }
         }

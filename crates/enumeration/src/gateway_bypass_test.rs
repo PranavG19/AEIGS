@@ -7,24 +7,36 @@ fn direct_access_probes_generated_for_backend_hosts() {
         &["10.0.0.5", "backend.internal"],
     );
     assert!(probes.len() >= 8);
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::HostHeaderOverride));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::XForwardedHost));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::XOriginalUrl));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::XRewriteUrl));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::InternalIpAccess));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == DirectAccessTechnique::AlternatePort));
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::HostHeaderOverride)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::XForwardedHost)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::XOriginalUrl)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::XRewriteUrl)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::InternalIpAccess)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == DirectAccessTechnique::AlternatePort)
+    );
 }
 
 #[test]
@@ -78,30 +90,46 @@ fn evaluate_direct_access_both_blocked() {
 fn path_norm_payloads_generated() {
     let payloads = generate_path_norm_payloads("/admin/dashboard");
     assert!(payloads.len() >= 10);
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::DotSegmentTraversal));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::DoubleUrlEncoding));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::UnicodeNormalization));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::BackslashSubstitution));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::NullByteInjection));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::SemicolonPathParam));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::CaseSwitching));
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == PathNormTechnique::DoubleSlash));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::DotSegmentTraversal)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::DoubleUrlEncoding)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::UnicodeNormalization)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::BackslashSubstitution)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::NullByteInjection)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::SemicolonPathParam)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::CaseSwitching)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == PathNormTechnique::DoubleSlash)
+    );
 }
 
 #[test]
@@ -162,15 +190,21 @@ fn evaluate_path_norm_no_bypass_backend_blocks() {
 fn rate_limit_bypass_probes_generated() {
     let probes = generate_rate_limit_bypass_probes();
     assert!(probes.len() >= 7);
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == RateLimitBypassTechnique::XForwardedForRotation));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == RateLimitBypassTechnique::HttpMethodSwitch));
-    assert!(probes
-        .iter()
-        .any(|p| p.technique == RateLimitBypassTechnique::OriginIpRotation));
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == RateLimitBypassTechnique::XForwardedForRotation)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == RateLimitBypassTechnique::HttpMethodSwitch)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.technique == RateLimitBypassTechnique::OriginIpRotation)
+    );
 }
 
 #[test]
@@ -210,21 +244,31 @@ fn evaluate_rate_limit_bypass_not_bypassed() {
 fn auth_forwarding_probes_generated() {
     let probes = generate_auth_forwarding_probes("Bearer eyJhbGciOiJSUzI1NiJ9.test.sig");
     assert!(probes.len() >= 7);
-    assert!(probes
-        .iter()
-        .any(|p| p.issue_type == AuthForwardingIssue::TokenPassthrough));
-    assert!(probes
-        .iter()
-        .any(|p| p.issue_type == AuthForwardingIssue::InternalHeaderInjection));
-    assert!(probes
-        .iter()
-        .any(|p| p.issue_type == AuthForwardingIssue::AuthBypassViaHop));
-    assert!(probes
-        .iter()
-        .any(|p| p.issue_type == AuthForwardingIssue::SessionFixationViaGateway));
-    assert!(probes
-        .iter()
-        .any(|p| p.issue_type == AuthForwardingIssue::CredentialLeakInProxy));
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.issue_type == AuthForwardingIssue::TokenPassthrough)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.issue_type == AuthForwardingIssue::InternalHeaderInjection)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.issue_type == AuthForwardingIssue::AuthBypassViaHop)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.issue_type == AuthForwardingIssue::SessionFixationViaGateway)
+    );
+    assert!(
+        probes
+            .iter()
+            .any(|p| p.issue_type == AuthForwardingIssue::CredentialLeakInProxy)
+    );
 }
 
 #[test]
@@ -248,11 +292,13 @@ fn auth_forwarding_probes_contain_auth_header() {
         .iter()
         .find(|p| p.issue_type == AuthForwardingIssue::TokenPassthrough)
         .unwrap();
-    assert!(passthrough
-        .proof_headers
-        .get("Authorization")
-        .unwrap()
-        .contains("super_secret_token"));
+    assert!(
+        passthrough
+            .proof_headers
+            .get("Authorization")
+            .unwrap()
+            .contains("super_secret_token")
+    );
 }
 
 #[test]
@@ -263,18 +309,26 @@ fn full_analysis_generates_all_categories() {
         &["/admin"],
         Some("Bearer token123"),
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == GatewayBypassCategory::DirectBackendAccess));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == GatewayBypassCategory::PathNormalizationDiff));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == GatewayBypassCategory::RateLimitBypass));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == GatewayBypassCategory::AuthForwardingIssue));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == GatewayBypassCategory::DirectBackendAccess)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == GatewayBypassCategory::PathNormalizationDiff)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == GatewayBypassCategory::RateLimitBypass)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == GatewayBypassCategory::AuthForwardingIssue)
+    );
 }
 
 #[test]
@@ -285,9 +339,11 @@ fn full_analysis_without_auth_skips_auth_findings() {
         &["/admin"],
         None,
     );
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == GatewayBypassCategory::AuthForwardingIssue));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == GatewayBypassCategory::AuthForwardingIssue)
+    );
 }
 
 #[test]

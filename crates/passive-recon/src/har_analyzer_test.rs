@@ -71,10 +71,12 @@ fn test_insecure_http_detection() {
     let har = HarAnalyzer::parse(&json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, HarFindingCategory::InsecureTransmission)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, HarFindingCategory::InsecureTransmission))
+    );
 }
 
 #[test]
@@ -113,10 +115,12 @@ fn test_sensitive_query_param_detection() {
     let har = HarAnalyzer::parse(json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, HarFindingCategory::SensitiveDataInRequest)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, HarFindingCategory::SensitiveDataInRequest))
+    );
 }
 
 #[test]
@@ -162,10 +166,12 @@ fn test_response_body_secret_detection() {
     let har = HarAnalyzer::parse(&json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, HarFindingCategory::SensitiveDataInResponse)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, HarFindingCategory::SensitiveDataInResponse))
+    );
 }
 
 #[test]
@@ -242,10 +248,12 @@ fn test_information_leak_server_header() {
     let har = HarAnalyzer::parse(&json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, HarFindingCategory::InformationLeak)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, HarFindingCategory::InformationLeak))
+    );
 }
 
 #[test]
@@ -282,14 +290,18 @@ fn test_third_party_tracking() {
     let har = HarAnalyzer::parse(&json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .third_party_integrations
-        .iter()
-        .any(|t| t.service_name == "Google Analytics"));
-    assert!(result
-        .third_party_integrations
-        .iter()
-        .any(|t| t.service_name == "Stripe"));
+    assert!(
+        result
+            .third_party_integrations
+            .iter()
+            .any(|t| t.service_name == "Google Analytics")
+    );
+    assert!(
+        result
+            .third_party_integrations
+            .iter()
+            .any(|t| t.service_name == "Stripe")
+    );
 }
 
 #[test]
@@ -300,12 +312,16 @@ fn test_domain_extraction() {
     let har = HarAnalyzer::parse(&json).unwrap();
     let analyzer = HarAnalyzer::new();
     let result = analyzer.analyze(&har);
-    assert!(result
-        .domains_contacted
-        .contains(&"api.example.com".to_string()));
-    assert!(result
-        .domains_contacted
-        .contains(&"cdn.example.com".to_string()));
+    assert!(
+        result
+            .domains_contacted
+            .contains(&"api.example.com".to_string())
+    );
+    assert!(
+        result
+            .domains_contacted
+            .contains(&"cdn.example.com".to_string())
+    );
 }
 
 #[test]

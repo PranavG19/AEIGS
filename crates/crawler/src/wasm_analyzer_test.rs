@@ -203,10 +203,12 @@ fn source_map_section_flagged() {
     let custom = build_custom_section("sourceMappingURL", &[0x00; 20]);
     let wasm = build_wasm_module(&[(0, custom)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::DebugInfoLeak));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::DebugInfoLeak)
+    );
 }
 
 #[test]
@@ -232,10 +234,12 @@ fn dangerous_import_wasi_fd_write() {
     let imports = build_import_section_funcs(&[("wasi_snapshot_preview1", "fd_write", 0)]);
     let wasm = build_wasm_module(&[(2, imports)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::DangerousImport));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::DangerousImport)
+    );
 }
 
 #[test]
@@ -256,10 +260,12 @@ fn dangerous_import_emscripten_run_script() {
     let imports = build_import_section_funcs(&[("env", "emscripten_run_script", 0)]);
     let wasm = build_wasm_module(&[(2, imports)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.severity == Severity::Critical));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.severity == Severity::Critical)
+    );
 }
 
 #[test]
@@ -267,10 +273,12 @@ fn dangerous_import_syscall() {
     let imports = build_import_section_funcs(&[("env", "__syscall", 0)]);
     let wasm = build_wasm_module(&[(2, imports)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::DangerousImport));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::DangerousImport)
+    );
 }
 
 #[test]
@@ -278,10 +286,12 @@ fn dangerous_import_wasi_socket() {
     let imports = build_import_section_funcs(&[("wasi_snapshot_preview1", "sock_accept", 0)]);
     let wasm = build_wasm_module(&[(2, imports)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::DangerousImport));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::DangerousImport)
+    );
 }
 
 #[test]
@@ -289,10 +299,12 @@ fn suspicious_export_heap_base() {
     let exports = build_export_section(&[("__heap_base", 0x03, 0)]);
     let wasm = build_wasm_module(&[(7, exports)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::SuspiciousExport));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::SuspiciousExport)
+    );
 }
 
 #[test]
@@ -313,10 +325,12 @@ fn excessive_memory_flagged() {
     let mem = build_memory_section(2048, None);
     let wasm = build_wasm_module(&[(5, mem)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::ExcessiveMemory));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::ExcessiveMemory)
+    );
 }
 
 #[test]
@@ -324,10 +338,12 @@ fn max_memory_4gb_flagged() {
     let mem = build_memory_section(1, Some(65536));
     let wasm = build_wasm_module(&[(5, mem)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::ExcessiveMemory));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::ExcessiveMemory)
+    );
 }
 
 #[test]
@@ -335,10 +351,12 @@ fn credential_string_generates_finding() {
     let data = build_data_section_passive(&[b"access_token=eyJhbGciOiJIUzI1NiJ9"]);
     let wasm = build_wasm_module(&[(11, data)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::CredentialLeak));
+    assert!(
+        analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::CredentialLeak)
+    );
 }
 
 #[test]
@@ -428,10 +446,12 @@ fn normal_memory_no_finding() {
     let mem = build_memory_section(16, Some(256));
     let wasm = build_wasm_module(&[(5, mem)]);
     let analysis = analyze_wasm(&wasm);
-    assert!(!analysis
-        .security_findings
-        .iter()
-        .any(|f| f.category == FindingCategory::ExcessiveMemory));
+    assert!(
+        !analysis
+            .security_findings
+            .iter()
+            .any(|f| f.category == FindingCategory::ExcessiveMemory)
+    );
 }
 
 #[test]

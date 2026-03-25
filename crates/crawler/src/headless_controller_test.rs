@@ -145,10 +145,7 @@ async fn fill_and_submit_form() {
     let backend = MockBrowser::new();
     let controller = HeadlessController::new(HeadlessConfig::default(), backend);
 
-    let fields = vec![
-        ("#username", "admin"),
-        ("#password", "secret"),
-    ];
+    let fields = vec![("#username", "admin"), ("#password", "secret")];
     let result = controller
         .fill_and_submit(&fields, Some("#login-btn"))
         .await;
@@ -296,9 +293,7 @@ async fn navigate_ipv6_localhost_succeeds() {
     let backend = MockBrowser::new();
     let controller = HeadlessController::new(HeadlessConfig::default(), backend);
 
-    let result = controller
-        .navigate_and_capture("http://[::1]:3000/")
-        .await;
+    let result = controller.navigate_and_capture("http://[::1]:3000/").await;
     assert!(result.is_ok());
 }
 

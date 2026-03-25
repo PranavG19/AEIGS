@@ -139,7 +139,7 @@ impl GroundTruthManifest {
         let mut classes: Vec<VulnerabilityClass> = self
             .annotations
             .iter()
-            .map(|a| a.vulnerability_class.clone())
+            .map(|a| a.vulnerability_class)
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
             .collect();
@@ -175,15 +175,12 @@ impl GroundTruthManifest {
     ///
     /// `findings` is a list of `(endpoint, vulnerability_class)` tuples
     /// representing what the scanner actually found.
-    pub fn evaluate(
-        &self,
-        findings: &[(String, VulnerabilityClass)],
-    ) -> GroundTruthEvaluation {
+    pub fn evaluate(&self, findings: &[(String, VulnerabilityClass)]) -> GroundTruthEvaluation {
         let expected: std::collections::HashSet<(String, VulnerabilityClass)> = self
             .annotations
             .iter()
             .filter(|a| a.expected_detected)
-            .map(|a| (a.endpoint.clone(), a.vulnerability_class.clone()))
+            .map(|a| (a.endpoint.clone(), a.vulnerability_class))
             .collect();
 
         let found: std::collections::HashSet<(String, VulnerabilityClass)> =
@@ -359,13 +356,16 @@ pub fn express_ground_truth() -> GroundTruthManifest {
             .build(),
     );
     m.add(
-        AnnotationBuilder::new("/api/template", VulnerabilityClass::ServerSideTemplateInjection)
-            .severity(GroundTruthSeverity::High)
-            .cwe("CWE-1336")
-            .cvss(7.5)
-            .parameter("expr")
-            .description("SSTI via unvalidated template expression")
-            .build(),
+        AnnotationBuilder::new(
+            "/api/template",
+            VulnerabilityClass::ServerSideTemplateInjection,
+        )
+        .severity(GroundTruthSeverity::High)
+        .cwe("CWE-1336")
+        .cvss(7.5)
+        .parameter("expr")
+        .description("SSTI via unvalidated template expression")
+        .build(),
     );
     m.add(
         AnnotationBuilder::new("/api/admin", VulnerabilityClass::BrokenAuthentication)
@@ -410,14 +410,17 @@ pub fn express_ground_truth() -> GroundTruthManifest {
             .build(),
     );
     m.add(
-        AnnotationBuilder::new("/api/deserialize", VulnerabilityClass::InsecureDeserialization)
-            .method(HttpMethod::Post)
-            .severity(GroundTruthSeverity::Critical)
-            .cwe("CWE-502")
-            .cvss(9.8)
-            .parameter("data")
-            .description("Unsafe deserialization of user-controlled input")
-            .build(),
+        AnnotationBuilder::new(
+            "/api/deserialize",
+            VulnerabilityClass::InsecureDeserialization,
+        )
+        .method(HttpMethod::Post)
+        .severity(GroundTruthSeverity::Critical)
+        .cwe("CWE-502")
+        .cvss(9.8)
+        .parameter("data")
+        .description("Unsafe deserialization of user-controlled input")
+        .build(),
     );
 
     m

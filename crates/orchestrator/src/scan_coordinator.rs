@@ -182,9 +182,10 @@ impl ScanCoordinator {
     /// Advances to the next phase. Only valid if the current barrier is complete.
     pub fn advance_phase(&mut self, next: ScanPhase) -> Result<(), CoordinatorError> {
         if let Some(barrier) = self.barriers.get(&self.current_phase)
-            && !barrier.is_complete() {
-                return Err(CoordinatorError::BarrierTimeout(self.current_phase));
-            }
+            && !barrier.is_complete()
+        {
+            return Err(CoordinatorError::BarrierTimeout(self.current_phase));
+        }
         let valid = matches!(
             (self.current_phase, next),
             (ScanPhase::Recon, ScanPhase::Crawl)

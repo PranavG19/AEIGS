@@ -1,7 +1,7 @@
 use crate::distributed::{
-    create_assignments, default_distributed_config, describe_assignments, partition_endpoints,
     AssignmentStrategy, CoordinatorState, DistributedConfig, DistributedError, WorkAssignment,
-    WorkerId, WorkerRole, WorkerState, WorkerStatus,
+    WorkerId, WorkerRole, WorkerState, WorkerStatus, create_assignments,
+    default_distributed_config, describe_assignments, partition_endpoints,
 };
 
 fn worker_id(name: &str) -> WorkerId {

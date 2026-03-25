@@ -1,6 +1,6 @@
 use crate::scan_protocol::{
-    create_envelope, describe_message, deserialize_envelope, serialize_envelope, validate_message,
-    MessageEnvelope, MessageId, ProtocolError, ProtocolMessage, PROTOCOL_VERSION,
+    MessageEnvelope, MessageId, PROTOCOL_VERSION, ProtocolError, ProtocolMessage, create_envelope,
+    describe_message, deserialize_envelope, serialize_envelope, validate_message,
 };
 use aegis_protocol::finding::{
     Confidence, EvidenceLevel, FindingConfidence, FindingData, VulnerabilityClass,

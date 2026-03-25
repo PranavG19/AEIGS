@@ -1,7 +1,8 @@
-use petgraph::Direction;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::Direction;
 use std::collections::{HashMap, HashSet};
 
+/// A node in the attack graph representing an entry point, boundary, vulnerability, or asset.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AttackNode {
     pub id: u64,
@@ -9,6 +10,7 @@ pub struct AttackNode {
     pub node_type: AttackNodeType,
 }
 
+/// Role of a node within the attack graph.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AttackNodeType {
     EntryPoint,
@@ -29,6 +31,7 @@ impl std::fmt::Display for AttackNodeType {
     }
 }
 
+/// A directed edge between two attack graph nodes, weighted by exploitation difficulty.
 #[derive(Debug, Clone)]
 pub struct AttackEdge {
     pub source: u64,
@@ -37,6 +40,7 @@ pub struct AttackEdge {
     pub exploitation_difficulty: f64,
 }
 
+/// An ordered sequence of nodes forming a viable attack path, with total difficulty.
 #[derive(Debug, Clone)]
 pub struct AttackPath {
     pub nodes: Vec<u64>,
@@ -44,6 +48,9 @@ pub struct AttackPath {
     pub edges: Vec<AttackEdge>,
 }
 
+/// Result of a mitigation impact analysis on the attack graph.
+///
+/// Shows which asset nodes become unreachable when a specific node is removed.
 #[derive(Debug, Clone)]
 pub struct MitigationResult {
     pub removed_findings: Vec<NodeIndex>,
@@ -51,6 +58,10 @@ pub struct MitigationResult {
     pub impact_score: f64,
 }
 
+/// Directed graph of attack nodes and edges, backed by petgraph.
+///
+/// Nodes are identified by `u64` IDs; the graph supports path analysis,
+/// centrality computation, and mitigation impact estimation.
 pub struct AttackGraph {
     graph: DiGraph<AttackNode, AttackEdge>,
     index_map: HashMap<u64, NodeIndex>,

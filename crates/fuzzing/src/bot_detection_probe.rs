@@ -2,6 +2,9 @@ use crate::defense_profile::BotDetectionProfile;
 use regex::Regex;
 use std::sync::LazyLock;
 
+/// Response from a single bot-detection probe request.
+/// Captures whether browser headers were sent and whether the request was rapid,
+/// along with the response status and body for challenge detection.
 #[derive(Debug, Clone)]
 pub struct BotProbeResult {
     pub headers_sent: bool,
@@ -10,6 +13,8 @@ pub struct BotProbeResult {
     pub rapid_request: bool,
 }
 
+/// How the target detects bots: JavaScript challenges, CAPTCHAs, header analysis,
+/// behavioral rate patterns, or unknown. Serialized into `BotDetectionProfile`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DetectionMethod {
     JavaScriptChallenge,

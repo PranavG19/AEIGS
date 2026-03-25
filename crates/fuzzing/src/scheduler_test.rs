@@ -3,7 +3,7 @@ mod tests {
     use aegis_protocol::finding::VulnerabilityClass;
     use aegis_protocol::request::ParameterLocation;
 
-    use crate::scheduler::{is_fuzzable, FuzzScheduler, FuzzTarget};
+    use crate::scheduler::{FuzzScheduler, FuzzTarget, is_fuzzable};
     use crate::stealth_config::StealthConfig;
 
     fn target(endpoint: &str, priority: f64) -> FuzzTarget {

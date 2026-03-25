@@ -1,4 +1,5 @@
 use super::*;
+use aegis_protocol::finding::VulnerabilityClass;
 
 fn sample_manifest() -> GroundTruthManifest {
     let mut m = GroundTruthManifest::new("test-fixture");

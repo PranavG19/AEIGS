@@ -11,6 +11,7 @@ use crate::persona::Persona;
 use crate::session_manager::SessionManager;
 use crate::timing_controller::TimingController;
 
+/// Errors that can occur during evasion transport request execution.
 #[derive(Debug)]
 pub enum TransportError {
     NetworkError(String),
@@ -32,6 +33,13 @@ impl std::fmt::Display for TransportError {
 
 impl std::error::Error for TransportError {}
 
+/// HTTP transport layer with integrated evasion capabilities.
+///
+/// Wraps a `reqwest::Client` with persona-based header transformation,
+/// timing jitter, session management, cookie tracking, persona rotation,
+/// HTTP/2 fingerprint matching, and target validation (localhost-only by
+/// default, remote via scope attestation or operator authorization).
+/// Construct via `EvasionTransport::builder()`.
 pub struct EvasionTransport {
     client: Client,
     header_transformer: HeaderTransformer,
@@ -308,6 +316,11 @@ fn parse_method(method: &str) -> Result<reqwest::Method, TransportError> {
 #[path = "transport_test.rs"]
 mod transport_test;
 
+/// Builder for `EvasionTransport` with `with_*` configuration methods.
+///
+/// Defaults to the first persona in the embedded catalog, 50 requests per
+/// session, no persona rotation, strict TLS validation, and localhost-only
+/// target restriction.
 pub struct EvasionTransportBuilder {
     persona: Option<Persona>,
     persona_catalog_path: Option<std::path::PathBuf>,

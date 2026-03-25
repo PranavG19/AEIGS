@@ -3,6 +3,9 @@ use regex::RegexBuilder;
 
 use crate::defense_profile::{WafProfile, WafVendor};
 
+/// Response data from a single WAF detection probe request.
+/// Carries the probe payload and the response status, headers, and body snippet
+/// used by `identify_vendor()` and `identify_blocked_categories()`.
 #[derive(Debug, Clone)]
 pub struct WafProbeResult {
     pub probe_payload: String,
@@ -11,6 +14,8 @@ pub struct WafProbeResult {
     pub response_body_snippet: String,
 }
 
+/// Orchestrates WAF detection probes against a target URL.
+/// Stores the baseline status code to distinguish WAF blocks from normal responses.
 pub struct WafFingerprinter {
     pub target_url: String,
     pub baseline_status: Option<u16>,

@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::cvss_scorer::CvssSeverity;
 
+/// A complete pentest report with executive summary, methodology, findings, and remediation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PentestReport {
     pub executive_summary: String,
@@ -11,6 +12,7 @@ pub struct PentestReport {
     pub compliance_summary: String,
 }
 
+/// A single finding rendered as a prose narrative with impact, PoC, and remediation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FindingNarrative {
     pub title: String,
@@ -24,6 +26,7 @@ pub struct FindingNarrative {
     pub owasp_category: Option<String>,
 }
 
+/// Aggregated scan data used as input to report generation.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReportInput {
     pub target_url: String,
@@ -38,6 +41,7 @@ pub struct ReportInput {
     pub findings: Vec<FindingInput>,
 }
 
+/// Raw finding data passed into the report generator.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FindingInput {
     pub vulnerability_class: String,

@@ -21,9 +21,10 @@ fn lookup_by_name() {
     assert!(sqli.is_some());
     let meta = sqli.unwrap();
     assert_eq!(meta.crate_name, "aegis-fuzzing");
-    assert!(meta
-        .vulnerability_classes
-        .contains(&VulnerabilityClass::SqlInjection));
+    assert!(
+        meta.vulnerability_classes
+            .contains(&VulnerabilityClass::SqlInjection)
+    );
     assert_eq!(meta.priority, ModulePriority::Critical);
     assert!(meta.enabled);
 }
@@ -89,9 +90,10 @@ fn filter_by_vulnerability_class() {
     let sqli_modules = reg.for_vulnerability_class(&VulnerabilityClass::SqlInjection);
     assert!(!sqli_modules.is_empty());
     for m in &sqli_modules {
-        assert!(m
-            .vulnerability_classes
-            .contains(&VulnerabilityClass::SqlInjection));
+        assert!(
+            m.vulnerability_classes
+                .contains(&VulnerabilityClass::SqlInjection)
+        );
     }
 }
 

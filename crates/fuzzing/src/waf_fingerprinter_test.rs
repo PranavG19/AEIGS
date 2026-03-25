@@ -4,8 +4,8 @@ mod tests {
 
     use crate::defense_profile::WafVendor;
     use crate::waf_fingerprinter::{
-        WafFingerprinter, WafProbeResult, build_waf_profile, estimate_paranoia_level,
-        identify_blocked_categories, identify_vendor,
+        build_waf_profile, estimate_paranoia_level, identify_blocked_categories, identify_vendor,
+        WafFingerprinter, WafProbeResult,
     };
 
     fn probe_with_headers(status: u16, headers: Vec<(&str, &str)>, body: &str) -> WafProbeResult {

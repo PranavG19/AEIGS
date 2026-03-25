@@ -50,6 +50,12 @@ use crate::telemetry::{
 };
 use crate::util::timestamp_ms;
 
+/// Runtime state for a single scan execution.
+///
+/// Holds the scan configuration, shared knowledge graph, defense profile
+/// from fingerprinting, capability tokens, the refuted hypothesis tracker,
+/// and optional scope attestation / auth flow. Created by `run_scan` and
+/// threaded through every pipeline phase.
 pub struct ScanContext {
     pub config: ScanConfig,
     pub graph: Box<dyn GraphStore>,
@@ -64,12 +70,19 @@ pub struct ScanContext {
     pub llm_payloads: Vec<String>,
 }
 
+/// Output of a single pipeline phase: how many graph operations were applied
+/// and how many vulnerability findings were produced.
 #[derive(Debug, Clone)]
 pub struct PhaseResult {
     pub operations_applied: u64,
     pub findings_count: u64,
 }
 
+/// Final output of a complete scan, returned by `run_scan`.
+///
+/// Contains aggregate counts, output file paths (SARIF report, audit log,
+/// HMAC key), scan metrics, and optional diff information when `--graph-db`
+/// enables incremental scanning.
 #[derive(Debug)]
 pub struct ScanSummary {
     pub total_findings: u64,
@@ -92,6 +105,11 @@ pub struct ScanSummary {
     pub telemetry_path: Option<String>,
 }
 
+/// Top-level errors from the scan pipeline.
+///
+/// Each variant wraps either a config validation error, an audit log setup
+/// failure, a pipeline composition error, or a phase-specific `PhaseError`.
+/// Returned by `run_scan` and printed by `main.rs`.
 #[derive(Debug)]
 pub enum PipelineError {
     Config(ConfigError),

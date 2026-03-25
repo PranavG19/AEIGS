@@ -105,11 +105,12 @@ fn content_type_mismatch_is_multipart() {
         .iter()
         .find(|p| p.pattern == PollutionPattern::ContentTypeMismatch)
         .unwrap();
-    assert!(ct
-        .content_type
-        .as_ref()
-        .unwrap()
-        .starts_with("multipart/form-data"));
+    assert!(
+        ct.content_type
+            .as_ref()
+            .unwrap()
+            .starts_with("multipart/form-data")
+    );
     assert!(ct.body.as_ref().unwrap().contains("Content-Disposition"));
 }
 
@@ -139,9 +140,11 @@ fn waf_bypass_generates_three_variants() {
 fn waf_bypass_first_variant_benign_then_malicious() {
     let payloads = generate_waf_bypass_payloads("input", "' OR 1=1--");
     let first = &payloads[0];
-    assert!(first
-        .query_string
-        .starts_with("input=safe_normal_value&input="));
+    assert!(
+        first
+            .query_string
+            .starts_with("input=safe_normal_value&input=")
+    );
     assert!(first.body.is_none());
 }
 

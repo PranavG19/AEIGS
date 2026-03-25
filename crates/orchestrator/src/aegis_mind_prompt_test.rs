@@ -63,24 +63,36 @@ fn assemble_prompt_includes_all_sections() {
     assert!(assembled.total_token_estimate > 0);
 
     assert!(assembled.sections_included.contains(&"PERSONA".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"METHODOLOGY".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"KNOWLEDGE".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"OUTPUT_FORMAT".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"MEMORY_CONTEXT".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"DEFENSE_MAP".to_string()));
-    assert!(assembled
-        .sections_included
-        .contains(&"SCAN_BRIEFING".to_string()));
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"METHODOLOGY".to_string())
+    );
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"KNOWLEDGE".to_string())
+    );
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"OUTPUT_FORMAT".to_string())
+    );
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"MEMORY_CONTEXT".to_string())
+    );
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"DEFENSE_MAP".to_string())
+    );
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"SCAN_BRIEFING".to_string())
+    );
 }
 
 #[test]
@@ -94,17 +106,23 @@ fn assemble_prompt_without_optional_sections() {
 
     let assembled = assemble_prompt(&config, "briefing", None, None);
 
-    assert!(!assembled
-        .system_prompt
-        .contains("Tech Stack Attack Patterns"));
+    assert!(
+        !assembled
+            .system_prompt
+            .contains("Tech Stack Attack Patterns")
+    );
     assert!(!assembled.user_prompt.contains("CROSS-SESSION MEMORY"));
     assert!(!assembled.user_prompt.contains("DEFENSE MAP"));
-    assert!(!assembled
-        .sections_included
-        .contains(&"MEMORY_CONTEXT".to_string()));
-    assert!(!assembled
-        .sections_included
-        .contains(&"DEFENSE_MAP".to_string()));
+    assert!(
+        !assembled
+            .sections_included
+            .contains(&"MEMORY_CONTEXT".to_string())
+    );
+    assert!(
+        !assembled
+            .sections_included
+            .contains(&"DEFENSE_MAP".to_string())
+    );
 }
 
 #[test]
@@ -122,9 +140,11 @@ fn assemble_prompt_with_custom_instructions() {
     assert!(assembled.system_prompt.contains("Additional Instructions"));
     assert!(assembled.system_prompt.contains("Focus on JWT"));
     assert!(assembled.system_prompt.contains("Ignore XSS"));
-    assert!(assembled
-        .sections_included
-        .contains(&"CUSTOM_INSTRUCTIONS".to_string()));
+    assert!(
+        assembled
+            .sections_included
+            .contains(&"CUSTOM_INSTRUCTIONS".to_string())
+    );
 }
 
 #[test]

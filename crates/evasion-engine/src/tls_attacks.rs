@@ -226,8 +226,8 @@ fn build_client_hello(
     // Extensions: SNI
     let sni_bytes = sni.as_bytes();
     let sni_list_len = (sni_bytes.len() + 3) as u16;
-    let sni_ext_len = (sni_list_len + 2) as u16;
-    let extensions_len = (sni_ext_len + 4) as u16;
+    let sni_ext_len = sni_list_len + 2;
+    let extensions_len = sni_ext_len + 4;
 
     hello.extend_from_slice(&extensions_len.to_be_bytes());
     // SNI extension type = 0x0000

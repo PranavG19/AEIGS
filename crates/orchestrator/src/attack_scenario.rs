@@ -6,7 +6,6 @@
 /// has ordered steps, likelihood assessment, and impact rating.
 use aegis_protocol::finding::{EvidenceLevel, VulnerabilityClass};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// The attacker's objective for a scenario.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

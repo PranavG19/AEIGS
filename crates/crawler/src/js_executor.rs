@@ -118,8 +118,7 @@ pub struct JsAnalysisResult {
 pub fn extract_js_sources(html: &str) -> Vec<JsSource> {
     let mut sources = Vec::new();
 
-    let script_re =
-        regex::Regex::new(r#"(?is)<script([^>]*)>(.*?)</script>"#).unwrap();
+    let script_re = regex::Regex::new(r#"(?is)<script([^>]*)>(.*?)</script>"#).unwrap();
     let src_re = regex::Regex::new(r#"(?i)src\s*=\s*["']([^"']+)["']"#).unwrap();
 
     for cap in script_re.captures_iter(html) {
@@ -158,8 +157,7 @@ pub fn extract_js_sources(html: &str) -> Vec<JsSource> {
         });
     }
 
-    let import_re =
-        regex::Regex::new(r#"import\s*\(\s*["'`]([^"'`]+)["'`]\s*\)"#).unwrap();
+    let import_re = regex::Regex::new(r#"import\s*\(\s*["'`]([^"'`]+)["'`]\s*\)"#).unwrap();
     for cap in import_re.captures_iter(html) {
         sources.push(JsSource {
             url: Some(cap[1].to_string()),
@@ -186,7 +184,10 @@ pub fn find_sensitive_data(js_content: &str, source_file: Option<&str>) -> Vec<S
             r#"(?:aws_secret|secret_key|secretAccessKey)\s*[:=]\s*["']([A-Za-z0-9/+=]{40})["']"#,
             SensitiveDataType::AwsSecretKey,
         ),
-        (r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}", SensitiveDataType::JwtToken),
+        (
+            r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}",
+            SensitiveDataType::JwtToken,
+        ),
         (
             r#"(?:api_key|apikey|api-key|apiKey)\s*[:=]\s*["']([A-Za-z0-9_-]{20,})["']"#,
             SensitiveDataType::ApiKey,
@@ -203,10 +204,7 @@ pub fn find_sensitive_data(js_content: &str, source_file: Option<&str>) -> Vec<S
             r#"(?:Bearer|bearer)\s+[A-Za-z0-9._-]{20,}"#,
             SensitiveDataType::BearerToken,
         ),
-        (
-            r"AIza[A-Za-z0-9_-]{35}",
-            SensitiveDataType::GoogleApiKey,
-        ),
+        (r"AIza[A-Za-z0-9_-]{35}", SensitiveDataType::GoogleApiKey),
         (
             r"(?:sk_live|pk_live|sk_test|pk_test)_[A-Za-z0-9]{20,}",
             SensitiveDataType::StripeKey,
@@ -264,31 +262,11 @@ pub fn find_xss_sinks(js_content: &str, source_file: Option<&str>) -> Vec<DomXss
     let mut sinks = Vec::new();
 
     let patterns: &[(&str, XssSinkType, Option<&str>)] = &[
-        (
-            r"\.innerHTML\s*=",
-            XssSinkType::InnerHtml,
-            None,
-        ),
-        (
-            r"\.outerHTML\s*=",
-            XssSinkType::OuterHtml,
-            None,
-        ),
-        (
-            r"document\.write\s*\(",
-            XssSinkType::DocumentWrite,
-            None,
-        ),
-        (
-            r"document\.writeln\s*\(",
-            XssSinkType::DocumentWrite,
-            None,
-        ),
-        (
-            r"\beval\s*\(",
-            XssSinkType::Eval,
-            None,
-        ),
+        (r"\.innerHTML\s*=", XssSinkType::InnerHtml, None),
+        (r"\.outerHTML\s*=", XssSinkType::OuterHtml, None),
+        (r"document\.write\s*\(", XssSinkType::DocumentWrite, None),
+        (r"document\.writeln\s*\(", XssSinkType::DocumentWrite, None),
+        (r"\beval\s*\(", XssSinkType::Eval, None),
         (
             r"setTimeout\s*\(\s*[^,]*(?:location|document|window)",
             XssSinkType::SetTimeout,
@@ -299,31 +277,11 @@ pub fn find_xss_sinks(js_content: &str, source_file: Option<&str>) -> Vec<DomXss
             XssSinkType::SetInterval,
             Some("location/document/window"),
         ),
-        (
-            r"new\s+Function\s*\(",
-            XssSinkType::Function,
-            None,
-        ),
-        (
-            r"window\.open\s*\(",
-            XssSinkType::WindowOpen,
-            None,
-        ),
-        (
-            r"location\s*=",
-            XssSinkType::LocationAssign,
-            None,
-        ),
-        (
-            r"location\.href\s*=",
-            XssSinkType::LocationHref,
-            None,
-        ),
-        (
-            r"\$\([^)]*\)\s*\.html\s*\(",
-            XssSinkType::JQueryHtml,
-            None,
-        ),
+        (r"new\s+Function\s*\(", XssSinkType::Function, None),
+        (r"window\.open\s*\(", XssSinkType::WindowOpen, None),
+        (r"location\s*=", XssSinkType::LocationAssign, None),
+        (r"location\.href\s*=", XssSinkType::LocationHref, None),
+        (r"\$\([^)]*\)\s*\.html\s*\(", XssSinkType::JQueryHtml, None),
         (
             r"\.insertAdjacentHTML\s*\(",
             XssSinkType::InsertAdjacentHtml,
@@ -395,8 +353,7 @@ pub fn detect_webpack_chunks(js_content: &str) -> Vec<WebpackChunk> {
     let mut chunks = Vec::new();
 
     let chunk_re =
-        regex::Regex::new(r#"(?:webpackChunkName|chunkFilename)\s*:\s*["']([^"']+)["']"#)
-            .unwrap();
+        regex::Regex::new(r#"(?:webpackChunkName|chunkFilename)\s*:\s*["']([^"']+)["']"#).unwrap();
     for cap in chunk_re.captures_iter(js_content) {
         chunks.push(WebpackChunk {
             chunk_id: cap[1].to_string(),
@@ -405,9 +362,10 @@ pub fn detect_webpack_chunks(js_content: &str) -> Vec<WebpackChunk> {
         });
     }
 
-    let jsonp_re =
-        regex::Regex::new(r#"(?:webpackJsonp|__webpack_require__)\s*\.\s*(?:push|e)\s*\(\s*\[?\s*["']?(\w+)["']?"#)
-            .unwrap();
+    let jsonp_re = regex::Regex::new(
+        r#"(?:webpackJsonp|__webpack_require__)\s*\.\s*(?:push|e)\s*\(\s*\[?\s*["']?(\w+)["']?"#,
+    )
+    .unwrap();
     for cap in jsonp_re.captures_iter(js_content) {
         let id = cap[1].to_string();
         if !chunks.iter().any(|c| c.chunk_id == id) {
@@ -504,12 +462,8 @@ pub fn analyze_javascript(sources: &[JsSource]) -> JsAnalysisResult {
             }
         }
 
-        result
-            .source_maps
-            .extend(detect_source_maps(content));
-        result
-            .webpack_chunks
-            .extend(detect_webpack_chunks(content));
+        result.source_maps.extend(detect_source_maps(content));
+        result.webpack_chunks.extend(detect_webpack_chunks(content));
         result
             .service_workers
             .extend(detect_service_workers(content));

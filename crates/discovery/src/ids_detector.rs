@@ -175,6 +175,12 @@ impl std::fmt::Debug for IdsDetector {
     }
 }
 
+impl Default for IdsDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl IdsDetector {
     pub fn new() -> Self {
         let client = Client::builder()
@@ -193,8 +199,10 @@ impl IdsDetector {
 
         let mut indicators = Vec::new();
         let baseline_latency = self.measure_baseline_latency(base_url);
-        let mut profile = BehavioralProfile::default();
-        profile.baseline_latency_ms = baseline_latency;
+        let mut profile = BehavioralProfile {
+            baseline_latency_ms: baseline_latency,
+            ..Default::default()
+        };
 
         self.check_ids_response_headers(base_url, &mut indicators);
         self.check_signature_blocks(base_url, &mut indicators, &mut profile);
@@ -291,17 +299,17 @@ impl IdsDetector {
                         });
                     }
 
-                    if let Ok(body) = resp.text() {
-                        if body_contains_ids_markers(&body) {
-                            indicators.push(IdsIndicator {
-                                indicator_type: IdsIndicatorType::ResponseModification,
-                                description: format!(
-                                    "Response body contains IDS/WAF block page markers after '{description}'"
-                                ),
-                                payload_trigger: Some(payload.to_string()),
-                                severity: IdsSeverity::Medium,
-                            });
-                        }
+                    if let Ok(body) = resp.text()
+                        && body_contains_ids_markers(&body)
+                    {
+                        indicators.push(IdsIndicator {
+                            indicator_type: IdsIndicatorType::ResponseModification,
+                            description: format!(
+                                "Response body contains IDS/WAF block page markers after '{description}'"
+                            ),
+                            payload_trigger: Some(payload.to_string()),
+                            severity: IdsSeverity::Medium,
+                        });
                     }
                 }
                 Err(_) => {
@@ -478,13 +486,11 @@ pub(crate) fn classify_ids_type(indicators: &[IdsIndicator]) -> IdsType {
             IdsIndicatorType::TcpReset | IdsIndicatorType::ConnectionDrop
         )
     });
-    let has_delayed = indicators
+    let _has_delayed = indicators
         .iter()
         .any(|i| matches!(i.indicator_type, IdsIndicatorType::DelayedResponse));
 
-    if has_connection_drops && has_delayed {
-        IdsType::InlineIps
-    } else if has_connection_drops {
+    if has_connection_drops {
         IdsType::InlineIps
     } else {
         IdsType::Unknown

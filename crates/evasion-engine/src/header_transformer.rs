@@ -2,11 +2,21 @@ use std::collections::HashMap;
 
 use crate::persona::Persona;
 
+/// Ordered HTTP headers after persona-based transformation.
+///
+/// Contains the final header list with persona headers merged, existing
+/// headers preserved (without overwriting persona values), and all entries
+/// ordered according to the persona's canonical browser header ordering.
 #[derive(Debug, Clone)]
 pub struct TransformedHeaders {
     pub headers: Vec<(String, String)>,
 }
 
+/// Transforms request headers to match a persona's browser fingerprint.
+///
+/// Merges persona-specific headers (User-Agent, Accept, Sec-Fetch-*) with
+/// existing request headers, normalizes header names, and reorders them
+/// to match the persona's canonical browser header ordering.
 #[derive(Debug)]
 pub struct HeaderTransformer;
 

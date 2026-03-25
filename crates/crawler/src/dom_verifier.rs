@@ -51,7 +51,7 @@ pub struct DomVerificationResult {
 ///
 /// Sets `window.__aegis_*` marker flags when alert(), location assignment,
 /// document.cookie access, or external fetch() calls occur.
-const INSTRUMENTATION_JS: &str = r#"
+pub(crate) const INSTRUMENTATION_JS: &str = r#"
 (() => {
     window.__aegis_xss_fired = false;
     window.__aegis_nav_attempt = false;
@@ -110,7 +110,7 @@ const INSTRUMENTATION_JS: &str = r#"
 
 /// JavaScript that checks for injected script elements or inline event handlers
 /// added after instrumentation, indicating DOM mutation from XSS.
-const CHECK_DOM_MUTATION_JS: &str = r#"
+pub(crate) const CHECK_DOM_MUTATION_JS: &str = r#"
 (() => {
     const scripts = document.querySelectorAll('script');
     for (const s of scripts) {
@@ -129,7 +129,7 @@ const CHECK_DOM_MUTATION_JS: &str = r#"
 "#;
 
 /// JavaScript that reads back all `window.__aegis_*` marker flags as a JSON object.
-const READ_MARKERS_JS: &str = r#"
+pub(crate) const READ_MARKERS_JS: &str = r#"
 (() => {
     return {
         xss_fired: !!window.__aegis_xss_fired,
@@ -326,3 +326,4 @@ async fn navigate_and_check(
 #[cfg(test)]
 #[path = "dom_verifier_test.rs"]
 mod dom_verifier_test;
+

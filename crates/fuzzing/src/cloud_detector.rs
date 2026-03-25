@@ -108,7 +108,7 @@ impl CloudDetector {
         findings
     }
 
-    fn test_s3_bucket(&self, bucket_url: &str) -> Option<CloudFinding> {
+    pub(crate) fn test_s3_bucket(&self, bucket_url: &str) -> Option<CloudFinding> {
         let list_url = format!("{bucket_url}?list-type=2&max-keys=5");
         let resp = self.client.get(&list_url).send().ok()?;
 
@@ -128,7 +128,7 @@ impl CloudDetector {
         None
     }
 
-    fn test_firebase(&self, firebase_url: &str) -> Option<CloudFinding> {
+    pub(crate) fn test_firebase(&self, firebase_url: &str) -> Option<CloudFinding> {
         let json_url = format!("{firebase_url}/.json");
         let resp = self.client.get(&json_url).send().ok()?;
 
@@ -148,7 +148,7 @@ impl CloudDetector {
         None
     }
 
-    fn test_azure_blob(&self, container_url: &str) -> Option<CloudFinding> {
+    pub(crate) fn test_azure_blob(&self, container_url: &str) -> Option<CloudFinding> {
         let list_url = format!("{container_url}?restype=container&comp=list");
         let resp = self.client.get(&list_url).send().ok()?;
 

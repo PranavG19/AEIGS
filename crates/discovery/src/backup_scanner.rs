@@ -2,7 +2,7 @@ use reqwest::blocking::Client;
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
 
-use crate::brute_forcer::{BASELINE_404_PROBE, is_baseline_match};
+use crate::brute_forcer::{is_baseline_match, BASELINE_404_PROBE};
 
 const BACKUP_EXTENSIONS: &[&str] = &[
     ".bak", ".old", ".orig", "~", ".save", ".swp", ".tmp", ".copy",
@@ -50,6 +50,10 @@ pub const SENSITIVE_PATHS: &[&str] = &[
     "/config/secrets.yml",
 ];
 
+/// A confirmed backup or sensitive file found on the target.
+///
+/// Includes the HTTP path, response metadata, and a severity score
+/// derived from the file's `BackupType` classification.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BackupFinding {
     pub path: String,
@@ -59,6 +63,9 @@ pub struct BackupFinding {
     pub severity: f64,
 }
 
+/// Classification of a discovered backup or sensitive file.
+///
+/// Each variant carries a default severity via `default_severity()`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BackupType {
     EnvironmentFile,
@@ -86,6 +93,7 @@ impl BackupType {
     }
 }
 
+/// Errors that can occur during a backup scan.
 #[derive(Debug)]
 pub enum BackupScanError {
     InvalidUrl(String),
@@ -105,6 +113,10 @@ impl std::fmt::Display for BackupScanError {
 
 impl std::error::Error for BackupScanError {}
 
+/// Scans a localhost target for backup files, sensitive paths, and configuration leaks.
+///
+/// Probes `SENSITIVE_PATHS` plus backup-extension variants of `known_paths`,
+/// filtering out false positives via baseline 404 body-size comparison.
 pub struct BackupScanner {
     client: Client,
 }

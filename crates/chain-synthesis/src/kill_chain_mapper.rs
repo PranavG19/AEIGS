@@ -68,6 +68,7 @@ pub struct KillChainReport {
 /// Installation/C2, assets → Actions on Objectives.
 pub struct KillChainMapper<'a> {
     graph: &'a AttackGraph,
+    #[allow(clippy::type_complexity)]
     custom_rules: Vec<Box<dyn Fn(&str, AttackNodeType) -> Option<KillChainPhase> + 'a>>,
 }
 

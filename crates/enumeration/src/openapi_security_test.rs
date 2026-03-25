@@ -208,10 +208,12 @@ mod tests {
             .iter()
             .find(|i| i.parameter_name == "search")
             .unwrap();
-        assert!(search_issue
-            .missing_constraints
-            .iter()
-            .any(|c| c.contains("maxLength")));
+        assert!(
+            search_issue
+                .missing_constraints
+                .iter()
+                .any(|c| c.contains("maxLength"))
+        );
 
         let limit_issues = issues
             .iter()
@@ -228,18 +230,24 @@ mod tests {
 
         assert!(!exposures.is_empty());
         let users_exposure = exposures.iter().find(|e| e.path == "/users").unwrap();
-        assert!(users_exposure
-            .sensitive_fields
-            .iter()
-            .any(|f| f.contains("email")));
-        assert!(users_exposure
-            .sensitive_fields
-            .iter()
-            .any(|f| f.contains("password")));
-        assert!(users_exposure
-            .sensitive_fields
-            .iter()
-            .any(|f| f.contains("ssn")));
+        assert!(
+            users_exposure
+                .sensitive_fields
+                .iter()
+                .any(|f| f.contains("email"))
+        );
+        assert!(
+            users_exposure
+                .sensitive_fields
+                .iter()
+                .any(|f| f.contains("password"))
+        );
+        assert!(
+            users_exposure
+                .sensitive_fields
+                .iter()
+                .any(|f| f.contains("ssn"))
+        );
         assert_eq!(users_exposure.field_category, "credentials");
     }
 

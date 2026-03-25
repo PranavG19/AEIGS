@@ -682,8 +682,8 @@ fn resolve_finding_endpoint(graph: &dyn GraphStore, finding: &FindingData) -> St
                 .or_else(|| node.properties.get("url"))
                 .or_else(|| node.properties.get("name"))
         {
-                return path.clone();
-            }
+            return path.clone();
+        }
     }
     format!("node-ids:{:?}", finding.linked_node_ids)
 }

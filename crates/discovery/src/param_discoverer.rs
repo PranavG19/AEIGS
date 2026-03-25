@@ -15,6 +15,7 @@ pub const COMMON_PARAMS: &[&str] = &[
 const BODY_SIZE_DIFF_THRESHOLD: f64 = 0.10;
 const PROBE_VALUE: &str = "test123";
 
+/// A query parameter discovered to influence endpoint behavior.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DiscoveredParam {
     pub endpoint: String,
@@ -22,6 +23,9 @@ pub struct DiscoveredParam {
     pub evidence: ParamEvidence,
 }
 
+/// Evidence that a parameter affects server behavior.
+///
+/// Captured by comparing a baseline response (no param) against a probe response.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParamEvidence {
     StatusCodeChange(u16, u16),
@@ -29,6 +33,7 @@ pub enum ParamEvidence {
     ContentChange,
 }
 
+/// Errors that can occur during parameter discovery.
 #[derive(Debug)]
 pub enum ParamDiscoverError {
     InvalidUrl(String),
@@ -48,6 +53,10 @@ impl std::fmt::Display for ParamDiscoverError {
 
 impl std::error::Error for ParamDiscoverError {}
 
+/// Discovers hidden query parameters by probing `COMMON_PARAMS` against an endpoint.
+///
+/// For each candidate parameter, compares the response to a baseline (no param)
+/// looking for status code changes, body size differences, or content changes.
 pub struct ParamDiscoverer {
     client: Client,
 }

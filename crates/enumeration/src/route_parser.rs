@@ -1,5 +1,9 @@
 use std::path::Path;
 
+/// A route extracted from application source code.
+///
+/// Contains the URL pattern, HTTP method, optional handler name, originating
+/// framework, source file path, and line number.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiscoveredRoute {
     pub path_pattern: String,
@@ -10,6 +14,7 @@ pub struct DiscoveredRoute {
     pub line_number: Option<u32>,
 }
 
+/// HTTP method associated with a discovered route.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum HttpMethod {
     Get,
@@ -38,6 +43,7 @@ impl std::fmt::Display for HttpMethod {
     }
 }
 
+/// Web framework whose source-code conventions are used to extract routes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Framework {
     Express,
@@ -68,6 +74,7 @@ impl std::fmt::Display for Framework {
     }
 }
 
+/// Errors that can occur during route parsing.
 #[derive(Debug)]
 pub enum RouteParseError {
     IoError(std::io::Error),

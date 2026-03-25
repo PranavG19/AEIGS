@@ -4,59 +4,91 @@ pub mod api_abuse_detector;
 pub mod attack_surface_mapper;
 mod backup_scanner;
 mod brute_forcer;
+pub mod container_escape;
 pub mod ct_monitor;
 pub mod dns_security;
 pub mod domain_impersonation;
 pub mod email_infra;
 pub mod error_disclosure;
 mod graph_ops;
+pub mod js_bundle_analyzer;
 mod js_extractor;
+pub mod ldap_enumeration;
+pub mod logging_detection;
 pub mod osint_gatherer;
 mod param_discoverer;
 mod passive_intel;
 pub mod phishing_analyzer;
 mod sitemap_parser;
 pub mod smart_brute_forcer;
+pub mod subdomain_takeover_v2;
 mod tech_fingerprinter;
 pub mod threat_intel_feed;
 mod vhost_discoverer;
 pub mod vuln_intelligence;
-mod wordlist;
-pub mod container_escape;
-pub mod ldap_enumeration;
-pub mod logging_detection;
-pub mod subdomain_takeover_v2;
-pub mod js_bundle_analyzer;
 pub mod wayback_intel;
+mod wordlist;
 
 pub use api_abuse_detector::*;
 pub use attack_surface_mapper::*;
 pub use backup_scanner::*;
 pub use brute_forcer::*;
+pub use container_escape::*;
 pub use ct_monitor::*;
 pub use dns_security::*;
 pub use domain_impersonation::*;
 pub use email_infra::*;
 pub use error_disclosure::*;
 pub use graph_ops::*;
+pub use js_bundle_analyzer::*;
 pub use js_extractor::*;
+pub use ldap_enumeration::*;
+pub use logging_detection::*;
 pub use osint_gatherer::*;
 pub use param_discoverer::*;
 pub use passive_intel::*;
 pub use phishing_analyzer::*;
 pub use sitemap_parser::*;
 pub use smart_brute_forcer::*;
+pub use subdomain_takeover_v2::*;
 pub use tech_fingerprinter::*;
 pub use threat_intel_feed::*;
 pub use vhost_discoverer::*;
 pub use vuln_intelligence::*;
-pub use wordlist::*;
-pub use container_escape::*;
-pub use ldap_enumeration::*;
-pub use logging_detection::*;
-pub use subdomain_takeover_v2::*;
-pub use js_bundle_analyzer::*;
 pub use wayback_intel::*;
+pub use wordlist::*;
+
+pub mod canary_scanner;
+pub mod deception_mapper;
+pub mod honeypot_detector;
+pub mod ids_detector;
+pub mod stealth_assessment;
+
+pub use canary_scanner::*;
+pub use deception_mapper::*;
+pub use honeypot_detector::*;
+pub use ids_detector::*;
+pub use stealth_assessment::*;
+
+#[cfg(test)]
+#[path = "canary_scanner_test.rs"]
+mod canary_scanner_test;
+
+#[cfg(test)]
+#[path = "deception_mapper_test.rs"]
+mod deception_mapper_test;
+
+#[cfg(test)]
+#[path = "honeypot_detector_test.rs"]
+mod honeypot_detector_test;
+
+#[cfg(test)]
+#[path = "ids_detector_test.rs"]
+mod ids_detector_test;
+
+#[cfg(test)]
+#[path = "stealth_assessment_test.rs"]
+mod stealth_assessment_test;
 
 #[cfg(test)]
 #[path = "js_bundle_analyzer_test.rs"]

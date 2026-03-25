@@ -267,9 +267,11 @@ fn fixture_1_no_origin_innerhtml_is_exploitable() {
 
     assert_eq!(result.listeners_found.len(), 1);
     assert!(!result.listeners_found[0].has_origin_check);
-    assert!(result.listeners_found[0]
-        .sinks
-        .contains(&DomSink::InnerHtml));
+    assert!(
+        result.listeners_found[0]
+            .sinks
+            .contains(&DomSink::InnerHtml)
+    );
 
     let missing_origin = result
         .findings

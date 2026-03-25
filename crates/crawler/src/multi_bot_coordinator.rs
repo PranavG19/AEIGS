@@ -262,10 +262,7 @@ impl MultiBotCoordinator {
 
     /// Report that a task completed successfully.
     pub async fn complete_task(&self, bot_id: BotId, task: &ScanTask, response_time_ms: u64) {
-        self.completed_urls
-            .lock()
-            .await
-            .insert(task.url.clone());
+        self.completed_urls.lock().await.insert(task.url.clone());
 
         let mut stats = self.bot_stats.lock().await;
         if let Some(s) = stats.get_mut(&bot_id) {
@@ -367,8 +364,8 @@ impl MultiBotCoordinator {
             return ScaleDecision::NoChange;
         }
 
-        let avg_response: f64 = stats.values().map(|s| s.avg_response_ms).sum::<f64>()
-            / stats.len().max(1) as f64;
+        let avg_response: f64 =
+            stats.values().map(|s| s.avg_response_ms).sum::<f64>() / stats.len().max(1) as f64;
 
         let idle_count = statuses
             .values()

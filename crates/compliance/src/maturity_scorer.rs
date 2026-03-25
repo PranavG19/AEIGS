@@ -157,13 +157,13 @@ fn score_vulnerability_management(evidence: &MaturityEvidence) -> DimensionScore
     let critical_vulns: Vec<&VulnerabilityClass> = evidence
         .discovered_vulnerabilities
         .iter()
-        .filter(|v| is_critical_vuln(v))
+        .filter(is_critical_vuln)
         .collect();
 
     let high_vulns: Vec<&VulnerabilityClass> = evidence
         .discovered_vulnerabilities
         .iter()
-        .filter(|v| is_high_vuln(v))
+        .filter(is_high_vuln)
         .collect();
 
     if !critical_vulns.is_empty() {

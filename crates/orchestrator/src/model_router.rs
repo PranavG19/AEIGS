@@ -228,12 +228,13 @@ impl ModelRouter {
     /// Route a task to the best available model.
     pub fn route(&self, task_type: TaskType) -> Result<RoutingDecision, RouterError> {
         if let Some(budget) = self.config.cost_budget
-            && self.cost_tracker.is_over_budget(budget) {
-                return Err(RouterError::BudgetExceeded {
-                    budget,
-                    spent: self.cost_tracker.total_cost_usd,
-                });
-            }
+            && self.cost_tracker.is_over_budget(budget)
+        {
+            return Err(RouterError::BudgetExceeded {
+                budget,
+                spent: self.cost_tracker.total_cost_usd,
+            });
+        }
 
         let preferred_tier = self
             .config

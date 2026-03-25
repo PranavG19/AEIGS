@@ -259,7 +259,11 @@ mod tests {
     #[test]
     fn security_regression_count() {
         let report = ApiVersionDiffer::diff(&v1_spec(), &v2_spec());
-        assert!(report.security_regressions >= 3, "auth removal + constraint removal + rate limit removal + data leak = at least 3 regressions, got {}", report.security_regressions);
+        assert!(
+            report.security_regressions >= 3,
+            "auth removal + constraint removal + rate limit removal + data leak = at least 3 regressions, got {}",
+            report.security_regressions
+        );
     }
 
     #[test]

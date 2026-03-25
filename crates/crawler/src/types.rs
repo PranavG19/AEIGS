@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use aegis_protocol::request::ParameterLocation;
 
+/// How an endpoint or resource was discovered during crawling.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DiscoverySource {
     Link,
@@ -29,6 +30,7 @@ pub struct InterceptedApiCall {
     pub resource_type: ApiResourceType,
 }
 
+/// An endpoint discovered during crawling, with its HTTP method, parameters, and origin.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredEndpoint {
     pub url: String,
@@ -37,6 +39,7 @@ pub struct DiscoveredEndpoint {
     pub source: DiscoverySource,
 }
 
+/// A parameter observed on a discovered endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredParameter {
     pub name: String,
@@ -44,6 +47,7 @@ pub struct DiscoveredParameter {
     pub example_value: Option<String>,
 }
 
+/// An HTML form discovered on a crawled page.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredForm {
     pub action: String,
@@ -51,6 +55,7 @@ pub struct DiscoveredForm {
     pub inputs: Vec<FormInput>,
 }
 
+/// A single input element within a discovered form.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FormInput {
     pub name: String,
@@ -58,6 +63,7 @@ pub struct FormInput {
     pub value: Option<String>,
 }
 
+/// A DOM event handler discovered on a page element.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DomEventHandler {
     pub element_selector: String,
@@ -117,6 +123,7 @@ impl CrawlConfig {
     }
 }
 
+/// Accumulated results of a BFS crawl session.
 #[derive(Debug, Clone, Default)]
 pub struct CrawlResult {
     pub discovered_endpoints: Vec<DiscoveredEndpoint>,

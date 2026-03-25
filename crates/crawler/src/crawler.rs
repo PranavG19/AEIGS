@@ -147,7 +147,7 @@ fn forms_to_endpoints(forms: &[DiscoveredForm]) -> Vec<DiscoveredEndpoint> {
         .collect()
 }
 
-fn api_calls_to_endpoints(api_calls: &[InterceptedApiCall]) -> Vec<DiscoveredEndpoint> {
+pub(crate) fn api_calls_to_endpoints(api_calls: &[InterceptedApiCall]) -> Vec<DiscoveredEndpoint> {
     api_calls
         .iter()
         .map(|call| DiscoveredEndpoint {

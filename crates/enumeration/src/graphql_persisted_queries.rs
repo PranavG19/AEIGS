@@ -682,8 +682,7 @@ pub fn parse_batch_apq_response(response_body: &str, batch_size: usize) -> Vec<u
                 {
                     let element = &trimmed[start..=i];
                     let lower = element.to_lowercase();
-                    let has_data =
-                        lower.contains("\"data\"") && !lower.contains("\"data\":null");
+                    let has_data = lower.contains("\"data\"") && !lower.contains("\"data\":null");
                     let has_error = lower.contains("persisted_query_not_found")
                         || lower.contains("persistedquerynotfound");
                     if has_data && !has_error && element_idx < batch_size {
@@ -818,9 +817,7 @@ pub fn generate_cache_poison_payloads(target_type: &str) -> Vec<CachePoisonPaylo
             "Data exfiltration: register query selecting sensitive fields",
         ),
         (
-            format!(
-                "mutation {{ delete{target_type}(id: \"*\") {{ success }} }}"
-            ),
+            format!("mutation {{ delete{target_type}(id: \"*\") {{ success }} }}"),
             "Destructive mutation disguised as a query hash",
         ),
         (

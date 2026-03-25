@@ -330,9 +330,7 @@ fn build_mixed_encoding(param: &str) -> HppPayload {
     let encoded_param = url_encode(param);
     HppPayload {
         pattern: PollutionPattern::MixedEncoding,
-        query_string: format!(
-            "{param}={CANARY_FIRST}&{encoded_param}={CANARY_LAST}"
-        ),
+        query_string: format!("{param}={CANARY_FIRST}&{encoded_param}={CANARY_LAST}"),
         body: None,
         content_type: None,
         description: format!(

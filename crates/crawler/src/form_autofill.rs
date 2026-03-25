@@ -140,11 +140,16 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::Email;
     }
 
-    if type_lower == "tel" || name_lower.contains("phone") || name_lower.contains("tel") || name_lower.contains("mobile") {
+    if type_lower == "tel"
+        || name_lower.contains("phone")
+        || name_lower.contains("tel")
+        || name_lower.contains("mobile")
+    {
         return FieldType::Phone;
     }
 
-    if type_lower == "password" || name_lower.contains("password") || name_lower.contains("passwd") {
+    if type_lower == "password" || name_lower.contains("password") || name_lower.contains("passwd")
+    {
         return FieldType::Password;
     }
 
@@ -152,7 +157,11 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::Url;
     }
 
-    if type_lower == "date" || name_lower.contains("date") || name_lower.contains("birthday") || name_lower.contains("dob") {
+    if type_lower == "date"
+        || name_lower.contains("date")
+        || name_lower.contains("birthday")
+        || name_lower.contains("dob")
+    {
         return FieldType::Date;
     }
 
@@ -168,15 +177,20 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::Captcha;
     }
 
-    if name_lower.contains("username") || name_lower.contains("user_name") || name_lower == "login" {
+    if name_lower.contains("username") || name_lower.contains("user_name") || name_lower == "login"
+    {
         return FieldType::Username;
     }
 
-    if name_lower.contains("firstname") || name_lower.contains("first_name") || name_lower == "fname" {
+    if name_lower.contains("firstname")
+        || name_lower.contains("first_name")
+        || name_lower == "fname"
+    {
         return FieldType::FirstName;
     }
 
-    if name_lower.contains("lastname") || name_lower.contains("last_name") || name_lower == "lname" {
+    if name_lower.contains("lastname") || name_lower.contains("last_name") || name_lower == "lname"
+    {
         return FieldType::LastName;
     }
 
@@ -184,7 +198,10 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::FullName;
     }
 
-    if name_lower.contains("address") || name_lower.contains("street") || name_lower.contains("addr") {
+    if name_lower.contains("address")
+        || name_lower.contains("street")
+        || name_lower.contains("addr")
+    {
         return FieldType::Address;
     }
 
@@ -192,11 +209,17 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::City;
     }
 
-    if name_lower.contains("state") || name_lower.contains("province") || name_lower.contains("region") {
+    if name_lower.contains("state")
+        || name_lower.contains("province")
+        || name_lower.contains("region")
+    {
         return FieldType::State;
     }
 
-    if name_lower.contains("zip") || name_lower.contains("postal") || name_lower.contains("postcode") {
+    if name_lower.contains("zip")
+        || name_lower.contains("postal")
+        || name_lower.contains("postcode")
+    {
         return FieldType::ZipCode;
     }
 
@@ -204,15 +227,22 @@ pub fn detect_field_type(input: &FormInput) -> FieldType {
         return FieldType::Country;
     }
 
-    if name_lower.contains("card") || name_lower.contains("credit") || name_lower.contains("cc_num") {
+    if name_lower.contains("card") || name_lower.contains("credit") || name_lower.contains("cc_num")
+    {
         return FieldType::CreditCard;
     }
 
-    if name_lower.contains("cvv") || name_lower.contains("cvc") || name_lower.contains("security_code") {
+    if name_lower.contains("cvv")
+        || name_lower.contains("cvc")
+        || name_lower.contains("security_code")
+    {
         return FieldType::Cvv;
     }
 
-    if name_lower.contains("expir") || name_lower.contains("exp_date") || name_lower.contains("exp_month") {
+    if name_lower.contains("expir")
+        || name_lower.contains("exp_date")
+        || name_lower.contains("exp_month")
+    {
         return FieldType::ExpiryDate;
     }
 
@@ -366,15 +396,11 @@ pub fn generate_test_file(accept_attr: Option<&str>) -> (String, String, Vec<u8>
 
     if lower.contains("image") || lower.contains(".png") || lower.contains(".jpg") {
         let png_header: Vec<u8> = vec![
-            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
-            0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
-            0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-            0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53,
-            0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,
-            0x54, 0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00,
-            0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
-            0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E,
-            0x44, 0xAE, 0x42, 0x60, 0x82,
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00,
+            0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, 0x08,
+            0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC,
+            0x33, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
         ];
         return ("test.png".to_string(), "image/png".to_string(), png_header);
     }
@@ -390,20 +416,12 @@ pub fn generate_test_file(accept_attr: Option<&str>) -> (String, String, Vec<u8>
 
     if lower.contains(".xml") || lower.contains("text/xml") {
         let xml = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><test>aegis</test></root>";
-        return (
-            "test.xml".to_string(),
-            "text/xml".to_string(),
-            xml.to_vec(),
-        );
+        return ("test.xml".to_string(), "text/xml".to_string(), xml.to_vec());
     }
 
     if lower.contains(".csv") {
         let csv = b"name,email,phone\nAegis,test@test.local,5550001234\n";
-        return (
-            "test.csv".to_string(),
-            "text/csv".to_string(),
-            csv.to_vec(),
-        );
+        return ("test.csv".to_string(), "text/csv".to_string(), csv.to_vec());
     }
 
     let txt = b"Aegis scanner test file upload content.";
@@ -445,8 +463,9 @@ pub fn extract_csrf_tokens(html: &str) -> Vec<(String, String)> {
     }
 
     let meta_re = regex::Regex::new(
-        r#"(?i)<meta\s+name\s*=\s*["']csrf[_-]?token["']\s+content\s*=\s*["']([^"']+)["']"#
-    ).unwrap();
+        r#"(?i)<meta\s+name\s*=\s*["']csrf[_-]?token["']\s+content\s*=\s*["']([^"']+)["']"#,
+    )
+    .unwrap();
     for cap in meta_re.captures_iter(html) {
         tokens.push(("csrf-token".to_string(), cap[1].to_string()));
     }
@@ -456,16 +475,25 @@ pub fn extract_csrf_tokens(html: &str) -> Vec<(String, String)> {
 
 fn is_csrf_field(name: &str) -> bool {
     let csrf_patterns = [
-        "csrf", "_token", "authenticity_token", "csrfmiddlewaretoken",
-        "__requestverificationtoken", "antiforgery", "xsrf",
+        "csrf",
+        "_token",
+        "authenticity_token",
+        "csrfmiddlewaretoken",
+        "__requestverificationtoken",
+        "antiforgery",
+        "xsrf",
     ];
     csrf_patterns.iter().any(|p| name.contains(p))
 }
 
 fn is_captcha_field(name: &str) -> bool {
     let captcha_patterns = [
-        "captcha", "recaptcha", "hcaptcha", "g-recaptcha",
-        "cf-turnstile", "arkose",
+        "captcha",
+        "recaptcha",
+        "hcaptcha",
+        "g-recaptcha",
+        "cf-turnstile",
+        "arkose",
     ];
     captcha_patterns.iter().any(|p| name.contains(p))
 }

@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use crate::smuggling_detector::{
-    SmugglingDetector, SmugglingType, build_clte_probe, build_te_obfuscation_variants,
-    build_tecl_probe, interpret_timing, parse_status_code, send_raw_request,
+    build_clte_probe, build_te_obfuscation_variants, build_tecl_probe, interpret_timing,
+    parse_status_code, send_raw_request, SmugglingDetector, SmugglingType,
 };
 
 #[test]

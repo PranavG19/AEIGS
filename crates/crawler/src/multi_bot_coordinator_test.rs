@@ -33,7 +33,12 @@ async fn enqueue_and_assign_tasks() {
         .enqueue_task("http://localhost:8080/api", "GET", ScanTaskType::Crawl, 5)
         .await;
     coord
-        .enqueue_task("http://localhost:8080/login", "POST", ScanTaskType::Fuzz, 10)
+        .enqueue_task(
+            "http://localhost:8080/login",
+            "POST",
+            ScanTaskType::Fuzz,
+            10,
+        )
         .await;
 
     let task = coord.assign_task(bot).await;
@@ -104,7 +109,12 @@ async fn fail_task_drops_at_max_retries() {
     let bot = coord.register_bot().await;
 
     coord
-        .enqueue_task("http://localhost:8080/broken", "GET", ScanTaskType::Crawl, 5)
+        .enqueue_task(
+            "http://localhost:8080/broken",
+            "GET",
+            ScanTaskType::Crawl,
+            5,
+        )
         .await;
 
     let task = coord.assign_task(bot).await.unwrap();

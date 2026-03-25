@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod attack_narrative;
 pub mod certificate_serializer;
 pub mod evidence_packager;
@@ -21,6 +23,32 @@ pub use risk_scorer::*;
 pub use sarif_emitter::*;
 pub use scan_comparison::*;
 pub use scan_metrics::*;
+
+pub mod html_report;
+pub mod remediation_guide;
+pub mod risk_dashboard;
+pub mod summary_card;
+
+pub use html_report::*;
+pub use remediation_guide::*;
+pub use risk_dashboard::*;
+pub use summary_card::*;
+
+#[cfg(test)]
+#[path = "html_report_test.rs"]
+mod html_report_test;
+
+#[cfg(test)]
+#[path = "remediation_guide_test.rs"]
+mod remediation_guide_test;
+
+#[cfg(test)]
+#[path = "risk_dashboard_test.rs"]
+mod risk_dashboard_test;
+
+#[cfg(test)]
+#[path = "summary_card_test.rs"]
+mod summary_card_test;
 
 #[cfg(test)]
 #[path = "attack_narrative_test.rs"]

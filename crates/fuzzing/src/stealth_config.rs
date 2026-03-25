@@ -1,5 +1,8 @@
 use serde::{Deserialize, Serialize};
 
+/// Controls request pacing, jitter, session rotation, and payload selection strategy
+/// to evade WAF/rate-limit/bot detection. Use presets (`benchmark`, `aggressive`,
+/// `paranoid`) or build custom via `with_*` methods. Default is moderate stealth.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StealthConfig {
     pub max_requests_per_second: f64,

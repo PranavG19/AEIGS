@@ -347,9 +347,11 @@ fn score_ws_attack_ordering() {
 fn ws_upgrade_headers_no_extensions() {
     let headers = ws_upgrade_headers_with_extensions(&[]);
     assert_eq!(headers.len(), 4);
-    assert!(headers
-        .iter()
-        .any(|(k, v)| k == "Upgrade" && v == "websocket"));
+    assert!(
+        headers
+            .iter()
+            .any(|(k, v)| k == "Upgrade" && v == "websocket")
+    );
     assert!(headers.iter().any(|(k, _)| k == "Sec-WebSocket-Key"));
 }
 

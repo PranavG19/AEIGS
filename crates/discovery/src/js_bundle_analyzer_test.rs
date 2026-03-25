@@ -74,10 +74,12 @@ fn test_api_string_literal_extraction() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const url = "/api/v1/internal/health""#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .endpoints
-        .iter()
-        .any(|e| e.url.contains("/api/v1/internal/health")));
+    assert!(
+        result
+            .endpoints
+            .iter()
+            .any(|e| e.url.contains("/api/v1/internal/health"))
+    );
 }
 
 #[test]
@@ -98,10 +100,12 @@ fn test_stripe_key_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const sk = "sk_live_abcdef1234567890abcdef12""#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("Stripe")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("Stripe"))
+    );
 }
 
 #[test]
@@ -109,10 +113,12 @@ fn test_github_token_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"token: "ghp_abcdef1234567890abcdef1234567890abcd""#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("GitHub")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("GitHub"))
+    );
 }
 
 #[test]
@@ -120,10 +126,12 @@ fn test_db_connection_string_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const db = "postgres://admin:pass@host:5432/mydb""#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("Database connection")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("Database connection"))
+    );
 }
 
 #[test]
@@ -131,10 +139,12 @@ fn test_jwt_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c""#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("JWT")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("JWT"))
+    );
 }
 
 #[test]
@@ -144,10 +154,12 @@ fn test_source_map_detection() {
     let result = analyzer.analyze("app.js", content);
     assert!(!result.source_maps.is_empty());
     assert_eq!(result.source_maps[0].map_url, "app.js.map");
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::SourceMapExposed)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::SourceMapExposed))
+    );
 }
 
 #[test]
@@ -160,10 +172,12 @@ fn test_webpack_chunk_detection() {
     "#;
     let result = analyzer.analyze("bundle.js", content);
     assert!(!result.webpack_chunks.is_empty());
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::WebpackChunk)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::WebpackChunk))
+    );
 }
 
 #[test]
@@ -179,9 +193,11 @@ fn test_env_variable_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = "var url = process.env.REACT_APP_API_URL;\nvar s = process.env.SECRET_KEY;";
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .env_variables
-        .contains(&"REACT_APP_API_URL".to_string()));
+    assert!(
+        result
+            .env_variables
+            .contains(&"REACT_APP_API_URL".to_string())
+    );
     assert!(result.env_variables.contains(&"SECRET_KEY".to_string()));
 
     let secret_env = result
@@ -211,10 +227,12 @@ fn test_admin_route_detection() {
     let content = r#"{ path: "/admin/users", component: AdminUsers }"#;
     let result = analyzer.analyze("bundle.js", content);
     assert!(result.routes.iter().any(|r| r.contains("/admin")));
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::AdminRoute)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::AdminRoute))
+    );
 }
 
 #[test]
@@ -222,10 +240,12 @@ fn test_debug_route_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"{ path: "/debug/state", component: DebugState }"#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::DebugRoute)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::DebugRoute))
+    );
 }
 
 #[test]
@@ -233,10 +253,12 @@ fn test_internal_url_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const api = "https://api.corp.internal/v1/service";"#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::InternalUrl)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::InternalUrl))
+    );
 }
 
 #[test]
@@ -244,10 +266,12 @@ fn test_firebase_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const config = { databaseURL: "https://myapp.firebaseio.com" };"#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::CloudConfig)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::CloudConfig))
+    );
 }
 
 #[test]
@@ -255,10 +279,12 @@ fn test_auth_bypass_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = "if (isAdmin = true) { showPanel(); }";
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, JsBundleFindingCategory::AuthBypass)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, JsBundleFindingCategory::AuthBypass))
+    );
 }
 
 #[test]
@@ -323,10 +349,12 @@ fn test_gcp_api_key_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const key = "AIzaSyA1234567890abcdefghijklmnopqrstuvw";"#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("GCP")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("GCP"))
+    );
 }
 
 #[test]
@@ -334,10 +362,12 @@ fn test_private_key_detection() {
     let analyzer = JsBundleAnalyzer::new();
     let content = r#"const key = "-----BEGIN RSA PRIVATE KEY-----\nMIIE...";"#;
     let result = analyzer.analyze("bundle.js", content);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("Private key")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("Private key"))
+    );
 }
 
 #[test]

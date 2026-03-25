@@ -364,15 +364,7 @@ fn url_encode(s: &str) -> String {
 }
 
 fn unicode_encode(s: &str) -> String {
-    s.chars()
-        .map(|c| {
-            if c.is_ascii_alphanumeric() {
-                format!("\\u{:04x}", c as u32)
-            } else {
-                format!("\\u{:04x}", c as u32)
-            }
-        })
-        .collect()
+    s.chars().map(|c| format!("\\u{:04x}", c as u32)).collect()
 }
 
 fn overlong_utf8_encode(s: &str) -> String {

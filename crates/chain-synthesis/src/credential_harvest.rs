@@ -483,11 +483,7 @@ impl CredentialHarvester {
             AccessLevel::Unknown => 1.0,
         };
         let score = base * cred.confidence;
-        if cred.validated {
-            score * 1.5
-        } else {
-            score
-        }
+        if cred.validated { score * 1.5 } else { score }
     }
 
     /// Generates summary statistics for all harvested credentials.

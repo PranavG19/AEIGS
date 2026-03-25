@@ -60,12 +60,16 @@ fn test_removed_endpoint_detection() {
     let live: HashSet<String> = ["https://example.com/still-here".to_string()].into();
 
     let result = intel.analyze(&records, &live);
-    assert!(result
-        .removed_endpoints
-        .contains(&"https://example.com/old-page".to_string()));
-    assert!(!result
-        .removed_endpoints
-        .contains(&"https://example.com/still-here".to_string()));
+    assert!(
+        result
+            .removed_endpoints
+            .contains(&"https://example.com/old-page".to_string())
+    );
+    assert!(
+        !result
+            .removed_endpoints
+            .contains(&"https://example.com/still-here".to_string())
+    );
 }
 
 #[test]
@@ -130,10 +134,12 @@ fn test_old_api_version_detection() {
 
     let result = intel.analyze(&records, &live);
     assert!(result.old_api_versions.len() >= 2);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, WaybackFindingCategory::OldApiVersion)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, WaybackFindingCategory::OldApiVersion))
+    );
 }
 
 #[test]
@@ -212,9 +218,11 @@ fn test_snapshot_secret_scanning() {
     let findings = intel.scan_snapshot_for_secrets("https://example.com/config.js", body);
     assert!(findings.len() >= 2);
     assert!(findings.iter().any(|f| f.description.contains("AWS")));
-    assert!(findings
-        .iter()
-        .any(|f| f.description.contains("PostgreSQL")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.description.contains("PostgreSQL"))
+    );
 }
 
 #[test]
@@ -237,10 +245,12 @@ fn test_directory_listing_detection() {
     let live: HashSet<String> = HashSet::new();
 
     let result = intel.analyze(&records, &live);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, WaybackFindingCategory::DirectoryListing)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, WaybackFindingCategory::DirectoryListing))
+    );
 }
 
 #[test]

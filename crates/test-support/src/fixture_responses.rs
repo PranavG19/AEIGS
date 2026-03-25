@@ -37,53 +37,47 @@ pub struct FixtureResponseLibrary {
 impl FixtureResponseLibrary {
     /// Builds the full library with all fixture responses.
     pub fn build() -> Self {
-        let mut responses = Vec::new();
-
-        // --- WAF Block Pages ---
-        responses.push(waf_cloudflare());
-        responses.push(waf_aws_waf());
-        responses.push(waf_akamai());
-        responses.push(waf_modsecurity());
-        responses.push(waf_imperva());
-        responses.push(waf_sucuri());
-
-        // --- Framework Error Pages ---
-        responses.push(error_django_debug());
-        responses.push(error_rails_500());
-        responses.push(error_spring_whitelabel());
-        responses.push(error_express_default());
-        responses.push(error_laravel_debug());
-        responses.push(error_flask_debug());
-
-        // --- CMS Login Pages ---
-        responses.push(login_wordpress());
-        responses.push(login_drupal());
-        responses.push(login_joomla());
-
-        // --- API Responses: JSON ---
-        responses.push(api_json_success());
-        responses.push(api_json_paginated());
-        responses.push(api_json_error_validation());
-        responses.push(api_json_auth_error());
-
-        // --- API Responses: XML ---
-        responses.push(api_xml_soap_response());
-        responses.push(api_xml_rss_feed());
-
-        // --- API Responses: GraphQL ---
-        responses.push(api_graphql_data());
-        responses.push(api_graphql_error());
-        responses.push(api_graphql_introspection());
-
-        // --- Vulnerable Responses (for scanner verification) ---
-        responses.push(vuln_sqli_error());
-        responses.push(vuln_xss_reflected());
-        responses.push(vuln_path_traversal());
-        responses.push(vuln_ssrf_metadata());
-        responses.push(vuln_sensitive_data_leak());
-        responses.push(vuln_server_version_header());
-        responses.push(vuln_directory_listing());
-        responses.push(vuln_stack_trace_leak());
+        let responses = vec![
+            // --- WAF Block Pages ---
+            waf_cloudflare(),
+            waf_aws_waf(),
+            waf_akamai(),
+            waf_modsecurity(),
+            waf_imperva(),
+            waf_sucuri(),
+            // --- Framework Error Pages ---
+            error_django_debug(),
+            error_rails_500(),
+            error_spring_whitelabel(),
+            error_express_default(),
+            error_laravel_debug(),
+            error_flask_debug(),
+            // --- CMS Login Pages ---
+            login_wordpress(),
+            login_drupal(),
+            login_joomla(),
+            // --- API Responses: JSON ---
+            api_json_success(),
+            api_json_paginated(),
+            api_json_error_validation(),
+            api_json_auth_error(),
+            // --- API Responses: XML ---
+            api_xml_soap_response(),
+            api_xml_rss_feed(),
+            // --- API Responses: GraphQL ---
+            api_graphql_data(),
+            api_graphql_error(),
+            api_graphql_introspection(),
+            // --- Vulnerable Responses (for scanner verification) ---
+            vuln_sqli_error(),
+            vuln_xss_reflected(),
+            vuln_path_traversal(),
+            vuln_ssrf_metadata(),
+            vuln_sensitive_data_leak(),
+            vuln_server_version_header(),
+            vuln_directory_listing(),
+            vuln_stack_trace_leak(),
+        ];
 
         Self { responses }
     }
@@ -266,7 +260,10 @@ fn waf_imperva() -> FixtureResponse {
         &[
             ("server", "Imperva"),
             ("content-type", "text/html"),
-            ("x-iinfo", "1-23456789-0 0NNN RT(1234567890 0) q(0 -1 -1 -1)"),
+            (
+                "x-iinfo",
+                "1-23456789-0 0NNN RT(1234567890 0) q(0 -1 -1 -1)",
+            ),
         ],
         r#"<html><head><title>Error</title></head>
 <body><div style="text-align:center">
@@ -310,10 +307,7 @@ fn error_django_debug() -> FixtureResponse {
         ResponseCategory::ErrorPage,
         "Django",
         500,
-        &[
-            ("content-type", "text/html"),
-            ("x-frame-options", "DENY"),
-        ],
+        &[("content-type", "text/html"), ("x-frame-options", "DENY")],
         r#"<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <title>OperationalError at /api/users</title>
 <style>body{font-family:sans-serif}</style></head>
@@ -425,9 +419,7 @@ fn error_laravel_debug() -> FixtureResponse {
         ResponseCategory::ErrorPage,
         "Laravel",
         500,
-        &[
-            ("content-type", "text/html; charset=UTF-8"),
-        ],
+        &[("content-type", "text/html; charset=UTF-8")],
         r#"<!DOCTYPE html><html><head><title>Whoops! There was an error.</title></head>
 <body class="ignition"><div class="exception">
 <h1>Illuminate\Database\QueryException</h1>
@@ -595,7 +587,10 @@ fn api_json_paginated() -> FixtureResponse {
         200,
         &[
             ("content-type", "application/json"),
-            ("link", r#"<https://api.example.com/users?page=2>; rel="next", <https://api.example.com/users?page=5>; rel="last""#),
+            (
+                "link",
+                r#"<https://api.example.com/users?page=2>; rel="next", <https://api.example.com/users?page=5>; rel="last""#,
+            ),
         ],
         r#"{"data":[{"id":1,"name":"User 1"},{"id":2,"name":"User 2"}],"pagination":{"current_page":1,"total_pages":5,"total_count":100,"per_page":20,"next_cursor":"eyJpZCI6MjB9"}}"#,
         "Paginated JSON response with Link header and cursor",

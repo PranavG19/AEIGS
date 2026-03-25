@@ -78,9 +78,11 @@ fn analyze_nested_quantifier_regex() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(a+)+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::NestedQuantifiers));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::NestedQuantifiers)
+    );
     assert!(result.estimated_severity >= 7.0);
 }
 
@@ -89,9 +91,11 @@ fn analyze_star_height_regex() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(a*)*$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::StarHeight));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::StarHeight)
+    );
 }
 
 #[test]
@@ -99,9 +103,11 @@ fn analyze_overlapping_alternation() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(a|a)+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::OverlappingAlternation));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::OverlappingAlternation)
+    );
 }
 
 #[test]
@@ -125,9 +131,11 @@ fn analyze_unbounded_repetition() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(.*a){10}");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::UnboundedRepetitionAmbiguous));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::UnboundedRepetitionAmbiguous)
+    );
 }
 
 #[test]
@@ -135,9 +143,11 @@ fn analyze_backreference_quantifier() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(a+)\1+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::BackreferenceWithQuantifier));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::BackreferenceWithQuantifier)
+    );
 }
 
 #[test]
@@ -145,9 +155,11 @@ fn analyze_lazy_inside_greedy() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(a+?)*$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::LazyInsideGreedy));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::LazyInsideGreedy)
+    );
 }
 
 #[test]
@@ -155,9 +167,11 @@ fn analyze_overlapping_char_classes() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"([a-zA-Z]+)*$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::OverlappingCharacterClasses));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::OverlappingCharacterClasses)
+    );
 }
 
 #[test]
@@ -165,9 +179,11 @@ fn analyze_recursive_group() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"((a+b)+c)+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::RecursiveGroupRepetition));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::RecursiveGroupRepetition)
+    );
 }
 
 #[test]
@@ -175,9 +191,11 @@ fn analyze_anchored_alternation() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"^(a+|b+|ab)+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::AnchoredAlternationBomb));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::AnchoredAlternationBomb)
+    );
 }
 
 #[test]
@@ -388,9 +406,11 @@ fn lookahead_pattern_detected() {
     let engine = RedosEngine::new();
     let result = engine.analyze_regex(r"(?=a+b)a+$");
     assert!(result.vulnerable);
-    assert!(result
-        .matched_patterns
-        .contains(&RedosVulnPattern::LookaheadWithBacktracking));
+    assert!(
+        result
+            .matched_patterns
+            .contains(&RedosVulnPattern::LookaheadWithBacktracking)
+    );
 }
 
 #[test]

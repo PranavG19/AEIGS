@@ -1,4 +1,4 @@
-use crate::confirmation::{ConfirmFn, build_confirmation_registry};
+use crate::confirmation::{build_confirmation_registry, ConfirmFn};
 use crate::executor::FuzzResponse;
 use aegis_protocol::finding::VulnerabilityClass;
 use rand::Rng;
@@ -8,6 +8,8 @@ use std::hash::{Hash, Hasher};
 use std::sync::LazyLock;
 use std::time::Duration;
 
+/// Statistical baseline for an endpoint's normal behavior (status codes, timing, body size).
+/// Built from benign responses and used by `FuzzOracle` to detect anomalies.
 #[derive(Debug, Clone)]
 pub struct BaselineProfile {
     pub endpoint: String,
@@ -60,6 +62,8 @@ impl BaselineProfile {
     }
 }
 
+/// A detected deviation from baseline behavior in a fuzz response.
+/// Carries a confidence `score` in [0, 1] and a human-readable `description`.
 #[derive(Debug, Clone)]
 pub struct Anomaly {
     pub request_id: u64,
@@ -68,6 +72,8 @@ pub struct Anomaly {
     pub description: String,
 }
 
+/// Category of anomaly detected by the oracle.
+/// Used for deduplication in counterfactual analysis (control anomalies are subtracted).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AnomalyType {
     StatusCodeAnomaly,
@@ -97,6 +103,9 @@ pub enum CounterfactualOrder {
     TreatmentFirst,
 }
 
+/// Counterfactual anomaly oracle that compares fuzz responses against baselines.
+/// Supports paired control/treatment analysis and per-vulnerability-class confirmation
+/// functions to eliminate false positives from broken endpoints.
 pub struct FuzzOracle {
     baselines: HashMap<(String, String), BaselineProfile>,
     anomaly_threshold: f64,
@@ -382,6 +391,8 @@ fn check_reflection(response: &FuzzResponse, payload: &str) -> Option<Anomaly> {
     }
 }
 
+/// Summary of how deterministic an endpoint's responses are across repeated requests.
+/// A non-deterministic endpoint (low `body_similarity`) produces unreliable baselines.
 #[derive(Debug, Clone)]
 pub struct VarianceReport {
     pub response_codes: Vec<u16>,

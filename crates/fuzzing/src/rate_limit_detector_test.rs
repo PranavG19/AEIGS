@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
     use crate::rate_limit_detector::{
-        BurstProbeResult, RateLimitProbeResult, WindowProbeResult, build_rate_limit_profile,
-        detect_burst_allowance, detect_limit_response_code, detect_limit_window, detect_rate_limit,
+        build_rate_limit_profile, detect_burst_allowance, detect_limit_response_code,
+        detect_limit_window, detect_rate_limit, BurstProbeResult, RateLimitProbeResult,
+        WindowProbeResult,
     };
 
     fn probe(rate: f64, total: u32, limited: u32, code: Option<u16>) -> RateLimitProbeResult {

@@ -148,9 +148,11 @@ fn unique_vulns_per_target() {
     let result = compare_scans(&scans);
     let unique_app1 = result.unique_to_target.get("https://app1.example.com");
     assert!(unique_app1.is_some());
-    assert!(unique_app1
-        .unwrap()
-        .contains(&VulnerabilityClass::SqlInjection));
+    assert!(
+        unique_app1
+            .unwrap()
+            .contains(&VulnerabilityClass::SqlInjection)
+    );
 }
 
 #[test]

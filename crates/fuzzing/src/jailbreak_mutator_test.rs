@@ -65,9 +65,11 @@ fn base64_encoding_contains_valid_base64() {
     assert!(result.text.contains("base64"));
     let lines: Vec<&str> = result.text.lines().collect();
     let b64_line = lines.last().unwrap();
-    assert!(base64::engine::general_purpose::STANDARD
-        .decode(b64_line)
-        .is_ok());
+    assert!(
+        base64::engine::general_purpose::STANDARD
+            .decode(b64_line)
+            .is_ok()
+    );
 }
 
 use base64::Engine;

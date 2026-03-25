@@ -1,5 +1,10 @@
 use std::collections::HashMap;
 
+/// Manages browser session state including cookies, request history, and Referer headers.
+///
+/// Automatically rotates sessions after `max_requests_per_session` requests,
+/// clearing cookies and history to simulate a fresh browsing session.
+/// Processes Set-Cookie response headers and injects Cookie/Referer request headers.
 #[derive(Debug, Clone)]
 pub struct SessionManager {
     cookies: HashMap<String, String>,

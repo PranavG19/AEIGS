@@ -70,9 +70,17 @@ pub struct SpawnerOutput {
 pub enum SpawnerError {
     BinaryNotFound(String),
     SpawnFailed(std::io::Error),
-    Timeout { partial_stdout: String, elapsed_ms: u64 },
-    ProcessFailed { exit_code: i32, stderr: String },
-    OutputTruncated { output: SpawnerOutput },
+    Timeout {
+        partial_stdout: String,
+        elapsed_ms: u64,
+    },
+    ProcessFailed {
+        exit_code: i32,
+        stderr: String,
+    },
+    OutputTruncated {
+        output: SpawnerOutput,
+    },
     Io(std::io::Error),
 }
 
@@ -190,12 +198,13 @@ pub fn spawn_opencode(
             };
 
             if let Some(code) = exit_code
-                && code != 0 {
-                    return Err(SpawnerError::ProcessFailed {
-                        exit_code: code,
-                        stderr: output.stderr.clone(),
-                    });
-                }
+                && code != 0
+            {
+                return Err(SpawnerError::ProcessFailed {
+                    exit_code: code,
+                    stderr: output.stderr.clone(),
+                });
+            }
 
             if truncated {
                 return Err(SpawnerError::OutputTruncated { output });
@@ -223,9 +232,10 @@ pub fn parse_structured_output(output: &SpawnerOutput) -> Result<serde_json::Val
     }
 
     if let Some(block) = extract_json_block(&output.stdout)
-        && let Ok(val) = serde_json::from_str::<serde_json::Value>(&block) {
-            return Ok(val);
-        }
+        && let Ok(val) = serde_json::from_str::<serde_json::Value>(&block)
+    {
+        return Ok(val);
+    }
 
     Err(SpawnerError::Io(std::io::Error::new(
         std::io::ErrorKind::InvalidData,

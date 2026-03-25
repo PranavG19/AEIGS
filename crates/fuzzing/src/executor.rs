@@ -6,6 +6,8 @@ use aegis_protocol::target_validation;
 
 pub use aegis_protocol::request::{FuzzRequest, FuzzResponse, ParameterLocation};
 
+/// Errors produced by `RequestExecutor` during request dispatch.
+/// Covers network failures, timeouts, rate limiting, and target validation rejection.
 #[derive(Debug)]
 pub enum ExecutorError {
     NetworkError(String),
@@ -27,6 +29,8 @@ impl std::fmt::Display for ExecutorError {
 
 impl std::error::Error for ExecutorError {}
 
+/// Sliding-window rate limiter that tracks request timestamps over the last second.
+/// Call `try_acquire()` before each request to enforce the configured max RPS.
 pub struct RateLimiter {
     max_requests_per_second: u32,
     request_timestamps: Vec<Instant>,
@@ -68,6 +72,9 @@ impl RateLimiter {
     }
 }
 
+/// Builds and dispatches `FuzzRequest`s against a validated target URL.
+/// Enforces rate limiting, scope attestation, and optional stealth configuration.
+/// Tracks request/error counters for reporting.
 pub struct RequestExecutor {
     base_url: String,
     rate_limiter: RateLimiter,

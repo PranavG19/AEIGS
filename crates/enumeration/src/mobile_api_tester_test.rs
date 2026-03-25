@@ -99,9 +99,11 @@ fn no_api_key_in_unrelated_param() {
 fn extract_hardcoded_aws_key_from_content() {
     let content = "some config = AKIAIOSFODNN7EXAMPLE01 and more stuff";
     let results = extract_api_keys_from_content(content);
-    assert!(results
-        .iter()
-        .any(|r| r.key_type == ApiKeyType::AwsAccessKey));
+    assert!(
+        results
+            .iter()
+            .any(|r| r.key_type == ApiKeyType::AwsAccessKey)
+    );
 }
 
 #[test]
@@ -109,9 +111,11 @@ fn extract_hardcoded_stripe_key_from_content() {
     let content = r#"const key = "sk_live_abcdefghijklmnopqrstuvwx";"#;
     let results = extract_api_keys_from_content(content);
     assert!(results.iter().any(|r| r.key_type == ApiKeyType::StripeKey));
-    assert!(results
-        .iter()
-        .all(|r| r.severity == MobileApiSeverity::Critical));
+    assert!(
+        results
+            .iter()
+            .all(|r| r.severity == MobileApiSeverity::Critical)
+    );
 }
 
 #[test]
@@ -205,21 +209,31 @@ fn heuristic_custom_binary_detection() {
 fn push_abuse_payloads_generated() {
     let payloads = generate_push_abuse_payloads("https://api.example.com/push", "abc123token");
     assert_eq!(payloads.len(), 5);
-    assert!(payloads
-        .iter()
-        .any(|p| p.abuse_type == PushAbuseType::TokenLeakage));
-    assert!(payloads
-        .iter()
-        .any(|p| p.abuse_type == PushAbuseType::UnauthorizedPush));
-    assert!(payloads
-        .iter()
-        .any(|p| p.abuse_type == PushAbuseType::TopicEnumeration));
-    assert!(payloads
-        .iter()
-        .any(|p| p.abuse_type == PushAbuseType::PayloadInjection));
-    assert!(payloads
-        .iter()
-        .any(|p| p.abuse_type == PushAbuseType::RegistrationSpoof));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.abuse_type == PushAbuseType::TokenLeakage)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.abuse_type == PushAbuseType::UnauthorizedPush)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.abuse_type == PushAbuseType::TopicEnumeration)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.abuse_type == PushAbuseType::PayloadInjection)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.abuse_type == PushAbuseType::RegistrationSpoof)
+    );
 }
 
 #[test]
@@ -236,21 +250,31 @@ fn push_abuse_payloads_contain_token() {
 fn device_token_manipulations_generated() {
     let manips = generate_device_token_manipulations("abcdef0123456789abcdef");
     assert!(manips.len() >= 5);
-    assert!(manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::TokenReplay));
-    assert!(manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::TokenForge));
-    assert!(manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::TokenEnumeration));
-    assert!(manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::CrossUserTokenSwap));
-    assert!(manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::ExpiredTokenReuse));
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::TokenReplay)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::TokenForge)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::TokenEnumeration)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::CrossUserTokenSwap)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::ExpiredTokenReuse)
+    );
 }
 
 #[test]
@@ -306,21 +330,31 @@ fn full_analysis_finds_multiple_categories() {
         Some(&[0x08, 0x96, 0x01]),
         Some("device_token_abc123"),
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::CertificatePinningBypass));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::ApiKeyExposure));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::BinaryProtocolAbuse));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::PushNotificationAbuse));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::DeviceTokenManipulation));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::CertificatePinningBypass)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::ApiKeyExposure)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::BinaryProtocolAbuse)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::PushNotificationAbuse)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::DeviceTokenManipulation)
+    );
 }
 
 #[test]
@@ -336,9 +370,11 @@ fn full_analysis_minimal_input() {
         None,
         None,
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == MobileApiAttackCategory::CertificatePinningBypass));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == MobileApiAttackCategory::CertificatePinningBypass)
+    );
 }
 
 #[test]
@@ -369,9 +405,11 @@ fn display_impls_produce_expected_strings() {
 fn extract_sendgrid_key_from_content() {
     let content = "api_key = SG.abcdefghijklmnopqrstuvwxyz1234567890";
     let results = extract_api_keys_from_content(content);
-    assert!(results
-        .iter()
-        .any(|r| r.key_type == ApiKeyType::SendGridKey));
+    assert!(
+        results
+            .iter()
+            .any(|r| r.key_type == ApiKeyType::SendGridKey)
+    );
 }
 
 #[test]
@@ -408,7 +446,9 @@ fn empty_body_no_heuristic_detection() {
 #[test]
 fn short_device_token_skips_enumeration() {
     let manips = generate_device_token_manipulations("abc");
-    assert!(!manips
-        .iter()
-        .any(|m| m.manipulation_type == DeviceTokenAttack::TokenEnumeration));
+    assert!(
+        !manips
+            .iter()
+            .any(|m| m.manipulation_type == DeviceTokenAttack::TokenEnumeration)
+    );
 }

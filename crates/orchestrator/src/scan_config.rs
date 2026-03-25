@@ -7,10 +7,20 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
+/// Stealth intensity level that controls request pacing, evasion transforms,
+/// and timing jitter across all scan phases.
+///
+/// Higher levels trade scan speed for reduced detection risk:
+/// - `Default`: standard pacing, suitable for localhost targets.
+/// - `Aggressive`: minimal delays, no evasion transforms.
+/// - `Paranoid`: maximum jitter, persona rotation, and rate limiting.
 #[derive(Debug, Clone, PartialEq)]
 pub enum StealthLevel {
+    /// Standard pacing with basic evasion transforms.
     Default,
+    /// Minimal delays, no evasion — fastest scan speed.
     Aggressive,
+    /// Maximum jitter, persona rotation, and conservative rate limits.
     Paranoid,
 }
 
@@ -101,6 +111,22 @@ pub struct KnownIssue {
     pub vulnerability_class: VulnerabilityClass,
 }
 
+/// Business context loaded from a JSON file (`--context-file`) that configures
+/// endpoint filtering, asset criticality, and known-issue suppression.
+///
+/// Used by the reporting phase to annotate SARIF output with suppressions for
+/// accepted risks and by the fuzzer to skip excluded endpoints.
+///
+/// # Example JSON
+///
+/// ```json
+/// {
+///   "excluded_endpoints": ["/health"],
+///   "critical_assets": ["/api/payments"],
+///   "pii_endpoints": ["/api/users"],
+///   "known_issues": []
+/// }
+/// ```
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BusinessContext {
     #[serde(default)]
@@ -113,6 +139,11 @@ pub struct BusinessContext {
     pub known_issues: Vec<KnownIssue>,
 }
 
+/// Errors arising from scan configuration parsing and validation.
+///
+/// Returned by `validate_localhost`, `parse_stealth_level`, `resolve_persona_id`,
+/// and the various `load_*` / `parse_*` config helpers. Converts into
+/// `PipelineError::Config` at the pipeline entry point.
 #[derive(Debug)]
 pub enum ConfigError {
     InvalidTarget(String),
@@ -455,7 +486,11 @@ fn extract_host(url: &str) -> Option<String> {
     } else {
         host_port.split(':').next()?.to_string()
     };
-    if host.is_empty() { None } else { Some(host) }
+    if host.is_empty() {
+        None
+    } else {
+        Some(host)
+    }
 }
 
 pub fn parse_stealth_level(level: &str) -> Result<StealthLevel, ConfigError> {
@@ -478,6 +513,10 @@ pub fn resolve_persona_id(name: &str) -> Result<PersonaId, ConfigError> {
     }
 }
 
+/// Per-phase wall-clock timing data collected during a scan.
+///
+/// Populated by the pipeline as each phase completes. Serialized alongside
+/// the SARIF report when telemetry is enabled.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PhaseTimings {
     pub timings: std::collections::HashMap<String, std::time::Duration>,
@@ -489,6 +528,10 @@ impl PhaseTimings {
     }
 }
 
+/// Aggregate LLM usage statistics for the hypothesis engine across a full scan.
+///
+/// Tracks call count, cumulative latency, and total token consumption.
+/// Used by `ScanMetrics` and optionally exported via telemetry.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct LlmMetrics {
     pub call_count: u64,
@@ -504,6 +547,10 @@ impl LlmMetrics {
     }
 }
 
+/// Combined scan-level metrics: per-phase timing and LLM usage.
+///
+/// Threaded through the pipeline and returned in `ScanSummary`. When
+/// `--telemetry` is enabled, serialized to a JSON file alongside the SARIF output.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ScanMetrics {
     pub phase_timings: PhaseTimings,

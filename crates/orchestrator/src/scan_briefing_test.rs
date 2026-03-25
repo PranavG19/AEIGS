@@ -1,6 +1,6 @@
 use super::*;
-use aegis_knowledge_graph::graph::GraphError;
 use aegis_knowledge_graph::GraphStore;
+use aegis_knowledge_graph::graph::GraphError;
 use aegis_protocol::defense_context::DefenseContext;
 use aegis_protocol::finding::{EvidenceLevel, FindingData, VulnerabilityClass};
 use aegis_protocol::node::{NodeData, NodeType};

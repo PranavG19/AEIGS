@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use reqwest::blocking::Client;
-use reqwest::header::{HOST, HeaderValue};
+use reqwest::header::{HeaderValue, HOST};
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
 
@@ -42,6 +42,7 @@ pub const VHOST_PREFIXES: &[&str] = &[
     "wiki",
 ];
 
+/// A virtual host that responded differently from the baseline when probed via Host header.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DiscoveredVhost {
     pub hostname: String,
@@ -50,6 +51,7 @@ pub struct DiscoveredVhost {
     pub evidence: String,
 }
 
+/// Errors that can occur during virtual host discovery.
 #[derive(Debug)]
 pub enum VhostError {
     InvalidUrl(String),
@@ -69,6 +71,10 @@ impl std::fmt::Display for VhostError {
 
 impl std::error::Error for VhostError {}
 
+/// Discovers virtual hosts by sending requests with varied Host headers.
+///
+/// Compares each response against a baseline to detect status code, body size,
+/// or content differences that indicate a distinct vhost configuration.
 pub struct VhostDiscoverer {
     client: Client,
 }

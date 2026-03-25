@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::bot_detection_probe::{
-        BotProbeResult, DetectionMethod, analyze_bot_detection, detect_challenge_type,
-        is_challenge_response,
+        analyze_bot_detection, detect_challenge_type, is_challenge_response, BotProbeResult,
+        DetectionMethod,
     };
 
     fn ok_result(headers_sent: bool, rapid: bool) -> BotProbeResult {

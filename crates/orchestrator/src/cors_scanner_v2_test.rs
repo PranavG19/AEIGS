@@ -272,9 +272,11 @@ fn test_classify_impact_medium_no_credentials() {
     let impact = classify_impact(CorsSeverity::Medium, false, &OriginTestKind::Wildcard);
 
     assert_eq!(impact.severity, CorsSeverity::Medium);
-    assert!(impact
-        .categories
-        .contains(&ImpactCategory::DataExfiltration));
+    assert!(
+        impact
+            .categories
+            .contains(&ImpactCategory::DataExfiltration)
+    );
     assert!(!impact.categories.contains(&ImpactCategory::CredentialTheft));
 }
 
@@ -286,9 +288,11 @@ fn test_classify_impact_internal_network() {
         &OriginTestKind::InternalNetwork,
     );
 
-    assert!(impact
-        .categories
-        .contains(&ImpactCategory::InternalNetworkPivot));
+    assert!(
+        impact
+            .categories
+            .contains(&ImpactCategory::InternalNetworkPivot)
+    );
 }
 
 #[test]

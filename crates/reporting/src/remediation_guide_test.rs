@@ -1,7 +1,6 @@
 use crate::remediation_guide::{
-    code_fixes_for, config_changes_for, fix_effort_for, generate_remediation_guide,
+    FixEffort, code_fixes_for, config_changes_for, fix_effort_for, generate_remediation_guide,
     impact_reduction_for, remediation_guide_to_json, remediation_severity_rating, waf_rules_for,
-    FixEffort,
 };
 use crate::sarif_emitter::{SarifFinding, SarifLevel};
 use aegis_protocol::finding::VulnerabilityClass;

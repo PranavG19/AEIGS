@@ -179,6 +179,7 @@ impl WafRuleReverser {
 
     /// Discover which encodings bypass the WAF for a blocked payload.
     pub fn discover_bypass_encodings(&self, payload: &str) -> Vec<EncodingDiscoveryResult> {
+        #[allow(clippy::type_complexity)]
         let encoding_fns: Vec<(&str, fn(&str) -> String)> = vec![
             ("url", url_encode_simple as fn(&str) -> String),
             ("double-url", double_url_encode as fn(&str) -> String),

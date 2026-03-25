@@ -1,4 +1,5 @@
 pub mod auth_automator;
+pub mod browser_ext_analyzer;
 mod crawler;
 mod error;
 pub mod form_autofill;
@@ -8,13 +9,12 @@ pub mod js_executor;
 pub mod js_taint_analyzer;
 pub mod multi_bot_coordinator;
 mod page_fetcher;
+pub mod postmessage_attack;
 pub mod spa_crawler;
 mod types;
 pub mod visual_regression;
 pub mod wasm_analyzer;
 pub mod websocket_hijack;
-pub mod browser_ext_analyzer;
-pub mod postmessage_attack;
 
 #[cfg(feature = "browser")]
 mod browser_fetcher;
@@ -25,6 +25,7 @@ mod dom_verifier;
 pub mod katana_wrapper;
 
 pub use auth_automator::*;
+pub use browser_ext_analyzer::*;
 pub use crawler::Crawler;
 pub use error::*;
 pub use form_autofill::*;
@@ -34,13 +35,12 @@ pub use js_executor::*;
 pub use js_taint_analyzer::*;
 pub use multi_bot_coordinator::*;
 pub use page_fetcher::*;
+pub use postmessage_attack::*;
 pub use spa_crawler::*;
 pub use types::*;
 pub use visual_regression::*;
 pub use wasm_analyzer::*;
 pub use websocket_hijack::*;
-pub use browser_ext_analyzer::*;
-pub use postmessage_attack::*;
 
 #[cfg(feature = "browser")]
 pub use browser_fetcher::*;
@@ -77,14 +77,6 @@ mod auth_automator_test;
 #[cfg(test)]
 #[path = "browser_ext_analyzer_test.rs"]
 mod browser_ext_analyzer_test;
-
-#[cfg(test)]
-#[path = "crawler_test.rs"]
-mod crawler_test;
-
-#[cfg(test)]
-#[path = "dom_verifier_test.rs"]
-mod dom_verifier_test;
 
 #[cfg(test)]
 #[path = "form_autofill_test.rs"]

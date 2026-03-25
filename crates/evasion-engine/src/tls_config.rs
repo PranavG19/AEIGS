@@ -173,6 +173,11 @@ impl FingerprintMapping {
     }
 }
 
+/// Errors from TLS configuration validation.
+///
+/// Returned by `validate_tls_config` when backend, fingerprint, or setting
+/// combinations are incompatible. Currently all combinations pass; future
+/// backends (rquest) may impose constraints.
 #[derive(Debug, Clone)]
 pub enum TlsConfigError {
     UnsupportedBackend(String),

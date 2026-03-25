@@ -90,10 +90,12 @@ fn discovery_step_always_present() {
         .iter()
         .find(|s| s.step_type == EvidenceStepType::Discovery);
     assert!(discovery.is_some());
-    assert!(discovery
-        .unwrap()
-        .description
-        .contains("Cross-Site Scripting"));
+    assert!(
+        discovery
+            .unwrap()
+            .description
+            .contains("Cross-Site Scripting")
+    );
 }
 
 #[test]

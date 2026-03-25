@@ -191,10 +191,11 @@ fn horizontal_test_plan_generation() {
     assert_eq!(plan.target_parameter, "user_id");
     assert_eq!(plan.original_id, "100");
     assert!(!plan.replacement_ids.is_empty());
-    assert!(plan
-        .replacement_ids
-        .iter()
-        .any(|r| r == "200" || r == "300"));
+    assert!(
+        plan.replacement_ids
+            .iter()
+            .any(|r| r == "200" || r == "300")
+    );
 }
 
 #[test]
@@ -225,12 +226,16 @@ fn vertical_test_plan_for_admin_endpoint() {
     }];
     let plans = IdorDetector::plan_vertical_tests(&endpoints);
     assert_eq!(plans.len(), 2);
-    assert!(plans
-        .iter()
-        .any(|p| p.test_with_privilege == PrivilegeLevel::RegularUser));
-    assert!(plans
-        .iter()
-        .any(|p| p.test_with_privilege == PrivilegeLevel::Unauthenticated));
+    assert!(
+        plans
+            .iter()
+            .any(|p| p.test_with_privilege == PrivilegeLevel::RegularUser)
+    );
+    assert!(
+        plans
+            .iter()
+            .any(|p| p.test_with_privilege == PrivilegeLevel::Unauthenticated)
+    );
 }
 
 #[test]

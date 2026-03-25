@@ -234,15 +234,21 @@ fn test_security_headers_detection() {
         "",
     );
     let result = fp.fingerprint(&resp);
-    assert!(result
-        .security_headers_present
-        .contains(&"strict-transport-security".to_string()));
-    assert!(result
-        .security_headers_present
-        .contains(&"x-content-type-options".to_string()));
-    assert!(result
-        .security_headers_missing
-        .contains(&"content-security-policy".to_string()));
+    assert!(
+        result
+            .security_headers_present
+            .contains(&"strict-transport-security".to_string())
+    );
+    assert!(
+        result
+            .security_headers_present
+            .contains(&"x-content-type-options".to_string())
+    );
+    assert!(
+        result
+            .security_headers_missing
+            .contains(&"content-security-policy".to_string())
+    );
 }
 
 #[test]

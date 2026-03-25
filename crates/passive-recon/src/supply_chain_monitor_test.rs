@@ -84,9 +84,11 @@ fn typosquat_lodash_vs_lodahs() {
     let meta = make_metadata("lodahs");
     let findings = monitor.check_typosquatting(&meta);
     assert!(!findings.is_empty(), "lodahs should trigger typosquatting");
-    assert!(findings
-        .iter()
-        .any(|f| f.indicator == AttackIndicator::Typosquatting));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.indicator == AttackIndicator::Typosquatting)
+    );
 }
 
 #[test]

@@ -39,10 +39,12 @@ mod tests {
         assert_eq!(report.summary.new_count, 2);
         assert_eq!(report.summary.resolved_count, 0);
         assert_eq!(report.summary.net_change, 2);
-        assert!(report
-            .entries
-            .iter()
-            .all(|e| e.status == FindingStatus::New));
+        assert!(
+            report
+                .entries
+                .iter()
+                .all(|e| e.status == FindingStatus::New)
+        );
     }
 
     #[test]

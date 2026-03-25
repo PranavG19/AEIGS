@@ -2,6 +2,10 @@ use aegis_fuzzing::{BotDetectionProfile, DefenseProfile, RateLimitProfile, WafPr
 use aegis_protocol::finding::VulnerabilityClass;
 use serde::{Deserialize, Serialize};
 
+/// Inputs for computing a composite risk score for a single finding.
+///
+/// Combines CVSS exploitability, defense posture, attack graph reachability,
+/// asset sensitivity, and confidence to produce a 0–100 composite score.
 #[derive(Debug, Clone)]
 pub struct RiskInput {
     pub vulnerability_class: VulnerabilityClass,
@@ -15,6 +19,10 @@ pub struct RiskInput {
     pub confidence: f64,
 }
 
+/// Computed risk score broken into four sub-components and a composite.
+///
+/// `composite` is a 0–100 human-readable value derived from the product of
+/// exploitability (0–10), reachability (0–10), blast_radius (0–10), and confidence (0–1).
 #[derive(Debug, Clone)]
 pub struct RiskScore {
     pub exploitability: f64,
@@ -100,6 +108,7 @@ pub fn top_remediation_targets(inputs: &[RiskInput], budget: usize) -> Vec<(usiz
     ranked.into_iter().take(budget).collect()
 }
 
+/// Defense posture metadata attached to a scored finding for SARIF serialization.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefenseScoreContext {
     pub waf_present: bool,
@@ -110,6 +119,7 @@ pub struct DefenseScoreContext {
     pub bot_detection_evaded: bool,
 }
 
+/// A finding with defense-aware risk scoring applied.
 #[derive(Debug, Clone)]
 pub struct ScoredFinding {
     pub finding_id: u64,

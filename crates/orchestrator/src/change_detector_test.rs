@@ -183,12 +183,16 @@ mod tests {
         let report = ChangeDetector::new().detect(&baseline, &current);
         assert_eq!(report.total_changes, 2);
         let types: HashSet<_> = report.changes.iter().map(|c| &c.change_type).collect();
-        assert!(types
-            .iter()
-            .any(|t| matches!(t, ChangeType::TechnologyAdded(s) if s == "Express 5.0")));
-        assert!(types
-            .iter()
-            .any(|t| matches!(t, ChangeType::TechnologyRemoved(s) if s == "Express 4.18")));
+        assert!(
+            types
+                .iter()
+                .any(|t| matches!(t, ChangeType::TechnologyAdded(s) if s == "Express 5.0"))
+        );
+        assert!(
+            types
+                .iter()
+                .any(|t| matches!(t, ChangeType::TechnologyRemoved(s) if s == "Express 4.18"))
+        );
     }
 
     #[test]

@@ -92,7 +92,10 @@ pub struct WsAttackVector {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WsAttackPayload {
     /// Full HTML page content for CSWSH proof-of-concept.
-    CswshPoc { html: String, attacker_origin: String },
+    CswshPoc {
+        html: String,
+        attacker_origin: String,
+    },
     /// Upgrade request manipulation for auth bypass.
     UpgradeRequest {
         headers: Vec<(String, String)>,
@@ -323,8 +326,9 @@ pub fn generate_auth_bypass_vectors(config: &WsHijackConfig) -> Vec<WsAttackVect
             ],
             with_cookies: true,
         },
-        detection_hint: "101 Switching Protocols with forged cookie indicates weak session validation"
-            .to_string(),
+        detection_hint:
+            "101 Switching Protocols with forged cookie indicates weak session validation"
+                .to_string(),
     });
 
     vectors.push(WsAttackVector {
@@ -482,7 +486,9 @@ pub fn generate_message_injection_payloads() -> Vec<WsAttackVector> {
     vectors.push(WsAttackVector {
         category: WsAttackCategory::MessageInjection,
         name: "msgpack-type-confusion".to_string(),
-        description: "MsgPack-encoded binary payload with type confusion to bypass schema validation".to_string(),
+        description:
+            "MsgPack-encoded binary payload with type confusion to bypass schema validation"
+                .to_string(),
         severity: WsSeverity::Medium,
         payload: WsAttackPayload::Message {
             format: WsMessageFormat::MsgPackBinary,
@@ -494,7 +500,8 @@ pub fn generate_message_injection_payloads() -> Vec<WsAttackVector> {
                 0xC3, // true
             ],
         },
-        detection_hint: "Server deserializes crafted MsgPack and grants elevated access".to_string(),
+        detection_hint: "Server deserializes crafted MsgPack and grants elevated access"
+            .to_string(),
     });
 
     vectors
@@ -557,7 +564,8 @@ pub fn generate_dos_vectors(config: &WsHijackConfig) -> Vec<WsAttackVector> {
                 technique: DosTechnique::SlowRead,
                 parameter: 60,
             },
-            detection_hint: "Server buffers outbound data indefinitely for slow clients".to_string(),
+            detection_hint: "Server buffers outbound data indefinitely for slow clients"
+                .to_string(),
         },
         WsAttackVector {
             category: WsAttackCategory::DenialOfService,
@@ -608,8 +616,9 @@ pub fn generate_downgrade_vectors(config: &WsHijackConfig) -> Vec<WsAttackVector
                 original_url: target.clone(),
                 downgraded_url: http_url,
             },
-            detection_hint: "Server responds with meaningful HTTP content instead of 426 Upgrade Required"
-                .to_string(),
+            detection_hint:
+                "Server responds with meaningful HTTP content instead of 426 Upgrade Required"
+                    .to_string(),
         });
     }
 
@@ -684,7 +693,8 @@ pub fn generate_smuggling_vectors(config: &WsHijackConfig) -> Vec<WsAttackVector
                      \r\n"
                 ),
             },
-            detection_hint: "Server processes injected X-Injected header or reflects it".to_string(),
+            detection_hint: "Server processes injected X-Injected header or reflects it"
+                .to_string(),
         },
     ]
 }
@@ -739,8 +749,8 @@ pub fn detect_token_leakage(ws_url: &str) -> Option<WsAttackVector> {
             url: ws_url.to_string(),
             leaked_params: leaked,
         },
-        detection_hint: "Tokens in URL are logged by proxies, browser history, and referrer headers"
-            .to_string(),
+        detection_hint:
+            "Tokens in URL are logged by proxies, browser history, and referrer headers".to_string(),
     })
 }
 
@@ -796,14 +806,14 @@ pub fn analyze_websocket_endpoint(config: &WsHijackConfig) -> WsHijackResult {
     }
 }
 
-fn extract_host(url: &str) -> String {
+pub(crate) fn extract_host(url: &str) -> String {
     url::Url::parse(url)
         .ok()
         .and_then(|u| u.host_str().map(|h| h.to_string()))
         .unwrap_or_else(|| "localhost".to_string())
 }
 
-fn extract_path(url: &str) -> String {
+pub(crate) fn extract_path(url: &str) -> String {
     url::Url::parse(url)
         .ok()
         .map(|u| u.path().to_string())

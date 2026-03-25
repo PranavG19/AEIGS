@@ -22,7 +22,7 @@ pub struct Cookie {
 #[derive(Debug, Clone)]
 pub struct SessionJar {
     cookies: Vec<Cookie>,
-    auto_update: bool,
+    pub(crate) auto_update: bool,
 }
 
 const SESSION_PREFIXES: &[&str] = &["session", "token", "auth", "sid", "jwt", "csrf"];

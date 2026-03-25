@@ -1,7 +1,7 @@
 use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::risk_dashboard::{
-    categorize_vulnerability, compute_dashboard, grade_from_score, to_json, LetterGrade, Trend,
+    LetterGrade, Trend, categorize_vulnerability, compute_dashboard, grade_from_score, to_json,
 };
 use crate::sarif_emitter::SarifFinding;
 

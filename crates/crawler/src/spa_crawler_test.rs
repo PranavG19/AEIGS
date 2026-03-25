@@ -108,15 +108,21 @@ fn extract_axios_api_calls() {
     "#;
     let endpoints = extract_api_endpoints_from_js(js);
     assert_eq!(endpoints.len(), 3);
-    assert!(endpoints
-        .iter()
-        .any(|e| e.url == "/api/data" && e.method == "GET"));
-    assert!(endpoints
-        .iter()
-        .any(|e| e.url == "/api/submit" && e.method == "POST"));
-    assert!(endpoints
-        .iter()
-        .any(|e| e.url == "/api/item/5" && e.method == "DELETE"));
+    assert!(
+        endpoints
+            .iter()
+            .any(|e| e.url == "/api/data" && e.method == "GET")
+    );
+    assert!(
+        endpoints
+            .iter()
+            .any(|e| e.url == "/api/submit" && e.method == "POST")
+    );
+    assert!(
+        endpoints
+            .iter()
+            .any(|e| e.url == "/api/item/5" && e.method == "DELETE")
+    );
 }
 
 #[test]
@@ -127,12 +133,16 @@ fn extract_xhr_api_calls() {
     "#;
     let endpoints = extract_api_endpoints_from_js(js);
     assert_eq!(endpoints.len(), 2);
-    assert!(endpoints
-        .iter()
-        .any(|e| e.url == "/api/legacy" && e.method == "GET"));
-    assert!(endpoints
-        .iter()
-        .any(|e| e.url == "/api/old-submit" && e.method == "POST"));
+    assert!(
+        endpoints
+            .iter()
+            .any(|e| e.url == "/api/legacy" && e.method == "GET")
+    );
+    assert!(
+        endpoints
+            .iter()
+            .any(|e| e.url == "/api/old-submit" && e.method == "POST")
+    );
 }
 
 #[test]
@@ -233,10 +243,12 @@ fn crawl_spa_full_integration() {
     assert!(result.client_routes.contains(&"/settings".to_string()));
     assert!(result.api_endpoints.len() >= 3);
     assert_eq!(result.pagination_pattern, PaginationPattern::InfiniteScroll);
-    assert!(result
-        .interactive_elements
-        .iter()
-        .any(|e| e.text == "Refresh"));
+    assert!(
+        result
+            .interactive_elements
+            .iter()
+            .any(|e| e.text == "Refresh")
+    );
     assert!(!result.discovered_forms.is_empty());
     assert_eq!(result.pages_loaded, 1);
 }
@@ -271,10 +283,12 @@ fn resolve_relative_api_urls_to_base() {
     let html = r#"<script>fetch("/api/data")</script>"#;
     let config = SpaCrawlConfig::default();
     let result = crawl_spa(html, &[], "http://localhost:8080", &config);
-    assert!(result
-        .discovered_endpoints
-        .iter()
-        .any(|e| e.url == "http://localhost:8080/api/data"));
+    assert!(
+        result
+            .discovered_endpoints
+            .iter()
+            .any(|e| e.url == "http://localhost:8080/api/data")
+    );
 }
 
 #[test]

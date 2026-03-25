@@ -813,7 +813,7 @@ pub fn detect_war_xss_vectors(web_accessible_resources: &[String], js_source: &s
 }
 
 /// Analyzes extension permissions and returns findings for dangerous ones.
-fn analyze_permissions(manifest: &ExtensionManifest) -> Vec<ExtensionFinding> {
+pub(crate) fn analyze_permissions(manifest: &ExtensionManifest) -> Vec<ExtensionFinding> {
     let mut findings = Vec::new();
     let permission_map: HashMap<&str, (PermissionRisk, &str)> = DANGEROUS_PERMISSIONS
         .iter()

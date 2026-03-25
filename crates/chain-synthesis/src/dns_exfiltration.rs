@@ -6,9 +6,9 @@
 use std::fmt;
 use std::io::{Read, Write};
 
+use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
-use flate2::Compression;
 
 /// Maximum length of a single DNS label (RFC 1035).
 const MAX_LABEL_LEN: usize = 63;
@@ -256,7 +256,7 @@ fn base32_decode(s: &str) -> Result<Vec<u8>, DnsExfilError> {
             _ => {
                 return Err(DnsExfilError::DecodeError(format!(
                     "invalid base32 char: {ch}"
-                )))
+                )));
             }
         };
         buffer = (buffer << 5) | u64::from(val);
@@ -422,11 +422,7 @@ pub fn encode_exfil(
 }
 
 fn truncate_to(s: &str, max: usize) -> &str {
-    if s.len() <= max {
-        s
-    } else {
-        &s[..max]
-    }
+    if s.len() <= max { s } else { &s[..max] }
 }
 
 /// Decode DNS exfiltration chunks back to the original data.

@@ -3,6 +3,7 @@ use std::fmt::Write;
 
 use aegis_protocol::finding::VulnerabilityClass;
 
+/// Cross-references a vulnerability to compliance frameworks (OWASP, CWE, PCI-DSS).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComplianceMapping {
     pub owasp_2021: Option<String>,

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::full_scan::{full_scan, ScanError};
+    use crate::full_scan::{ScanError, full_scan};
     use crate::scan_config::ScanConfig;
     use clap::Parser;
 

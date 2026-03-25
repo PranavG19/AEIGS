@@ -80,6 +80,7 @@ struct FingerprintSignature {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 enum SignaturePattern {
     Exists,
     Contains(String),
@@ -179,7 +180,7 @@ impl WafFingerprinterV2 {
 
         let mut detected: Vec<(WafVendor, f64)> = scores
             .iter()
-            .map(|(v, (s, _))| (*v, s.min(1.0).max(0.0)))
+            .map(|(v, (s, _))| (*v, s.clamp(0.0, 1.0)))
             .filter(|(_, s)| *s > 0.1)
             .collect();
         detected.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));

@@ -155,8 +155,7 @@ fn zone_transfer_ignores_non_matching_records() {
 
 #[test]
 fn dns_records_extracts_from_txt_mx_ns() {
-    let dns =
-        "example.com. IN TXT \"v=spf1 include:mail.example.com include:spf.example.com ~all\"\n\
+    let dns = "example.com. IN TXT \"v=spf1 include:mail.example.com include:spf.example.com ~all\"\n\
                example.com. IN MX 10 mx1.example.com.\n\
                example.com. IN NS ns1.example.com.\n\
                example.com. IN NS ns2.example.com.";

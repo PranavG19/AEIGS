@@ -98,12 +98,15 @@ fn compare_findings(
     }
 }
 
+/// CLI arguments for the `eval` subcommand that runs a scan against a
+/// Docker-based fixture and compares results to a ground-truth file.
 pub struct EvalArgs {
     pub fixture: String,
     pub no_cleanup: bool,
     pub verbose: bool,
 }
 
+/// Static configuration for a Docker-based evaluation fixture.
 pub struct FixtureConfig {
     pub name: &'static str,
     pub compose_file: &'static str,
@@ -112,6 +115,7 @@ pub struct FixtureConfig {
     pub ground_truth_rel_path: &'static str,
 }
 
+/// Output of `run_eval`: aggregate metrics and per-class detection breakdown.
 pub struct EvalResult {
     pub fixture: String,
     pub comparison: ComparisonResult,
@@ -119,11 +123,13 @@ pub struct EvalResult {
     pub per_class: Vec<ClassResult>,
 }
 
+/// Per-vulnerability-class detection result within an eval run.
 pub struct ClassResult {
     pub vulnerability_class: String,
     pub detected: bool,
 }
 
+/// Errors from the `eval` subcommand.
 #[derive(Debug)]
 pub enum EvalError {
     DockerNotAvailable(String),

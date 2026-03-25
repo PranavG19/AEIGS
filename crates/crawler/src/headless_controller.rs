@@ -306,8 +306,7 @@ pub fn extract_forms_from_html(html: &str, base_url: &str) -> Vec<DiscoveredForm
     let form_re = regex::Regex::new(r"(?is)<form([^>]*)>(.*?)</form>").unwrap();
     let action_re = regex::Regex::new(r#"(?i)action\s*=\s*["']([^"']*)["']"#).unwrap();
     let method_re = regex::Regex::new(r#"(?i)method\s*=\s*["']([^"']*)["']"#).unwrap();
-    let input_re =
-        regex::Regex::new(r#"(?i)<input([^>]*)>"#).unwrap();
+    let input_re = regex::Regex::new(r#"(?i)<input([^>]*)>"#).unwrap();
     let name_re = regex::Regex::new(r#"(?i)name\s*=\s*["']([^"']*)["']"#).unwrap();
     let type_re = regex::Regex::new(r#"(?i)type\s*=\s*["']([^"']*)["']"#).unwrap();
     let value_re = regex::Regex::new(r#"(?i)value\s*=\s*["']([^"']*)["']"#).unwrap();

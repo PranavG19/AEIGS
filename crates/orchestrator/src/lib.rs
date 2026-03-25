@@ -4,6 +4,7 @@ pub mod aegis_mind_prompt;
 pub mod agent_executor;
 pub mod agent_loop;
 pub mod agent_memory_db;
+pub mod agent_memory_store;
 pub mod agent_tools;
 pub mod ambient_light_audit;
 pub mod api_endpoint_leak_audit;
@@ -26,11 +27,14 @@ pub mod brain_loop;
 pub mod broadcast_channel_audit;
 pub mod cache_audit;
 pub mod cache_poison_audit;
+pub mod cache_poisoning_engine;
 pub mod calibration;
 pub mod canvas_fingerprint_audit;
 pub mod checkpoint;
 pub mod clear_site_data_audit;
+pub mod cli_builder;
 pub mod clickjack_audit;
+pub mod clickjacking_engine;
 pub mod clipboard_audit;
 pub mod comment_leak;
 pub mod compression_stream_audit;
@@ -49,6 +53,7 @@ pub mod coop_coep_audit;
 pub mod corp_audit;
 pub mod cors_preflight_audit;
 pub mod cors_scanner;
+pub mod cors_scanner_v2;
 pub mod credential_api_audit;
 pub mod credential_harvest_audit;
 pub mod crlf_injection_audit;
@@ -68,6 +73,7 @@ pub mod dialog_element_audit;
 pub mod differential_response;
 pub mod digital_goods_audit;
 pub mod distributed;
+pub mod distributed_rate_limiter;
 pub mod distributed_transport;
 pub mod dns_enumerator;
 pub mod dns_prefetch_control_audit;
@@ -81,7 +87,9 @@ pub mod email_security;
 pub mod encoding_api_audit;
 pub mod endpoint_similarity;
 pub mod error_page_audit;
+pub mod error_recovery;
 pub mod etag_audit;
+pub mod eval;
 pub mod event_source_audit;
 pub mod expose_headers_audit;
 pub mod eyedropper_audit;
@@ -92,6 +100,7 @@ pub mod file_access_audit;
 pub mod file_handling_audit;
 pub mod file_system_access_audit;
 pub mod finding_correlator;
+pub mod finding_pipeline;
 pub mod form_audit;
 pub mod full_scan;
 pub mod fullscreen_audit;
@@ -112,6 +121,7 @@ pub mod http_version;
 pub mod hypothesis_bridge;
 pub mod idle_detection_audit;
 pub mod idor_analyzer;
+pub mod idor_detector;
 pub mod iframe_audit;
 pub mod image_capture_audit;
 pub mod import_map_audit;
@@ -139,6 +149,7 @@ pub mod method_override_audit;
 pub mod method_scanner;
 pub mod mixed_content;
 pub mod model_router;
+pub mod module_registry;
 pub mod module_selector;
 pub mod mutation_observer_audit;
 pub mod navigation_api_audit;
@@ -155,10 +166,10 @@ pub mod opencode_spawner;
 pub mod opener_audit;
 pub mod page_lifecycle_audit;
 pub mod path_traversal_audit;
+pub mod payload_forge;
 pub mod payment_form_audit;
 pub mod payment_handler_audit;
 pub mod payment_request_audit;
-pub mod payload_forge;
 pub mod perf_observer_audit;
 pub mod permissions_api_audit;
 pub mod permissions_policy;
@@ -168,6 +179,7 @@ mod phase_dom_verify;
 pub mod phase_error;
 mod phase_fingerprint;
 mod phase_fuzz;
+pub mod phase_orchestrator_v2;
 mod phase_recon;
 mod phase_report;
 pub mod pip_audit;
@@ -179,6 +191,7 @@ pub mod postmessage_audit;
 pub mod preconnect_audit;
 pub mod presentation_audit;
 pub mod priority_hints_audit;
+pub mod progress_reporter;
 pub mod prototype_pollution_audit;
 pub mod proxy_header_audit;
 pub mod race_engine;
@@ -191,21 +204,25 @@ pub mod reporting_endpoints_audit;
 pub mod request_smuggling_audit;
 pub mod resize_observer_audit;
 pub mod resource_timing_audit;
+pub mod result_aggregator;
 pub mod robots_parser;
 pub mod s3_scanner;
 pub mod sanitizer_api_audit;
 pub mod scan_briefing;
 pub mod scan_config;
 pub mod scan_context_serializer;
+pub mod scan_coordinator;
 pub mod scan_history;
-pub mod scan_profiles;
 pub mod scan_persistence;
+pub mod scan_profiles;
+pub mod scan_protocol;
 pub mod scan_regression;
 pub mod scan_strategy;
-pub mod scope_manager;
 pub mod scheduler_api_audit;
+pub mod scope_manager;
 pub mod screen_capture_audit;
 pub mod screen_orientation_audit;
+pub mod security_misconfig;
 pub mod security_txt;
 pub mod selection_audit;
 pub mod sensitive_file_audit;
@@ -226,11 +243,13 @@ pub mod sri_checker;
 pub mod sse_audit;
 pub mod ssrf_chain;
 pub mod ssrf_redirect_audit;
+pub mod ssti_polyglot;
 pub mod storage_access_audit;
 pub mod storage_audit;
 pub mod storage_bucket_audit;
 pub mod structured_clone_audit;
 pub mod subdomain_takeover;
+pub mod task_distributor;
 pub mod tech_detector;
 pub mod telemetry;
 pub mod template_injection_audit;
@@ -276,34 +295,16 @@ pub mod window_controls_overlay_audit;
 pub mod window_management_audit;
 pub mod window_name_audit;
 pub mod wireless_api_audit;
+pub mod worker_node;
 pub mod www_authenticate_audit;
 pub mod xfo_audit;
+pub mod xml_injection_suite;
 pub mod xs_leaks;
 pub mod xxe_scanner;
-pub mod agent_memory_store;
-pub mod cache_poisoning_engine;
-pub mod clickjacking_engine;
-pub mod cors_scanner_v2;
-pub mod distributed_rate_limiter;
-pub mod eval;
-pub mod idor_detector;
-pub mod result_aggregator;
-pub mod scan_coordinator;
-pub mod scan_protocol;
-pub mod security_misconfig;
-pub mod ssti_polyglot;
-pub mod task_distributor;
-pub mod worker_node;
-pub mod xml_injection_suite;
-pub mod cli_builder;
-pub mod error_recovery;
-pub mod finding_pipeline;
-pub mod module_registry;
-pub mod phase_orchestrator_v2;
-pub mod progress_reporter;
 
 pub use abort_controller_audit::*;
 pub use actor::*;
+pub use agent_memory_store::*;
 pub use ambient_light_audit::*;
 pub use api_endpoint_leak_audit::*;
 pub use api_version_audit::*;
@@ -320,10 +321,13 @@ pub use beacon_api_audit::*;
 pub use broadcast_channel_audit::*;
 pub use cache_audit::*;
 pub use cache_poison_audit::*;
+pub use cache_poisoning_engine::*;
 pub use canvas_fingerprint_audit::*;
 pub use checkpoint::*;
 pub use clear_site_data_audit::*;
+pub use cli_builder::*;
 pub use clickjack_audit::*;
+pub use clickjacking_engine::*;
 pub use clipboard_audit::*;
 pub use comment_leak::*;
 pub use compression_stream_audit::*;
@@ -341,6 +345,7 @@ pub use coop_coep_audit::*;
 pub use corp_audit::*;
 pub use cors_preflight_audit::*;
 pub use cors_scanner::*;
+pub use cors_scanner_v2::*;
 pub use credential_api_audit::*;
 pub use credential_harvest_audit::*;
 pub use csp_analyzer::*;
@@ -358,6 +363,7 @@ pub use device_motion_audit::*;
 pub use dialog_element_audit::*;
 pub use digital_goods_audit::*;
 pub use distributed::*;
+pub use distributed_rate_limiter::*;
 pub use distributed_transport::*;
 pub use dns_enumerator::*;
 pub use dns_prefetch_control_audit::*;
@@ -369,7 +375,9 @@ pub use email_security::*;
 pub use encoding_api_audit::*;
 pub use endpoint_similarity::*;
 pub use error_page_audit::*;
+pub use error_recovery::*;
 pub use etag_audit::*;
+pub use eval::*;
 pub use event_source_audit::*;
 pub use expose_headers_audit::*;
 pub use eyedropper_audit::*;
@@ -378,6 +386,7 @@ pub use fetch_credential_audit::*;
 pub use file_access_audit::*;
 pub use file_handling_audit::*;
 pub use file_system_access_audit::*;
+pub use finding_pipeline::*;
 pub use form_audit::*;
 pub use fullscreen_audit::*;
 pub use gamepad_audit::*;
@@ -393,6 +402,7 @@ pub use http_version::*;
 pub use hypothesis_bridge::*;
 pub use idle_detection_audit::*;
 pub use idor_analyzer::*;
+pub use idor_detector::*;
 pub use iframe_audit::*;
 pub use image_capture_audit::*;
 pub use import_map_audit::*;
@@ -417,6 +427,7 @@ pub use meta_tag_audit::*;
 pub use method_override_audit::*;
 pub use method_scanner::*;
 pub use mixed_content::*;
+pub use module_registry::*;
 pub use module_selector::*;
 pub use mutation_observer_audit::*;
 pub use navigation_api_audit::*;
@@ -442,6 +453,7 @@ pub use phase_dom_verify::*;
 pub use phase_error::*;
 pub use phase_fingerprint::*;
 pub use phase_fuzz::*;
+pub use phase_orchestrator_v2::*;
 pub use phase_recon::*;
 pub use phase_report::*;
 pub use pip_audit::*;
@@ -453,6 +465,7 @@ pub use postmessage_audit::*;
 pub use preconnect_audit::*;
 pub use presentation_audit::*;
 pub use priority_hints_audit::*;
+pub use progress_reporter::*;
 pub use prototype_pollution_audit::*;
 pub use proxy_header_audit::*;
 pub use rate_limit_detector::*;
@@ -464,18 +477,22 @@ pub use reporting_endpoints_audit::*;
 pub use request_smuggling_audit::*;
 pub use resize_observer_audit::*;
 pub use resource_timing_audit::*;
+pub use result_aggregator::*;
 pub use robots_parser::*;
 pub use s3_scanner::*;
 pub use sanitizer_api_audit::*;
 pub use scan_config::*;
+pub use scan_coordinator::*;
 pub use scan_history::*;
 pub use scan_persistence::*;
+pub use scan_protocol::*;
 pub use scan_regression::*;
 pub use scan_strategy::*;
-pub use scope_manager::*;
 pub use scheduler_api_audit::*;
+pub use scope_manager::*;
 pub use screen_capture_audit::*;
 pub use screen_orientation_audit::*;
+pub use security_misconfig::*;
 pub use security_txt::*;
 pub use selection_audit::*;
 pub use sensitive_file_audit::*;
@@ -494,11 +511,13 @@ pub use speech_api_audit::*;
 pub use sri_checker::*;
 pub use sse_audit::*;
 pub use ssrf_redirect_audit::*;
+pub use ssti_polyglot::*;
 pub use storage_access_audit::*;
 pub use storage_audit::*;
 pub use storage_bucket_audit::*;
 pub use structured_clone_audit::*;
 pub use subdomain_takeover::*;
+pub use task_distributor::*;
 pub use tech_detector::*;
 pub use telemetry::*;
 pub use template_injection_audit::*;
@@ -541,29 +560,78 @@ pub use window_controls_overlay_audit::*;
 pub use window_management_audit::*;
 pub use window_name_audit::*;
 pub use wireless_api_audit::*;
+pub use worker_node::*;
 pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
-pub use agent_memory_store::*;
-pub use cache_poisoning_engine::*;
-pub use clickjacking_engine::*;
-pub use cors_scanner_v2::*;
-pub use distributed_rate_limiter::*;
-pub use eval::*;
-pub use idor_detector::*;
-pub use result_aggregator::*;
-pub use scan_coordinator::*;
-pub use scan_protocol::*;
-pub use security_misconfig::*;
-pub use ssti_polyglot::*;
-pub use task_distributor::*;
-pub use worker_node::*;
 pub use xml_injection_suite::*;
-pub use cli_builder::*;
-pub use error_recovery::*;
-pub use finding_pipeline::*;
-pub use module_registry::*;
-pub use phase_orchestrator_v2::*;
-pub use progress_reporter::*;
+
+pub mod alert_rules;
+pub mod attack_scenario;
+pub mod change_detector;
+pub mod continuous_scheduler;
+pub mod evidence_chain;
+pub mod notifications;
+pub mod playbook_engine;
+pub mod scan_comparison_intel;
+pub mod scan_diff_reporter;
+pub mod scan_history_db;
+pub mod target_intel;
+
+pub use alert_rules::*;
+pub use attack_scenario::*;
+pub use change_detector::*;
+pub use continuous_scheduler::*;
+pub use evidence_chain::*;
+pub use notifications::*;
+pub use playbook_engine::*;
+pub use scan_comparison_intel::*;
+pub use scan_diff_reporter::*;
+pub use scan_history_db::*;
+pub use target_intel::*;
+
+#[cfg(test)]
+#[path = "alert_rules_test.rs"]
+mod alert_rules_test;
+
+#[cfg(test)]
+#[path = "attack_scenario_test.rs"]
+mod attack_scenario_test;
+
+#[cfg(test)]
+#[path = "change_detector_test.rs"]
+mod change_detector_test;
+
+#[cfg(test)]
+#[path = "continuous_scheduler_test.rs"]
+mod continuous_scheduler_test;
+
+#[cfg(test)]
+#[path = "evidence_chain_test.rs"]
+mod evidence_chain_test;
+
+#[cfg(test)]
+#[path = "notifications_test.rs"]
+mod notifications_test;
+
+#[cfg(test)]
+#[path = "playbook_engine_test.rs"]
+mod playbook_engine_test;
+
+#[cfg(test)]
+#[path = "scan_comparison_intel_test.rs"]
+mod scan_comparison_intel_test;
+
+#[cfg(test)]
+#[path = "scan_diff_reporter_test.rs"]
+mod scan_diff_reporter_test;
+
+#[cfg(test)]
+#[path = "scan_history_db_test.rs"]
+mod scan_history_db_test;
+
+#[cfg(test)]
+#[path = "target_intel_test.rs"]
+mod target_intel_test;
 
 #[cfg(test)]
 #[path = "cli_builder_test.rs"]

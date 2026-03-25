@@ -8,9 +8,11 @@ fn ssrf_payloads_include_localhost_variants() {
         .filter(|p| p.technique == SsrfTechnique::LocalhostAccess)
         .collect();
     assert!(localhost.len() >= 8);
-    assert!(localhost
-        .iter()
-        .any(|p| p.payload_url.contains("127.0.0.1")));
+    assert!(
+        localhost
+            .iter()
+            .any(|p| p.payload_url.contains("127.0.0.1"))
+    );
     assert!(localhost.iter().any(|p| p.payload_url.contains("::1")));
     assert!(localhost.iter().any(|p| p.payload_url.contains("0x7f")));
 }
@@ -23,12 +25,16 @@ fn ssrf_payloads_include_cloud_metadata() {
         .filter(|p| p.technique == SsrfTechnique::MetadataEndpoint)
         .collect();
     assert!(metadata.len() >= 4);
-    assert!(metadata
-        .iter()
-        .any(|p| p.payload_url.contains("169.254.169.254")));
-    assert!(metadata
-        .iter()
-        .any(|p| p.payload_url.contains("metadata.google.internal")));
+    assert!(
+        metadata
+            .iter()
+            .any(|p| p.payload_url.contains("169.254.169.254"))
+    );
+    assert!(
+        metadata
+            .iter()
+            .any(|p| p.payload_url.contains("metadata.google.internal"))
+    );
 }
 
 #[test]
@@ -44,9 +50,11 @@ fn ssrf_payloads_include_internal_network() {
 #[test]
 fn ssrf_payloads_include_dns_rebinding() {
     let payloads = generate_ssrf_payloads("url");
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == SsrfTechnique::DnsRebinding));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == SsrfTechnique::DnsRebinding)
+    );
 }
 
 #[test]
@@ -58,17 +66,21 @@ fn ssrf_payloads_include_scheme_abuse() {
         .collect();
     assert!(scheme.len() >= 3);
     assert!(scheme.iter().any(|p| p.payload_url.starts_with("file://")));
-    assert!(scheme
-        .iter()
-        .any(|p| p.payload_url.starts_with("gopher://")));
+    assert!(
+        scheme
+            .iter()
+            .any(|p| p.payload_url.starts_with("gopher://"))
+    );
 }
 
 #[test]
 fn ssrf_payloads_include_redirect_chain() {
     let payloads = generate_ssrf_payloads("url");
-    assert!(payloads
-        .iter()
-        .any(|p| p.technique == SsrfTechnique::RedirectChain));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.technique == SsrfTechnique::RedirectChain)
+    );
 }
 
 #[test]
@@ -114,27 +126,41 @@ fn evaluate_event_replay_rejected() {
 fn signature_bypass_tests_generated() {
     let tests = generate_signature_bypass_tests("sha256=abcdef1234567890");
     assert!(tests.len() >= 7);
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::EmptySignature));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::MissingHeader));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::AlgorithmSwitch));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::TimingAttack));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::LengthExtension));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::NonCanonicalEncoding));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == SignatureBypassTechnique::ReplayWithTimestamp));
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::EmptySignature)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::MissingHeader)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::AlgorithmSwitch)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::TimingAttack)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::LengthExtension)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::NonCanonicalEncoding)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == SignatureBypassTechnique::ReplayWithTimestamp)
+    );
 }
 
 #[test]
@@ -184,21 +210,31 @@ fn signature_bypass_non_canonical_uppercases() {
 fn callback_manipulations_generated() {
     let manips = generate_callback_manipulations("https://myapp.com/webhooks/handle");
     assert!(manips.len() >= 5);
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == CallbackTechnique::UrlRedirect));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == CallbackTechnique::HostOverride));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == CallbackTechnique::PathTraversal));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == CallbackTechnique::ProtocolDowngrade));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == CallbackTechnique::ParameterInjection));
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == CallbackTechnique::UrlRedirect)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == CallbackTechnique::HostOverride)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == CallbackTechnique::PathTraversal)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == CallbackTechnique::ProtocolDowngrade)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == CallbackTechnique::ParameterInjection)
+    );
 }
 
 #[test]
@@ -247,24 +283,36 @@ fn callback_parameter_injection() {
 fn payload_injections_generated() {
     let injections = generate_payload_injections("user_email");
     assert!(injections.len() >= 6);
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::JsonFieldInjection));
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::TypeConfusion));
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::OversizedPayload));
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::NestedObjectBomb));
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::UnicodeBypass));
-    assert!(injections
-        .iter()
-        .any(|i| i.technique == PayloadInjectionTechnique::HeaderInjectionViaPayload));
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::JsonFieldInjection)
+    );
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::TypeConfusion)
+    );
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::OversizedPayload)
+    );
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::NestedObjectBomb)
+    );
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::UnicodeBypass)
+    );
+    assert!(
+        injections
+            .iter()
+            .any(|i| i.technique == PayloadInjectionTechnique::HeaderInjectionViaPayload)
+    );
 }
 
 #[test]
@@ -329,35 +377,51 @@ fn full_analysis_all_categories() {
         Some("sha256=abc123"),
         Some("user_email"),
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::SsrfViaWebhook));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::EventReplay));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::SignatureBypass));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::CallbackManipulation));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::PayloadInjection));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::SsrfViaWebhook)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::EventReplay)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::SignatureBypass)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::CallbackManipulation)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::PayloadInjection)
+    );
 }
 
 #[test]
 fn full_analysis_minimal_input() {
     let findings = run_webhook_security_analysis("url", None, None, None, None, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::SsrfViaWebhook));
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::EventReplay));
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == WebhookAttackCategory::SignatureBypass));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::SsrfViaWebhook)
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::EventReplay)
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == WebhookAttackCategory::SignatureBypass)
+    );
 }
 
 #[test]

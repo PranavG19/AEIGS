@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+/// A named set of credentials with a privilege level and optional auth header.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Credential {
     pub label: String,
@@ -7,6 +8,7 @@ pub struct Credential {
     pub auth_header: Option<String>,
 }
 
+/// Ordered privilege level of a credential, from unauthenticated to service account.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum PrivilegeLevel {
     Unauthenticated,
@@ -29,6 +31,7 @@ impl std::fmt::Display for PrivilegeLevel {
     }
 }
 
+/// A recorded HTTP status code for a specific (endpoint, method, credential) triple.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EndpointAccess {
     pub endpoint: String,
@@ -37,6 +40,8 @@ pub struct EndpointAccess {
     pub status_code: u16,
 }
 
+/// An authorization anomaly where a low-privilege credential can access a resource
+/// that should require higher privileges.
 #[derive(Debug, Clone)]
 pub struct AuthorizationAnomaly {
     pub endpoint: String,
@@ -50,6 +55,7 @@ pub struct AuthorizationAnomaly {
     pub anomaly_type: AnomalyType,
 }
 
+/// Classification of an authorization anomaly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AnomalyType {
     PotentialIdor,
@@ -68,6 +74,9 @@ impl std::fmt::Display for AnomalyType {
     }
 }
 
+/// Builds an access-control matrix by recording (endpoint, credential) → status code
+/// pairs, then detects authorization anomalies where low-privilege credentials
+/// receive success responses on resources meant for higher privilege levels.
 pub struct AuthorizationMatrix {
     credentials: Vec<Credential>,
     access_results: Vec<EndpointAccess>,

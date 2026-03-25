@@ -409,7 +409,7 @@ impl RedosEngine {
                     RegexEngine::Ruby,
                 ],
                 trigger_patterns: vec![
-                    r"^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})+$".to_string()
+                    r"^([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})+$".to_string(),
                 ],
                 description: "Email validation bomb — nested repetition in common email regex"
                     .to_string(),

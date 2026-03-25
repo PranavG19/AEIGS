@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::defense_profile::RateLimitProfile;
 
+/// Result of a sustained-rate probe: how many requests were sent at a given rate
+/// and how many were throttled. Used to detect the rate-limit threshold.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RateLimitProbeResult {
     pub request_rate: f64,
@@ -12,6 +14,8 @@ pub struct RateLimitProbeResult {
     pub limit_status_code: Option<u16>,
 }
 
+/// Result of a burst probe that sends rapid sequential requests to find the burst
+/// allowance — the request count at which rate limiting first activates.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BurstProbeResult {
     pub total_sent: u32,
@@ -19,6 +23,8 @@ pub struct BurstProbeResult {
     pub limit_status_code: Option<u16>,
 }
 
+/// Result of a window-recovery probe that waits a given duration after being
+/// rate-limited and checks whether the limit has reset.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WindowProbeResult {
     pub wait_seconds: u32,

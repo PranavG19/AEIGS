@@ -69,9 +69,11 @@ mod tests {
             .iter()
             .find(|tc| tc.name.contains("x_http_method_override"))
             .unwrap();
-        assert!(header_override
-            .headers
-            .contains_key("X-HTTP-Method-Override"));
+        assert!(
+            header_override
+                .headers
+                .contains_key("X-HTTP-Method-Override")
+        );
         assert_eq!(header_override.headers["X-HTTP-Method-Override"], "DELETE");
     }
 

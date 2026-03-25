@@ -13,6 +13,7 @@ const DEFAULT_CONCURRENCY: usize = 20;
 pub(crate) const BASELINE_404_PROBE: &str = "aegis-nonexistent-path-4f7a8b2c-d1e3";
 pub(crate) const BODY_SIZE_TOLERANCE: usize = 64;
 
+/// A path found by directory brute-forcing that returned a non-filtered status code.
 #[derive(Debug, Clone)]
 pub struct DiscoveredPath {
     pub path: String,
@@ -22,6 +23,7 @@ pub struct DiscoveredPath {
     pub interesting: bool,
 }
 
+/// Errors that can occur during directory brute-forcing.
 #[derive(Debug)]
 pub enum BruteForceError {
     InvalidBaseUrl(String),
@@ -41,6 +43,11 @@ impl std::fmt::Display for BruteForceError {
 
 impl std::error::Error for BruteForceError {}
 
+/// Multi-threaded directory brute-forcer for localhost targets.
+///
+/// Probes wordlist entries (optionally with file extensions) against the target,
+/// filtering 404 responses and baseline-matching pages. Use builder methods
+/// `with_extensions`, `with_concurrency`, and `with_filter_codes` to customize.
 pub struct DirectoryBruster {
     client: Client,
     pub(crate) base_url: String,

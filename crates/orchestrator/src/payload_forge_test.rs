@@ -95,9 +95,11 @@ fn sql_comment_insert_breaks_keywords() {
 fn xss_payloads_no_waf_baseline() {
     let payloads = generate_xss_payloads(PayloadContext::HtmlBody, &no_waf());
     assert!(!payloads.is_empty());
-    assert!(payloads
-        .iter()
-        .all(|p| p.vulnerability_class == VulnerabilityClass::CrossSiteScripting));
+    assert!(
+        payloads
+            .iter()
+            .all(|p| p.vulnerability_class == VulnerabilityClass::CrossSiteScripting)
+    );
     assert!(payloads.iter().any(|p| p.raw.contains("onerror")));
     assert!(payloads.iter().any(|p| p.raw.contains("svg")));
 }
@@ -118,15 +120,21 @@ fn xss_payloads_waf_generates_evasions() {
 fn xss_payloads_waf_includes_encoded_variants() {
     let payloads = generate_xss_payloads(PayloadContext::HtmlBody, &with_xss_waf());
     assert!(payloads.iter().any(|p| !p.encoding_chain.is_empty()));
-    assert!(payloads
-        .iter()
-        .any(|p| p.encoding_chain.contains(&EncodingStep::CaseToggle)));
-    assert!(payloads
-        .iter()
-        .any(|p| p.encoding_chain.contains(&EncodingStep::HtmlEntityEncode)));
-    assert!(payloads
-        .iter()
-        .any(|p| p.encoding_chain.contains(&EncodingStep::DoubleUrlEncode)));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.encoding_chain.contains(&EncodingStep::CaseToggle))
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.encoding_chain.contains(&EncodingStep::HtmlEntityEncode))
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.encoding_chain.contains(&EncodingStep::DoubleUrlEncode))
+    );
 }
 
 #[test]
@@ -147,9 +155,11 @@ fn xss_js_string_context() {
 fn sqli_payloads_no_waf() {
     let payloads = generate_sqli_payloads(PayloadContext::SqlString, &no_waf());
     assert!(!payloads.is_empty());
-    assert!(payloads
-        .iter()
-        .all(|p| p.vulnerability_class == VulnerabilityClass::SqlInjection));
+    assert!(
+        payloads
+            .iter()
+            .all(|p| p.vulnerability_class == VulnerabilityClass::SqlInjection)
+    );
     assert!(payloads.iter().any(|p| p.raw.contains("UNION")));
     assert!(payloads.iter().any(|p| p.raw.contains("SLEEP")));
 }
@@ -231,9 +241,10 @@ fn forge_payloads_dispatches_by_class() {
         &no_waf(),
     );
     assert!(!xss.is_empty());
-    assert!(xss
-        .iter()
-        .all(|p| p.vulnerability_class == VulnerabilityClass::CrossSiteScripting));
+    assert!(
+        xss.iter()
+            .all(|p| p.vulnerability_class == VulnerabilityClass::CrossSiteScripting)
+    );
 
     let sqli = forge_payloads(
         VulnerabilityClass::SqlInjection,

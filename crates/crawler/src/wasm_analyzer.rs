@@ -662,9 +662,8 @@ fn check_memory_size(analysis: &mut WasmAnalysis) {
             analysis.security_findings.push(SecurityFinding {
                 severity: Severity::Low,
                 category: FindingCategory::ExcessiveMemory,
-                description:
-                    "maximum memory set to 4 GiB (65536 pages), the absolute WASM limit"
-                        .to_owned(),
+                description: "maximum memory set to 4 GiB (65536 pages), the absolute WASM limit"
+                    .to_owned(),
             });
         }
     }

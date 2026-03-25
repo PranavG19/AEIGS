@@ -14,6 +14,10 @@ pub struct ScanCheckpoint {
     pub timestamp_unix_ms: u64,
 }
 
+/// Errors arising from checkpoint file I/O or deserialization.
+///
+/// Returned by `save_checkpoint`, `load_checkpoint`, and `delete_checkpoint`.
+/// Wraps into `PhaseError::Checkpoint` for pipeline-level error propagation.
 #[derive(Debug)]
 pub enum CheckpointError {
     IoError(String),

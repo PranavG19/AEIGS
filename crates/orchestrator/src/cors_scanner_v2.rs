@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 
 use aegis_evasion_engine::{
-    analyze_probe, build_report, generate_poc_html, generate_probes, CorsExploitReport,
-    CorsHeaders, CorsMisconfigKind, CorsProbeResult, CorsSeverity,
+    CorsExploitReport, CorsHeaders, CorsMisconfigKind, CorsProbeResult, CorsSeverity,
+    analyze_probe, build_report, generate_poc_html, generate_probes,
 };
 
 /// Origin test variants sent per endpoint during V2 scanning.

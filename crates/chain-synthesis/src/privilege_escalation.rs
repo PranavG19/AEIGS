@@ -1,7 +1,7 @@
+use petgraph::Direction;
 use petgraph::algo::dijkstra;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
-use petgraph::Direction;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap, HashSet, VecDeque};
 

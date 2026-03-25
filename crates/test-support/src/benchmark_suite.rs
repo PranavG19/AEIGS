@@ -250,18 +250,18 @@ impl BenchmarkReport {
         let mut regressions = Vec::new();
 
         for current in &self.measurements {
-            if let Some(base) = baseline.by_name(&current.name) {
-                if base.ops_per_sec > 0.0 {
-                    let change_pct =
-                        ((current.ops_per_sec - base.ops_per_sec) / base.ops_per_sec) * 100.0;
-                    if change_pct < -threshold_pct {
-                        regressions.push(BenchmarkRegression {
-                            name: current.name.clone(),
-                            baseline_ops_per_sec: base.ops_per_sec,
-                            current_ops_per_sec: current.ops_per_sec,
-                            change_pct,
-                        });
-                    }
+            if let Some(base) = baseline.by_name(&current.name)
+                && base.ops_per_sec > 0.0
+            {
+                let change_pct =
+                    ((current.ops_per_sec - base.ops_per_sec) / base.ops_per_sec) * 100.0;
+                if change_pct < -threshold_pct {
+                    regressions.push(BenchmarkRegression {
+                        name: current.name.clone(),
+                        baseline_ops_per_sec: base.ops_per_sec,
+                        current_ops_per_sec: current.ops_per_sec,
+                        change_pct,
+                    });
                 }
             }
         }

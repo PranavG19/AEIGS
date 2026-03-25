@@ -10,6 +10,11 @@ const MAX_BATCH_SIZE: usize = 1000;
 const DEFAULT_SEVERITY: f64 = 5.0;
 const SENTINEL_VERSION: &str = "999999.0.0";
 
+/// CLI arguments for the `update-db` subcommand.
+///
+/// Parsed from raw `args[2..]` by `parse_update_db_args`. Controls where
+/// the vulnerability database is stored, which source directory to scan
+/// for lock files, and whether to perform a full refresh.
 #[derive(Debug)]
 pub struct UpdateDbArgs {
     pub db_path: PathBuf,
@@ -19,6 +24,10 @@ pub struct UpdateDbArgs {
     pub update_tools: bool,
 }
 
+/// Summary returned after a successful `update-db` run.
+///
+/// Reports the database path, how many new records were inserted,
+/// total record count, and how many unique packages were queried via OSV.
 pub struct UpdateDbSummary {
     pub db_path: PathBuf,
     pub new_records: usize,
@@ -26,6 +35,7 @@ pub struct UpdateDbSummary {
     pub packages_queried: usize,
 }
 
+/// Errors from the `update-db` subcommand.
 #[derive(Debug)]
 pub enum UpdateDbError {
     MissingArg(String),
@@ -319,16 +329,19 @@ fn find_flag(args: &[String], name: &str) -> Option<String> {
     args.windows(2).find(|w| w[0] == flag).map(|w| w[1].clone())
 }
 
+/// Deserialized batch response from the OSV.dev vulnerability API.
 #[derive(Debug, Deserialize)]
 pub struct OsvBatchResponse {
     pub results: Vec<OsvBatchResult>,
 }
 
+/// A single package result within an OSV batch response.
 #[derive(Debug, Deserialize)]
 pub struct OsvBatchResult {
     pub vulns: Option<Vec<OsvVulnerability>>,
 }
 
+/// An individual vulnerability record from the OSV API.
 #[derive(Debug, Deserialize)]
 pub struct OsvVulnerability {
     pub id: String,
@@ -338,6 +351,7 @@ pub struct OsvVulnerability {
     pub affected: Option<Vec<OsvAffected>>,
 }
 
+/// Severity entry from the OSV vulnerability schema (CVSS or similar).
 #[derive(Debug, Deserialize)]
 pub struct OsvSeverity {
     #[serde(rename = "type")]
@@ -345,18 +359,21 @@ pub struct OsvSeverity {
     pub score: String,
 }
 
+/// An affected package entry in an OSV vulnerability.
 #[derive(Debug, Deserialize)]
 pub struct OsvAffected {
     pub package: Option<OsvPackage>,
     pub ranges: Option<Vec<OsvRange>>,
 }
 
+/// Package identifier within an OSV affected entry.
 #[derive(Debug, Deserialize)]
 pub struct OsvPackage {
     pub name: String,
     pub ecosystem: String,
 }
 
+/// Version range within an OSV affected entry (SEMVER or ECOSYSTEM type).
 #[derive(Debug, Deserialize)]
 pub struct OsvRange {
     #[serde(rename = "type")]
@@ -364,6 +381,7 @@ pub struct OsvRange {
     pub events: Vec<OsvEvent>,
 }
 
+/// A version lifecycle event (introduced, fixed, or last_affected).
 #[derive(Debug, Deserialize)]
 pub struct OsvEvent {
     pub introduced: Option<String>,

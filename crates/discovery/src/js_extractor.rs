@@ -3,6 +3,10 @@ use std::collections::HashSet;
 use regex::Regex;
 use url::Url;
 
+/// An API endpoint extracted from JavaScript source code.
+///
+/// Contains the resolved URL, optional HTTP method, and the regex pattern
+/// that matched (e.g. "fetch", "axios", "xmlhttprequest").
 #[derive(Debug, Clone)]
 pub struct ExtractedEndpoint {
     pub url: String,
@@ -10,6 +14,11 @@ pub struct ExtractedEndpoint {
     pub source_pattern: String,
 }
 
+/// Extracts API endpoints from JavaScript source by matching common HTTP patterns.
+///
+/// Recognizes `fetch`, `axios`, `$.ajax`, `XMLHttpRequest.open`, route definitions,
+/// full URLs, and `/api/` path literals. URLs are resolved relative to the base URL
+/// and filtered to the same host.
 pub struct JsEndpointExtractor {
     base_url: String,
     base_host: String,

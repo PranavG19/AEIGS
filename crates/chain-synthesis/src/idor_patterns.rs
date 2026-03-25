@@ -1,6 +1,6 @@
+use petgraph::Direction;
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::EdgeRef;
-use petgraph::Direction;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
 
@@ -710,9 +710,12 @@ pub fn generate_uuid_prediction_chain(
                 "Extract timestamp ({}), clock_seq ({}), MAC ({:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x})",
                 analysis.timestamp_100ns,
                 analysis.clock_sequence,
-                analysis.mac_address[0], analysis.mac_address[1],
-                analysis.mac_address[2], analysis.mac_address[3],
-                analysis.mac_address[4], analysis.mac_address[5],
+                analysis.mac_address[0],
+                analysis.mac_address[1],
+                analysis.mac_address[2],
+                analysis.mac_address[3],
+                analysis.mac_address[4],
+                analysis.mac_address[5],
             ),
             endpoint: finding.endpoint.clone(),
             method: finding.method,

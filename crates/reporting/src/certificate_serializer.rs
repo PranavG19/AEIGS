@@ -6,6 +6,7 @@ struct CertificateEnvelope {
     payload: Vec<u8>,
 }
 
+/// Errors that can occur during CBOR certificate serialization or deserialization.
 #[derive(Debug)]
 pub enum CertificateError {
     SerializeError(String),
@@ -25,6 +26,7 @@ impl std::fmt::Display for CertificateError {
 
 impl std::error::Error for CertificateError {}
 
+/// Discriminator for the kind of evidence a certificate attests to.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum CertificateType {
     Fuzzing,
@@ -35,6 +37,7 @@ pub enum CertificateType {
     Evasion,
 }
 
+/// Evidence certificate for a fuzzing-based discovery (request/response pair with anomaly).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FuzzingCertificate {
     pub request_method: String,
@@ -47,6 +50,7 @@ pub struct FuzzingCertificate {
     pub statistical_significance: f64,
 }
 
+/// Evidence certificate for a taint-flow analysis (source → sink with intermediate steps).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaintCertificate {
     pub source_location: SourceSinkLocation,
@@ -54,6 +58,7 @@ pub struct TaintCertificate {
     pub path_steps: Vec<TaintPathStep>,
 }
 
+/// Code location of a taint source or sink.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SourceSinkLocation {
     pub file: String,
@@ -62,6 +67,7 @@ pub struct SourceSinkLocation {
     pub variable: String,
 }
 
+/// A single step in a taint propagation path.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaintPathStep {
     pub file: String,
@@ -71,11 +77,13 @@ pub struct TaintPathStep {
     pub operation: String,
 }
 
+/// Evidence certificate for a multi-step attack chain.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainCertificate {
     pub steps: Vec<ChainStep>,
 }
 
+/// A single step in an attack chain certificate.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChainStep {
     pub vulnerability_id: u64,
@@ -83,6 +91,7 @@ pub struct ChainStep {
     pub transition_condition: String,
 }
 
+/// Evidence certificate for a misconfigured setting (expected vs actual value).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConfigCertificate {
     pub config_key: String,
@@ -90,6 +99,7 @@ pub struct ConfigCertificate {
     pub expected_value: String,
 }
 
+/// Evidence certificate for a known vulnerable dependency.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DependencyCertificate {
     pub package_name: String,
@@ -98,6 +108,7 @@ pub struct DependencyCertificate {
     pub cve_id: String,
 }
 
+/// Evidence certificate for a successful WAF/defense evasion.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EvasionCertificate {
     pub original_payload: String,
@@ -111,6 +122,7 @@ pub struct EvasionCertificate {
 
 const CURRENT_VERSION: u16 = 2;
 
+/// Tagged union of all evidence certificate types, serialized as CBOR in a versioned envelope.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Certificate {
     Fuzzing(FuzzingCertificate),

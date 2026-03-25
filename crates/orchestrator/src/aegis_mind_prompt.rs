@@ -190,7 +190,11 @@ pub fn assemble_prompt(
     sections.push("KNOWLEDGE".to_string());
 
     // Output format specification
-    let _ = write!(system, "{}", build_output_format_section(&config.output_format));
+    let _ = write!(
+        system,
+        "{}",
+        build_output_format_section(&config.output_format)
+    );
     sections.push("OUTPUT_FORMAT".to_string());
 
     // Behavioral rules
@@ -211,18 +215,20 @@ pub fn assemble_prompt(
     let mut user = String::with_capacity(4096);
 
     if let Some(mem) = memory_context
-        && config.include_memory_context {
-            let _ = write!(user, "{}", format_memory_context(mem));
-            sections.push("MEMORY_CONTEXT".to_string());
-        }
+        && config.include_memory_context
+    {
+        let _ = write!(user, "{}", format_memory_context(mem));
+        sections.push("MEMORY_CONTEXT".to_string());
+    }
 
     if let Some(dmap) = defense_map
-        && config.include_defense_map {
-            let _ = writeln!(user, "## DEFENSE MAP");
-            let _ = writeln!(user, "{}", dmap);
-            let _ = writeln!(user);
-            sections.push("DEFENSE_MAP".to_string());
-        }
+        && config.include_defense_map
+    {
+        let _ = writeln!(user, "## DEFENSE MAP");
+        let _ = writeln!(user, "{}", dmap);
+        let _ = writeln!(user);
+        sections.push("DEFENSE_MAP".to_string());
+    }
 
     let _ = write!(user, "{}", scan_briefing);
     sections.push("SCAN_BRIEFING".to_string());
@@ -249,23 +255,56 @@ fn build_knowledge_section(config: &MindPromptConfig) -> String {
     let _ = writeln!(s, "You have deep expertise in:");
     let _ = writeln!(s, "- OWASP Top 10 2021 and API Security Top 10 2023");
     let _ = writeln!(s, "- CWE taxonomy and CVE correlation");
-    let _ = writeln!(s, "- WAF evasion: encoding chains, Unicode normalization, chunked encoding");
-    let _ = writeln!(s, "- Authentication bypass: JWT, OAuth 2.0, session management");
-    let _ = writeln!(s, "- Injection: SQL, NoSQL, LDAP, SSTI, command, expression languages");
+    let _ = writeln!(
+        s,
+        "- WAF evasion: encoding chains, Unicode normalization, chunked encoding"
+    );
+    let _ = writeln!(
+        s,
+        "- Authentication bypass: JWT, OAuth 2.0, session management"
+    );
+    let _ = writeln!(
+        s,
+        "- Injection: SQL, NoSQL, LDAP, SSTI, command, expression languages"
+    );
     let _ = writeln!(s, "- Client-side: XSS, DOM clobbering, prototype pollution");
-    let _ = writeln!(s, "- Server-side: SSRF, request smuggling, deserialization, race conditions");
+    let _ = writeln!(
+        s,
+        "- Server-side: SSRF, request smuggling, deserialization, race conditions"
+    );
     let _ = writeln!(s, "- Cloud: AWS/GCP/Azure misconfiguration, IAM escalation");
     let _ = writeln!(s);
 
     if config.include_tech_attack_patterns {
         let _ = writeln!(s, "## Tech Stack Attack Patterns");
-        let _ = writeln!(s, "- Express/Node.js → prototype pollution, SSTI (EJS/Pug), event loop blocking");
-        let _ = writeln!(s, "- Django/Python → SSTI (Jinja2), ORM injection, pickle deserialization");
-        let _ = writeln!(s, "- Spring/Java → SpEL injection, deserialization, actuator endpoints");
-        let _ = writeln!(s, "- Laravel/PHP → SSTI (Blade), file upload RCE, mass assignment");
-        let _ = writeln!(s, "- GraphQL → introspection disclosure, batch query DoS, IDOR via node IDs");
-        let _ = writeln!(s, "- Nginx → alias traversal, off-by-slash, proxy_pass SSRF");
-        let _ = writeln!(s, "- Cloudflare WAF → Unicode normalization, chunked encoding, origin IP discovery");
+        let _ = writeln!(
+            s,
+            "- Express/Node.js → prototype pollution, SSTI (EJS/Pug), event loop blocking"
+        );
+        let _ = writeln!(
+            s,
+            "- Django/Python → SSTI (Jinja2), ORM injection, pickle deserialization"
+        );
+        let _ = writeln!(
+            s,
+            "- Spring/Java → SpEL injection, deserialization, actuator endpoints"
+        );
+        let _ = writeln!(
+            s,
+            "- Laravel/PHP → SSTI (Blade), file upload RCE, mass assignment"
+        );
+        let _ = writeln!(
+            s,
+            "- GraphQL → introspection disclosure, batch query DoS, IDOR via node IDs"
+        );
+        let _ = writeln!(
+            s,
+            "- Nginx → alias traversal, off-by-slash, proxy_pass SSRF"
+        );
+        let _ = writeln!(
+            s,
+            "- Cloudflare WAF → Unicode normalization, chunked encoding, origin IP discovery"
+        );
         let _ = writeln!(s);
     }
 
@@ -300,7 +339,10 @@ fn build_output_format_section(format: &OutputFormatSpec) -> String {
             let _ = writeln!(s, "    \"parameters\": {{}},");
             let _ = writeln!(s, "    \"rationale\": \"Reason for this action\"");
             let _ = writeln!(s, "  }}],");
-            let _ = writeln!(s, "  \"reasoning_summary\": \"Brief assessment and strategy\"");
+            let _ = writeln!(
+                s,
+                "  \"reasoning_summary\": \"Brief assessment and strategy\""
+            );
             let _ = writeln!(s, "}}");
             let _ = writeln!(s, "```");
         }
@@ -319,12 +361,27 @@ fn build_behavioral_rules() -> String {
     let mut s = String::new();
     let _ = writeln!(s, "## Behavioral Rules");
     let _ = writeln!(s, "1. Be aggressive. Find vulnerabilities, not excuses.");
-    let _ = writeln!(s, "2. Be creative. Mutate, chain, and invent beyond standard payloads.");
-    let _ = writeln!(s, "3. Be specific. Exact payloads, exact endpoints, exact encoding.");
-    let _ = writeln!(s, "4. Be adaptive. If WAF blocks X, try Y with different evasion.");
-    let _ = writeln!(s, "5. Chain everything. Single findings are starting points, not endpoints.");
+    let _ = writeln!(
+        s,
+        "2. Be creative. Mutate, chain, and invent beyond standard payloads."
+    );
+    let _ = writeln!(
+        s,
+        "3. Be specific. Exact payloads, exact endpoints, exact encoding."
+    );
+    let _ = writeln!(
+        s,
+        "4. Be adaptive. If WAF blocks X, try Y with different evasion."
+    );
+    let _ = writeln!(
+        s,
+        "5. Chain everything. Single findings are starting points, not endpoints."
+    );
     let _ = writeln!(s, "6. Never repeat failed attempts without a new angle.");
-    let _ = writeln!(s, "7. Think about absence. Missing headers, no rate limiting, no CSRF tokens — absence is evidence.");
+    let _ = writeln!(
+        s,
+        "7. Think about absence. Missing headers, no rate limiting, no CSRF tokens — absence is evidence."
+    );
     let _ = writeln!(s);
     s
 }

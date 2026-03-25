@@ -1,27 +1,27 @@
 pub mod dep_confusion;
 pub mod dependency_parser;
 pub mod filesystem_walker;
+pub mod secret_scanner;
+pub mod subdomain_enum;
 pub mod supply_chain_monitor;
 pub mod tls_scanner;
 pub mod vuln_database;
-pub mod secret_scanner;
-pub mod subdomain_enum;
 
 pub use dep_confusion::*;
 pub use dependency_parser::*;
 pub use filesystem_walker::*;
+pub use secret_scanner::*;
 pub use supply_chain_monitor::*;
 pub use tls_scanner::*;
 pub use vuln_database::*;
-pub use secret_scanner::*;
 pub mod git_analyzer;
 pub mod har_analyzer;
 pub mod service_fingerprinter;
 
-pub use subdomain_enum::*;
 pub use git_analyzer::*;
 pub use har_analyzer::*;
 pub use service_fingerprinter::*;
+pub use subdomain_enum::*;
 
 #[cfg(test)]
 #[path = "git_analyzer_test.rs"]

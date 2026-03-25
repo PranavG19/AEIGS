@@ -447,9 +447,11 @@ fn test_impact_scoring_high_value_data() {
     let impact = compute_impact(&finding);
     assert!(impact.overall_score >= 9.0);
     assert_eq!(impact.severity_label, "Critical");
-    assert!(impact
-        .regulatory_frameworks
-        .contains(&"PCI-DSS".to_string()));
+    assert!(
+        impact
+            .regulatory_frameworks
+            .contains(&"PCI-DSS".to_string())
+    );
     assert!(impact.data_impact.contains_key("financial-data"));
     assert!(!impact.business_narrative.is_empty());
 }
@@ -561,10 +563,12 @@ fn test_prerequisites_populated() {
     let chains = builder.generate_direct_chains(&finding);
 
     assert!(!chains[0].prerequisites.is_empty());
-    assert!(chains[0]
-        .prerequisites
-        .iter()
-        .any(|p| p.contains("session")));
+    assert!(
+        chains[0]
+            .prerequisites
+            .iter()
+            .any(|p| p.contains("session"))
+    );
 }
 
 #[test]

@@ -123,12 +123,12 @@ impl CronSchedule {
         let minute_ok = self
             .minutes
             .as_ref()
-            .map_or(true, |mins| mins.contains(&minute));
-        let hour_ok = self.hours.as_ref().map_or(true, |hrs| hrs.contains(&hour));
+            .is_none_or(|mins| mins.contains(&minute));
+        let hour_ok = self.hours.as_ref().is_none_or(|hrs| hrs.contains(&hour));
         let day_ok = self
             .days_of_week
             .as_ref()
-            .map_or(true, |days| days.contains(&day));
+            .is_none_or(|days| days.contains(&day));
         minute_ok && hour_ok && day_ok
     }
 }
@@ -233,11 +233,11 @@ impl ContinuousScheduler {
                 continue;
             }
 
-            if let Some(qh) = &scan.quiet_hours {
-                if qh.is_quiet(hour, day) {
-                    skipped_quiet.push(id.clone());
-                    continue;
-                }
+            if let Some(qh) = &scan.quiet_hours
+                && qh.is_quiet(hour, day)
+            {
+                skipped_quiet.push(id.clone());
+                continue;
             }
 
             if let Some(last) = scan.last_run_timestamp_ms {

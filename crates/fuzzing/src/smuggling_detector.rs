@@ -286,7 +286,7 @@ pub fn send_raw_request(
     Ok((elapsed, status))
 }
 
-fn parse_status_code(response: &[u8]) -> u16 {
+pub(crate) fn parse_status_code(response: &[u8]) -> u16 {
     let text = String::from_utf8_lossy(response);
     let first_line = text.lines().next().unwrap_or("");
     let parts: Vec<&str> = first_line.splitn(3, ' ').collect();

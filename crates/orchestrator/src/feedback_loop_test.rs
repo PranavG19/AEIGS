@@ -85,9 +85,11 @@ fn process_iteration_refuted_creates_failed_attempts() {
     assert_eq!(result.confirmed, 0);
     assert_eq!(result.refuted, 2);
     assert_eq!(result.new_failed_attempts.len(), 2);
-    assert!(result.new_failed_attempts[0]
-        .failure_reason
-        .contains("not vulnerable"));
+    assert!(
+        result.new_failed_attempts[0]
+            .failure_reason
+            .contains("not vulnerable")
+    );
 }
 
 #[test]
@@ -300,11 +302,13 @@ fn run_feedback_loop_hits_max_iterations() {
 
     assert!(!state.converged);
     assert_eq!(state.iterations_completed(), 3);
-    assert!(state
-        .convergence_reason
-        .as_ref()
-        .unwrap()
-        .contains("max iterations"));
+    assert!(
+        state
+            .convergence_reason
+            .as_ref()
+            .unwrap()
+            .contains("max iterations")
+    );
 }
 
 #[test]

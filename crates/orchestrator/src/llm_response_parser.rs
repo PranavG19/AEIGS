@@ -237,13 +237,15 @@ fn try_multi_block_merge(raw: &str, warnings: &mut Vec<ParseWarning>) -> Option<
     for block in &blocks {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(block) {
             if let Some(hyps) = val.get("hypotheses")
-                && let Ok(h) = serde_json::from_value::<Vec<ParsedHypothesis>>(hyps.clone()) {
-                    all_hypotheses.extend(h);
-                }
+                && let Ok(h) = serde_json::from_value::<Vec<ParsedHypothesis>>(hyps.clone())
+            {
+                all_hypotheses.extend(h);
+            }
             if let Some(acts) = val.get("actions")
-                && let Ok(a) = serde_json::from_value::<Vec<ParsedAction>>(acts.clone()) {
-                    all_actions.extend(a);
-                }
+                && let Ok(a) = serde_json::from_value::<Vec<ParsedAction>>(acts.clone())
+            {
+                all_actions.extend(a);
+            }
             if let Some(rs) = val
                 .get("reasoning_summary")
                 .or_else(|| val.get("reasoning"))
@@ -313,8 +315,8 @@ fn try_partial_extraction(raw: &str, warnings: &mut Vec<ParseWarning>) -> Option
         }
     }
 
-    if let Some(rs) = find_json_string(raw, "reasoning_summary")
-        .or_else(|| find_json_string(raw, "reasoning"))
+    if let Some(rs) =
+        find_json_string(raw, "reasoning_summary").or_else(|| find_json_string(raw, "reasoning"))
     {
         summary = rs;
     }

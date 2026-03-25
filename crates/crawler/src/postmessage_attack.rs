@@ -189,9 +189,10 @@ pub fn extract_message_listeners(js_source: &str) -> Vec<(String, usize)> {
         }
     }
 
-    let onmessage_re =
-        Regex::new(r#"(?s)(?:window\.)?onmessage\s*=\s*(?:function\s*\([^)]*\)|(\([^)]*\)|\w+)\s*=>)"#)
-            .expect("valid regex");
+    let onmessage_re = Regex::new(
+        r#"(?s)(?:window\.)?onmessage\s*=\s*(?:function\s*\([^)]*\)|(\([^)]*\)|\w+)\s*=>)"#,
+    )
+    .expect("valid regex");
 
     for mat in onmessage_re.find_iter(js_source) {
         let start = mat.start();
@@ -271,15 +272,30 @@ pub fn detect_sinks(handler_body: &str) -> Vec<DomSink> {
         (r"\.innerHTML\s*=", DomSink::InnerHtml),
         (r"\.outerHTML\s*=", DomSink::OuterHtml),
         (r"\beval\s*\(", DomSink::Eval),
-        (r"\bsetTimeout\s*\(\s*(?:event|e|msg)\.", DomSink::SetTimeout),
-        (r"\bsetInterval\s*\(\s*(?:event|e|msg)\.", DomSink::SetInterval),
+        (
+            r"\bsetTimeout\s*\(\s*(?:event|e|msg)\.",
+            DomSink::SetTimeout,
+        ),
+        (
+            r"\bsetInterval\s*\(\s*(?:event|e|msg)\.",
+            DomSink::SetInterval,
+        ),
         (r"\bnew\s+Function\s*\(", DomSink::Function),
         (r"(?:window\.)?location\.href\s*=", DomSink::LocationHref),
-        (r"(?:window\.)?location\.assign\s*\(", DomSink::LocationAssign),
-        (r"(?:window\.)?location\.replace\s*\(", DomSink::LocationReplace),
+        (
+            r"(?:window\.)?location\.assign\s*\(",
+            DomSink::LocationAssign,
+        ),
+        (
+            r"(?:window\.)?location\.replace\s*\(",
+            DomSink::LocationReplace,
+        ),
         (r"document\.write\s*\(", DomSink::DocumentWrite),
         (r"\.src\s*=\s*(?:event|e|msg)\.", DomSink::ScriptSrc),
-        (r"\.textContent\s*=\s*(?:event|e|msg)\.", DomSink::ScriptTextContent),
+        (
+            r"\.textContent\s*=\s*(?:event|e|msg)\.",
+            DomSink::ScriptTextContent,
+        ),
         (r"\.insertAdjacentHTML\s*\(", DomSink::InsertAdjacentHtml),
     ];
 
@@ -296,20 +312,16 @@ pub fn detect_sinks(handler_body: &str) -> Vec<DomSink> {
 
 /// Detects whether a handler sends data back via postMessage (potential data leak).
 pub fn detects_data_response(handler_body: &str) -> bool {
-    let response_re = Regex::new(
-        r"(?:source|parent|opener|sender)\s*\.\s*postMessage\s*\(",
-    )
-    .expect("valid regex");
+    let response_re = Regex::new(r"(?:source|parent|opener|sender)\s*\.\s*postMessage\s*\(")
+        .expect("valid regex");
 
     response_re.is_match(handler_body)
 }
 
 /// Detects window.opener or window.parent message passing patterns.
 pub fn detects_window_reference(handler_body: &str) -> bool {
-    let ref_re = Regex::new(
-        r"(?:window\.(?:opener|parent)|parent|opener)\s*\.\s*postMessage\s*\(",
-    )
-    .expect("valid regex");
+    let ref_re = Regex::new(r"(?:window\.(?:opener|parent)|parent|opener)\s*\.\s*postMessage\s*\(")
+        .expect("valid regex");
 
     ref_re.is_match(handler_body)
 }
@@ -508,10 +520,7 @@ pub fn analyze_postmessage(js_source: &str, config: &PostMessageConfig) -> PostM
         .iter()
         .filter(|f| f.severity == PostMessageSeverity::High)
         .count();
-    let exploitable_count = findings
-        .iter()
-        .filter(|f| f.poc_html.is_some())
-        .count();
+    let exploitable_count = findings.iter().filter(|f| f.poc_html.is_some()).count();
 
     let summary = PostMessageSummary {
         total_listeners: listeners.len(),
@@ -566,15 +575,9 @@ pub fn generate_sink_poc(config: &PostMessageConfig, sink: DomSink) -> String {
         DomSink::LocationHref | DomSink::LocationAssign | DomSink::LocationReplace => {
             r#""javascript:alert(document.domain)""#
         }
-        DomSink::DocumentWrite => {
-            r#""<script>alert(document.domain)<\/script>""#
-        }
-        DomSink::ScriptSrc => {
-            &format!(r#""{}/malicious.js""#, config.attacker_origin)
-        }
-        DomSink::ScriptTextContent => {
-            r#""alert(document.domain)""#
-        }
+        DomSink::DocumentWrite => r#""<script>alert(document.domain)<\/script>""#,
+        DomSink::ScriptSrc => &format!(r#""{}/malicious.js""#, config.attacker_origin),
+        DomSink::ScriptTextContent => r#""alert(document.domain)""#,
     };
 
     format!(

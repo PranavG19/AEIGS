@@ -44,21 +44,31 @@ fn replay_attacks_generated() {
     };
     let attacks = generate_replay_attacks(&metadata, "/api/v1/data");
     assert!(attacks.len() >= 8);
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::ExactReplay));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::TimestampShift));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::NonceReuse));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::CrossEndpointReplay));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::MethodSwitchReplay));
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::ExactReplay)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::TimestampShift)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::NonceReuse)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::CrossEndpointReplay)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::MethodSwitchReplay)
+    );
 }
 
 #[test]
@@ -88,9 +98,11 @@ fn replay_nonce_reuse_only_when_nonce_present() {
         signature: "sig".to_string(),
     };
     let attacks = generate_replay_attacks(&no_nonce, "/api");
-    assert!(!attacks
-        .iter()
-        .any(|a| a.technique == ReplayTechnique::NonceReuse));
+    assert!(
+        !attacks
+            .iter()
+            .any(|a| a.technique == ReplayTechnique::NonceReuse)
+    );
 }
 
 #[test]
@@ -104,24 +116,36 @@ fn algorithm_confusion_tests_generated() {
     };
     let tests = generate_algorithm_confusion_tests(&metadata);
     assert!(tests.len() >= 6);
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::HmacToNone));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::RsaToHmac));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::Sha256ToSha1));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::Sha256ToMd5));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::CustomAlgorithm));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == AlgoConfusionTechnique::AlgorithmHeaderStrip));
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::HmacToNone)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::RsaToHmac)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::Sha256ToSha1)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::Sha256ToMd5)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::CustomAlgorithm)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == AlgoConfusionTechnique::AlgorithmHeaderStrip)
+    );
 }
 
 #[test]
@@ -147,24 +171,36 @@ fn hmac_to_none_has_empty_signature() {
 fn empty_signature_tests_generated() {
     let tests = generate_empty_signature_tests();
     assert!(tests.len() >= 6);
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::EmptyString));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::NullByte));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::WhitespaceOnly));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::MissingHeader));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::ZeroLength));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == EmptySignatureTechnique::InvalidBase64));
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::EmptyString)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::NullByte)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::WhitespaceOnly)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::MissingHeader)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::ZeroLength)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == EmptySignatureTechnique::InvalidBase64)
+    );
 }
 
 #[test]
@@ -192,12 +228,16 @@ fn null_byte_signature_contains_null() {
 fn clock_skew_tests_generated() {
     let tests = generate_clock_skew_tests("1700000000");
     assert!(tests.len() >= 9);
-    assert!(tests
-        .iter()
-        .any(|t| t.direction == ClockSkewDirection::Future));
-    assert!(tests
-        .iter()
-        .any(|t| t.direction == ClockSkewDirection::Past));
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.direction == ClockSkewDirection::Future)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.direction == ClockSkewDirection::Past)
+    );
 }
 
 #[test]
@@ -220,24 +260,36 @@ fn clock_skew_past_week_is_critical() {
 fn partial_coverage_tests_generated() {
     let tests = generate_partial_coverage_tests(&["host".to_string(), "content-type".to_string()]);
     assert!(tests.len() >= 8);
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::UnsignedQueryParams));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::UnsignedBody));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::UnsignedMethod));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::UnsignedPath));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::HeaderOrderManipulation));
-    assert!(tests
-        .iter()
-        .any(|t| t.technique == PartialCoverageTechnique::CasingManipulation));
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::UnsignedQueryParams)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::UnsignedBody)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::UnsignedMethod)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::UnsignedPath)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::HeaderOrderManipulation)
+    );
+    assert!(
+        tests
+            .iter()
+            .any(|t| t.technique == PartialCoverageTechnique::CasingManipulation)
+    );
 }
 
 #[test]
@@ -248,12 +300,16 @@ fn partial_coverage_detects_unsigned_headers() {
         .filter(|t| t.technique == PartialCoverageTechnique::UnsignedHeaders)
         .collect();
     assert!(unsigned.len() >= 3);
-    assert!(unsigned
-        .iter()
-        .any(|t| t.unsigned_component == "content-type"));
-    assert!(unsigned
-        .iter()
-        .any(|t| t.unsigned_component == "authorization"));
+    assert!(
+        unsigned
+            .iter()
+            .any(|t| t.unsigned_component == "content-type")
+    );
+    assert!(
+        unsigned
+            .iter()
+            .any(|t| t.unsigned_component == "authorization")
+    );
 }
 
 #[test]
@@ -298,29 +354,41 @@ fn full_analysis_generates_all_categories() {
         None,
         "/api/v1/data",
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::ReplayAttack));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::AlgorithmConfusion));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::EmptySignature));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::ClockSkewExploitation));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::PartialCoverage));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::ReplayAttack)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::AlgorithmConfusion)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::EmptySignature)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::ClockSkewExploitation)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::PartialCoverage)
+    );
 }
 
 #[test]
 fn full_analysis_without_timestamp_skips_clock_skew() {
     let findings = run_signing_bypass_analysis("Bearer token123", None, None, "/api");
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == SigningBypassCategory::ClockSkewExploitation));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == SigningBypassCategory::ClockSkewExploitation)
+    );
 }
 
 #[test]

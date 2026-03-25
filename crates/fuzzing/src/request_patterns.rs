@@ -68,6 +68,8 @@ pub struct NavigationStep {
     pub api_calls: Vec<String>,
 }
 
+/// Errors when constructing request batches: empty input, invalid cover ratio,
+/// or exceeding `MAX_BATCH_SIZE` (64).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PatternError {
     EmptyBatch,

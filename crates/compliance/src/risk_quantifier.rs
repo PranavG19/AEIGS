@@ -6,7 +6,7 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::class_mapper::default_cvss_for_class;
-use crate::cvss_scorer::{compute_cvss, CvssSeverity};
+use crate::cvss_scorer::{CvssSeverity, compute_cvss};
 
 /// EPSS-like exploit probability score for a vulnerability class.
 /// Values approximate real EPSS distributions by severity tier.
@@ -325,7 +325,7 @@ pub fn format_risk_report(result: &RiskQuantificationResult) -> String {
     );
     let _ = writeln!(out);
 
-    let _ = writeln!(out, "## Monte Carlo Analysis ({} iterations)\n", "N");
+    let _ = writeln!(out, "## Monte Carlo Analysis (N iterations)\n");
     let mc = &result.monte_carlo_loss_distribution;
     let _ = writeln!(out, "| Percentile | Annual Loss |");
     let _ = writeln!(out, "|------------|-------------|");

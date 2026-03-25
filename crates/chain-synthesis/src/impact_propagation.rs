@@ -94,9 +94,7 @@ impl<'a> ImpactPropagationEngine<'a> {
     /// Propagate impact from the compromised `origin` node.
     /// Returns the full blast radius including cascading effects.
     pub fn propagate(&self, origin: u64) -> Option<ImpactReport> {
-        if self.graph.node(origin).is_none() {
-            return None;
-        }
+        self.graph.node(origin)?;
 
         let mut visited: HashSet<u64> = HashSet::new();
         let mut queue: VecDeque<(u64, usize, f64)> = VecDeque::new();
@@ -148,17 +146,17 @@ impl<'a> ImpactPropagationEngine<'a> {
                 } else {
                     None
                 };
-                if let Some(peer_id) = peer {
-                    if visited.insert(peer_id) {
-                        steps.push(PropagationStep {
-                            from_node: current,
-                            to_node: peer_id,
-                            impact_type: ImpactType::TrustRelationship,
-                            hop_distance: hop + 1,
-                            cumulative_difficulty: cumulative_diff + 1.0,
-                        });
-                        queue.push_back((peer_id, hop + 1, cumulative_diff + 1.0));
-                    }
+                if let Some(peer_id) = peer
+                    && visited.insert(peer_id)
+                {
+                    steps.push(PropagationStep {
+                        from_node: current,
+                        to_node: peer_id,
+                        impact_type: ImpactType::TrustRelationship,
+                        hop_distance: hop + 1,
+                        cumulative_difficulty: cumulative_diff + 1.0,
+                    });
+                    queue.push_back((peer_id, hop + 1, cumulative_diff + 1.0));
                 }
             }
         }

@@ -202,30 +202,37 @@ impl EvasionCatalogue {
         self.techniques
             .iter()
             .filter(|t| {
-                if let Some(pt) = &query.payload_type {
-                    if !t.payload_types.contains(pt) {
-                        return false;
-                    }
+                if let Some(pt) = &query.payload_type
+                    && !t.payload_types.contains(pt)
+                {
+                    return false;
                 }
-                if let Some(vendor) = &query.vendor {
-                    if !t.target_vendors.contains(vendor) {
-                        return false;
-                    }
+                if query
+                    .vendor
+                    .as_ref()
+                    .is_some_and(|vendor| !t.target_vendors.contains(vendor))
+                {
+                    return false;
                 }
-                if let Some(enc) = &query.encoding {
-                    if t.encoding != *enc {
-                        return false;
-                    }
+                if query
+                    .encoding
+                    .as_ref()
+                    .is_some_and(|enc| t.encoding != *enc)
+                {
+                    return false;
                 }
-                if let Some(min_rate) = query.min_success_rate {
-                    if t.success_rate < min_rate {
-                        return false;
-                    }
+                if query
+                    .min_success_rate
+                    .is_some_and(|min_rate| t.success_rate < min_rate)
+                {
+                    return false;
                 }
-                if let Some(min_stealth) = &query.min_stealth_level {
-                    if t.stealth_level < *min_stealth {
-                        return false;
-                    }
+                if query
+                    .min_stealth_level
+                    .as_ref()
+                    .is_some_and(|min_stealth| t.stealth_level < *min_stealth)
+                {
+                    return false;
                 }
                 if let Some(tag) = &query.tag {
                     let tag_lower = tag.to_lowercase();

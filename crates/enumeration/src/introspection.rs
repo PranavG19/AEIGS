@@ -1,5 +1,9 @@
 use serde::Deserialize;
 
+/// An endpoint discovered via OpenAPI or GraphQL introspection.
+///
+/// Contains path, method, parameters, security schemes, content types,
+/// and response status codes extracted from the API schema.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct IntrospectedEndpoint {
     pub path: String,
@@ -12,6 +16,7 @@ pub struct IntrospectedEndpoint {
     pub response_status_codes: Vec<u16>,
 }
 
+/// A parameter declared on an introspected endpoint.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EndpointParameter {
     pub name: String,
@@ -20,6 +25,7 @@ pub struct EndpointParameter {
     pub required: bool,
 }
 
+/// Where a parameter is transmitted in the HTTP request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParameterLocation {
     Path,
@@ -42,6 +48,7 @@ impl std::fmt::Display for ParameterLocation {
     }
 }
 
+/// Errors that can occur during OpenAPI or GraphQL introspection parsing.
 #[derive(Debug)]
 pub enum IntrospectionError {
     JsonParseError(serde_json::Error),

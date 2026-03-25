@@ -238,8 +238,9 @@ impl ChangeDetector {
         out: &mut Vec<DetectedChange>,
     ) {
         for (ep, current_sig) in &current.response_signatures {
-            if let Some(baseline_sig) = baseline.response_signatures.get(ep) {
-                if baseline_sig != current_sig {
+            if let Some(baseline_sig) = baseline.response_signatures.get(ep)
+                && baseline_sig != current_sig
+            {
                     out.push(DetectedChange {
                         change_type: ChangeType::ResponseChanged(ep.clone()),
                         severity: if baseline_sig.status_code != current_sig.status_code {
@@ -256,7 +257,6 @@ impl ChangeDetector {
                         ),
                         detected_at_ms: ts,
                     });
-                }
             }
         }
     }

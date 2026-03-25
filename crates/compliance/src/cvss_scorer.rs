@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// CVSS v3.1 Attack Vector metric.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AttackVector {
     Network,
@@ -9,12 +10,14 @@ pub enum AttackVector {
     Physical,
 }
 
+/// CVSS v3.1 Attack Complexity metric.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum AttackComplexity {
     Low,
     High,
 }
 
+/// CVSS v3.1 Privileges Required metric.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PrivilegesRequired {
     None,
@@ -22,18 +25,21 @@ pub enum PrivilegesRequired {
     High,
 }
 
+/// CVSS v3.1 User Interaction metric.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum UserInteraction {
     None,
     Required,
 }
 
+/// CVSS v3.1 Scope metric.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Scope {
     Unchanged,
     Changed,
 }
 
+/// CVSS v3.1 CIA impact level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Impact {
     None,
@@ -41,6 +47,7 @@ pub enum Impact {
     High,
 }
 
+/// Qualitative severity label derived from a CVSS score.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum CvssSeverity {
     None,
@@ -62,6 +69,7 @@ impl fmt::Display for CvssSeverity {
     }
 }
 
+/// Complete set of CVSS v3.1 base metric values for a vulnerability.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CvssMetrics {
     pub attack_vector: AttackVector,
@@ -74,6 +82,7 @@ pub struct CvssMetrics {
     pub availability: Impact,
 }
 
+/// Computed CVSS v3.1 score with vector string and severity label.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CvssResult {
     pub score: f64,

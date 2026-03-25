@@ -206,9 +206,11 @@ fn detect_anomalies_response_divergence() {
     };
 
     let anomalies = detect_anomalies(&results, 1);
-    assert!(anomalies
-        .iter()
-        .any(|a| matches!(a, RaceAnomaly::ResponseDivergence { .. })));
+    assert!(
+        anomalies
+            .iter()
+            .any(|a| matches!(a, RaceAnomaly::ResponseDivergence { .. }))
+    );
 }
 
 #[test]
@@ -224,9 +226,11 @@ fn detect_anomalies_no_issues() {
     };
 
     let anomalies = detect_anomalies(&results, 1);
-    assert!(anomalies
-        .iter()
-        .all(|a| !matches!(a, RaceAnomaly::MultipleSuccesses { .. })));
+    assert!(
+        anomalies
+            .iter()
+            .all(|a| !matches!(a, RaceAnomaly::MultipleSuccesses { .. }))
+    );
 }
 
 #[test]

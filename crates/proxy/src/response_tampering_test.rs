@@ -33,9 +33,11 @@ fn detect_unencoded_reflection_in_html_body() {
         .with_body(b"<html><body>Hello <script>alert(1)</script></body></html>")
         .with_reflected_input("<script>alert(1)</script>");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::UnencodedReflection));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::UnencodedReflection)
+    );
     let f = findings
         .iter()
         .find(|f| f.pattern == TamperingPattern::UnencodedReflection)
@@ -47,9 +49,11 @@ fn detect_unencoded_reflection_in_html_body() {
 fn no_reflection_when_input_absent() {
     let ctx = ResponseContext::new(200).with_body(b"<html>safe</html>");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .all(|f| f.pattern != TamperingPattern::UnencodedReflection));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.pattern != TamperingPattern::UnencodedReflection)
+    );
 }
 
 #[test]
@@ -76,9 +80,11 @@ fn detect_html_served_as_plain_text() {
         .with_header("content-type", "text/plain")
         .with_body(b"<html><script>alert(1)</script></html>");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::MimeTypeConfusion));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::MimeTypeConfusion)
+    );
 }
 
 #[test]
@@ -87,9 +93,11 @@ fn detect_js_served_as_image() {
         .with_header("content-type", "image/png")
         .with_body(b"function malicious() { eval('pwned') }");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::MimeTypeConfusion));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::MimeTypeConfusion)
+    );
 }
 
 #[test]
@@ -98,9 +106,11 @@ fn no_mime_confusion_when_types_match() {
         .with_header("content-type", "text/html")
         .with_body(b"<html>legit</html>");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .all(|f| f.pattern != TamperingPattern::MimeTypeConfusion));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.pattern != TamperingPattern::MimeTypeConfusion)
+    );
 }
 
 // =========================================================================
@@ -115,9 +125,11 @@ fn detect_gif_html_polyglot() {
         .with_header("content-type", "image/gif")
         .with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot)
+    );
 }
 
 #[test]
@@ -128,9 +140,11 @@ fn detect_png_js_polyglot() {
         .with_header("content-type", "image/png")
         .with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot)
+    );
 }
 
 #[test]
@@ -140,9 +154,11 @@ fn detect_xml_html_polyglot() {
         .with_header("content-type", "application/xml")
         .with_body(body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::ContentSniffingPolyglot)
+    );
 }
 
 #[test]
@@ -154,9 +170,11 @@ fn nosniff_header_suppresses_polyglot_detection() {
         .with_header("x-content-type-options", "nosniff")
         .with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .all(|f| f.pattern != TamperingPattern::ContentSniffingPolyglot));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.pattern != TamperingPattern::ContentSniffingPolyglot)
+    );
 }
 
 // =========================================================================
@@ -169,9 +187,11 @@ fn detect_crlf_in_header_value() {
         .with_header("location", "http://example.com\r\nX-Injected: true")
         .with_body(b"ok");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting)
+    );
     let f = findings
         .iter()
         .find(|f| f.pattern == TamperingPattern::CrlfResponseSplitting)
@@ -185,9 +205,11 @@ fn detect_url_encoded_crlf_in_header() {
         .with_header("x-redirect", "value%0d%0aInjected: yes")
         .with_body(b"ok");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting)
+    );
 }
 
 #[test]
@@ -195,9 +217,11 @@ fn detect_full_response_in_body() {
     let body = b"some prefix\r\n\r\nHTTP/1.1 200 OK\r\n\r\n<html>injected</html>";
     let ctx = ResponseContext::new(200).with_body(body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CrlfResponseSplitting)
+    );
 }
 
 // =========================================================================
@@ -210,9 +234,11 @@ fn detect_utf7_encoded_content() {
         .with_header("content-type", "text/html")
         .with_body(b"+ADw-script+AD4-alert(1)+ADw-/script+AD4-");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CharsetConfusion));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CharsetConfusion)
+    );
 }
 
 #[test]
@@ -224,9 +250,11 @@ fn detect_shift_jis_escape_sequence() {
         .with_header("content-type", "text/html")
         .with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CharsetConfusion));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CharsetConfusion)
+    );
 }
 
 #[test]
@@ -236,10 +264,12 @@ fn detect_charset_mismatch_header_vs_meta() {
         .with_header("content-type", "text/html; charset=utf-8")
         .with_body(body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CharsetConfusion
-            && f.description.contains("mismatch")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CharsetConfusion
+                && f.description.contains("mismatch"))
+    );
 }
 
 // =========================================================================
@@ -265,10 +295,12 @@ fn detect_svg_with_foreign_object() {
         .with_header("content-type", "image/svg+xml")
         .with_body(svg.as_bytes());
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::SvgInjection
-            && f.description.contains("foreignObject")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::SvgInjection
+                && f.description.contains("foreignObject"))
+    );
 }
 
 #[test]
@@ -309,10 +341,12 @@ fn detect_pdf_with_open_action() {
         .with_header("content-type", "application/pdf")
         .with_body(&pdf);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::PdfInjection
-            && f.description.contains("auto-execute")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::PdfInjection
+                && f.description.contains("auto-execute"))
+    );
 }
 
 #[test]
@@ -322,10 +356,12 @@ fn detect_pdf_with_submit_form() {
         .with_header("content-type", "application/pdf")
         .with_body(&pdf);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::PdfInjection
-            && f.description.contains("exfiltration")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::PdfInjection
+                && f.description.contains("exfiltration"))
+    );
 }
 
 #[test]
@@ -335,9 +371,11 @@ fn detect_pdf_with_uri_action() {
         .with_header("content-type", "application/pdf")
         .with_body(&pdf);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::PdfInjection));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::PdfInjection)
+    );
 }
 
 // =========================================================================
@@ -350,9 +388,11 @@ fn detect_gzip_header_non_gzip_body() {
         .with_header("content-encoding", "gzip")
         .with_body(b"this is plaintext, not gzip");
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation)
+    );
 }
 
 #[test]
@@ -363,9 +403,11 @@ fn detect_deflate_header_gzip_body() {
         .with_header("content-encoding", "deflate")
         .with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation)
+    );
 }
 
 #[test]
@@ -373,9 +415,11 @@ fn detect_undeclared_compressed_body() {
     let body = vec![0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00];
     let ctx = ResponseContext::new(200).with_body(&body);
     let findings = ResponseTamperingDetector::analyse(&ctx);
-    assert!(findings
-        .iter()
-        .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.pattern == TamperingPattern::CompressedResponseManipulation)
+    );
 }
 
 // =========================================================================

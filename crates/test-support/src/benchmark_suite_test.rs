@@ -1,4 +1,5 @@
 use super::*;
+use std::time::Duration;
 
 #[test]
 fn run_benchmark_produces_valid_measurement() {

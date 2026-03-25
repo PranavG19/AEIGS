@@ -23,7 +23,7 @@ pub struct PhaseTimings {
 }
 
 impl PhaseTimings {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             timings: HashMap::new(),
         }
@@ -91,9 +91,18 @@ impl HarnessResult {
             self.evaluation.false_negatives.len()
         ));
         lines.push("-".repeat(60));
-        lines.push(format!("Precision:        {:.2}%", self.evaluation.precision * 100.0));
-        lines.push(format!("Recall:           {:.2}%", self.evaluation.recall * 100.0));
-        lines.push(format!("F1 Score:         {:.2}%", self.evaluation.f1 * 100.0));
+        lines.push(format!(
+            "Precision:        {:.2}%",
+            self.evaluation.precision * 100.0
+        ));
+        lines.push(format!(
+            "Recall:           {:.2}%",
+            self.evaluation.recall * 100.0
+        ));
+        lines.push(format!(
+            "F1 Score:         {:.2}%",
+            self.evaluation.f1 * 100.0
+        ));
         lines.push("-".repeat(60));
         lines.push(format!(
             "Server Start:     {:?}",
@@ -159,14 +168,15 @@ impl HarnessResult {
 ///
 /// Receives the base URL of the running test server and returns a list
 /// of `(endpoint, vulnerability_class)` tuples representing findings.
-pub type ScannerFn =
-    Box<dyn FnOnce(String) -> Vec<(String, VulnerabilityClass)> + Send>;
+pub type ScannerFn = Box<dyn FnOnce(String) -> Vec<(String, VulnerabilityClass)> + Send>;
 
 /// Async scanner function signature.
 pub type AsyncScannerFn = Box<
-    dyn FnOnce(String) -> std::pin::Pin<
-        Box<dyn std::future::Future<Output = Vec<(String, VulnerabilityClass)>> + Send>,
-    > + Send,
+    dyn FnOnce(
+            String,
+        ) -> std::pin::Pin<
+            Box<dyn std::future::Future<Output = Vec<(String, VulnerabilityClass)>> + Send>,
+        > + Send,
 >;
 
 /// Integration test harness that orchestrates end-to-end scan testing.
@@ -288,7 +298,7 @@ pub fn harness_from_vulnerable_api() -> IntegrationHarness {
 
     for ann in api.annotations() {
         manifest.add(
-            AnnotationBuilder::new(&ann.endpoint, ann.vulnerability_class.clone())
+            AnnotationBuilder::new(&ann.endpoint, ann.vulnerability_class)
                 .severity(match ann.severity {
                     crate::vulnerable_api::Severity::Critical => GroundTruthSeverity::Critical,
                     crate::vulnerable_api::Severity::High => GroundTruthSeverity::High,

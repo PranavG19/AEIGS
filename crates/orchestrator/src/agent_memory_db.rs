@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
 /// Half-life for memory decay in milliseconds (7 days).
@@ -326,10 +326,8 @@ impl AgentMemoryDb {
                     payload_type: row.get(3)?,
                     evasion_technique: row.get(4)?,
                     success: false,
-                    tech_stack: serde_json::from_str(
-                        &row.get::<_, String>(6).unwrap_or_default(),
-                    )
-                    .unwrap_or_default(),
+                    tech_stack: serde_json::from_str(&row.get::<_, String>(6).unwrap_or_default())
+                        .unwrap_or_default(),
                     defense_stack: serde_json::from_str(
                         &row.get::<_, String>(7).unwrap_or_default(),
                     )
@@ -398,9 +396,7 @@ impl AgentMemoryDb {
              LIMIT 10",
         )?;
         let top_classes: Vec<(String, f64)> = class_stmt
-            .query_map(params![tech_json], |row| {
-                Ok((row.get(0)?, row.get(1)?))
-            })?
+            .query_map(params![tech_json], |row| Ok((row.get(0)?, row.get(1)?)))?
             .collect::<Result<Vec<_>, _>>()?;
 
         let mut bypass_stmt = self.conn.prepare(
@@ -504,11 +500,9 @@ impl AgentMemoryDb {
 
     /// Total target profiles in the database.
     pub fn total_profiles(&self) -> Result<u64, MemoryDbError> {
-        let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM target_profiles",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM target_profiles", [], |row| row.get(0))?;
         Ok(count as u64)
     }
 

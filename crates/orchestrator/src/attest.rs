@@ -1,11 +1,13 @@
 use aegis_protocol::scope_attestation::{
-    ScopeDocument, SignedScopeAttestation, days_to_ymd, sign_scope_document,
+    days_to_ymd, sign_scope_document, ScopeDocument, SignedScopeAttestation,
 };
 use ed25519_dalek::SigningKey;
 use std::path::{Path, PathBuf};
 
 const DEFAULT_OUTPUT: &str = "scope-attestation.json";
 
+/// CLI arguments for the `attest` subcommand that generates Ed25519-signed
+/// scope attestation files for authorized remote scanning.
 #[derive(Debug)]
 pub struct AttestArgs {
     pub target: String,
@@ -15,6 +17,7 @@ pub struct AttestArgs {
     pub output_path: PathBuf,
 }
 
+/// Errors from the `attest` subcommand.
 #[derive(Debug)]
 pub enum AttestError {
     MissingArg(String),

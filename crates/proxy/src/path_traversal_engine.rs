@@ -206,7 +206,7 @@ impl PathTraversalEngine {
         dot_dot.repeat(depth)
     }
 
-    fn apply_encoding(raw: &str, level: EncodingLevel) -> String {
+    pub(crate) fn apply_encoding(raw: &str, level: EncodingLevel) -> String {
         match level {
             EncodingLevel::Plain => raw.to_string(),
             EncodingLevel::UrlEncoded => raw
@@ -240,7 +240,7 @@ impl PathTraversalEngine {
         }
     }
 
-    fn encoding_ladder() -> Vec<EncodingLevel> {
+    pub(crate) fn encoding_ladder() -> Vec<EncodingLevel> {
         vec![
             EncodingLevel::Plain,
             EncodingLevel::UrlEncoded,

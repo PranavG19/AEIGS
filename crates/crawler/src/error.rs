@@ -1,5 +1,6 @@
 use std::fmt;
 
+/// Errors that can occur during a crawl session.
 #[derive(Debug)]
 pub enum CrawlError {
     BrowserLaunch(String),

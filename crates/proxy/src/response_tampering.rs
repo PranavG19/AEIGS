@@ -549,7 +549,7 @@ impl PolyglotGenerator {
         buf.extend_from_slice(b"IHDR");
         buf.extend_from_slice(&ihdr_data);
         buf.extend_from_slice(&[0x00; 4]); // CRC placeholder
-                                           // Embed JS as a tEXt chunk (ancillary, safe to ignore by image decoders)
+        // Embed JS as a tEXt chunk (ancillary, safe to ignore by image decoders)
         let keyword = b"Comment\x00";
         let text_data_len = keyword.len() + js_payload.len();
         buf.extend_from_slice(&(text_data_len as u32).to_be_bytes());
@@ -557,7 +557,7 @@ impl PolyglotGenerator {
         buf.extend_from_slice(keyword);
         buf.extend_from_slice(js_payload.as_bytes());
         buf.extend_from_slice(&[0x00; 4]); // CRC placeholder
-                                           // IEND
+        // IEND
         buf.extend_from_slice(&[0x00, 0x00, 0x00, 0x00]);
         buf.extend_from_slice(b"IEND");
         buf.extend_from_slice(&[0xae, 0x42, 0x60, 0x82]); // IEND CRC

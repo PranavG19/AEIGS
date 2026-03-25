@@ -50,6 +50,74 @@ pub use waf_grammar::*;
 pub use response_injection::*;
 pub use verb_tampering::*;
 
+pub mod adaptive_evasion;
+pub mod desync_library;
+pub mod dns_poison;
+pub mod encoding_ladder_v2;
+pub mod evasion_catalogue;
+pub mod ip_reputation;
+pub mod ip_spoof_headers;
+pub mod network_discovery;
+pub mod tls_attacks;
+pub mod waf_fingerprinter_v2;
+pub mod waf_rule_reverser;
+
+pub use adaptive_evasion::*;
+pub use desync_library::*;
+pub use dns_poison::*;
+pub use encoding_ladder_v2::*;
+pub use evasion_catalogue::*;
+pub use ip_reputation::*;
+pub use ip_spoof_headers::*;
+pub use network_discovery::*;
+pub use tls_attacks::*;
+pub use waf_fingerprinter_v2::*;
+pub use waf_rule_reverser::*;
+
+#[cfg(test)]
+#[path = "adaptive_evasion_test.rs"]
+mod adaptive_evasion_test;
+
+#[cfg(test)]
+#[path = "desync_library_test.rs"]
+mod desync_library_test;
+
+#[cfg(test)]
+#[path = "dns_poison_test.rs"]
+mod dns_poison_test;
+
+#[cfg(test)]
+#[path = "encoding_ladder_v2_test.rs"]
+mod encoding_ladder_v2_test;
+
+#[cfg(test)]
+#[path = "evasion_catalogue_test.rs"]
+mod evasion_catalogue_test;
+
+#[cfg(test)]
+#[path = "ip_reputation_test.rs"]
+mod ip_reputation_test;
+
+#[cfg(test)]
+#[path = "ip_spoof_headers_test.rs"]
+mod ip_spoof_headers_test;
+
+#[cfg(test)]
+#[path = "network_discovery_test.rs"]
+mod network_discovery_test;
+
+#[cfg(test)]
+#[path = "tls_attacks_test.rs"]
+mod tls_attacks_test;
+
+#[cfg(test)]
+#[path = "waf_fingerprinter_v2_test.rs"]
+mod waf_fingerprinter_v2_test;
+
+#[cfg(test)]
+#[path = "waf_rule_reverser_test.rs"]
+mod waf_rule_reverser_test;
+
 #[cfg(test)]
 #[path = "cors_exploit_test.rs"]
 mod cors_exploit_test;

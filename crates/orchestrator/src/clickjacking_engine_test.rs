@@ -79,27 +79,33 @@ fn detect_weak_xfo_invalid_value() {
 fn detect_conflicting_xfo_deny_csp_allows() {
     let h = headers_with(Some("DENY"), Some("frame-ancestors https://example.com"));
     let patterns = analyze_headers(&h);
-    assert!(patterns
-        .iter()
-        .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. })));
+    assert!(
+        patterns
+            .iter()
+            .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. }))
+    );
 }
 
 #[test]
 fn detect_conflicting_xfo_sameorigin_csp_none() {
     let h = headers_with(Some("SAMEORIGIN"), Some("frame-ancestors 'none'"));
     let patterns = analyze_headers(&h);
-    assert!(patterns
-        .iter()
-        .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. })));
+    assert!(
+        patterns
+            .iter()
+            .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. }))
+    );
 }
 
 #[test]
 fn no_conflict_when_both_deny() {
     let h = headers_with(Some("DENY"), Some("frame-ancestors 'none'"));
     let patterns = analyze_headers(&h);
-    assert!(!patterns
-        .iter()
-        .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. })));
+    assert!(
+        !patterns
+            .iter()
+            .any(|p| matches!(p, ClickjackingPattern::ConflictingHeaders { .. }))
+    );
 }
 
 #[test]
@@ -192,18 +198,26 @@ fn full_analysis_no_protection() {
     );
     let result = analyze(&ctx);
     assert!(result.patterns.contains(&ClickjackingPattern::MissingXfo));
-    assert!(result
-        .patterns
-        .contains(&ClickjackingPattern::DoubleClickVulnerable));
-    assert!(result
-        .patterns
-        .contains(&ClickjackingPattern::DragDropVulnerable));
-    assert!(result
-        .patterns
-        .contains(&ClickjackingPattern::CursorJackingVulnerable));
-    assert!(result
-        .patterns
-        .contains(&ClickjackingPattern::TouchJackingVulnerable));
+    assert!(
+        result
+            .patterns
+            .contains(&ClickjackingPattern::DoubleClickVulnerable)
+    );
+    assert!(
+        result
+            .patterns
+            .contains(&ClickjackingPattern::DragDropVulnerable)
+    );
+    assert!(
+        result
+            .patterns
+            .contains(&ClickjackingPattern::CursorJackingVulnerable)
+    );
+    assert!(
+        result
+            .patterns
+            .contains(&ClickjackingPattern::TouchJackingVulnerable)
+    );
     assert!(!result.pocs.is_empty());
 }
 
@@ -212,18 +226,22 @@ fn full_analysis_with_social_actions() {
     let body = r#"<div class="fb-like" data-action="like"></div>"#;
     let ctx = page("https://social.com/page", None, None, body);
     let result = analyze(&ctx);
-    assert!(result
-        .patterns
-        .contains(&ClickjackingPattern::LikejackingVulnerable));
+    assert!(
+        result
+            .patterns
+            .contains(&ClickjackingPattern::LikejackingVulnerable)
+    );
 }
 
 #[test]
 fn full_analysis_no_social_no_likejacking() {
     let ctx = page("https://target.com/plain", None, None, "<p>No social</p>");
     let result = analyze(&ctx);
-    assert!(!result
-        .patterns
-        .contains(&ClickjackingPattern::LikejackingVulnerable));
+    assert!(
+        !result
+            .patterns
+            .contains(&ClickjackingPattern::LikejackingVulnerable)
+    );
 }
 
 #[test]
@@ -235,18 +253,26 @@ fn full_analysis_protected_no_interactive_patterns() {
         "<p>Secure</p>",
     );
     let result = analyze(&ctx);
-    assert!(!result
-        .patterns
-        .contains(&ClickjackingPattern::DoubleClickVulnerable));
-    assert!(!result
-        .patterns
-        .contains(&ClickjackingPattern::DragDropVulnerable));
-    assert!(!result
-        .patterns
-        .contains(&ClickjackingPattern::CursorJackingVulnerable));
-    assert!(!result
-        .patterns
-        .contains(&ClickjackingPattern::TouchJackingVulnerable));
+    assert!(
+        !result
+            .patterns
+            .contains(&ClickjackingPattern::DoubleClickVulnerable)
+    );
+    assert!(
+        !result
+            .patterns
+            .contains(&ClickjackingPattern::DragDropVulnerable)
+    );
+    assert!(
+        !result
+            .patterns
+            .contains(&ClickjackingPattern::CursorJackingVulnerable)
+    );
+    assert!(
+        !result
+            .patterns
+            .contains(&ClickjackingPattern::TouchJackingVulnerable)
+    );
 }
 
 #[test]
@@ -449,21 +475,25 @@ fn pocs_generated_for_every_pattern() {
 fn draggable_content_detection() {
     let with_input = page("https://t.com", None, None, "<input type='text'>");
     let res = analyze(&with_input);
-    assert!(res
-        .patterns
-        .contains(&ClickjackingPattern::DragDropVulnerable));
+    assert!(
+        res.patterns
+            .contains(&ClickjackingPattern::DragDropVulnerable)
+    );
 
     let with_textarea = page("https://t.com", None, None, "<textarea></textarea>");
     let res2 = analyze(&with_textarea);
-    assert!(res2
-        .patterns
-        .contains(&ClickjackingPattern::DragDropVulnerable));
+    assert!(
+        res2.patterns
+            .contains(&ClickjackingPattern::DragDropVulnerable)
+    );
 
     let without = page("https://t.com", None, None, "<p>plain</p>");
     let res3 = analyze(&without);
-    assert!(!res3
-        .patterns
-        .contains(&ClickjackingPattern::DragDropVulnerable));
+    assert!(
+        !res3
+            .patterns
+            .contains(&ClickjackingPattern::DragDropVulnerable)
+    );
 }
 
 #[test]

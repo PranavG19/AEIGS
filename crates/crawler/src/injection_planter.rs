@@ -172,7 +172,7 @@ const ZWJ: char = '\u{200D}'; // zero-width joiner → separator
 ///
 /// Each byte is encoded as 8 zero-width characters (ZWS=0, ZWNJ=1),
 /// separated by ZWJ between bytes.
-fn encode_zero_width(payload: &str) -> String {
+pub(crate) fn encode_zero_width(payload: &str) -> String {
     let mut out = String::new();
     for (i, byte) in payload.bytes().enumerate() {
         if i > 0 {

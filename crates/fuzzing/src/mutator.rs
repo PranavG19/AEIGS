@@ -6,6 +6,8 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+/// How likely a payload is to evade WAF signature detection.
+/// Used to sort and filter payloads in stealth-aware fuzzing modes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StealthRating {
     High,
@@ -13,6 +15,8 @@ pub enum StealthRating {
     Low,
 }
 
+/// A WAF-bypass payload loaded from the external bypass corpus JSON file.
+/// Carries metadata about which WAF vendors it targets and its evasion technique.
 #[derive(Debug, Clone)]
 pub struct BypassPayload {
     pub raw: String,
@@ -127,6 +131,8 @@ fn parse_bypass_payload(item: &Value) -> Result<BypassPayload, String> {
     })
 }
 
+/// A payload produced by the mutator, tagged with its vulnerability class
+/// and the mutation strategy that generated it.
 #[derive(Debug, Clone)]
 pub struct MutatedPayload {
     pub raw: String,
@@ -134,6 +140,8 @@ pub struct MutatedPayload {
     pub mutation_strategy: MutationStrategy,
 }
 
+/// The technique used to produce a `MutatedPayload`.
+/// Distinguishes template-based, generative, bit-flip, and boundary payloads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MutationStrategy {
     Template,
@@ -154,6 +162,8 @@ impl std::fmt::Display for MutationStrategy {
     }
 }
 
+/// Tracks how a `TaggedPayload` was produced for downstream analytics.
+/// Includes bypass corpus as a distinct origin from standard templates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MutationOrigin {
     Template,
@@ -163,12 +173,16 @@ pub enum MutationOrigin {
     BypassCorpus,
 }
 
+/// A payload string paired with its `MutationOrigin` for provenance tracking.
+/// Used by the scheduler and oracle to correlate findings back to mutation strategy.
 #[derive(Debug, Clone)]
 pub struct TaggedPayload {
     pub payload: String,
     pub origin: MutationOrigin,
 }
 
+/// Generates and mutates fuzzing payloads from built-in templates and an optional
+/// bypass corpus. Supports stealth-aware generation and boundary-value payloads.
 pub struct PayloadMutator {
     templates: Vec<(VulnerabilityClass, Vec<String>)>,
     bypass_corpus: Vec<(VulnerabilityClass, Vec<BypassPayload>)>,

@@ -452,10 +452,7 @@ impl HarAnalyzer {
                         category: HarFindingCategory::SensitiveDataInResponse,
                         severity,
                         description: format!("{} found in response body", label),
-                        evidence: format!(
-                            "Response from {}",
-                            truncate(&entry.request.url, 100)
-                        ),
+                        evidence: format!("Response from {}", truncate(&entry.request.url, 100)),
                         url: entry.request.url.clone(),
                         entry_index: idx,
                     });

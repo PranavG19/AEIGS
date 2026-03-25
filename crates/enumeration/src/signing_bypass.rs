@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 use std::fmt;
 
 /// Severity for signing bypass findings.
@@ -307,9 +306,7 @@ fn extract_param(header: &str, param: &str) -> String {
         let value_start = start + search.len();
         let rest = &header[value_start..];
         let rest = rest.trim_start_matches('"');
-        let end = rest
-            .find(|c: char| c == '"' || c == ',' || c == ' ')
-            .unwrap_or(rest.len());
+        let end = rest.find(['"', ',', ' ']).unwrap_or(rest.len());
         rest[..end].to_string()
     } else {
         String::new()
@@ -321,8 +318,7 @@ fn extract_param_quoted(header: &str, param: &str) -> String {
     if let Some(start) = header.find(&search) {
         let value_start = start + search.len();
         let rest = &header[value_start..];
-        if rest.starts_with('"') {
-            let inner = &rest[1..];
+        if let Some(inner) = rest.strip_prefix('"') {
             let end = inner.find('"').unwrap_or(inner.len());
             inner[..end].to_string()
         } else {

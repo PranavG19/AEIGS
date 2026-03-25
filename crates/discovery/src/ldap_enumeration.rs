@@ -66,8 +66,7 @@ pub const LDAP_INJECTION_PAYLOADS: &[LdapInjectionPayload] = &[
     LdapInjectionPayload {
         name: "blind_false_condition",
         payload: "*)(cn=zzz_nonexistent_zzz",
-        description:
-            "Boolean-false blind condition — matches nothing, baseline for blind extraction",
+        description: "Boolean-false blind condition — matches nothing, baseline for blind extraction",
         category: InjectionCategory::BlindBoolean,
     },
     LdapInjectionPayload {

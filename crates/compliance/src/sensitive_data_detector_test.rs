@@ -58,18 +58,22 @@ fn luhn_rejects_short_number() {
 fn detects_credit_card_with_luhn() {
     let body = "Card on file: 4111111111111111 for user";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::CreditCard));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::CreditCard)
+    );
 }
 
 #[test]
 fn rejects_invalid_credit_card() {
     let body = "Card on file: 4111111111111112 for user";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .all(|f| f.kind != SensitiveDataKind::CreditCard));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.kind != SensitiveDataKind::CreditCard)
+    );
 }
 
 #[test]
@@ -88,54 +92,66 @@ fn credit_card_has_pci_dss_mapping() {
 fn detects_phone_number() {
     let body = "Contact: (555) 123-4567 for support";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::PhoneNumber));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::PhoneNumber)
+    );
 }
 
 #[test]
 fn detects_email_address() {
     let body = "Send to john.doe@company.org immediately";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::EmailAddress));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::EmailAddress)
+    );
 }
 
 #[test]
 fn filters_example_com_emails() {
     let body = "Send to user@example.com for info";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .all(|f| f.kind != SensitiveDataKind::EmailAddress));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.kind != SensitiveDataKind::EmailAddress)
+    );
 }
 
 #[test]
 fn detects_bank_account() {
     let body = "Account: 12345678901 balance $500";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::BankAccountNumber));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::BankAccountNumber)
+    );
 }
 
 #[test]
 fn detects_routing_number() {
     let body = "Routing: 021000021 for wire";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::RoutingNumber));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::RoutingNumber)
+    );
 }
 
 #[test]
 fn rejects_invalid_routing_number() {
     let body = "Routing: 123456789 invalid";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .all(|f| f.kind != SensitiveDataKind::RoutingNumber));
+    assert!(
+        findings
+            .iter()
+            .all(|f| f.kind != SensitiveDataKind::RoutingNumber)
+    );
 }
 
 #[test]
@@ -156,9 +172,11 @@ fn rejects_invalid_iban_checksum() {
 fn detects_icd10_code() {
     let body = "Diagnosis: J45.0 confirmed by specialist";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::Icd10Code));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::Icd10Code)
+    );
 }
 
 #[test]
@@ -176,18 +194,22 @@ fn icd10_has_hipaa_mapping() {
 fn detects_prescription() {
     let body = "Rx: Amoxicillin 500 mg twice daily";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::PrescriptionPattern));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::PrescriptionPattern)
+    );
 }
 
 #[test]
 fn detects_password_in_url() {
     let body = "https://app.internal/login?password=s3cretP@ss&user=admin";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::PasswordInUrl));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::PasswordInUrl)
+    );
 }
 
 #[test]
@@ -195,135 +217,165 @@ fn detects_token_in_error() {
     let body =
         "Error: authentication failed for token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWI";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::TokenInError));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::TokenInError)
+    );
 }
 
 #[test]
 fn detects_session_id_in_log() {
     let body = "session_id=abc123def456ghi789jkl012mno345pq active";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::SessionIdInLog));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::SessionIdInLog)
+    );
 }
 
 #[test]
 fn detects_private_ip_10_range() {
     let body = "Server: 10.0.1.55 responding on port 8080";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::PrivateIpAddress));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::PrivateIpAddress)
+    );
 }
 
 #[test]
 fn detects_private_ip_192_168() {
     let body = "Gateway: 192.168.1.1 is unreachable";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::PrivateIpAddress));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::PrivateIpAddress)
+    );
 }
 
 #[test]
 fn detects_internal_hostname() {
     let body = "Connected to db-primary.internal on port 5432";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::Hostname));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::Hostname)
+    );
 }
 
 #[test]
 fn detects_file_path_unix() {
     let body = "Config loaded from /etc/nginx/sites-enabled/app.conf";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::FilePath));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::FilePath)
+    );
 }
 
 #[test]
 fn detects_file_path_windows() {
     let body = r"Error in C:\Users\admin\AppData\config.ini";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::FilePath));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::FilePath)
+    );
 }
 
 #[test]
 fn detects_java_stack_trace() {
     let body = "at com.acme.UserService.handle(UserService.java:42)";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::StackTrace));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::StackTrace)
+    );
 }
 
 #[test]
 fn detects_python_stack_trace() {
     let body = r#"File "/app/server.py", line 128"#;
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::StackTrace));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::StackTrace)
+    );
 }
 
 #[test]
 fn detects_aws_access_key() {
     let body = "aws_access_key_id = AKIAIOSFODNN7PRODCTN";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::AwsAccessKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::AwsAccessKey)
+    );
 }
 
 #[test]
 fn detects_aws_secret_key() {
     let body = "aws_secret_access_key=wJalrXUtnFEMIK7MDENG/bPxRfiCYPRODUCTKEYa";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::AwsSecretKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::AwsSecretKey)
+    );
 }
 
 #[test]
 fn detects_generic_api_key() {
     let body = "api_key: sk_live_abcdefghijklmnopqrstuvwxyz1234";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::GenericApiKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::GenericApiKey)
+    );
 }
 
 #[test]
 fn detects_database_connection_string() {
     let body = "Connected to postgresql://admin:pass@db.internal:5432/production";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::DatabaseConnectionString));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::DatabaseConnectionString)
+    );
 }
 
 #[test]
 fn detects_gps_coordinates() {
     let body = r#"{"latitude": 40.7128, "longitude": -74.0060}"#;
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::GpsCoordinates));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::GpsCoordinates)
+    );
 }
 
 #[test]
 fn detects_street_address() {
     let body = "Ship to 742 Evergreen Terrace Drive";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::StreetAddress));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::StreetAddress)
+    );
 }
 
 #[test]
@@ -401,9 +453,11 @@ fn iban_validation_rejects_too_short() {
 fn detects_mongodb_connection_string() {
     let body = "mongodb+srv://user:pass@cluster0.abcde.mongodb.net/mydb";
     let findings = detect_sensitive_data(body);
-    assert!(findings
-        .iter()
-        .any(|f| f.kind == SensitiveDataKind::DatabaseConnectionString));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.kind == SensitiveDataKind::DatabaseConnectionString)
+    );
 }
 
 #[test]

@@ -444,11 +444,7 @@ pub fn group_parallel_reads(plans: &[FilePlan]) -> Vec<Vec<usize>> {
                 .filter(|(_, p)| p.target.priority == *prio)
                 .map(|(i, _)| i)
                 .collect();
-            if group.is_empty() {
-                None
-            } else {
-                Some(group)
-            }
+            if group.is_empty() { None } else { Some(group) }
         })
         .collect()
 }

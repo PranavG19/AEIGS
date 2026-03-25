@@ -1134,7 +1134,9 @@ pub fn generate_idempotency_tests(
     let mut tests = Vec::new();
 
     let query = if args.is_empty() {
-        format!("mutation {{ {mutation_name}(input: {{ name: \"idempotency-test\" }}) {{ id __typename }} }}")
+        format!(
+            "mutation {{ {mutation_name}(input: {{ name: \"idempotency-test\" }}) {{ id __typename }} }}"
+        )
     } else {
         format!("mutation {{ {mutation_name}({args}) {{ id __typename }} }}")
     };

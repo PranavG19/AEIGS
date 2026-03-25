@@ -6,10 +6,10 @@ use aegis_protocol::defense_context::DefenseContext;
 use aegis_protocol::finding::VulnerabilityClass;
 
 use crate::opencode_bridge::{
-    invoke_brain, AgentHypothesis, AgentResponse, BridgeError, OpenCodeConfig,
+    AgentHypothesis, AgentResponse, BridgeError, OpenCodeConfig, invoke_brain,
 };
 use crate::scan_context_serializer::{
-    serialize_briefing, BriefingConfig, FailedAttempt, ScanBriefing, ScanMeta,
+    BriefingConfig, FailedAttempt, ScanBriefing, ScanMeta, serialize_briefing,
 };
 
 /// Outcome of testing a single hypothesis from the Brain.

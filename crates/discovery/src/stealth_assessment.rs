@@ -185,6 +185,12 @@ impl std::fmt::Debug for StealthAssessor {
     }
 }
 
+impl Default for StealthAssessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StealthAssessor {
     pub fn new() -> Self {
         Self

@@ -638,7 +638,7 @@ impl OpenApiSecurityAnalyzer {
         if schema.get("properties").is_some() {
             match schema.get("additionalProperties") {
                 None => true,
-                Some(v) => v.as_bool().unwrap_or(true)
+                Some(v) => v.as_bool().unwrap_or(true),
             }
         } else {
             false

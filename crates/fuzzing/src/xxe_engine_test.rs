@@ -101,9 +101,11 @@ fn error_based_malformed_uri_payload() {
 fn svg_payload_is_valid_svg_structure() {
     let payload = engine().file_upload_svg(TargetOs::Linux);
     assert!(payload.body.contains("<svg"));
-    assert!(payload
-        .body
-        .contains("xmlns=\"http://www.w3.org/2000/svg\""));
+    assert!(
+        payload
+            .body
+            .contains("xmlns=\"http://www.w3.org/2000/svg\"")
+    );
     assert!(payload.body.contains("</svg>"));
     assert_eq!(payload.content_type, "image/svg+xml");
 }
@@ -165,9 +167,11 @@ fn soap_payload_has_envelope_structure() {
 #[test]
 fn soap_payload_has_correct_namespace() {
     let payload = engine().soap_envelope(TargetOs::Linux);
-    assert!(payload
-        .body
-        .contains("http://schemas.xmlsoap.org/soap/envelope/"));
+    assert!(
+        payload
+            .body
+            .contains("http://schemas.xmlsoap.org/soap/envelope/")
+    );
 }
 
 // ── JsonToXml ────────────────────────────────────────────────

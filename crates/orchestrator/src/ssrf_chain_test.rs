@@ -287,9 +287,11 @@ fn aws_credential_chain_generates_steps() {
     assert_eq!(chain.len(), 1);
     assert_eq!(chain[0].stage, SsrfChainStage::CredentialExtraction);
     assert!(chain[0].payload.url.contains("my-ec2-role"));
-    assert!(chain[0]
-        .expected_indicators
-        .contains(&"AccessKeyId".to_string()));
+    assert!(
+        chain[0]
+            .expected_indicators
+            .contains(&"AccessKeyId".to_string())
+    );
 }
 
 #[test]

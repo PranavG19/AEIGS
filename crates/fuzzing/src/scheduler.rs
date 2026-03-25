@@ -6,6 +6,8 @@ use aegis_protocol::request::ParameterLocation;
 
 use crate::stealth_config::StealthConfig;
 
+/// A single endpoint+parameter+vulnerability combination queued for fuzzing.
+/// Priority score determines scheduling order; attempts track re-test count.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FuzzTarget {
     pub endpoint: String,
@@ -47,6 +49,9 @@ impl Ord for PrioritizedTarget {
 
 type DeduplicationKey = (String, String, VulnerabilityClass);
 
+/// Priority queue scheduler for fuzz targets using a max-heap on `priority_score`.
+/// Deduplicates by `(endpoint, parameter, vulnerability_class)` and supports
+/// stealth-aware reprioritization and novelty-based re-enqueue.
 pub struct FuzzScheduler {
     queue: BinaryHeap<PrioritizedTarget>,
     enqueued: HashSet<DeduplicationKey>,

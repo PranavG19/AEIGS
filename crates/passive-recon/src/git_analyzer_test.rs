@@ -20,10 +20,12 @@ fn test_git_exposed_via_head() {
 
     let result = analyzer.analyze(&probes);
     assert!(result.git_exposed);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, GitFindingCategory::HeadExposure)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, GitFindingCategory::HeadExposure))
+    );
 }
 
 #[test]
@@ -130,14 +132,18 @@ fn test_packed_refs_enumeration() {
 
     let result = analyzer.analyze(&probes);
     assert!(result.discovered_branches.len() >= 2);
-    assert!(result
-        .discovered_branches
-        .iter()
-        .any(|b| b.name == "feature-auth"));
-    assert!(result
-        .discovered_branches
-        .iter()
-        .any(|b| b.name == "hotfix-payment"));
+    assert!(
+        result
+            .discovered_branches
+            .iter()
+            .any(|b| b.name == "feature-auth")
+    );
+    assert!(
+        result
+            .discovered_branches
+            .iter()
+            .any(|b| b.name == "hotfix-payment")
+    );
 }
 
 #[test]
@@ -156,10 +162,12 @@ fn test_reflog_leakage() {
     ];
 
     let result = analyzer.analyze(&probes);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, GitFindingCategory::RefLogLeakage)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, GitFindingCategory::RefLogLeakage))
+    );
     assert!(!result.reconstructed_commits.is_empty());
 }
 
@@ -182,10 +190,12 @@ fn test_secret_in_reflog() {
     ];
 
     let result = analyzer.analyze(&probes);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, GitFindingCategory::SecretInCommit)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, GitFindingCategory::SecretInCommit))
+    );
 }
 
 #[test]
@@ -207,10 +217,12 @@ fn test_pack_file_exposure() {
     ];
 
     let result = analyzer.analyze(&probes);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, GitFindingCategory::PackFileExposure)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, GitFindingCategory::PackFileExposure))
+    );
 }
 
 #[test]
@@ -261,10 +273,12 @@ fn test_detached_head_state() {
     )];
 
     let result = analyzer.analyze(&probes);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| f.description.contains("Detached HEAD")));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| f.description.contains("Detached HEAD"))
+    );
 }
 
 #[test]
@@ -312,17 +326,23 @@ fn test_object_leakage() {
     )];
 
     let result = analyzer.analyze(&probes);
-    assert!(result
-        .findings
-        .iter()
-        .any(|f| matches!(f.category, GitFindingCategory::ObjectLeakage)));
+    assert!(
+        result
+            .findings
+            .iter()
+            .any(|f| matches!(f.category, GitFindingCategory::ObjectLeakage))
+    );
 }
 
 #[test]
 fn test_full_analysis_comprehensive() {
     let analyzer = GitAnalyzer::new("https://target.local");
     let probes = vec![
-        make_probe("https://target.local/.git/HEAD", 200, "ref: refs/heads/main\n"),
+        make_probe(
+            "https://target.local/.git/HEAD",
+            200,
+            "ref: refs/heads/main\n",
+        ),
         make_probe(
             "https://target.local/.git/config",
             200,

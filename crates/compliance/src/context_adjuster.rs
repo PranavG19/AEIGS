@@ -3,6 +3,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::cvss_scorer::{AttackComplexity, CvssMetrics, PrivilegesRequired, UserInteraction};
 
+/// Runtime context surrounding a specific finding, used to adjust CVSS scores.
+///
+/// Captures authentication requirements, WAF presence and bypass status,
+/// and whether user interaction is needed for exploitation.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FindingContext {
     pub requires_authentication: bool,

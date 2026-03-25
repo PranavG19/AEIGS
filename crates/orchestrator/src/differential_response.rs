@@ -268,11 +268,7 @@ pub fn fingerprint_similarity(a: &ResponseFingerprint, b: &ResponseFingerprint) 
         }
     }
 
-    if weight > 0.0 {
-        score / weight
-    } else {
-        0.0
-    }
+    if weight > 0.0 { score / weight } else { 0.0 }
 }
 
 /// An inferred WAF rule based on the pattern of blocks and passes.

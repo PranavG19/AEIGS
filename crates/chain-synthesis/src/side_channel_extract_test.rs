@@ -111,10 +111,12 @@ fn test_optimize_reduces_probe_count() {
         optimized.total_probes < plan.total_probes,
         "optimization should have removed the duplicate probe",
     );
-    assert!(optimized
-        .optimization_notes
-        .iter()
-        .any(|n| n.contains("duplicate")));
+    assert!(
+        optimized
+            .optimization_notes
+            .iter()
+            .any(|n| n.contains("duplicate"))
+    );
 }
 
 #[test]
@@ -129,10 +131,12 @@ fn test_optimize_adds_binary_search_note() {
     let plan = plan_timing_oracle(&config).unwrap();
     let optimized = optimize_extraction_plan(&plan);
 
-    assert!(optimized
-        .optimization_notes
-        .iter()
-        .any(|n| n.contains("binary search") || n.contains("Binary search")));
+    assert!(
+        optimized
+            .optimization_notes
+            .iter()
+            .any(|n| n.contains("binary search") || n.contains("Binary search"))
+    );
 }
 
 // =========================================================================

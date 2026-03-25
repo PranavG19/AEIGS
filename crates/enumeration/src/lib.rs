@@ -8,17 +8,17 @@ pub mod auth_flow;
 pub mod auth_matrix;
 pub mod graphql_attack_engine;
 pub mod graphql_discovery;
+pub mod graphql_field_auth;
+pub mod graphql_mutation_abuse;
+pub mod graphql_persisted_queries;
 pub mod graphql_subscription_abuse;
+pub mod grpc_security;
 pub mod introspection;
 pub mod oauth_attack_engine;
-pub mod grpc_security;
 pub mod openapi_security;
 pub mod rest_abuse_patterns;
 pub mod route_parser;
 pub mod session_exploitation;
-pub mod graphql_field_auth;
-pub mod graphql_mutation_abuse;
-pub mod graphql_persisted_queries;
 
 pub use api_auth_tester::*;
 pub use api_doc_discovery::*;
@@ -28,6 +28,9 @@ pub use auth_flow::*;
 pub use auth_matrix::*;
 pub use graphql_attack_engine::*;
 pub use graphql_discovery::*;
+pub use graphql_field_auth::*;
+pub use graphql_mutation_abuse::*;
+pub use graphql_persisted_queries::*;
 pub use graphql_subscription_abuse::*;
 pub use grpc_security::*;
 pub use introspection::*;
@@ -36,9 +39,38 @@ pub use openapi_security::*;
 pub use rest_abuse_patterns::*;
 pub use route_parser::*;
 pub use session_exploitation::*;
-pub use graphql_field_auth::*;
-pub use graphql_mutation_abuse::*;
-pub use graphql_persisted_queries::*;
+
+pub mod content_negotiation;
+pub mod gateway_bypass;
+pub mod mobile_api_tester;
+pub mod signing_bypass;
+pub mod webhook_tester;
+
+pub use content_negotiation::*;
+pub use gateway_bypass::*;
+pub use mobile_api_tester::*;
+pub use signing_bypass::*;
+pub use webhook_tester::*;
+
+#[cfg(test)]
+#[path = "content_negotiation_test.rs"]
+mod content_negotiation_test;
+
+#[cfg(test)]
+#[path = "gateway_bypass_test.rs"]
+mod gateway_bypass_test;
+
+#[cfg(test)]
+#[path = "mobile_api_tester_test.rs"]
+mod mobile_api_tester_test;
+
+#[cfg(test)]
+#[path = "signing_bypass_test.rs"]
+mod signing_bypass_test;
+
+#[cfg(test)]
+#[path = "webhook_tester_test.rs"]
+mod webhook_tester_test;
 
 #[cfg(test)]
 #[path = "auth_flow_test.rs"]

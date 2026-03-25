@@ -1,6 +1,6 @@
 use crate::attack_graph::{AttackGraph, AttackNodeType};
 use crate::attack_tree::{
-    attack_tree_to_dot, attack_tree_to_json, attack_tree_to_mermaid, AttackTreeGenerator, GateType,
+    AttackTreeGenerator, GateType, attack_tree_to_dot, attack_tree_to_json, attack_tree_to_mermaid,
 };
 
 fn build_diamond_graph() -> AttackGraph {

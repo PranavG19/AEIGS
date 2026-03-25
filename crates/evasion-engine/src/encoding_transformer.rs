@@ -1,6 +1,11 @@
 use aegis_protocol::finding::VulnerabilityClass;
 use serde::{Deserialize, Serialize};
 
+/// Payload encoding strategy for WAF/filter evasion.
+///
+/// Each variant represents a distinct encoding technique applicable to
+/// specific vulnerability classes. The `EncodingTransformer` selects
+/// applicable strategies based on the target vulnerability class.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum EncodingStrategy {
     DoubleUrlEncoding,
@@ -13,6 +18,8 @@ pub enum EncodingStrategy {
     ConcatenationSplitting,
 }
 
+/// A payload after encoding transformation, retaining the original text
+/// and the strategy that produced it for traceability.
 #[derive(Debug, Clone)]
 pub struct EncodedPayload {
     pub encoded: String,
@@ -20,6 +27,11 @@ pub struct EncodedPayload {
     pub original: String,
 }
 
+/// Applies encoding transformations to payloads for WAF/filter evasion.
+///
+/// Given a payload string and vulnerability class, produces multiple encoded
+/// variants using all applicable strategies (double URL encoding, unicode
+/// normalization, mixed case, comment insertion, etc.).
 pub struct EncodingTransformer;
 
 impl EncodingTransformer {

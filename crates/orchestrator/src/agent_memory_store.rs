@@ -1,11 +1,9 @@
 use std::path::Path;
 
-use rusqlite::{params, Connection};
+use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 
-use crate::agent_loop::{
-    AgentMemory, EndpointBehavior, TechniqueRecord, WafBypassRecord,
-};
+use crate::agent_loop::{AgentMemory, EndpointBehavior, TechniqueRecord, WafBypassRecord};
 
 /// Persistent cross-session memory store for the autonomous agent.
 ///
@@ -208,10 +206,7 @@ impl AgentMemoryStore {
     }
 
     /// Records a technique outcome (success or failure) with full context.
-    pub fn record_technique(
-        &self,
-        outcome: &TechniqueOutcome,
-    ) -> Result<i64, MemoryStoreError> {
+    pub fn record_technique(&self, outcome: &TechniqueOutcome) -> Result<i64, MemoryStoreError> {
         let tech_json = serde_json::to_string(&outcome.tech_stack)?;
         let defense_json = serde_json::to_string(&outcome.defense_stack)?;
         self.conn.execute(
@@ -301,10 +296,7 @@ impl AgentMemoryStore {
     }
 
     /// Saves a session summary for historical trend tracking.
-    pub fn save_session_summary(
-        &self,
-        summary: &SessionSummary,
-    ) -> Result<i64, MemoryStoreError> {
+    pub fn save_session_summary(&self, summary: &SessionSummary) -> Result<i64, MemoryStoreError> {
         self.conn.execute(
             "INSERT OR REPLACE INTO session_summaries
                 (session_id, target_url, tech_stack_json, total_findings,
@@ -351,9 +343,7 @@ impl AgentMemoryStore {
     }
 
     /// Returns success rates for all vulnerability classes that have data.
-    pub fn all_class_success_rates(
-        &self,
-    ) -> Result<Vec<ClassSuccessRate>, MemoryStoreError> {
+    pub fn all_class_success_rates(&self) -> Result<Vec<ClassSuccessRate>, MemoryStoreError> {
         let mut stmt = self.conn.prepare(
             "SELECT vulnerability_class, COUNT(*), COALESCE(SUM(success), 0)
              FROM technique_outcomes
@@ -448,9 +438,7 @@ impl AgentMemoryStore {
     /// Groups technique outcomes by tech_stack_json and vulnerability_class,
     /// computing success rates. The agent uses this for: "Last time I saw
     /// Express+EJS, SSTI had a 67% success rate — prioritize that."
-    pub fn tech_stack_correlations(
-        &self,
-    ) -> Result<Vec<TechStackCorrelation>, MemoryStoreError> {
+    pub fn tech_stack_correlations(&self) -> Result<Vec<TechStackCorrelation>, MemoryStoreError> {
         let mut stmt = self.conn.prepare(
             "SELECT tech_stack_json, vulnerability_class, COUNT(*), COALESCE(SUM(success), 0)
              FROM technique_outcomes
@@ -497,9 +485,7 @@ impl AgentMemoryStore {
             |row| Ok((row.get(0)?, row.get(1)?)),
         );
         match result {
-            Ok((total, successes)) if total > 0 => {
-                Ok(Some(successes as f64 / total as f64))
-            }
+            Ok((total, successes)) if total > 0 => Ok(Some(successes as f64 / total as f64)),
             Ok(_) => Ok(None),
             Err(e) => Err(e.into()),
         }
@@ -605,7 +591,11 @@ impl AgentMemoryStore {
             count += 1;
         }
 
-        let total_findings: u32 = memory.iteration_summaries.iter().map(|s| s.new_findings).sum();
+        let total_findings: u32 = memory
+            .iteration_summaries
+            .iter()
+            .map(|s| s.new_findings)
+            .sum();
         tx.execute(
             "INSERT OR REPLACE INTO session_summaries
                 (session_id, target_url, tech_stack_json, total_findings,
@@ -783,31 +773,29 @@ impl AgentMemoryStore {
 
     /// Returns the total number of technique outcome records.
     pub fn total_technique_records(&self) -> Result<u64, MemoryStoreError> {
-        let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM technique_outcomes",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM technique_outcomes", [], |row| {
+                    row.get(0)
+                })?;
         Ok(count as u64)
     }
 
     /// Returns the total number of WAF bypass records.
     pub fn total_bypass_records(&self) -> Result<u64, MemoryStoreError> {
-        let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM waf_bypasses",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 = self
+            .conn
+            .query_row("SELECT COUNT(*) FROM waf_bypasses", [], |row| row.get(0))?;
         Ok(count as u64)
     }
 
     /// Returns the total number of session summaries.
     pub fn total_sessions(&self) -> Result<u64, MemoryStoreError> {
-        let count: i64 = self.conn.query_row(
-            "SELECT COUNT(*) FROM session_summaries",
-            [],
-            |row| row.get(0),
-        )?;
+        let count: i64 =
+            self.conn
+                .query_row("SELECT COUNT(*) FROM session_summaries", [], |row| {
+                    row.get(0)
+                })?;
         Ok(count as u64)
     }
 

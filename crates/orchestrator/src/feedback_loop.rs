@@ -3,7 +3,7 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::llm_response_parser::{
-    normalize_hypothesis, parse_llm_response, validate_hypothesis, ParsedHypothesis, ParsedResponse,
+    ParsedHypothesis, ParsedResponse, normalize_hypothesis, parse_llm_response, validate_hypothesis,
 };
 use crate::scan_briefing::FailedAttemptSummary;
 

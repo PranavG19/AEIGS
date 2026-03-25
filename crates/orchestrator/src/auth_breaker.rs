@@ -1,7 +1,7 @@
 use std::fmt;
 
-use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 
 /// Active authentication attack techniques for JWT, session tokens,
 /// OAuth flows, and SAML assertions.
@@ -717,8 +717,9 @@ fn detect_sequential_pattern(tokens: &[&str]) -> f64 {
 
     for pair in tokens.windows(2) {
         if let (Some(a), Some(b)) = (parse_numeric_suffix(pair[0]), parse_numeric_suffix(pair[1]))
-            && (b == a + 1 || b == a + 2) {
-                sequential_pairs += 1;
+            && (b == a + 1 || b == a + 2)
+        {
+            sequential_pairs += 1;
         }
     }
 

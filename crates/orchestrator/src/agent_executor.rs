@@ -5,9 +5,9 @@ use std::time::Instant;
 use serde::{Deserialize, Serialize};
 
 use crate::agent_loop::{
-    build_fallback_plan, ActionResult, AgentAction, AgentConfig, AgentLoopState, AgentMemory,
-    AgentObservation, AgentPhase, DefenseObservation, EndpointObservation, FindingObservation,
-    TechniqueRecord,
+    ActionResult, AgentAction, AgentConfig, AgentLoopState, AgentMemory, AgentObservation,
+    AgentPhase, DefenseObservation, EndpointObservation, FindingObservation, TechniqueRecord,
+    build_fallback_plan,
 };
 
 /// Outcome of dispatching a single `AgentAction` through a handler.

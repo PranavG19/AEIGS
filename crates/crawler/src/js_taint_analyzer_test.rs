@@ -154,70 +154,84 @@ fn fixture_8_href_to_settimeout() {
 fn detects_location_hash_source() {
     let js = "var x = location.hash;";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::LocationHash));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::LocationHash)
+    );
 }
 
 #[test]
 fn detects_location_search_source() {
     let js = "var q = location.search;";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::LocationSearch));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::LocationSearch)
+    );
 }
 
 #[test]
 fn detects_document_referrer_source() {
     let js = "var r = document.referrer;";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::DocumentReferrer));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::DocumentReferrer)
+    );
 }
 
 #[test]
 fn detects_document_cookie_source() {
     let js = "var c = document.cookie;";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::DocumentCookie));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::DocumentCookie)
+    );
 }
 
 #[test]
 fn detects_postmessage_source() {
     let js = r#"window.addEventListener("message", function(e) { var d = event.data; });"#;
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::PostMessage));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::PostMessage)
+    );
 }
 
 #[test]
 fn detects_window_name_source() {
     let js = "var n = window.name;";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::WindowName));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::WindowName)
+    );
 }
 
 #[test]
 fn detects_urlsearchparams_source() {
     let js = "var p = new URLSearchParams(window.location.search);";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sources_found
-        .iter()
-        .any(|(s, _)| *s == TaintSource::UrlSearchParams));
+    assert!(
+        result
+            .sources_found
+            .iter()
+            .any(|(s, _)| *s == TaintSource::UrlSearchParams)
+    );
 }
 
 // ─── Sink detection tests ────────────────────────────────────────────
@@ -226,50 +240,60 @@ fn detects_urlsearchparams_source() {
 fn detects_innerhtml_sink() {
     let js = r#"document.getElementById("x").innerHTML = "hi";"#;
     let result = analyze_js_taint(js);
-    assert!(result
-        .sinks_found
-        .iter()
-        .any(|(s, _)| *s == TaintSink::InnerHtml));
+    assert!(
+        result
+            .sinks_found
+            .iter()
+            .any(|(s, _)| *s == TaintSink::InnerHtml)
+    );
 }
 
 #[test]
 fn detects_eval_sink() {
     let js = "eval(userInput);";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sinks_found
-        .iter()
-        .any(|(s, _)| *s == TaintSink::Eval));
+    assert!(
+        result
+            .sinks_found
+            .iter()
+            .any(|(s, _)| *s == TaintSink::Eval)
+    );
 }
 
 #[test]
 fn detects_document_write_sink() {
     let js = r#"document.write("<p>" + x + "</p>");"#;
     let result = analyze_js_taint(js);
-    assert!(result
-        .sinks_found
-        .iter()
-        .any(|(s, _)| *s == TaintSink::DocumentWrite));
+    assert!(
+        result
+            .sinks_found
+            .iter()
+            .any(|(s, _)| *s == TaintSink::DocumentWrite)
+    );
 }
 
 #[test]
 fn detects_jquery_html_sink() {
     let js = r##"$("#output").html(content);"##;
     let result = analyze_js_taint(js);
-    assert!(result
-        .sinks_found
-        .iter()
-        .any(|(s, _)| *s == TaintSink::JQueryHtml));
+    assert!(
+        result
+            .sinks_found
+            .iter()
+            .any(|(s, _)| *s == TaintSink::JQueryHtml)
+    );
 }
 
 #[test]
 fn detects_fetch_sink() {
     let js = "fetch(apiUrl);";
     let result = analyze_js_taint(js);
-    assert!(result
-        .sinks_found
-        .iter()
-        .any(|(s, _)| *s == TaintSink::FetchUrl));
+    assert!(
+        result
+            .sinks_found
+            .iter()
+            .any(|(s, _)| *s == TaintSink::FetchUrl)
+    );
 }
 
 // ─── Propagation and edge-case tests ─────────────────────────────────
@@ -452,10 +476,12 @@ location.replace(dest);
 "#;
     let result = analyze_js_taint(js);
     assert!(result.has_flows());
-    assert!(result
-        .flows
-        .iter()
-        .any(|f| f.sink == TaintSink::LocationReplace));
+    assert!(
+        result
+            .flows
+            .iter()
+            .any(|f| f.sink == TaintSink::LocationReplace)
+    );
 }
 
 #[test]
@@ -477,10 +503,12 @@ $("body").append(payload);
 "#;
     let result = analyze_js_taint(js);
     assert!(result.has_flows());
-    assert!(result
-        .flows
-        .iter()
-        .any(|f| f.sink == TaintSink::JQueryAppend));
+    assert!(
+        result
+            .flows
+            .iter()
+            .any(|f| f.sink == TaintSink::JQueryAppend)
+    );
 }
 
 #[test]

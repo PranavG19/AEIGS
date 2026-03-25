@@ -9,11 +9,13 @@ use aegis_protocol::target_validation::validate_target_is_localhost;
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// Aggregated technology fingerprint for a target, containing all detected technologies.
 #[derive(Debug, Clone, PartialEq)]
 pub struct TechFingerprint {
     pub technologies: Vec<DetectedTech>,
 }
 
+/// A single technology detected on the target, with version and confidence.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DetectedTech {
     pub name: String,
@@ -23,6 +25,7 @@ pub struct DetectedTech {
     pub evidence: String,
 }
 
+/// Broad category of a detected technology (server, framework, CMS, etc.).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TechCategory {
     WebServer,
@@ -50,6 +53,7 @@ impl std::fmt::Display for TechCategory {
     }
 }
 
+/// Errors that can occur during technology fingerprinting.
 #[derive(Debug)]
 pub enum FingerprintError {
     InvalidUrl(String),
@@ -69,6 +73,10 @@ impl std::fmt::Display for FingerprintError {
 
 impl std::error::Error for FingerprintError {}
 
+/// Identifies server software, frameworks, and client-side libraries on a target.
+///
+/// Combines HTTP header analysis, HTML meta/content patterns, and known-path probing.
+/// Deduplicates results by technology name, keeping the highest-confidence detection.
 pub struct TechFingerprinter {
     client: Client,
 }

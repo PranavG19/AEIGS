@@ -33,9 +33,11 @@ fn detects_privileged_container() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::PrivilegedContainer));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::PrivilegedContainer)
+    );
     let priv_finding = findings
         .iter()
         .find(|f| f.category == EscapeCategory::PrivilegedContainer)
@@ -54,9 +56,11 @@ fn no_false_positive_privileged_false() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::PrivilegedContainer));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::PrivilegedContainer)
+    );
 }
 
 #[test]
@@ -78,9 +82,11 @@ spec:
           mountPath: /var/run/docker.sock"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::MountedDockerSocket));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::MountedDockerSocket)
+    );
 }
 
 #[test]
@@ -254,9 +260,11 @@ fn detects_writable_root_mount() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::WritableHostMount));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::WritableHostMount)
+    );
 }
 
 #[test]
@@ -272,9 +280,11 @@ spec:
       image: alpine"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure)
+    );
 }
 
 #[test]
@@ -289,9 +299,11 @@ spec:
       image: alpine"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure)
+    );
 }
 
 #[test]
@@ -309,9 +321,11 @@ spec:
       image: alpine"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::ServiceAccountTokenExposure)
+    );
 }
 
 #[test]
@@ -328,9 +342,11 @@ spec:
         - containerPort: 10250"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::ExposedKubeletApi));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::ExposedKubeletApi)
+    );
 }
 
 #[test]
@@ -348,9 +364,11 @@ spec:
           image: alpine"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::DefaultNamespaceNoRbac));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::DefaultNamespaceNoRbac)
+    );
 }
 
 #[test]
@@ -370,9 +388,11 @@ spec:
           image: alpine"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::DefaultNamespaceNoRbac));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::DefaultNamespaceNoRbac)
+    );
 }
 
 #[test]
@@ -419,9 +439,11 @@ fn detects_compose_docker_socket() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::MountedDockerSocket));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::MountedDockerSocket)
+    );
 }
 
 #[test]
@@ -451,9 +473,11 @@ fn detects_compose_host_pid() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::HostNamespaceSharing));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::HostNamespaceSharing)
+    );
 }
 
 #[test]
@@ -480,9 +504,11 @@ fn detects_compose_writable_host_mount() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::WritableHostMount));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::WritableHostMount)
+    );
 }
 
 #[test]
@@ -510,9 +536,11 @@ fn detects_compose_security_opt_apparmor_unconfined() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.description.contains("apparmor:unconfined")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.description.contains("apparmor:unconfined"))
+    );
 }
 
 #[test]
@@ -525,9 +553,11 @@ fn detects_compose_security_opt_seccomp_unconfined() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.description.contains("seccomp:unconfined")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.description.contains("seccomp:unconfined"))
+    );
 }
 
 #[test]
@@ -556,12 +586,16 @@ fn dockerfile_nonroot_user_no_finding() {
     let dockerfile = "FROM ubuntu:22.04\nRUN apt-get update\nUSER 1000\nCMD /app/start";
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_dockerfile(dockerfile);
-    assert!(!findings
-        .iter()
-        .any(|f| f.description.contains("no USER instruction")));
-    assert!(!findings
-        .iter()
-        .any(|f| f.description.contains("runs as root")));
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.description.contains("no USER instruction"))
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.description.contains("runs as root"))
+    );
 }
 
 #[test]
@@ -569,9 +603,11 @@ fn detects_dockerfile_hardcoded_secrets() {
     let dockerfile = "FROM node:18\nENV API_KEY=sk-12345\nCMD node server.js";
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_dockerfile(dockerfile);
-    assert!(findings
-        .iter()
-        .any(|f| f.description.contains("Secrets hardcoded")));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.description.contains("Secrets hardcoded"))
+    );
 }
 
 #[test]
@@ -579,9 +615,11 @@ fn detects_dockerfile_docker_socket_copy() {
     let dockerfile = "FROM alpine\nCOPY /var/run/docker.sock /docker.sock\nCMD sh";
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_dockerfile(dockerfile);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::MountedDockerSocket));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::MountedDockerSocket)
+    );
 }
 
 #[test]
@@ -589,9 +627,11 @@ fn detects_dockerfile_exposed_kubelet() {
     let dockerfile = "FROM nginx\nEXPOSE 10250\nCMD nginx -g 'daemon off;'";
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_dockerfile(dockerfile);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::ExposedKubeletApi));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::ExposedKubeletApi)
+    );
 }
 
 #[test]
@@ -618,12 +658,16 @@ spec:
         privileged: true"#;
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::HostNamespaceSharing));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::PrivilegedContainer));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::HostNamespaceSharing)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::PrivilegedContainer)
+    );
 }
 
 #[test]
@@ -668,9 +712,11 @@ fn scanner_resets_between_scans() {
     let first = scanner.scan_yaml(&yaml_one);
     assert!(!first.is_empty());
     let second = scanner.scan_yaml(&yaml_two);
-    assert!(!second
-        .iter()
-        .any(|f| f.category == EscapeCategory::PrivilegedContainer));
+    assert!(
+        !second
+            .iter()
+            .any(|f| f.category == EscapeCategory::PrivilegedContainer)
+    );
 }
 
 #[test]
@@ -738,9 +784,11 @@ fn detects_containerd_socket_mount() {
     );
     let mut scanner = ContainerEscapeScanner::new();
     let findings = scanner.scan_yaml(&yaml);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == EscapeCategory::MountedDockerSocket));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == EscapeCategory::MountedDockerSocket)
+    );
 }
 
 #[test]

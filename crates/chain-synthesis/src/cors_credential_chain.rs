@@ -361,7 +361,9 @@ impl CorsCredentialChainGenerator {
                 technical_detail: format!(
                     "User navigates to {attacker_origin}/exploit.html via phishing link or ad"
                 ),
-                expected_outcome: "Attacker page loads in victim's browser with active session cookies".to_string(),
+                expected_outcome:
+                    "Attacker page loads in victim's browser with active session cookies"
+                        .to_string(),
             },
             ChainStep {
                 step_number: 2,
@@ -378,7 +380,8 @@ impl CorsCredentialChainGenerator {
             ChainStep {
                 step_number: 3,
                 description: "Read cross-origin response containing user data".to_string(),
-                technical_detail: "Browser allows JS to read response body due to valid CORS headers".to_string(),
+                technical_detail:
+                    "Browser allows JS to read response body due to valid CORS headers".to_string(),
                 expected_outcome: "Attacker JS has full access to response JSON/HTML".to_string(),
             },
             ChainStep {
@@ -388,7 +391,8 @@ impl CorsCredentialChainGenerator {
                     "POST stolen data to {} via navigator.sendBeacon or fetch",
                     self.exfil_endpoint
                 ),
-                expected_outcome: "Attacker receives victim's sensitive data on their server".to_string(),
+                expected_outcome: "Attacker receives victim's sensitive data on their server"
+                    .to_string(),
             },
         ];
 
@@ -440,21 +444,21 @@ impl CorsCredentialChainGenerator {
                     "Inside iframe: fetch('{}', {{credentials: 'include'}}) — browser sends Origin: null",
                     finding.endpoint_url
                 ),
-                expected_outcome: "Server responds with Access-Control-Allow-Origin: null, ACAC: true".to_string(),
+                expected_outcome:
+                    "Server responds with Access-Control-Allow-Origin: null, ACAC: true".to_string(),
             },
             ChainStep {
                 step_number: 3,
                 description: "Read response and relay to parent frame".to_string(),
-                technical_detail: "iframe script reads response, uses parent.postMessage() to send data up".to_string(),
+                technical_detail:
+                    "iframe script reads response, uses parent.postMessage() to send data up"
+                        .to_string(),
                 expected_outcome: "Parent page receives stolen data via message event".to_string(),
             },
             ChainStep {
                 step_number: 4,
                 description: "Exfiltrate data to attacker server".to_string(),
-                technical_detail: format!(
-                    "Parent page POSTs data to {}",
-                    self.exfil_endpoint
-                ),
+                technical_detail: format!("Parent page POSTs data to {}", self.exfil_endpoint),
                 expected_outcome: "Attacker collects victim data".to_string(),
             },
         ];

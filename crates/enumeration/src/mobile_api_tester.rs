@@ -332,7 +332,7 @@ pub fn detect_cert_pinning(
     }
     if response_headers
         .get("expect-ct")
-        .map_or(false, |v| v.contains("enforce"))
+        .is_some_and(|v| v.contains("enforce"))
     {
         pinning_indicators.push("Expect-CT with enforce directive".to_string());
     }
@@ -563,12 +563,12 @@ pub fn detect_binary_protocol(
         indicators.push("Content-Type contains cbor".to_string());
     }
 
-    if protocol == DetectedBinaryProtocol::None && !body.is_empty() {
-        if let Some(detected) = heuristic_binary_detect(body) {
-            protocol = detected.0;
-            confidence = detected.1;
-            indicators.push(detected.2);
-        }
+    if protocol == DetectedBinaryProtocol::None && !body.is_empty()
+        && let Some(detected) = heuristic_binary_detect(body)
+    {
+        protocol = detected.0;
+        confidence = detected.1;
+        indicators.push(detected.2);
     }
 
     let severity = match protocol {
@@ -584,7 +584,9 @@ pub fn detect_binary_protocol(
         _ => {
             format!(
                 "{} detected on {} (confidence: {:.0}%); binary protocol may bypass WAF text-based rules",
-                protocol, endpoint, confidence * 100.0
+                protocol,
+                endpoint,
+                confidence * 100.0
             )
         }
     };
@@ -819,6 +821,7 @@ fn mask_key(key: &str) -> String {
 }
 
 /// Run the full mobile API security analysis.
+#[allow(clippy::too_many_arguments)]
 pub fn run_mobile_api_analysis(
     endpoint: &str,
     response_headers: &HashMap<String, String>,

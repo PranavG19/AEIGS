@@ -7,6 +7,7 @@ use sarif_rust::types::{
 };
 use std::collections::{HashMap, HashSet};
 
+/// Defense context annotations embedded in SARIF result properties.
 #[derive(Debug, Clone, Default)]
 pub struct SarifDefenseContext {
     pub waf_vendor: Option<String>,
@@ -17,6 +18,10 @@ pub struct SarifDefenseContext {
     pub stealth_mode_used: bool,
 }
 
+/// A vulnerability finding prepared for SARIF 2.1.0 emission.
+///
+/// Contains rule metadata, location, severity/confidence scores, defense context,
+/// optional CWE/ATT&CK/CVE references, and suppression annotations.
 pub struct SarifFinding {
     pub rule_id: String,
     pub rule_description: String,
@@ -44,11 +49,13 @@ pub struct SarifFinding {
     pub parameter_name: Option<String>,
 }
 
+/// An additional location related to a SARIF finding.
 pub struct RelatedLocation {
     pub uri: Option<String>,
     pub message: String,
 }
 
+/// SARIF result severity level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SarifLevel {
     Error,

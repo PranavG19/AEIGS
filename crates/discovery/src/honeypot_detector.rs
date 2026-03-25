@@ -10,6 +10,7 @@ use aegis_protocol::target_validation::validate_target_is_localhost;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Known SSH honeypot banners (Cowrie, Kippo, etc.)
+#[allow(dead_code)]
 const SSH_HONEYPOT_BANNERS: &[&str] = &[
     "SSH-2.0-OpenSSH_6.0p1 Debian-4+deb7u2",
     "SSH-2.0-OpenSSH_5.9p1 Debian-5ubuntu1.4",
@@ -172,6 +173,12 @@ impl std::fmt::Debug for HoneypotDetector {
     }
 }
 
+impl Default for HoneypotDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HoneypotDetector {
     pub fn new() -> Self {
         let client = Client::builder()
@@ -252,16 +259,16 @@ impl HoneypotDetector {
                 let status = resp.status().as_u16();
                 if status == 200 {
                     accessible_count += 1;
-                    if let Ok(body) = resp.text() {
-                        if is_fake_login_page(&body) {
-                            indicators.push(HoneypotIndicator {
-                                indicator_type: IndicatorType::FakeLoginPage,
-                                description: format!(
-                                    "Login page at '{path}' appears fake: minimal form, no real framework markers"
-                                ),
-                                severity: IndicatorSeverity::High,
-                            });
-                        }
+                    if let Ok(body) = resp.text()
+                        && is_fake_login_page(&body)
+                    {
+                        indicators.push(HoneypotIndicator {
+                            indicator_type: IndicatorType::FakeLoginPage,
+                            description: format!(
+                                "Login page at '{path}' appears fake: minimal form, no real framework markers"
+                            ),
+                            severity: IndicatorSeverity::High,
+                        });
                     }
                 }
             }
@@ -289,10 +296,10 @@ impl HoneypotDetector {
         let mut responds_200_count = 0;
         for path in random_paths {
             let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            if let Ok(resp) = self.client.get(&url).send() {
-                if resp.status().as_u16() == 200 {
-                    responds_200_count += 1;
-                }
+            if let Ok(resp) = self.client.get(&url).send()
+                && resp.status().as_u16() == 200
+            {
+                responds_200_count += 1;
             }
         }
 
@@ -310,10 +317,10 @@ impl HoneypotDetector {
         let mut lure_accessible = 0;
         for path in HONEYPOT_LURE_PATHS {
             let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            if let Ok(resp) = self.client.get(&url).send() {
-                if resp.status().as_u16() == 200 {
-                    lure_accessible += 1;
-                }
+            if let Ok(resp) = self.client.get(&url).send()
+                && resp.status().as_u16() == 200
+            {
+                lure_accessible += 1;
             }
         }
 
@@ -341,37 +348,34 @@ impl HoneypotDetector {
 
         for path in paths_to_check {
             let url = format!("{}{}", base_url.trim_end_matches('/'), path);
-            if let Ok(resp) = self.client.get(&url).send() {
-                if resp.status().as_u16() == 200 {
-                    if let Ok(body) = resp.text() {
-                        if let Some(m) = aws_key_re.find(&body) {
-                            let key = m.as_str();
-                            let is_known_canary =
-                                CANARY_AWS_KEY_PREFIXES.iter().any(|p| key.starts_with(p));
-                            indicators.push(HoneypotIndicator {
-                                indicator_type: IndicatorType::CanaryToken,
-                                description: format!(
-                                    "AWS key '{key}' found at '{path}' — {} canary credential",
-                                    if is_known_canary { "known" } else { "likely" }
-                                ),
-                                severity: if is_known_canary {
-                                    IndicatorSeverity::Critical
-                                } else {
-                                    IndicatorSeverity::High
-                                },
-                            });
-                        }
+            if let Ok(resp) = self.client.get(&url).send()
+                && resp.status().as_u16() == 200
+                && let Ok(body) = resp.text()
+            {
+                if let Some(m) = aws_key_re.find(&body) {
+                    let key = m.as_str();
+                    let is_known_canary =
+                        CANARY_AWS_KEY_PREFIXES.iter().any(|p| key.starts_with(p));
+                    indicators.push(HoneypotIndicator {
+                        indicator_type: IndicatorType::CanaryToken,
+                        description: format!(
+                            "AWS key '{key}' found at '{path}' — {} canary credential",
+                            if is_known_canary { "known" } else { "likely" }
+                        ),
+                        severity: if is_known_canary {
+                            IndicatorSeverity::Critical
+                        } else {
+                            IndicatorSeverity::High
+                        },
+                    });
+                }
 
-                        if body.contains("canarytokens.com") || body.contains("honeydb.io") {
-                            indicators.push(HoneypotIndicator {
-                                indicator_type: IndicatorType::CanaryToken,
-                                description: format!(
-                                    "Known canary token service URL found at '{path}'"
-                                ),
-                                severity: IndicatorSeverity::Critical,
-                            });
-                        }
-                    }
+                if body.contains("canarytokens.com") || body.contains("honeydb.io") {
+                    indicators.push(HoneypotIndicator {
+                        indicator_type: IndicatorType::CanaryToken,
+                        description: format!("Known canary token service URL found at '{path}'"),
+                        severity: IndicatorSeverity::Critical,
+                    });
                 }
             }
         }

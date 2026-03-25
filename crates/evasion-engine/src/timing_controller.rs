@@ -1,11 +1,16 @@
 use std::time::Instant;
 
+use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 
 use crate::persona::{JitterDistribution, Persona};
 
+/// Controls inter-request timing delays to mimic human browsing patterns.
+///
+/// Generates randomized delays using the configured jitter distribution
+/// (uniform, exponential, or normal) bounded by min/max intervals from the
+/// active persona. The first request in a session has zero delay.
 pub struct TimingController {
     min_delay_ms: u64,
     max_delay_ms: u64,

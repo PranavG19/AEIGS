@@ -1,5 +1,9 @@
 use super::*;
+use aegis_protocol::finding::VulnerabilityClass;
+use axum::Router;
 use crate::ground_truth_v2::{AnnotationBuilder, GroundTruthManifest, GroundTruthSeverity};
+use std::collections::HashMap;
+use std::time::Duration;
 
 fn simple_router() -> Router {
     use axum::routing::get;
@@ -48,10 +52,7 @@ fn simple_ground_truth() -> GroundTruthManifest {
 fn perfect_scanner() -> ScannerFn {
     Box::new(|_url: String| {
         vec![
-            (
-                "/api/search".to_string(),
-                VulnerabilityClass::SqlInjection,
-            ),
+            ("/api/search".to_string(), VulnerabilityClass::SqlInjection),
             (
                 "/api/render".to_string(),
                 VulnerabilityClass::CrossSiteScripting,
@@ -69,10 +70,7 @@ fn empty_scanner() -> ScannerFn {
 fn noisy_scanner() -> ScannerFn {
     Box::new(|_url: String| {
         vec![
-            (
-                "/api/search".to_string(),
-                VulnerabilityClass::SqlInjection,
-            ),
+            ("/api/search".to_string(), VulnerabilityClass::SqlInjection),
             (
                 "/api/render".to_string(),
                 VulnerabilityClass::CrossSiteScripting,
@@ -88,12 +86,7 @@ fn noisy_scanner() -> ScannerFn {
 
 /// A scanner that finds only half.
 fn partial_scanner() -> ScannerFn {
-    Box::new(|_url: String| {
-        vec![(
-            "/api/search".to_string(),
-            VulnerabilityClass::SqlInjection,
-        )]
-    })
+    Box::new(|_url: String| vec![("/api/search".to_string(), VulnerabilityClass::SqlInjection)])
 }
 
 #[tokio::test]
@@ -158,7 +151,12 @@ async fn timings_are_recorded() {
     assert!(result.timings.get(HarnessPhase::ServerStart) > Duration::ZERO);
     assert!(result.timings.get(HarnessPhase::Total) > Duration::ZERO);
     // Evaluation can be near-zero but should be recorded
-    assert!(result.timings.timings.contains_key(&HarnessPhase::Evaluation));
+    assert!(
+        result
+            .timings
+            .timings
+            .contains_key(&HarnessPhase::Evaluation)
+    );
 }
 
 #[tokio::test]
@@ -193,10 +191,7 @@ async fn async_scanner_works() {
     let async_scanner: AsyncScannerFn = Box::new(|_url| {
         Box::pin(async {
             vec![
-                (
-                    "/api/search".to_string(),
-                    VulnerabilityClass::SqlInjection,
-                ),
+                ("/api/search".to_string(), VulnerabilityClass::SqlInjection),
                 (
                     "/api/render".to_string(),
                     VulnerabilityClass::CrossSiteScripting,

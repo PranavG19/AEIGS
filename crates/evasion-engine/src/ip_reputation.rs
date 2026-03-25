@@ -487,13 +487,14 @@ impl IpReputationChecker {
                 recommendations.push(format!("Add IPs in {region} for better diversity"));
             }
         }
-        if let Some((&max_region, &max_count)) = region_counts.iter().max_by_key(|(_, c)| *c) {
-            if total > 0 && max_count as f64 / total as f64 > 0.5 {
-                recommendations.push(format!(
-                    "Rebalance: {max_region} has {:.0}% of IPs",
-                    max_count as f64 / total as f64 * 100.0
-                ));
-            }
+        if let Some((&max_region, &max_count)) = region_counts.iter().max_by_key(|(_, c)| *c)
+            && total > 0
+            && max_count as f64 / total as f64 > 0.5
+        {
+            recommendations.push(format!(
+                "Rebalance: {max_region} has {:.0}% of IPs",
+                max_count as f64 / total as f64 * 100.0
+            ));
         }
 
         GeoDiversityScore {

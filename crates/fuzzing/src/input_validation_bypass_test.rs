@@ -182,9 +182,11 @@ fn negative_unsigned_has_uint32_max() {
 #[test]
 fn empty_null_missing_includes_whitespace_only() {
     let payloads = ValidationBypassGenerator::empty_null_missing();
-    assert!(payloads
-        .iter()
-        .any(|p| p.payload.trim().is_empty() && !p.payload.is_empty()));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.payload.trim().is_empty() && !p.payload.is_empty())
+    );
 }
 
 #[test]
@@ -225,9 +227,11 @@ fn prototype_pollution_has_proto() {
 #[test]
 fn prototype_pollution_has_constructor_path() {
     let payloads = ValidationBypassGenerator::prototype_pollution();
-    assert!(payloads
-        .iter()
-        .any(|p| p.payload.contains("constructor") && p.payload.contains("prototype")));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.payload.contains("constructor") && p.payload.contains("prototype"))
+    );
 }
 
 #[test]

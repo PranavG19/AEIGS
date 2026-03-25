@@ -6,6 +6,7 @@ use reqwest::blocking::Client;
 
 use crate::graph_ops::timestamp_ms;
 
+/// Parsed contents of a `robots.txt` file.
 #[derive(Debug, Clone, Default)]
 pub struct RobotsResult {
     pub disallowed_paths: Vec<String>,
@@ -13,11 +14,13 @@ pub struct RobotsResult {
     pub allowed_paths: Vec<String>,
 }
 
+/// URLs extracted from one or more XML sitemaps.
 #[derive(Debug, Clone, Default)]
 pub struct SitemapResult {
     pub urls: Vec<String>,
 }
 
+/// Errors that can occur when fetching or parsing sitemaps and robots.txt.
 #[derive(Debug)]
 pub enum SitemapError {
     NonLocalhostTarget(String),

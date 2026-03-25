@@ -628,7 +628,7 @@ pub fn fingerprint_waf_from_headers(headers: &[(String, String)]) -> Option<WafF
 
     vendor_evidence
         .into_iter()
-        .max_by(|a, b| a.1 .0.partial_cmp(&b.1 .0).unwrap())
+        .max_by(|a, b| a.1.0.partial_cmp(&b.1.0).unwrap())
         .map(|(vendor, (confidence, evidence))| WafFingerprint {
             vendor,
             confidence,
@@ -657,7 +657,7 @@ pub fn fingerprint_waf_from_body(body: &str) -> Option<WafFingerprint> {
 
     vendor_evidence
         .into_iter()
-        .max_by(|a, b| a.1 .0.partial_cmp(&b.1 .0).unwrap())
+        .max_by(|a, b| a.1.0.partial_cmp(&b.1.0).unwrap())
         .map(|(vendor, (confidence, evidence))| WafFingerprint {
             vendor,
             confidence,

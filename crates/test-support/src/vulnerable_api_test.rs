@@ -1,5 +1,8 @@
 use super::*;
 use axum::body::Body;
+use axum::http::StatusCode;
+use axum::response::Response;
+use axum::Router;
 use tower::ServiceExt;
 
 async fn send_get(router: Router, uri: &str) -> Response {
@@ -201,6 +204,9 @@ fn severity_distribution_has_criticals_and_highs() {
         .iter()
         .filter(|a| a.severity == Severity::High)
         .count();
-    assert!(criticals >= 4, "Expected >=4 critical vulns, got {criticals}");
+    assert!(
+        criticals >= 4,
+        "Expected >=4 critical vulns, got {criticals}"
+    );
     assert!(highs >= 8, "Expected >=8 high vulns, got {highs}");
 }

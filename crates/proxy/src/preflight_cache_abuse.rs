@@ -235,7 +235,9 @@ pub fn analyze_cache_timing(samples: &[TimingSample]) -> CacheTimingResult {
 
 /// Analyze the Access-Control-Max-Age value for abuse potential.
 pub fn analyze_max_age(max_age_seconds: u64) -> MaxAgeAnalysis {
-    let (is_overly_permissive, risk_level, recommendation) = if max_age_seconds >= MAX_AGE_HIGH_THRESHOLD {
+    let (is_overly_permissive, risk_level, recommendation) = if max_age_seconds
+        >= MAX_AGE_HIGH_THRESHOLD
+    {
         (
             true,
             Severity::High,
@@ -278,7 +280,10 @@ pub fn analyze_max_age(max_age_seconds: u64) -> MaxAgeAnalysis {
 
 /// Generate cache poisoning payload variants targeting the given endpoint.
 /// Returns at least 5 distinct payload variants.
-pub fn generate_poison_payloads(endpoint: &str, baseline: &CorsPreflightResponse) -> Vec<CachePoisonPayload> {
+pub fn generate_poison_payloads(
+    endpoint: &str,
+    baseline: &CorsPreflightResponse,
+) -> Vec<CachePoisonPayload> {
     let mut payloads = Vec::new();
     let mut id = 0;
 
@@ -426,12 +431,16 @@ pub fn generate_poison_payloads(endpoint: &str, baseline: &CorsPreflightResponse
 }
 
 /// Analyze a preflight response for all CORS abuse patterns.
-pub fn analyze_preflight(endpoint: &str, response: &CorsPreflightResponse) -> Vec<PreflightFinding> {
+pub fn analyze_preflight(
+    endpoint: &str,
+    response: &CorsPreflightResponse,
+) -> Vec<PreflightFinding> {
     let mut findings = Vec::new();
 
     // Check wildcard origin + credentials (Critical)
     if let Some(ref origin) = response.allow_origin
-        && origin == "*" && response.allow_credentials
+        && origin == "*"
+        && response.allow_credentials
     {
         findings.push(PreflightFinding {
             abuse_type: PreflightAbuse::WildcardOriginCredentials,
@@ -511,7 +520,9 @@ pub fn analyze_preflight(endpoint: &str, response: &CorsPreflightResponse) -> Ve
     // Check credentials escalation
     if response.allow_credentials
         && let Some(ref origin) = response.allow_origin
-        && origin != "*" && !origin.starts_with("https://evil") && origin != "null"
+        && origin != "*"
+        && !origin.starts_with("https://evil")
+        && origin != "null"
     {
         findings.push(PreflightFinding {
             abuse_type: PreflightAbuse::CredentialsEscalation,
@@ -606,9 +617,7 @@ pub fn analyze_preflight(endpoint: &str, response: &CorsPreflightResponse) -> Ve
             ),
             evidence: PreflightEvidence {
                 poisoned_origin: response.allow_origin.clone(),
-                reflected_headers: vec![
-                    ("Access-Control-Max-Age".into(), max_age.to_string()),
-                ],
+                reflected_headers: vec![("Access-Control-Max-Age".into(), max_age.to_string())],
                 max_age_seconds: Some(max_age),
                 cache_timing: None,
             },
@@ -680,7 +689,9 @@ pub fn run_preflight_analysis(
 }
 
 /// Build a mapping of abuse types to their findings for quick lookup.
-pub fn findings_by_type(findings: &[PreflightFinding]) -> HashMap<PreflightAbuse, Vec<&PreflightFinding>> {
+pub fn findings_by_type(
+    findings: &[PreflightFinding],
+) -> HashMap<PreflightAbuse, Vec<&PreflightFinding>> {
     let mut map: HashMap<PreflightAbuse, Vec<&PreflightFinding>> = HashMap::new();
     for f in findings {
         map.entry(f.abuse_type).or_default().push(f);
@@ -756,7 +767,11 @@ window.addEventListener("message", function(e) {{
     )
 }
 
-fn generate_poc_origin_reflection(endpoint: &str, reflected_origin: &str, with_credentials: bool) -> String {
+fn generate_poc_origin_reflection(
+    endpoint: &str,
+    reflected_origin: &str,
+    with_credentials: bool,
+) -> String {
     let cred_line = if with_credentials {
         "  credentials: \"include\","
     } else {

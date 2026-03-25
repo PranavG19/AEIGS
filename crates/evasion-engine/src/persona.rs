@@ -3,6 +3,11 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+/// Browser or tool identity to impersonate during evasion transport.
+///
+/// Each variant maps to a specific User-Agent, header ordering, TLS fingerprint,
+/// and timing profile. Used throughout the evasion engine to select coherent
+/// identity bundles for realistic traffic generation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PersonaId {
     ChromeDesktop,
@@ -17,6 +22,10 @@ pub enum PersonaId {
     PythonRequests,
 }
 
+/// Statistical distribution used to generate inter-request timing jitter.
+///
+/// Controls the shape of random delays between requests to mimic
+/// natural human browsing patterns and avoid detection by timing analysis.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum JitterDistribution {
     Uniform,
@@ -24,6 +33,11 @@ pub enum JitterDistribution {
     Normal,
 }
 
+/// Complete browser persona definition including headers, timing, and identity.
+///
+/// Bundles the User-Agent, Accept headers, Sec-Fetch headers, header ordering,
+/// and request timing parameters into a single coherent identity profile.
+/// Loaded from the embedded catalog or a custom JSON file via `load_persona_catalog`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Persona {
     pub id: PersonaId,
@@ -55,6 +69,10 @@ impl Persona {
     }
 }
 
+/// Builder for constructing custom `Persona` instances with `with_*` methods.
+///
+/// Created via `Persona::custom(id)`. All fields have sensible defaults;
+/// override only what differs from the base persona identity.
 pub struct PersonaBuilder {
     id: PersonaId,
     user_agent: String,
@@ -126,6 +144,10 @@ impl PersonaBuilder {
     }
 }
 
+/// Error type for persona catalog loading and validation.
+///
+/// Returned by `load_persona_catalog` when the catalog file is unreadable,
+/// malformed, empty, or contains duplicate/invalid persona entries.
 #[derive(Debug)]
 pub enum CatalogError {
     Io(std::io::Error),

@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 
 use crate::api_version_attack::{
-    diff_versions, extract_host, graphql_schema_diff_queries, unique_schemes, unique_versions,
-    version_ordinal, AttackCategory, VersionAttackConfig, VersionAttackEngine, VersionProbe,
-    VersionedEndpoint, VersioningScheme, ALL_SCHEMES, CONTENT_TYPE_PATTERNS, VERSION_HEADERS,
-    VERSION_PROBES, VERSION_QUERY_PARAMS,
+    ALL_SCHEMES, AttackCategory, CONTENT_TYPE_PATTERNS, VERSION_HEADERS, VERSION_PROBES,
+    VERSION_QUERY_PARAMS, VersionAttackConfig, VersionAttackEngine, VersionProbe,
+    VersionedEndpoint, VersioningScheme, diff_versions, extract_host, graphql_schema_diff_queries,
+    unique_schemes, unique_versions, version_ordinal,
 };
 
 #[test]

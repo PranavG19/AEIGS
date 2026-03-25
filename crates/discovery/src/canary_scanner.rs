@@ -141,6 +141,12 @@ impl std::fmt::Debug for CanaryScanner {
     }
 }
 
+impl Default for CanaryScanner {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CanaryScanner {
     pub fn new() -> Self {
         let client = Client::builder()
@@ -164,21 +170,17 @@ impl CanaryScanner {
 
         for path in CANARY_SCAN_PATHS {
             let url = format!("{}{}", base, path);
-            match self.client.get(&url).send() {
-                Ok(resp) => {
-                    if resp.status().as_u16() == 200 {
-                        if let Ok(body) = resp.text() {
-                            let found = scan_content_for_canaries(&body, path);
-                            if found.is_empty() {
-                                safe_paths.push(path.to_string());
-                            } else {
-                                dangerous_paths.push(path.to_string());
-                                canaries.extend(found);
-                            }
-                        }
-                    }
+            if let Ok(resp) = self.client.get(&url).send()
+                && resp.status().as_u16() == 200
+                && let Ok(body) = resp.text()
+            {
+                let found = scan_content_for_canaries(&body, path);
+                if found.is_empty() {
+                    safe_paths.push(path.to_string());
+                } else {
+                    dangerous_paths.push(path.to_string());
+                    canaries.extend(found);
                 }
-                Err(_) => {}
             }
         }
 

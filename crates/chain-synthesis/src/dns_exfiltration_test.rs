@@ -170,9 +170,11 @@ fn checksum_query_contains_crc() {
     let data = b"check crc";
     let config = DnsExfilConfig::new("c.test.com", DnsEncoding::Hex, false);
     let payload = encode_exfil(data, &config).unwrap();
-    assert!(payload
-        .checksum_query
-        .contains(&format!("crc-{:08x}", payload.crc32)));
+    assert!(
+        payload
+            .checksum_query
+            .contains(&format!("crc-{:08x}", payload.crc32))
+    );
 }
 
 #[test]
@@ -180,9 +182,11 @@ fn checksum_query_contains_count() {
     let data = b"check count";
     let config = DnsExfilConfig::new("c.test.com", DnsEncoding::Hex, false);
     let payload = encode_exfil(data, &config).unwrap();
-    assert!(payload
-        .checksum_query
-        .contains(&format!("cnt-{:04x}", payload.chunks.len())));
+    assert!(
+        payload
+            .checksum_query
+            .contains(&format!("cnt-{:04x}", payload.chunks.len()))
+    );
 }
 
 // =========================================================================

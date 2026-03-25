@@ -4,30 +4,46 @@ use crate::content_negotiation::*;
 fn accept_manipulations_generated() {
     let manips = generate_accept_manipulations("https://api.example.com/v1/users");
     assert!(manips.len() >= 10);
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::WildcardAccept));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::XmlPreference));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::YamlPreference));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::CsvExfiltration));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::QualityWeightTrick));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::EmptyAccept));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::InvalidMimeType));
-    assert!(manips
-        .iter()
-        .any(|m| m.technique == AcceptManipulationTechnique::AcceptLanguageOverflow));
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::WildcardAccept)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::XmlPreference)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::YamlPreference)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::CsvExfiltration)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::QualityWeightTrick)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::EmptyAccept)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::InvalidMimeType)
+    );
+    assert!(
+        manips
+            .iter()
+            .any(|m| m.technique == AcceptManipulationTechnique::AcceptLanguageOverflow)
+    );
 }
 
 #[test]
@@ -76,24 +92,36 @@ fn accept_overflow_has_long_header() {
 fn serialization_confusion_payloads_generated() {
     let payloads = generate_serialization_confusion_payloads("{\"user\": \"test\"}");
     assert!(payloads.len() >= 6);
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::XxeInjection));
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::YamlDeserialization));
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::PolyglotPayload));
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::TypeJuggling));
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::SchemaBypass));
-    assert!(payloads
-        .iter()
-        .any(|p| p.attack_vector == SerializationAttackVector::ParserDifferential));
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::XxeInjection)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::YamlDeserialization)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::PolyglotPayload)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::TypeJuggling)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::SchemaBypass)
+    );
+    assert!(
+        payloads
+            .iter()
+            .any(|p| p.attack_vector == SerializationAttackVector::ParserDifferential)
+    );
 }
 
 #[test]
@@ -135,21 +163,31 @@ fn type_juggling_has_duplicate_keys() {
 fn content_type_mismatches_generated() {
     let mismatches = generate_content_type_mismatches();
     assert!(mismatches.len() >= 7);
-    assert!(mismatches
-        .iter()
-        .any(|m| m.technique == MismatchTechnique::JsonBodyWithXmlHeader));
-    assert!(mismatches
-        .iter()
-        .any(|m| m.technique == MismatchTechnique::XmlBodyWithJsonHeader));
-    assert!(mismatches
-        .iter()
-        .any(|m| m.technique == MismatchTechnique::FormBodyWithJsonHeader));
-    assert!(mismatches
-        .iter()
-        .any(|m| m.technique == MismatchTechnique::EmptyContentType));
-    assert!(mismatches
-        .iter()
-        .any(|m| m.technique == MismatchTechnique::CharsetOverride));
+    assert!(
+        mismatches
+            .iter()
+            .any(|m| m.technique == MismatchTechnique::JsonBodyWithXmlHeader)
+    );
+    assert!(
+        mismatches
+            .iter()
+            .any(|m| m.technique == MismatchTechnique::XmlBodyWithJsonHeader)
+    );
+    assert!(
+        mismatches
+            .iter()
+            .any(|m| m.technique == MismatchTechnique::FormBodyWithJsonHeader)
+    );
+    assert!(
+        mismatches
+            .iter()
+            .any(|m| m.technique == MismatchTechnique::EmptyContentType)
+    );
+    assert!(
+        mismatches
+            .iter()
+            .any(|m| m.technique == MismatchTechnique::CharsetOverride)
+    );
 }
 
 #[test]
@@ -177,27 +215,41 @@ fn empty_content_type_mismatch() {
 fn boundary_manipulations_generated() {
     let attacks = generate_boundary_manipulations("----WebKitFormBoundary");
     assert!(attacks.len() >= 7);
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::BoundaryInject));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::DuplicateBoundary));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::NullByteBoundary));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::OverlongBoundary));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::MissingClosingBoundary));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::BoundaryInFilename));
-    assert!(attacks
-        .iter()
-        .any(|a| a.technique == BoundaryTechnique::NestedMultipart));
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::BoundaryInject)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::DuplicateBoundary)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::NullByteBoundary)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::OverlongBoundary)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::MissingClosingBoundary)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::BoundaryInFilename)
+    );
+    assert!(
+        attacks
+            .iter()
+            .any(|a| a.technique == BoundaryTechnique::NestedMultipart)
+    );
 }
 
 #[test]
@@ -248,35 +300,51 @@ fn full_analysis_all_categories() {
         Some("{\"test\": true}"),
         Some("----boundary"),
     );
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::AcceptManipulation));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::SerializationConfusion));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::ContentTypeMismatch));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::MultipartBoundaryAbuse));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::AcceptManipulation)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::SerializationConfusion)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::ContentTypeMismatch)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::MultipartBoundaryAbuse)
+    );
 }
 
 #[test]
 fn full_analysis_without_optional_inputs() {
     let findings = run_content_negotiation_analysis("https://api.example.com", None, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::AcceptManipulation));
-    assert!(findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::ContentTypeMismatch));
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::SerializationConfusion));
-    assert!(!findings
-        .iter()
-        .any(|f| f.category == ContentNegotiationCategory::MultipartBoundaryAbuse));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::AcceptManipulation)
+    );
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::ContentTypeMismatch)
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::SerializationConfusion)
+    );
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.category == ContentNegotiationCategory::MultipartBoundaryAbuse)
+    );
 }
 
 #[test]

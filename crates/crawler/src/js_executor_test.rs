@@ -38,18 +38,22 @@ fn extract_both_inline_and_external() {
 fn extract_event_handler_scripts() {
     let html = r#"<button onclick="alert('xss')">Click</button>"#;
     let sources = extract_js_sources(html);
-    assert!(sources
-        .iter()
-        .any(|s| s.source_type == JsSourceType::EventHandler));
+    assert!(
+        sources
+            .iter()
+            .any(|s| s.source_type == JsSourceType::EventHandler)
+    );
 }
 
 #[test]
 fn extract_dynamic_imports() {
     let html = r#"<script>import("/modules/lazy.js")</script>"#;
     let sources = extract_js_sources(html);
-    assert!(sources
-        .iter()
-        .any(|s| s.source_type == JsSourceType::DynamicImport));
+    assert!(
+        sources
+            .iter()
+            .any(|s| s.source_type == JsSourceType::DynamicImport)
+    );
 }
 
 #[test]
@@ -57,18 +61,22 @@ fn find_aws_access_key() {
     let js = r#"const key = "AKIAIOSFODNN7EXAMPLE";"#;
     let findings = find_sensitive_data(js, Some("config.js"));
     assert!(!findings.is_empty());
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::AwsAccessKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::AwsAccessKey)
+    );
 }
 
 #[test]
 fn find_jwt_token() {
     let js = r#"const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::JwtToken));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::JwtToken)
+    );
 }
 
 #[test]
@@ -82,45 +90,55 @@ fn find_api_key() {
 fn find_password_in_js() {
     let js = r#"const password = "SuperSecret123!";"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::Password));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::Password)
+    );
 }
 
 #[test]
 fn find_connection_string() {
     let js = r#"const db = "postgres://admin:pass123@db.internal:5432/mydb";"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::ConnectionString));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::ConnectionString)
+    );
 }
 
 #[test]
 fn find_google_api_key() {
     let js = r#"const gkey = "AIzaSyA1234567890abcdefghijklmnopqrstuv";"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::GoogleApiKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::GoogleApiKey)
+    );
 }
 
 #[test]
 fn find_stripe_key() {
     let js = r#"Stripe("pk_test_abcdefghijklmnopqrstuvwx");"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::StripeKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::StripeKey)
+    );
 }
 
 #[test]
 fn find_private_key() {
     let js = r#"const key = "-----BEGIN RSA PRIVATE KEY-----\nMIIE...";"#;
     let findings = find_sensitive_data(js, None);
-    assert!(findings
-        .iter()
-        .any(|f| f.data_type == SensitiveDataType::PrivateKey));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.data_type == SensitiveDataType::PrivateKey)
+    );
 }
 
 #[test]
@@ -141,9 +159,11 @@ fn find_innerhtml_sink() {
 fn find_document_write_sink() {
     let js = r#"document.write(data);"#;
     let sinks = find_xss_sinks(js, None);
-    assert!(sinks
-        .iter()
-        .any(|s| s.sink_type == XssSinkType::DocumentWrite));
+    assert!(
+        sinks
+            .iter()
+            .any(|s| s.sink_type == XssSinkType::DocumentWrite)
+    );
 }
 
 #[test]
@@ -164,9 +184,11 @@ fn find_window_open_sink() {
 fn find_location_href_sink() {
     let js = r#"location.href = redirectUrl;"#;
     let sinks = find_xss_sinks(js, None);
-    assert!(sinks
-        .iter()
-        .any(|s| s.sink_type == XssSinkType::LocationHref));
+    assert!(
+        sinks
+            .iter()
+            .any(|s| s.sink_type == XssSinkType::LocationHref)
+    );
 }
 
 #[test]
@@ -180,9 +202,11 @@ fn find_jquery_html_sink() {
 fn find_insert_adjacent_html_sink() {
     let js = r#"el.insertAdjacentHTML('beforeend', markup);"#;
     let sinks = find_xss_sinks(js, None);
-    assert!(sinks
-        .iter()
-        .any(|s| s.sink_type == XssSinkType::InsertAdjacentHtml));
+    assert!(
+        sinks
+            .iter()
+            .any(|s| s.sink_type == XssSinkType::InsertAdjacentHtml)
+    );
 }
 
 #[test]
@@ -256,15 +280,21 @@ fn detect_cache_strategies_in_sw() {
         // with stale-while-revalidate fallback
     "#;
     let workers = detect_service_workers(js);
-    assert!(workers[0]
-        .cache_strategies
-        .contains(&"CacheFirst".to_string()));
-    assert!(workers[0]
-        .cache_strategies
-        .contains(&"NetworkFirst".to_string()));
-    assert!(workers[0]
-        .cache_strategies
-        .contains(&"StaleWhileRevalidate".to_string()));
+    assert!(
+        workers[0]
+            .cache_strategies
+            .contains(&"CacheFirst".to_string())
+    );
+    assert!(
+        workers[0]
+            .cache_strategies
+            .contains(&"NetworkFirst".to_string())
+    );
+    assert!(
+        workers[0]
+            .cache_strategies
+            .contains(&"StaleWhileRevalidate".to_string())
+    );
 }
 
 #[test]

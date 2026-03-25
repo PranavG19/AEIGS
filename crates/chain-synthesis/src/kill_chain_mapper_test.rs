@@ -57,12 +57,16 @@ fn phase_coverage_maps_nodes_correctly() {
     let mapper = KillChainMapper::new(&g);
     let report = mapper.map();
 
-    assert!(report
-        .phase_coverage
-        .contains_key(&KillChainPhase::Reconnaissance));
-    assert!(report
-        .phase_coverage
-        .contains_key(&KillChainPhase::ActionsOnObjectives));
+    assert!(
+        report
+            .phase_coverage
+            .contains_key(&KillChainPhase::Reconnaissance)
+    );
+    assert!(
+        report
+            .phase_coverage
+            .contains_key(&KillChainPhase::ActionsOnObjectives)
+    );
 }
 
 #[test]

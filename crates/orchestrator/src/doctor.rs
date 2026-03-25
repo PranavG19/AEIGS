@@ -3,13 +3,21 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::Duration;
 
+/// Status of a single prerequisite check in the `doctor` subcommand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CheckStatus {
+    /// Prerequisite is present and meets version requirements.
     Pass,
+    /// Prerequisite is missing or not functional.
     Fail,
+    /// Prerequisite exists but has a minor issue (e.g., old version).
     Warn,
 }
 
+/// Result of a single system prerequisite check.
+///
+/// Contains the tool name, pass/fail/warn status, human-readable detail,
+/// and an optional fix hint displayed when the check does not pass.
 #[derive(Debug, Clone)]
 pub struct DoctorCheck {
     pub name: String,
@@ -18,6 +26,7 @@ pub struct DoctorCheck {
     pub fix_hint: Option<String>,
 }
 
+/// CLI arguments for the `doctor` subcommand.
 #[derive(Debug, Clone)]
 pub struct DoctorArgs {
     pub verbose: bool,

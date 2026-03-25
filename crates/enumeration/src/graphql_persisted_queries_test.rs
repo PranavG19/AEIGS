@@ -233,9 +233,11 @@ fn allowlist_fragment_spread_creates_named_fragment() {
         .iter()
         .find(|p| p.technique == AllowlistBypassTechnique::NamedFragmentSpread)
         .unwrap();
-    assert!(frag_payload
-        .query
-        .contains("fragment RestrictedFields on User"));
+    assert!(
+        frag_payload
+            .query
+            .contains("fragment RestrictedFields on User")
+    );
     assert!(frag_payload.query.contains("token"));
 }
 

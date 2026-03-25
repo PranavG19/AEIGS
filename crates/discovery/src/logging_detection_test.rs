@@ -179,9 +179,11 @@ fn honeypot_fake_admin_panel_detected() {
         "<form><input name='user'><input name='pass'>login</form>".to_string(),
     )];
     let results = detect_honeypots(&responses);
-    assert!(results
-        .iter()
-        .any(|h| h.indicator_type == HoneypotType::FakeAdminPanel));
+    assert!(
+        results
+            .iter()
+            .any(|h| h.indicator_type == HoneypotType::FakeAdminPanel)
+    );
 }
 
 #[test]
@@ -193,9 +195,11 @@ fn honeypot_tarpit_detected_for_slow_response() {
         "please wait while we verify your request".to_string(),
     )];
     let results = detect_honeypots(&responses);
-    assert!(results
-        .iter()
-        .any(|h| h.indicator_type == HoneypotType::TarpitEndpoint));
+    assert!(
+        results
+            .iter()
+            .any(|h| h.indicator_type == HoneypotType::TarpitEndpoint)
+    );
 }
 
 #[test]
@@ -207,9 +211,11 @@ fn honeypot_canary_token_detected() {
         "<img src='https://canarytokens.com/track/abc123.png'>".to_string(),
     )];
     let results = detect_honeypots(&responses);
-    assert!(results
-        .iter()
-        .any(|h| h.indicator_type == HoneypotType::CanaryToken));
+    assert!(
+        results
+            .iter()
+            .any(|h| h.indicator_type == HoneypotType::CanaryToken)
+    );
 }
 
 #[test]
@@ -221,45 +227,55 @@ fn honeypot_hidden_form_field_detected() {
         r#"<form><input type="text" name="honeypot" style="display:none"><input name="email"></form>"#.to_string(),
     )];
     let results = detect_honeypots(&responses);
-    assert!(results
-        .iter()
-        .any(|h| h.indicator_type == HoneypotType::HiddenFormField));
+    assert!(
+        results
+            .iter()
+            .any(|h| h.indicator_type == HoneypotType::HiddenFormField)
+    );
 }
 
 #[test]
 fn logging_blind_spot_static_asset() {
     let data = vec![("/static/app.js".to_string(), vec![10, 11, 10], false, false)];
     let results = detect_logging_blind_spots(&data);
-    assert!(results
-        .iter()
-        .any(|b| b.reason == BlindSpotReason::StaticAssetPath));
+    assert!(
+        results
+            .iter()
+            .any(|b| b.reason == BlindSpotReason::StaticAssetPath)
+    );
 }
 
 #[test]
 fn logging_blind_spot_health_check() {
     let data = vec![("/healthz".to_string(), vec![5, 5, 5], true, true)];
     let results = detect_logging_blind_spots(&data);
-    assert!(results
-        .iter()
-        .any(|b| b.reason == BlindSpotReason::HealthCheckEndpoint));
+    assert!(
+        results
+            .iter()
+            .any(|b| b.reason == BlindSpotReason::HealthCheckEndpoint)
+    );
 }
 
 #[test]
 fn logging_blind_spot_missing_request_id() {
     let data = vec![("/api/users".to_string(), vec![50, 55, 48], false, true)];
     let results = detect_logging_blind_spots(&data);
-    assert!(results
-        .iter()
-        .any(|b| b.reason == BlindSpotReason::MissingCorrelationId));
+    assert!(
+        results
+            .iter()
+            .any(|b| b.reason == BlindSpotReason::MissingCorrelationId)
+    );
 }
 
 #[test]
 fn logging_blind_spot_no_rate_limit() {
     let data = vec![("/api/search".to_string(), vec![50, 55, 48], true, false)];
     let results = detect_logging_blind_spots(&data);
-    assert!(results
-        .iter()
-        .any(|b| b.reason == BlindSpotReason::NoRateLimitEnforced));
+    assert!(
+        results
+            .iter()
+            .any(|b| b.reason == BlindSpotReason::NoRateLimitEnforced)
+    );
 }
 
 #[test]
@@ -271,9 +287,11 @@ fn logging_blind_spot_low_timing_variance() {
         true,
     )];
     let results = detect_logging_blind_spots(&data);
-    assert!(results
-        .iter()
-        .any(|b| b.reason == BlindSpotReason::NoTimingVariance));
+    assert!(
+        results
+            .iter()
+            .any(|b| b.reason == BlindSpotReason::NoTimingVariance)
+    );
 }
 
 #[test]
@@ -374,9 +392,11 @@ fn siem_new_security_headers_detected() {
         ("x-trace-id".to_string(), "trace-xyz".to_string()),
     ];
     let findings = detect_siem_indicators(&baseline, &triggered, 50, 50);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == DetectionCategory::SiemIndicator));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == DetectionCategory::SiemIndicator)
+    );
 }
 
 #[test]
@@ -402,9 +422,11 @@ fn response_timing_progressive_slowdown() {
         (8, 280),
     ];
     let findings = analyze_response_timing(&timings);
-    assert!(findings
-        .iter()
-        .any(|f| f.category == DetectionCategory::ResponseTimingAnalysis));
+    assert!(
+        findings
+            .iter()
+            .any(|f| f.category == DetectionCategory::ResponseTimingAnalysis)
+    );
 }
 
 #[test]

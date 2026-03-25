@@ -1,9 +1,9 @@
 use aegis_protocol::finding::VulnerabilityClass;
+use axum::Router;
 use axum::extract::{Json, Path, Query};
 use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum::routing::{get, post, put};
-use axum::Router;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -42,62 +42,308 @@ pub struct VulnerableApi {
 impl VulnerableApi {
     /// Builds the full vulnerable API with all 32 endpoints.
     pub fn build() -> Self {
-        let mut annotations = Vec::new();
-
-        // --- A01:2021 Broken Access Control ---
-        annotations.push(ann("/api/admin/users", "GET", VulnerabilityClass::BrokenAuthentication, Severity::Critical, "Admin panel without authentication", "A01:2021", "CWE-306"));
-        annotations.push(ann("/api/users/:id/profile", "GET", VulnerabilityClass::InsecureDirectObjectReference, Severity::High, "IDOR: any user profile accessible by ID", "A01:2021", "CWE-639"));
-        annotations.push(ann("/api/documents/:id", "GET", VulnerabilityClass::BrokenAuthorization, Severity::High, "Missing function-level access control on documents", "A01:2021", "CWE-285"));
-        annotations.push(ann("/api/redirect", "GET", VulnerabilityClass::OpenRedirect, Severity::Medium, "Unvalidated redirect via url param", "A01:2021", "CWE-601"));
-        annotations.push(ann("/api/cors-test", "GET", VulnerabilityClass::CrossOriginMisconfiguration, Severity::Medium, "Reflects Origin header in ACAO without validation", "A01:2021", "CWE-346"));
-
-        // --- A02:2021 Cryptographic Failures ---
-        annotations.push(ann("/api/secrets", "GET", VulnerabilityClass::SensitiveDataExposure, Severity::Critical, "API keys and credentials in plaintext response", "A02:2021", "CWE-312"));
-        annotations.push(ann("/api/token/weak", "GET", VulnerabilityClass::WeakCryptography, Severity::High, "JWT signed with weak secret 'password123'", "A02:2021", "CWE-326"));
-
-        // --- A03:2021 Injection ---
-        annotations.push(ann("/api/search", "GET", VulnerabilityClass::SqlInjection, Severity::Critical, "SQL injection via q parameter", "A03:2021", "CWE-89"));
-        annotations.push(ann("/api/nosql/users", "GET", VulnerabilityClass::NoSqlInjection, Severity::High, "NoSQL injection via filter JSON parameter", "A03:2021", "CWE-943"));
-        annotations.push(ann("/api/render", "GET", VulnerabilityClass::CrossSiteScripting, Severity::High, "Reflected XSS via name parameter", "A03:2021", "CWE-79"));
-        annotations.push(ann("/api/exec", "GET", VulnerabilityClass::CommandInjection, Severity::Critical, "OS command injection via host parameter", "A03:2021", "CWE-78"));
-        annotations.push(ann("/api/template", "GET", VulnerabilityClass::ServerSideTemplateInjection, Severity::High, "SSTI via expr parameter", "A03:2021", "CWE-1336"));
-        annotations.push(ann("/api/xml/parse", "POST", VulnerabilityClass::XmlExternalEntity, Severity::High, "XXE via XML body parsing", "A03:2021", "CWE-611"));
-        annotations.push(ann("/api/files", "GET", VulnerabilityClass::PathTraversal, Severity::High, "Path traversal via path parameter", "A03:2021", "CWE-22"));
-        annotations.push(ann("/api/crlf", "GET", VulnerabilityClass::CrlfInjection, Severity::Medium, "CRLF injection in Set-Cookie header", "A03:2021", "CWE-93"));
-        annotations.push(ann("/api/header-inject", "GET", VulnerabilityClass::HeaderInjection, Severity::Medium, "User input reflected in response header", "A03:2021", "CWE-113"));
-        annotations.push(ann("/api/host-check", "GET", VulnerabilityClass::HostHeaderInjection, Severity::Medium, "Host header reflected in response link", "A03:2021", "CWE-644"));
-
-        // --- A04:2021 Insecure Design ---
-        annotations.push(ann("/api/graphql", "POST", VulnerabilityClass::GraphQlAbuse, Severity::Medium, "GraphQL without depth/complexity limits", "A04:2021", "CWE-400"));
-
-        // --- A05:2021 Security Misconfiguration ---
-        annotations.push(ann("/api/debug", "GET", VulnerabilityClass::SecurityMisconfiguration, Severity::High, "Debug mode with stack traces and versions", "A05:2021", "CWE-215"));
-        annotations.push(ann("/api/security-headers", "GET", VulnerabilityClass::MissingSecurityHeader, Severity::Low, "Missing X-Frame-Options and CSP headers", "A05:2021", "CWE-693"));
-        annotations.push(ann("/api/clickjack", "GET", VulnerabilityClass::Clickjacking, Severity::Medium, "Frameable page without X-Frame-Options", "A05:2021", "CWE-1021"));
-
-        // --- A06:2021 Vulnerable and Outdated Components ---
-        annotations.push(ann("/api/version", "GET", VulnerabilityClass::InformationDisclosure, Severity::Low, "Server version and dependency info leaked", "A06:2021", "CWE-200"));
-
-        // --- A07:2021 Identification and Authentication Failures ---
-        annotations.push(ann("/api/jwt/none", "GET", VulnerabilityClass::JwtVulnerability, Severity::Critical, "JWT accepts alg:none", "A07:2021", "CWE-345"));
-
-        // --- A08:2021 Software and Data Integrity Failures ---
-        annotations.push(ann("/api/deserialize", "POST", VulnerabilityClass::InsecureDeserialization, Severity::Critical, "Unsafe deserialization of user input", "A08:2021", "CWE-502"));
-        annotations.push(ann("/api/mass-assign", "PUT", VulnerabilityClass::MassAssignment, Severity::High, "Mass assignment allows setting is_admin field", "A08:2021", "CWE-915"));
-
-        // --- A09:2021 Security Logging and Monitoring Failures ---
-        // (no endpoint — by design, but we test info-disclosure)
-
-        // --- A10:2021 Server-Side Request Forgery ---
-        annotations.push(ann("/api/fetch", "GET", VulnerabilityClass::ServerSideRequestForgery, Severity::High, "SSRF via url parameter", "A10:2021", "CWE-918"));
-
-        // --- Additional coverage for remaining classes ---
-        annotations.push(ann("/api/prototype", "POST", VulnerabilityClass::PrototypePollution, Severity::Medium, "Prototype pollution via JSON merge", "A03:2021", "CWE-1321"));
-        annotations.push(ann("/api/cache", "GET", VulnerabilityClass::CachePoisoning, Severity::Medium, "Cache key includes unvalidated header", "A05:2021", "CWE-349"));
-        annotations.push(ann("/api/smuggle", "POST", VulnerabilityClass::HttpRequestSmuggling, Severity::High, "CL/TE desync in request parsing", "A05:2021", "CWE-444"));
-        annotations.push(ann("/api/race", "POST", VulnerabilityClass::RaceCondition, Severity::Medium, "Race condition on account balance update", "A04:2021", "CWE-362"));
-        annotations.push(ann("/api/validate", "GET", VulnerabilityClass::InsufficientInputValidation, Severity::Low, "No length or format validation on input", "A03:2021", "CWE-20"));
-        annotations.push(ann("/api/store-xss", "POST", VulnerabilityClass::CrossSiteScripting, Severity::High, "Stored XSS via comment body", "A03:2021", "CWE-79"));
+        let annotations = vec![
+            // --- A01:2021 Broken Access Control ---
+            ann(
+                "/api/admin/users",
+                "GET",
+                VulnerabilityClass::BrokenAuthentication,
+                Severity::Critical,
+                "Admin panel without authentication",
+                "A01:2021",
+                "CWE-306",
+            ),
+            ann(
+                "/api/users/:id/profile",
+                "GET",
+                VulnerabilityClass::InsecureDirectObjectReference,
+                Severity::High,
+                "IDOR: any user profile accessible by ID",
+                "A01:2021",
+                "CWE-639",
+            ),
+            ann(
+                "/api/documents/:id",
+                "GET",
+                VulnerabilityClass::BrokenAuthorization,
+                Severity::High,
+                "Missing function-level access control on documents",
+                "A01:2021",
+                "CWE-285",
+            ),
+            ann(
+                "/api/redirect",
+                "GET",
+                VulnerabilityClass::OpenRedirect,
+                Severity::Medium,
+                "Unvalidated redirect via url param",
+                "A01:2021",
+                "CWE-601",
+            ),
+            ann(
+                "/api/cors-test",
+                "GET",
+                VulnerabilityClass::CrossOriginMisconfiguration,
+                Severity::Medium,
+                "Reflects Origin header in ACAO without validation",
+                "A01:2021",
+                "CWE-346",
+            ),
+            // --- A02:2021 Cryptographic Failures ---
+            ann(
+                "/api/secrets",
+                "GET",
+                VulnerabilityClass::SensitiveDataExposure,
+                Severity::Critical,
+                "API keys and credentials in plaintext response",
+                "A02:2021",
+                "CWE-312",
+            ),
+            ann(
+                "/api/token/weak",
+                "GET",
+                VulnerabilityClass::WeakCryptography,
+                Severity::High,
+                "JWT signed with weak secret 'password123'",
+                "A02:2021",
+                "CWE-326",
+            ),
+            // --- A03:2021 Injection ---
+            ann(
+                "/api/search",
+                "GET",
+                VulnerabilityClass::SqlInjection,
+                Severity::Critical,
+                "SQL injection via q parameter",
+                "A03:2021",
+                "CWE-89",
+            ),
+            ann(
+                "/api/nosql/users",
+                "GET",
+                VulnerabilityClass::NoSqlInjection,
+                Severity::High,
+                "NoSQL injection via filter JSON parameter",
+                "A03:2021",
+                "CWE-943",
+            ),
+            ann(
+                "/api/render",
+                "GET",
+                VulnerabilityClass::CrossSiteScripting,
+                Severity::High,
+                "Reflected XSS via name parameter",
+                "A03:2021",
+                "CWE-79",
+            ),
+            ann(
+                "/api/exec",
+                "GET",
+                VulnerabilityClass::CommandInjection,
+                Severity::Critical,
+                "OS command injection via host parameter",
+                "A03:2021",
+                "CWE-78",
+            ),
+            ann(
+                "/api/template",
+                "GET",
+                VulnerabilityClass::ServerSideTemplateInjection,
+                Severity::High,
+                "SSTI via expr parameter",
+                "A03:2021",
+                "CWE-1336",
+            ),
+            ann(
+                "/api/xml/parse",
+                "POST",
+                VulnerabilityClass::XmlExternalEntity,
+                Severity::High,
+                "XXE via XML body parsing",
+                "A03:2021",
+                "CWE-611",
+            ),
+            ann(
+                "/api/files",
+                "GET",
+                VulnerabilityClass::PathTraversal,
+                Severity::High,
+                "Path traversal via path parameter",
+                "A03:2021",
+                "CWE-22",
+            ),
+            ann(
+                "/api/crlf",
+                "GET",
+                VulnerabilityClass::CrlfInjection,
+                Severity::Medium,
+                "CRLF injection in Set-Cookie header",
+                "A03:2021",
+                "CWE-93",
+            ),
+            ann(
+                "/api/header-inject",
+                "GET",
+                VulnerabilityClass::HeaderInjection,
+                Severity::Medium,
+                "User input reflected in response header",
+                "A03:2021",
+                "CWE-113",
+            ),
+            ann(
+                "/api/host-check",
+                "GET",
+                VulnerabilityClass::HostHeaderInjection,
+                Severity::Medium,
+                "Host header reflected in response link",
+                "A03:2021",
+                "CWE-644",
+            ),
+            // --- A04:2021 Insecure Design ---
+            ann(
+                "/api/graphql",
+                "POST",
+                VulnerabilityClass::GraphQlAbuse,
+                Severity::Medium,
+                "GraphQL without depth/complexity limits",
+                "A04:2021",
+                "CWE-400",
+            ),
+            // --- A05:2021 Security Misconfiguration ---
+            ann(
+                "/api/debug",
+                "GET",
+                VulnerabilityClass::SecurityMisconfiguration,
+                Severity::High,
+                "Debug mode with stack traces and versions",
+                "A05:2021",
+                "CWE-215",
+            ),
+            ann(
+                "/api/security-headers",
+                "GET",
+                VulnerabilityClass::MissingSecurityHeader,
+                Severity::Low,
+                "Missing X-Frame-Options and CSP headers",
+                "A05:2021",
+                "CWE-693",
+            ),
+            ann(
+                "/api/clickjack",
+                "GET",
+                VulnerabilityClass::Clickjacking,
+                Severity::Medium,
+                "Frameable page without X-Frame-Options",
+                "A05:2021",
+                "CWE-1021",
+            ),
+            // --- A06:2021 Vulnerable and Outdated Components ---
+            ann(
+                "/api/version",
+                "GET",
+                VulnerabilityClass::InformationDisclosure,
+                Severity::Low,
+                "Server version and dependency info leaked",
+                "A06:2021",
+                "CWE-200",
+            ),
+            // --- A07:2021 Identification and Authentication Failures ---
+            ann(
+                "/api/jwt/none",
+                "GET",
+                VulnerabilityClass::JwtVulnerability,
+                Severity::Critical,
+                "JWT accepts alg:none",
+                "A07:2021",
+                "CWE-345",
+            ),
+            // --- A08:2021 Software and Data Integrity Failures ---
+            ann(
+                "/api/deserialize",
+                "POST",
+                VulnerabilityClass::InsecureDeserialization,
+                Severity::Critical,
+                "Unsafe deserialization of user input",
+                "A08:2021",
+                "CWE-502",
+            ),
+            ann(
+                "/api/mass-assign",
+                "PUT",
+                VulnerabilityClass::MassAssignment,
+                Severity::High,
+                "Mass assignment allows setting is_admin field",
+                "A08:2021",
+                "CWE-915",
+            ),
+            // --- A09:2021 Security Logging and Monitoring Failures ---
+            // (no endpoint — by design, but we test info-disclosure)
+            // --- A10:2021 Server-Side Request Forgery ---
+            ann(
+                "/api/fetch",
+                "GET",
+                VulnerabilityClass::ServerSideRequestForgery,
+                Severity::High,
+                "SSRF via url parameter",
+                "A10:2021",
+                "CWE-918",
+            ),
+            // --- Additional coverage for remaining classes ---
+            ann(
+                "/api/prototype",
+                "POST",
+                VulnerabilityClass::PrototypePollution,
+                Severity::Medium,
+                "Prototype pollution via JSON merge",
+                "A03:2021",
+                "CWE-1321",
+            ),
+            ann(
+                "/api/cache",
+                "GET",
+                VulnerabilityClass::CachePoisoning,
+                Severity::Medium,
+                "Cache key includes unvalidated header",
+                "A05:2021",
+                "CWE-349",
+            ),
+            ann(
+                "/api/smuggle",
+                "POST",
+                VulnerabilityClass::HttpRequestSmuggling,
+                Severity::High,
+                "CL/TE desync in request parsing",
+                "A05:2021",
+                "CWE-444",
+            ),
+            ann(
+                "/api/race",
+                "POST",
+                VulnerabilityClass::RaceCondition,
+                Severity::Medium,
+                "Race condition on account balance update",
+                "A04:2021",
+                "CWE-362",
+            ),
+            ann(
+                "/api/validate",
+                "GET",
+                VulnerabilityClass::InsufficientInputValidation,
+                Severity::Low,
+                "No length or format validation on input",
+                "A03:2021",
+                "CWE-20",
+            ),
+            ann(
+                "/api/store-xss",
+                "POST",
+                VulnerabilityClass::CrossSiteScripting,
+                Severity::High,
+                "Stored XSS via comment body",
+                "A03:2021",
+                "CWE-79",
+            ),
+        ];
 
         let router = Router::new()
             // A01: Broken Access Control
@@ -144,7 +390,10 @@ impl VulnerableApi {
             .route("/api/store-xss", post(handle_stored_xss))
             .route("/health", get(|| async { "ok" }));
 
-        Self { router, annotations }
+        Self {
+            router,
+            annotations,
+        }
     }
 
     /// Returns the built axum Router.
@@ -171,7 +420,7 @@ impl VulnerableApi {
         let classes: std::collections::HashSet<_> = self
             .annotations
             .iter()
-            .map(|a| a.vulnerability_class.clone())
+            .map(|a| a.vulnerability_class)
             .collect();
         classes.len()
     }
@@ -284,11 +533,16 @@ async fn handle_sqli(Query(params): Query<HashMap<String, String>>) -> Response 
     if q.contains('\'') || q.contains("--") || q.contains(" OR ") || q.contains("UNION") {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("ERROR: syntax error at or near \"{}\" in query: {}", q, query),
+            format!(
+                "ERROR: syntax error at or near \"{}\" in query: {}",
+                q, query
+            ),
         )
             .into_response()
     } else {
-        serde_json::json!({"query": query, "results": []}).to_string().into_response()
+        serde_json::json!({"query": query, "results": []})
+            .to_string()
+            .into_response()
     }
 }
 
@@ -553,8 +807,11 @@ async fn handle_mass_assign(Json(body): Json<MassAssignBody>) -> impl IntoRespon
 
 async fn handle_ssrf(Query(params): Query<HashMap<String, String>>) -> String {
     let url = params.get("url").cloned().unwrap_or_default();
-    if url.contains("169.254.169.254") || url.contains("metadata") || url.contains("localhost")
-        || url.contains("127.0.0.1") || url.contains("internal")
+    if url.contains("169.254.169.254")
+        || url.contains("metadata")
+        || url.contains("localhost")
+        || url.contains("127.0.0.1")
+        || url.contains("internal")
     {
         format!(
             "Fetched: {url}\n\
@@ -591,7 +848,10 @@ async fn handle_cache_poison(headers: HeaderMap) -> Response {
 <body>Cached page</body></html>"#
     );
     let mut resp_headers = HeaderMap::new();
-    resp_headers.insert("cache-control", HeaderValue::from_static("public, max-age=3600"));
+    resp_headers.insert(
+        "cache-control",
+        HeaderValue::from_static("public, max-age=3600"),
+    );
     (resp_headers, Html(body)).into_response()
 }
 
