@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod api_abuse_detector;
 pub mod attack_surface_mapper;
 mod backup_scanner;
@@ -24,6 +26,8 @@ pub mod container_escape;
 pub mod ldap_enumeration;
 pub mod logging_detection;
 pub mod subdomain_takeover_v2;
+pub mod js_bundle_analyzer;
+pub mod wayback_intel;
 
 pub use api_abuse_detector::*;
 pub use attack_surface_mapper::*;
@@ -51,6 +55,16 @@ pub use container_escape::*;
 pub use ldap_enumeration::*;
 pub use logging_detection::*;
 pub use subdomain_takeover_v2::*;
+pub use js_bundle_analyzer::*;
+pub use wayback_intel::*;
+
+#[cfg(test)]
+#[path = "js_bundle_analyzer_test.rs"]
+mod js_bundle_analyzer_test;
+
+#[cfg(test)]
+#[path = "wayback_intel_test.rs"]
+mod wayback_intel_test;
 
 #[cfg(test)]
 #[path = "backup_scanner_test.rs"]

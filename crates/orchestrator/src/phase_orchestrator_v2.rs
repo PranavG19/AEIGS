@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Phase identifiers for the V2 orchestration pipeline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

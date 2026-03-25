@@ -271,16 +271,16 @@ impl GitAnalyzer {
             .find(|r| r.path.ends_with(".git/HEAD") && r.status_code == 200);
 
         for result in probe_results {
-            if result.status_code == 200 {
-                if let Some(f) = self.analyze_probe(result) {
-                    if matches!(
-                        f.category,
-                        GitFindingCategory::HeadExposure | GitFindingCategory::ConfigExposure
-                    ) {
-                        git_exposed = true;
-                    }
-                    findings.push(f);
+            if result.status_code == 200
+                && let Some(f) = self.analyze_probe(result)
+            {
+                if matches!(
+                    f.category,
+                    GitFindingCategory::HeadExposure | GitFindingCategory::ConfigExposure
+                ) {
+                    git_exposed = true;
                 }
+                findings.push(f);
             }
         }
 
@@ -541,15 +541,15 @@ impl GitAnalyzer {
             if probe.status_code != 200 {
                 continue;
             }
-            if let Some(branch_name) = self.extract_branch_name(&probe.path) {
-                if seen.insert(branch_name.clone()) {
-                    let is_active = head_ref.as_deref() == Some(&branch_name);
-                    branches.push(DiscoveredBranch {
-                        name: branch_name,
-                        ref_hash: probe.body.trim().to_string(),
-                        is_active,
-                    });
-                }
+            if let Some(branch_name) = self.extract_branch_name(&probe.path)
+                && seen.insert(branch_name.clone())
+            {
+                let is_active = head_ref.as_deref() == Some(&branch_name);
+                branches.push(DiscoveredBranch {
+                    name: branch_name,
+                    ref_hash: probe.body.trim().to_string(),
+                    is_active,
+                });
             }
         }
 
@@ -563,10 +563,11 @@ impl GitAnalyzer {
         if !path.contains("/refs/heads/") {
             return None;
         }
-        if let Some(rest) = path.split("/refs/heads/").last() {
-            if !rest.is_empty() && !rest.contains("..") {
-                return Some(rest.to_string());
-            }
+        if let Some(rest) = path.split("/refs/heads/").last()
+            && !rest.is_empty()
+            && !rest.contains("..")
+        {
+            return Some(rest.to_string());
         }
         None
     }
@@ -583,10 +584,10 @@ impl GitAnalyzer {
                 continue;
             }
             for line in probe.body.lines() {
-                if let Some(commit) = self.parse_reflog_entry(line) {
-                    if seen_hashes.insert(commit.hash.clone()) {
-                        commits.push(commit);
-                    }
+                if let Some(commit) = self.parse_reflog_entry(line)
+                    && seen_hashes.insert(commit.hash.clone())
+                {
+                    commits.push(commit);
                 }
             }
         }
@@ -648,7 +649,7 @@ impl GitAnalyzer {
         }
 
         for &(pattern, reason, severity) in SENSITIVE_FILE_PATTERNS {
-            if let Some(sources) = file_mentions.get(pattern) {
+            if let Some(_sources) = file_mentions.get(pattern) {
                 recoverable.push(RecoverableFile {
                     path: pattern.to_string(),
                     last_commit_hash: "unknown".into(),

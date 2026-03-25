@@ -169,7 +169,7 @@ impl FindingPipeline {
             map
         };
 
-        for (_node_id, indices) in &node_map {
+        for indices in node_map.values() {
             if indices.len() > 1 {
                 let keys: Vec<String> = indices
                     .iter()

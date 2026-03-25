@@ -4,7 +4,7 @@
 /// extraction from fetch/axios calls, hardcoded secrets/tokens, admin/debug
 /// routes in client-side routing, environment variable leakage (process.env).
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fmt;
 
 /// Category of a JS bundle finding.

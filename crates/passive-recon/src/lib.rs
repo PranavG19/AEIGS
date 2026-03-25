@@ -14,7 +14,26 @@ pub use supply_chain_monitor::*;
 pub use tls_scanner::*;
 pub use vuln_database::*;
 pub use secret_scanner::*;
+pub mod git_analyzer;
+pub mod har_analyzer;
+pub mod service_fingerprinter;
+
 pub use subdomain_enum::*;
+pub use git_analyzer::*;
+pub use har_analyzer::*;
+pub use service_fingerprinter::*;
+
+#[cfg(test)]
+#[path = "git_analyzer_test.rs"]
+mod git_analyzer_test;
+
+#[cfg(test)]
+#[path = "har_analyzer_test.rs"]
+mod har_analyzer_test;
+
+#[cfg(test)]
+#[path = "service_fingerprinter_test.rs"]
+mod service_fingerprinter_test;
 
 #[cfg(test)]
 #[path = "dependency_parser_test.rs"]

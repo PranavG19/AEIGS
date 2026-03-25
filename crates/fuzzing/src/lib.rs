@@ -45,6 +45,12 @@ pub mod input_validation_bypass;
 pub mod prototype_pollution_tester;
 pub mod redos_engine;
 pub mod sqli_second_order;
+pub mod cmdi_payloads_v2;
+pub mod dictionary_manager;
+pub mod sqli_payloads;
+pub mod ssrf_payloads;
+pub mod ssti_payloads;
+pub mod xss_payloads;
 
 pub use anomaly_detector::*;
 pub use bot_detection_probe::*;
@@ -90,6 +96,36 @@ pub use subdomain_takeover::*;
 pub use waf_fingerprinter::*;
 pub use websocket_binary_fuzzer::*;
 pub use xxe_engine::*;
+pub use cmdi_payloads_v2::*;
+pub use dictionary_manager::*;
+pub use sqli_payloads::*;
+pub use ssrf_payloads::*;
+pub use ssti_payloads::*;
+pub use xss_payloads::*;
+
+#[cfg(test)]
+#[path = "cmdi_payloads_v2_test.rs"]
+mod cmdi_payloads_v2_test;
+
+#[cfg(test)]
+#[path = "dictionary_manager_test.rs"]
+mod dictionary_manager_test;
+
+#[cfg(test)]
+#[path = "sqli_payloads_test.rs"]
+mod sqli_payloads_test;
+
+#[cfg(test)]
+#[path = "ssrf_payloads_test.rs"]
+mod ssrf_payloads_test;
+
+#[cfg(test)]
+#[path = "ssti_payloads_test.rs"]
+mod ssti_payloads_test;
+
+#[cfg(test)]
+#[path = "xss_payloads_test.rs"]
+mod xss_payloads_test;
 
 #[cfg(test)]
 #[path = "anomaly_detector_test.rs"]

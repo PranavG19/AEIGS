@@ -424,41 +424,41 @@ impl HarAnalyzer {
     }
 
     fn check_request_body(&self, entry: &HarEntry, idx: usize, findings: &mut Vec<HarFinding>) {
-        if let Some(post_data) = &entry.request.post_data {
-            if let Some(text) = &post_data.text {
-                for &(pattern, label, severity) in BODY_SECRET_PATTERNS {
-                    if text.to_lowercase().contains(&pattern.to_lowercase()) {
-                        findings.push(HarFinding {
-                            category: HarFindingCategory::SensitiveDataInRequest,
-                            severity,
-                            description: format!("{} found in request body", label),
-                            evidence: format!("POST to {}", truncate(&entry.request.url, 100)),
-                            url: entry.request.url.clone(),
-                            entry_index: idx,
-                        });
-                    }
+        if let Some(post_data) = &entry.request.post_data
+            && let Some(text) = &post_data.text
+        {
+            for &(pattern, label, severity) in BODY_SECRET_PATTERNS {
+                if text.to_lowercase().contains(&pattern.to_lowercase()) {
+                    findings.push(HarFinding {
+                        category: HarFindingCategory::SensitiveDataInRequest,
+                        severity,
+                        description: format!("{} found in request body", label),
+                        evidence: format!("POST to {}", truncate(&entry.request.url, 100)),
+                        url: entry.request.url.clone(),
+                        entry_index: idx,
+                    });
                 }
             }
         }
     }
 
     fn check_response_body(&self, entry: &HarEntry, idx: usize, findings: &mut Vec<HarFinding>) {
-        if let Some(content) = &entry.response.content {
-            if let Some(text) = &content.text {
-                for &(pattern, label, severity) in BODY_SECRET_PATTERNS {
-                    if text.to_lowercase().contains(&pattern.to_lowercase()) {
-                        findings.push(HarFinding {
-                            category: HarFindingCategory::SensitiveDataInResponse,
-                            severity,
-                            description: format!("{} found in response body", label),
-                            evidence: format!(
-                                "Response from {}",
-                                truncate(&entry.request.url, 100)
-                            ),
-                            url: entry.request.url.clone(),
-                            entry_index: idx,
-                        });
-                    }
+        if let Some(content) = &entry.response.content
+            && let Some(text) = &content.text
+        {
+            for &(pattern, label, severity) in BODY_SECRET_PATTERNS {
+                if text.to_lowercase().contains(&pattern.to_lowercase()) {
+                    findings.push(HarFinding {
+                        category: HarFindingCategory::SensitiveDataInResponse,
+                        severity,
+                        description: format!("{} found in response body", label),
+                        evidence: format!(
+                            "Response from {}",
+                            truncate(&entry.request.url, 100)
+                        ),
+                        url: entry.request.url.clone(),
+                        entry_index: idx,
+                    });
                 }
             }
         }

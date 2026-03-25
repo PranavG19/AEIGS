@@ -295,6 +295,12 @@ pub mod ssti_polyglot;
 pub mod task_distributor;
 pub mod worker_node;
 pub mod xml_injection_suite;
+pub mod cli_builder;
+pub mod error_recovery;
+pub mod finding_pipeline;
+pub mod module_registry;
+pub mod phase_orchestrator_v2;
+pub mod progress_reporter;
 
 pub use abort_controller_audit::*;
 pub use actor::*;
@@ -552,6 +558,36 @@ pub use ssti_polyglot::*;
 pub use task_distributor::*;
 pub use worker_node::*;
 pub use xml_injection_suite::*;
+pub use cli_builder::*;
+pub use error_recovery::*;
+pub use finding_pipeline::*;
+pub use module_registry::*;
+pub use phase_orchestrator_v2::*;
+pub use progress_reporter::*;
+
+#[cfg(test)]
+#[path = "cli_builder_test.rs"]
+mod cli_builder_test;
+
+#[cfg(test)]
+#[path = "error_recovery_test.rs"]
+mod error_recovery_test;
+
+#[cfg(test)]
+#[path = "finding_pipeline_test.rs"]
+mod finding_pipeline_test;
+
+#[cfg(test)]
+#[path = "module_registry_test.rs"]
+mod module_registry_test;
+
+#[cfg(test)]
+#[path = "phase_orchestrator_v2_test.rs"]
+mod phase_orchestrator_v2_test;
+
+#[cfg(test)]
+#[path = "progress_reporter_test.rs"]
+mod progress_reporter_test;
 
 #[cfg(test)]
 #[path = "scan_history_test.rs"]
