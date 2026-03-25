@@ -26,6 +26,18 @@ mkdir -p "$LOG_DIR"
 [ -f "$TASK_FILE" ] || { echo "FATAL: no TASK.md in $WORKTREE"; exit 1; }
 command -v opencode >/dev/null 2>&1 || { echo "FATAL: opencode not found"; exit 1; }
 
+# ── PREVENT target/ FROM BEING COMMITTED ────────────────────
+cat > "${WORKTREE}/.gitignore" << 'GITEOF'
+target/
+Cargo.lock
+TASK.md
+HEARTBEAT
+STOP
+.worker_loop.sh
+.worker-logs/
+.DS_Store
+GITEOF
+
 # ── RESOLVE AWS CREDENTIALS ────────────────────────────────────
 export AWS_PROFILE=ziya
 AWS_CREDS=$(aws configure export-credentials --format env 2>/dev/null) || true
@@ -64,15 +76,16 @@ worker_loop() {
     echo ""
     echo "━━━ Worker $WORKER_ID | Iteration $ITERATION | $TIMESTAMP ━━━"
 
-    TASK_PROMPT="Read TASK.md. Build the feature described in it. This is your ONLY job.
+    TASK_PROMPT="Read TASK.md. Build the features described in it. Work through the PRIORITY STACK in order.
 
 RULES:
 1. Write code IMMEDIATELY. Minimal reading — TASK.md has everything you need.
-2. After each logical unit: cargo test -p {crate_name} → git add -A → git commit '[crate] verb phrase' 
+2. After each logical unit: cargo test -p {crate_name} → git add crates/ hypothesis-engine/ → git commit '[crate] verb phrase'
+   CRITICAL: Only git add crates/ and hypothesis-engine/ directories. NEVER git add -A. NEVER commit target/ or Cargo.lock.
 3. Write timestamp to HEARTBEAT file with each commit: date > HEARTBEAT
-4. When the feature is COMPLETE (all acceptance criteria met): write DONE to TASK.md status field.
-5. After marking DONE, run cargo clippy -p {crate_name} -- -D warnings and fix any issues.
-6. Then STOP. Do not start new features. Your job is done.
+4. Work through ALL tasks in the priority stack. When you finish one task, immediately start the next.
+5. If context is filling up, update TASK.md to mark completed tasks and note where you are so the next iteration can continue.
+6. After ALL tasks done, mark status as DONE.
 
 BIAS FOR ACTION. Ship code. No analysis paralysis."
 
