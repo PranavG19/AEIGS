@@ -1909,3 +1909,24 @@ mod objective_evaluator_test;
 #[cfg(test)]
 #[path = "auto_report_test.rs"]
 mod auto_report_test;
+
+pub mod mesh_c2;
+pub use mesh_c2::*;
+
+#[cfg(test)]
+#[path = "mesh_c2_test.rs"]
+mod mesh_c2_test;
+
+pub mod multi_operator;
+pub use multi_operator::*;
+
+#[cfg(test)]
+#[path = "multi_operator_test.rs"]
+mod multi_operator_test;
+
+pub mod campaign_manager_v2;
+pub use campaign_manager_v2::*;
+
+#[cfg(test)]
+#[path = "campaign_manager_v2_test.rs"]
+mod campaign_manager_v2_test;

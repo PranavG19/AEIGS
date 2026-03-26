@@ -91,6 +91,9 @@ pub mod timestomper;
 pub mod anti_memory_forensics;
 pub mod ja4_impersonator;
 pub mod tcpip_spoofer;
+pub mod doh_enforcer;
+pub mod asn_router;
+pub mod biometric_mimicry;
 
 pub use adaptive_evasion::*;
 pub use desync_library::*;
@@ -133,6 +136,9 @@ pub use timestomper::*;
 pub use anti_memory_forensics::*;
 pub use ja4_impersonator::*;
 pub use tcpip_spoofer::*;
+pub use doh_enforcer::*;
+pub use asn_router::*;
+pub use biometric_mimicry::*;
 
 #[cfg(test)]
 #[path = "adaptive_evasion_test.rs"]
@@ -397,3 +403,15 @@ mod ja4_impersonator_test;
 #[cfg(test)]
 #[path = "tcpip_spoofer_test.rs"]
 mod tcpip_spoofer_test;
+
+#[cfg(test)]
+#[path = "doh_enforcer_test.rs"]
+mod doh_enforcer_test;
+
+#[cfg(test)]
+#[path = "asn_router_test.rs"]
+mod asn_router_test;
+
+#[cfg(test)]
+#[path = "biometric_mimicry_test.rs"]
+mod biometric_mimicry_test;
