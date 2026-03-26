@@ -20,6 +20,7 @@ members = [
     "crates/proxy-tui",
     "crates/aegis-c2",
     "crates/aegis-scan-tui",
+    "crates/aegis-web-ui",
 ]
 resolver = "2"
 
