@@ -72,6 +72,11 @@ pub mod encrypted_channel_blend;
 pub mod lotl_protocol;
 pub mod ml_adversarial;
 pub mod saas_dead_drops;
+pub mod sandbox_detector;
+pub mod memory_wiper;
+pub mod log_evasion;
+pub mod anti_forensics_v2;
+pub mod implant_obfuscator;
 
 pub use adaptive_evasion::*;
 pub use desync_library::*;
@@ -95,6 +100,11 @@ pub use encrypted_channel_blend::*;
 pub use lotl_protocol::*;
 pub use ml_adversarial::*;
 pub use saas_dead_drops::*;
+pub use sandbox_detector::*;
+pub use memory_wiper::*;
+pub use log_evasion::*;
+pub use anti_forensics_v2::*;
+pub use implant_obfuscator::*;
 
 #[cfg(test)]
 #[path = "adaptive_evasion_test.rs"]
@@ -283,3 +293,23 @@ mod ml_adversarial_test;
 #[cfg(test)]
 #[path = "saas_dead_drops_test.rs"]
 mod saas_dead_drops_test;
+
+#[cfg(test)]
+#[path = "sandbox_detector_test.rs"]
+mod sandbox_detector_test;
+
+#[cfg(test)]
+#[path = "memory_wiper_test.rs"]
+mod memory_wiper_test;
+
+#[cfg(test)]
+#[path = "log_evasion_test.rs"]
+mod log_evasion_test;
+
+#[cfg(test)]
+#[path = "anti_forensics_v2_test.rs"]
+mod anti_forensics_v2_test;
+
+#[cfg(test)]
+#[path = "implant_obfuscator_test.rs"]
+mod implant_obfuscator_test;
