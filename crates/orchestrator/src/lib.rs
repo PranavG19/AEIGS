@@ -571,6 +571,11 @@ pub use www_authenticate_audit::*;
 pub use xfo_audit::*;
 pub use xml_injection_suite::*;
 
+pub mod c2_dns;
+pub mod c2_https;
+pub mod c2_protocol;
+pub mod implant_generator;
+
 pub mod adaptive_defense_planner;
 pub mod alert_rules;
 pub mod attack_scenario;

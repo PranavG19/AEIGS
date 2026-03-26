@@ -8,7 +8,6 @@
 /// Lifecycle: deploy → verify → monitor → rotate → clean.
 use aegis_protocol::finding::VulnerabilityClass;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// The target environment context for persistence planning.
 #[derive(Debug, Clone, Serialize, Deserialize)]

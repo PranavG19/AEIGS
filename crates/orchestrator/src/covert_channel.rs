@@ -145,7 +145,7 @@ pub fn dns_tunnel_decode(queries: &[String], base_domain: &str) -> Option<Vec<u8
     base32_decode(&encoded)
 }
 
-fn base32_encode(data: &[u8]) -> String {
+pub fn base32_encode(data: &[u8]) -> String {
     const ALPHABET: &[u8] = b"abcdefghijklmnopqrstuvwxyz234567";
     let mut result = String::new();
     let mut buffer: u64 = 0;
@@ -167,7 +167,7 @@ fn base32_encode(data: &[u8]) -> String {
     result
 }
 
-fn base32_decode(encoded: &str) -> Option<Vec<u8>> {
+pub fn base32_decode(encoded: &str) -> Option<Vec<u8>> {
     let mut buffer: u64 = 0;
     let mut bits = 0;
     let mut result = Vec::new();

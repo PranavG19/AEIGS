@@ -1,0 +1,22 @@
+[package]
+name = "aegis-c2"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "aegis-c2"
+path = "src/main.rs"
+
+[dependencies]
+aegis-orchestrator = { path = "../orchestrator" }
+aegis-protocol = { path = "../protocol" }
+ratatui = "0.29"
+crossterm = "0.28"
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = "0.4"
+
+[dev-dependencies]
+tempfile = { workspace = true }

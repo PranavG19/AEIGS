@@ -2,11 +2,11 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use aegis_exploiter::{
-    AmassWrapper, ExploitContext, ExploitResult, GauWrapper, ToolWrapper, TrufflehogWrapper,
-    spawn_with_timeout,
+    spawn_with_timeout, AmassWrapper, ExploitContext, ExploitResult, GauWrapper, ToolWrapper,
+    TrufflehogWrapper,
 };
-use aegis_passive_recon::dependency_parser::{ParsedDependency, parse_lock_file};
-use aegis_passive_recon::filesystem_walker::{FileClassification, walk_directory};
+use aegis_passive_recon::dependency_parser::{parse_lock_file, ParsedDependency};
+use aegis_passive_recon::filesystem_walker::{walk_directory, FileClassification};
 use aegis_passive_recon::vuln_database::VulnDatabase;
 use aegis_protocol::finding::VulnerabilityClass;
 use aegis_protocol::node::NodeType;
@@ -2140,14 +2140,14 @@ pub fn run_recon(ctx: &mut ScanContext) -> Result<PhaseResult, PhaseError> {
 
     // --- Collect results from separate-thread scanners ---
     if let Some(handle) = trufflehog_handle {
-        let secrets = handle.join().unwrap_or_default();
+        let secrets: Vec<aegis_exploiter::ExploitResult> = handle.join().unwrap_or_default();
         let secret_ops = secret_findings_to_operations(&secrets, &mut sequence);
         findings_count += secret_ops.len() as u64;
         entries.extend(secret_ops);
     }
 
     if let Some(handle) = github_org_handle {
-        let secrets = handle.join().unwrap_or_default();
+        let secrets: Vec<aegis_exploiter::ExploitResult> = handle.join().unwrap_or_default();
         let org_ops = secret_findings_to_operations(&secrets, &mut sequence);
         findings_count += org_ops.len() as u64;
         entries.extend(org_ops);
