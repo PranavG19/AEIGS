@@ -15,7 +15,6 @@ pub mod graphql_subscription_abuse;
 pub mod grpc_security;
 pub mod introspection;
 pub mod oauth_attack_engine;
-pub mod oauth_leakage_detector;
 pub mod openapi_security;
 pub mod rest_abuse_patterns;
 pub mod route_parser;
@@ -36,7 +35,6 @@ pub use graphql_subscription_abuse::*;
 pub use grpc_security::*;
 pub use introspection::*;
 pub use oauth_attack_engine::*;
-pub use oauth_leakage_detector::*;
 pub use openapi_security::*;
 pub use rest_abuse_patterns::*;
 pub use route_parser::*;
@@ -57,25 +55,6 @@ pub use grpc_exploiter::*;
 pub use mobile_api_tester::*;
 pub use signing_bypass::*;
 pub use webhook_tester::*;
-
-pub mod api_schema_drift_v2;
-pub mod csrf_entropy_v2;
-pub mod graphql_bypass_v3;
-pub use api_schema_drift_v2::*;
-pub use csrf_entropy_v2::*;
-pub use graphql_bypass_v3::*;
-
-#[cfg(test)]
-#[path = "api_schema_drift_v2_test.rs"]
-mod api_schema_drift_v2_test;
-
-#[cfg(test)]
-#[path = "csrf_entropy_v2_test.rs"]
-mod csrf_entropy_v2_test;
-
-#[cfg(test)]
-#[path = "graphql_bypass_v3_test.rs"]
-mod graphql_bypass_v3_test;
 
 #[cfg(test)]
 #[path = "content_negotiation_test.rs"]
@@ -132,10 +111,6 @@ mod graphql_subscription_abuse_test;
 #[cfg(test)]
 #[path = "oauth_attack_engine_test.rs"]
 mod oauth_attack_engine_test;
-
-#[cfg(test)]
-#[path = "oauth_leakage_detector_test.rs"]
-mod oauth_leakage_detector_test;
 
 #[cfg(test)]
 #[path = "session_exploitation_test.rs"]
