@@ -77,6 +77,20 @@ pub mod memory_wiper;
 pub mod log_evasion;
 pub mod anti_forensics_v2;
 pub mod implant_obfuscator;
+pub mod log_poisoner;
+pub mod opsec_gate;
+pub mod polymorphic_signer;
+pub mod ephemeral_executor;
+pub mod zero_disk_mode;
+pub mod traffic_normalizer;
+pub mod forward_secrecy;
+pub mod hw_key_storage;
+pub mod memory_loader;
+pub mod lolbin_generator;
+pub mod timestomper;
+pub mod anti_memory_forensics;
+pub mod ja4_impersonator;
+pub mod tcpip_spoofer;
 
 pub use adaptive_evasion::*;
 pub use desync_library::*;
@@ -105,6 +119,20 @@ pub use memory_wiper::*;
 pub use log_evasion::*;
 pub use anti_forensics_v2::*;
 pub use implant_obfuscator::*;
+pub use log_poisoner::*;
+pub use opsec_gate::*;
+pub use polymorphic_signer::*;
+pub use ephemeral_executor::*;
+pub use zero_disk_mode::*;
+pub use traffic_normalizer::*;
+pub use forward_secrecy::*;
+pub use hw_key_storage::*;
+pub use memory_loader::*;
+pub use lolbin_generator::*;
+pub use timestomper::*;
+pub use anti_memory_forensics::*;
+pub use ja4_impersonator::*;
+pub use tcpip_spoofer::*;
 
 #[cfg(test)]
 #[path = "adaptive_evasion_test.rs"]
@@ -313,3 +341,59 @@ mod anti_forensics_v2_test;
 #[cfg(test)]
 #[path = "implant_obfuscator_test.rs"]
 mod implant_obfuscator_test;
+
+#[cfg(test)]
+#[path = "log_poisoner_test.rs"]
+mod log_poisoner_test;
+
+#[cfg(test)]
+#[path = "opsec_gate_test.rs"]
+mod opsec_gate_test;
+
+#[cfg(test)]
+#[path = "polymorphic_signer_test.rs"]
+mod polymorphic_signer_test;
+
+#[cfg(test)]
+#[path = "ephemeral_executor_test.rs"]
+mod ephemeral_executor_test;
+
+#[cfg(test)]
+#[path = "zero_disk_mode_test.rs"]
+mod zero_disk_mode_test;
+
+#[cfg(test)]
+#[path = "traffic_normalizer_test.rs"]
+mod traffic_normalizer_test;
+
+#[cfg(test)]
+#[path = "forward_secrecy_test.rs"]
+mod forward_secrecy_test;
+
+#[cfg(test)]
+#[path = "hw_key_storage_test.rs"]
+mod hw_key_storage_test;
+
+#[cfg(test)]
+#[path = "memory_loader_test.rs"]
+mod memory_loader_test;
+
+#[cfg(test)]
+#[path = "lolbin_generator_test.rs"]
+mod lolbin_generator_test;
+
+#[cfg(test)]
+#[path = "timestomper_test.rs"]
+mod timestomper_test;
+
+#[cfg(test)]
+#[path = "anti_memory_forensics_test.rs"]
+mod anti_memory_forensics_test;
+
+#[cfg(test)]
+#[path = "ja4_impersonator_test.rs"]
+mod ja4_impersonator_test;
+
+#[cfg(test)]
+#[path = "tcpip_spoofer_test.rs"]
+mod tcpip_spoofer_test;

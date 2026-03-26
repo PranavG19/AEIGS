@@ -3,8 +3,10 @@ pub mod browser_ext_analyzer;
 mod crawler;
 mod error;
 pub mod form_autofill;
+pub mod gpu_browser;
 pub mod headless_controller;
 pub mod injection_planter;
+pub mod js_engine;
 pub mod js_executor;
 pub mod js_taint_analyzer;
 pub mod multi_bot_coordinator;
@@ -29,8 +31,10 @@ pub use browser_ext_analyzer::*;
 pub use crawler::Crawler;
 pub use error::*;
 pub use form_autofill::*;
+pub use gpu_browser::*;
 pub use headless_controller::*;
 pub use injection_planter::*;
+pub use js_engine::*;
 pub use js_executor::*;
 pub use js_taint_analyzer::*;
 pub use multi_bot_coordinator::*;
@@ -113,3 +117,11 @@ mod visual_regression_test;
 #[cfg(test)]
 #[path = "websocket_hijack_test.rs"]
 mod websocket_hijack_test;
+
+#[cfg(test)]
+#[path = "gpu_browser_test.rs"]
+mod gpu_browser_test;
+
+#[cfg(test)]
+#[path = "js_engine_test.rs"]
+mod js_engine_test;

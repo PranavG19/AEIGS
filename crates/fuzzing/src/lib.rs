@@ -38,6 +38,7 @@ pub mod streaming_fuzzer;
 pub mod subdomain_takeover;
 pub mod waf_fingerprinter;
 pub mod websocket_binary_fuzzer;
+pub mod ws_state_machine_v2;
 pub mod xxe_engine;
 
 pub mod graphql_deep_exploit;
@@ -45,14 +46,21 @@ pub mod single_packet_race;
 
 pub mod anomaly_detector;
 pub mod cmdi_payloads_v2;
+pub mod code_path_analyzer;
 pub mod dictionary_manager;
+pub mod h2_push_exploit;
+pub mod hpack_bomb_v2;
 pub mod input_validation_bypass;
+pub mod lfi_rce_chain;
 pub mod prototype_pollution_tester;
+pub mod race_window_detector;
 pub mod redos_engine;
 pub mod sqli_payloads;
 pub mod sqli_second_order;
 pub mod ssrf_payloads;
 pub mod ssti_payloads;
+pub mod ssti_rce;
+pub mod timing_oracle_v2;
 pub mod xss_payloads;
 
 pub use anomaly_detector::*;
@@ -60,6 +68,7 @@ pub use bot_detection_probe::*;
 pub use campaign_manager::*;
 pub use cloud_detector::*;
 pub use cmdi_payloads_v2::*;
+pub use code_path_analyzer::*;
 pub use command_injection_gen::*;
 pub use comparative_fuzzer::*;
 pub use confirmation::*;
@@ -73,11 +82,14 @@ pub use executor::*;
 pub use graphql_deep_exploit::*;
 pub use graphql_tester::*;
 pub use h2_protocol_attacks::*;
+pub use h2_push_exploit::*;
 pub use header_analyzer::*;
 pub use header_smuggling::*;
+pub use hpack_bomb_v2::*;
 pub use idor_tester::*;
 pub use input_validation_bypass::*;
 pub use jailbreak_mutator::*;
+pub use lfi_rce_chain::*;
 pub use llm_oracle::*;
 pub use mass_assignment_tester::*;
 pub use mutation_strategy::*;
@@ -91,6 +103,7 @@ pub use protocol_fuzzer::*;
 pub use prototype_pollution_tester::*;
 pub use single_packet_race::*;
 pub use race_tester::*;
+pub use race_window_detector::*;
 pub use rate_limit_detector::*;
 pub use redos_engine::*;
 pub use request_patterns::*;
@@ -100,11 +113,14 @@ pub use sqli_payloads::*;
 pub use sqli_second_order::*;
 pub use ssrf_payloads::*;
 pub use ssti_payloads::*;
+pub use ssti_rce::*;
 pub use stealth_config::*;
 pub use streaming_fuzzer::*;
 pub use subdomain_takeover::*;
+pub use timing_oracle_v2::*;
 pub use waf_fingerprinter::*;
 pub use websocket_binary_fuzzer::*;
+pub use ws_state_machine_v2::*;
 pub use xss_payloads::*;
 pub use xxe_engine::*;
 
@@ -315,3 +331,35 @@ mod single_packet_race_test;
 #[cfg(test)]
 #[path = "graphql_deep_exploit_test.rs"]
 mod graphql_deep_exploit_test;
+
+#[cfg(test)]
+#[path = "h2_push_exploit_test.rs"]
+mod h2_push_exploit_test;
+
+#[cfg(test)]
+#[path = "hpack_bomb_v2_test.rs"]
+mod hpack_bomb_v2_test;
+
+#[cfg(test)]
+#[path = "code_path_analyzer_test.rs"]
+mod code_path_analyzer_test;
+
+#[cfg(test)]
+#[path = "timing_oracle_v2_test.rs"]
+mod timing_oracle_v2_test;
+
+#[cfg(test)]
+#[path = "race_window_detector_test.rs"]
+mod race_window_detector_test;
+
+#[cfg(test)]
+#[path = "lfi_rce_chain_test.rs"]
+mod lfi_rce_chain_test;
+
+#[cfg(test)]
+#[path = "ssti_rce_test.rs"]
+mod ssti_rce_test;
+
+#[cfg(test)]
+#[path = "ws_state_machine_v2_test.rs"]
+mod ws_state_machine_v2_test;

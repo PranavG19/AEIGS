@@ -42,12 +42,16 @@ pub use session_exploitation::*;
 
 pub mod content_negotiation;
 pub mod gateway_bypass;
+pub mod graphql_reconstructor;
+pub mod grpc_exploiter;
 pub mod mobile_api_tester;
 pub mod signing_bypass;
 pub mod webhook_tester;
 
 pub use content_negotiation::*;
 pub use gateway_bypass::*;
+pub use graphql_reconstructor::*;
+pub use grpc_exploiter::*;
 pub use mobile_api_tester::*;
 pub use signing_bypass::*;
 pub use webhook_tester::*;
@@ -143,3 +147,11 @@ mod graphql_field_auth_test;
 #[cfg(test)]
 #[path = "graphql_persisted_queries_test.rs"]
 mod graphql_persisted_queries_test;
+
+#[cfg(test)]
+#[path = "grpc_exploiter_test.rs"]
+mod grpc_exploiter_test;
+
+#[cfg(test)]
+#[path = "graphql_reconstructor_test.rs"]
+mod graphql_reconstructor_test;
