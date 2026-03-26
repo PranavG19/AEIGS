@@ -579,13 +579,18 @@ pub mod implant_generator;
 pub mod adaptive_defense_planner;
 pub mod alert_rules;
 pub mod attack_scenario;
+pub mod auto_report;
 pub mod change_detector;
 pub mod continuous_scheduler;
 pub mod evidence_chain;
 pub mod exploit_compiler;
+pub mod initial_access;
+pub mod kill_chain_executor;
+pub mod lateral_movement;
 pub mod multi_vector_coordinator;
 pub mod notifications;
 pub mod novel_vuln_reasoner;
+pub mod objective_evaluator;
 pub mod persistence_manager;
 pub mod playbook_engine;
 pub mod scan_comparison_intel;
@@ -1750,10 +1755,6 @@ mod grammar_fuzzer_test;
 mod graphql_batch_amplification_test;
 
 #[cfg(test)]
-#[path = "host_header_audit_test.rs"]
-mod host_header_audit_test;
-
-#[cfg(test)]
 #[path = "idor_detector_test.rs"]
 mod idor_detector_test;
 
@@ -1888,3 +1889,23 @@ mod novel_vuln_reasoner_test;
 #[cfg(test)]
 #[path = "persistence_manager_test.rs"]
 mod persistence_manager_test;
+
+#[cfg(test)]
+#[path = "kill_chain_executor_test.rs"]
+mod kill_chain_executor_test;
+
+#[cfg(test)]
+#[path = "initial_access_test.rs"]
+mod initial_access_test;
+
+#[cfg(test)]
+#[path = "lateral_movement_test.rs"]
+mod lateral_movement_test;
+
+#[cfg(test)]
+#[path = "objective_evaluator_test.rs"]
+mod objective_evaluator_test;
+
+#[cfg(test)]
+#[path = "auto_report_test.rs"]
+mod auto_report_test;
