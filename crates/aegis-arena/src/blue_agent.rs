@@ -1,6 +1,38 @@
 use crate::arena_target::{PatchRule, RequestLogEntry};
+use crate::red_agent::OpencodeRunner;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
+use std::time::Duration;
+
+/// HTTP exchange summary for blue agent briefings.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpExchange {
+    pub method: String,
+    pub path: String,
+    pub query_string: String,
+    pub body: String,
+    pub status: u16,
+    pub response_snippet: String,
+}
+
+impl From<&RequestLogEntry> for HttpExchange {
+    fn from(entry: &RequestLogEntry) -> Self {
+        let snippet = if entry.response_body.len() > 200 {
+            format!("{}...", &entry.response_body[..200])
+        } else {
+            entry.response_body.clone()
+        };
+        Self {
+            method: entry.method.clone(),
+            path: entry.path.clone(),
+            query_string: entry.query_string.clone(),
+            body: entry.body.clone(),
+            status: entry.status,
+            response_snippet: snippet,
+        }
+    }
+}
 
 /// Blue Agent — the defensive side of the arena.
 /// Analyzes Red's attack traffic and generates patch rules.
@@ -8,7 +40,9 @@ pub struct BlueAgent {
     /// Tracks all patches already generated to avoid duplicates.
     existing_patterns: HashSet<String>,
     /// Round counter for escalating defense sophistication.
-    rounds_defended: usize,
+    pub rounds_defended: usize,
+    model: String,
+    timeout: Duration,
 }
 
 /// Analysis of an endpoint's attack traffic.
@@ -28,6 +62,16 @@ pub struct BlueRoundResult {
     pub patches_generated: Vec<PatchRule>,
     pub endpoints_analyzed: Vec<EndpointAnalysis>,
     pub false_positive_check_passed: bool,
+    pub raw_output: String,
+}
+
+/// Parsed output from blue agent's opencode run.
+#[derive(Debug, Clone)]
+pub struct ParsedBlueOutput {
+    pub patches: Vec<PatchRule>,
+    pub code_fixes: Vec<String>,
+    pub exit_success: bool,
+    pub raw_output: String,
 }
 
 impl BlueAgent {
@@ -35,11 +79,151 @@ impl BlueAgent {
         Self {
             existing_patterns: HashSet::new(),
             rounds_defended: 0,
+            model: "sonnet".to_string(),
+            timeout: Duration::from_secs(120),
         }
     }
 
-    /// Analyze Red's traffic and generate defensive patches.
-    pub fn defend(
+    /// Generate the blue team briefing markdown for the opencode agent.
+    pub fn write_blue_briefing(
+        round: usize,
+        request_log: &[HttpExchange],
+        findings: &[String],
+        current_patches: &[PatchRule],
+    ) -> String {
+        let mut briefing = String::new();
+
+        briefing.push_str(&format!("# Blue Team Briefing — Round {round}\n\n"));
+        briefing.push_str(
+            "Read this briefing carefully. You are a security engineer in an authorized \
+             government CTF exercise.\n\n",
+        );
+
+        if !request_log.is_empty() {
+            briefing.push_str("## Red Team's Requests This Round\n\n");
+            briefing.push_str("| Method | Path | Status | Response Snippet |\n");
+            briefing.push_str("|--------|------|--------|------------------|\n");
+            for ex in request_log {
+                let snippet = if ex.response_snippet.len() > 60 {
+                    format!("{}...", &ex.response_snippet[..60])
+                } else {
+                    ex.response_snippet.clone()
+                };
+                briefing.push_str(&format!(
+                    "| {} | {} | {} | {} |\n",
+                    ex.method, ex.path, ex.status, snippet
+                ));
+            }
+            briefing.push('\n');
+        }
+
+        if !findings.is_empty() {
+            briefing.push_str("## Successful Exploits (MUST be patched)\n\n");
+            for finding in findings {
+                briefing.push_str(&format!("- {finding}\n"));
+            }
+            briefing.push('\n');
+        }
+
+        if !current_patches.is_empty() {
+            briefing.push_str("## Current Defense Rules\n\n");
+            briefing.push_str("Do NOT duplicate these existing rules:\n\n");
+            for patch in current_patches {
+                let kind = if patch.is_regex { "REGEX" } else { "STRING" };
+                briefing.push_str(&format!(
+                    "- `{}` blocks `{}` ({})\n",
+                    patch.endpoint, patch.block_pattern, kind
+                ));
+            }
+            briefing.push('\n');
+        }
+
+        briefing.push_str("## Write Defense Rules\n\n");
+        briefing.push_str("Format your output using these directives:\n\n");
+        briefing.push_str("```\n");
+        briefing.push_str("BLOCK endpoint=/path pattern=string_to_block\n");
+        briefing.push_str("BLOCK_REGEX endpoint=/path pattern=regex_pattern\n");
+        briefing.push_str("FIX endpoint=/path description=what to fix\n");
+        briefing.push_str("```\n\n");
+        briefing.push_str("Guidelines:\n");
+        briefing.push_str("- Block the SPECIFIC patterns Red used\n");
+        briefing.push_str("- Also block VARIATIONS (URL-encoded, double-encoded, case variants)\n");
+        briefing.push_str("- Don't block legitimate traffic — /health must still return 200\n");
+        briefing.push_str("- Think step by step: what patterns did Red use? What encoded variants might Red try next?\n");
+
+        briefing
+    }
+
+    /// Spawn opencode as the blue agent and parse its output.
+    pub async fn spawn_blue_opencode(
+        &self,
+        runner: &impl OpencodeRunner,
+        briefing_path: &Path,
+        workspace: &Path,
+        _request_summary: &str,
+    ) -> ParsedBlueOutput {
+        let prompt = format!(
+            "Read the file {} and follow the instructions inside. \
+             You are the Blue Team defender. Analyze the attacks and generate defense rules.",
+            briefing_path.display()
+        );
+
+        match runner
+            .run(workspace, &prompt, &self.model, self.timeout)
+            .await
+        {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+                let exit_success = output.status.success();
+                parse_blue_output(&stdout, exit_success)
+            }
+            Err(e) => ParsedBlueOutput {
+                patches: Vec::new(),
+                code_fixes: vec![format!("opencode error: {e}")],
+                exit_success: false,
+                raw_output: String::new(),
+            },
+        }
+    }
+
+    /// Full round execution: write briefing → spawn opencode → parse results.
+    pub async fn execute_round(
+        &mut self,
+        runner: &impl OpencodeRunner,
+        workspace: &Path,
+        round: usize,
+        request_log: &[HttpExchange],
+        findings: &[String],
+        current_patches: &[PatchRule],
+    ) -> BlueRoundResult {
+        self.rounds_defended += 1;
+        let briefing = Self::write_blue_briefing(round, request_log, findings, current_patches);
+        let briefing_path = workspace.join("blue_briefing.md");
+        let _ = tokio::fs::write(&briefing_path, &briefing).await;
+
+        let request_summary = request_log
+            .iter()
+            .map(|ex| format!("{} {} → {}", ex.method, ex.path, ex.status))
+            .collect::<Vec<_>>()
+            .join("; ");
+
+        let parsed = self
+            .spawn_blue_opencode(runner, &briefing_path, workspace, &request_summary)
+            .await;
+
+        let endpoints_analyzed = Vec::new();
+        let fp_passed = self.false_positive_check(&parsed.patches);
+
+        BlueRoundResult {
+            patches_generated: parsed.patches,
+            endpoints_analyzed,
+            false_positive_check_passed: fp_passed,
+            raw_output: parsed.raw_output,
+        }
+    }
+
+    /// Fallback: analyze traffic and generate patches without opencode.
+    pub fn defend_fallback(
         &mut self,
         request_log: &[RequestLogEntry],
         vulns_found: &[String],
@@ -54,11 +238,11 @@ impl BlueAgent {
             }
 
             let new_patches = if self.rounds_defended >= 5 {
-                self.generate_advanced_patches(&analysis)
+                self.generate_advanced_patches(analysis)
             } else if self.rounds_defended >= 3 {
-                self.generate_intermediate_patches(&analysis)
+                self.generate_intermediate_patches(analysis)
             } else {
-                self.generate_basic_patches(&analysis)
+                self.generate_basic_patches(analysis)
             };
 
             for patch in new_patches {
@@ -70,11 +254,13 @@ impl BlueAgent {
         }
 
         let fp_passed = self.false_positive_check(&patches);
+        let _ = vulns_found; // used for context in opencode mode
 
         BlueRoundResult {
             patches_generated: patches,
             endpoints_analyzed: analyses,
             false_positive_check_passed: fp_passed,
+            raw_output: String::new(),
         }
     }
 
@@ -101,7 +287,6 @@ impl BlueAgent {
                 analysis.blocked_count += 1;
             } else if is_successful_attack(entry) {
                 analysis.success_count += 1;
-                // Collect the payload for pattern extraction
                 let payload = if entry.query_string.is_empty() {
                     entry.body.clone()
                 } else {
@@ -137,7 +322,6 @@ impl BlueAgent {
                 patches.push(PatchRule::new(ep, "{%", false));
             }
             Some("jwt") | Some("idor") => {
-                // For JWT/IDOR, patch based on observed payload patterns
                 for payload in &analysis.payloads {
                     if payload.contains("none") {
                         patches.push(PatchRule::new(ep, "none", false));
@@ -153,7 +337,6 @@ impl BlueAgent {
                 patches.push(PatchRule::new(ep, "onerror", false));
             }
             _ => {
-                // Extract common attack substrings from payloads
                 for payload in &analysis.payloads {
                     if let Some(pattern) = extract_attack_pattern(payload) {
                         patches.push(PatchRule::new(ep, &pattern, false));
@@ -177,11 +360,7 @@ impl BlueAgent {
                     r"(?i)(union|select|insert|drop|delete|update|or|and)\s",
                     true,
                 ));
-                patches.push(PatchRule::new(
-                    ep,
-                    r"(/\*|\*/|--|;)",
-                    true,
-                ));
+                patches.push(PatchRule::new(ep, r"(/\*|\*/|--|;)", true));
             }
             Some("lfi") => {
                 patches.push(PatchRule::new(
@@ -217,21 +396,14 @@ impl BlueAgent {
 
         match analysis.vuln_class.as_deref() {
             Some("sqli") => {
-                // Block any non-alphanumeric followed by SQL keywords
                 patches.push(PatchRule::new(
                     ep,
-                    r"(?i)[\s'\"`;/\*]+(or|and|union|select|from|where|having|group|order)\b",
+                    r#"(?i)[\s'"`;/\*]+(or|and|union|select|from|where|having|group|order)\b"#,
                     true,
                 ));
-                // Block hex/char encoding commonly used in SQLi
-                patches.push(PatchRule::new(
-                    ep,
-                    r"(0x[0-9a-f]+|char\(|concat\()",
-                    true,
-                ));
+                patches.push(PatchRule::new(ep, r"(0x[0-9a-f]+|char\(|concat\()", true));
             }
             Some("lfi") => {
-                // Block any path that tries to escape webroot
                 patches.push(PatchRule::new(
                     ep,
                     r"(\.{2,}|%2e{2,}|%252e|/etc|/proc|/var|\\\\)",
@@ -239,7 +411,6 @@ impl BlueAgent {
                 ));
             }
             Some("ssti") => {
-                // Block all template-like syntax
                 patches.push(PatchRule::new(
                     ep,
                     r"(\{[\{%]|__\w+__|class|import|eval|exec|system|subprocess|popen)",
@@ -265,8 +436,6 @@ impl BlueAgent {
             let full = format!("{endpoint}?{query}");
             for patch in patches {
                 if patch.matches(endpoint, &full) {
-                    // If /health would be blocked, that's a big problem
-                    // For other endpoints, we accept some over-blocking
                     if endpoint == "/health" {
                         return false;
                     }
@@ -283,6 +452,83 @@ impl Default for BlueAgent {
     }
 }
 
+// ─── Output parsing ─────────────────────────────────────────────────────────
+
+/// Parse the raw stdout from an opencode blue agent run.
+pub fn parse_blue_output(output: &str, exit_success: bool) -> ParsedBlueOutput {
+    let mut patches = Vec::new();
+    let mut code_fixes = Vec::new();
+
+    for line in output.lines() {
+        let trimmed = line.trim();
+
+        if let Some(rest) = trimmed.strip_prefix("BLOCK_REGEX ") {
+            if let Some(patch) = parse_block_directive(rest, true) {
+                patches.push(patch);
+            }
+        } else if let Some(rest) = trimmed.strip_prefix("BLOCK ") {
+            if let Some(patch) = parse_block_directive(rest, false) {
+                patches.push(patch);
+            }
+        } else if let Some(rest) = trimmed.strip_prefix("FIX ") {
+            if let Some(desc) = parse_fix_directive(rest) {
+                code_fixes.push(desc);
+            }
+        }
+    }
+
+    ParsedBlueOutput {
+        patches,
+        code_fixes,
+        exit_success,
+        raw_output: output.to_string(),
+    }
+}
+
+/// Parse a BLOCK/BLOCK_REGEX directive line.
+fn parse_block_directive(rest: &str, is_regex: bool) -> Option<PatchRule> {
+    let mut endpoint = None;
+    let mut pattern = None;
+
+    let parts: Vec<&str> = rest.splitn(2, "pattern=").collect();
+    if parts.len() == 2 {
+        let ep_part = parts[0].trim();
+        let pat_part = parts[1].trim();
+
+        if let Some(ep) = ep_part.strip_prefix("endpoint=") {
+            endpoint = Some(ep.trim().to_string());
+        }
+
+        // Strip surrounding quotes if present
+        let clean_pattern = pat_part
+            .trim_start_matches('\'')
+            .trim_end_matches('\'')
+            .trim_start_matches('"')
+            .trim_end_matches('"')
+            .to_string();
+        pattern = Some(clean_pattern);
+    }
+
+    match (endpoint, pattern) {
+        (Some(ep), Some(pat)) if !ep.is_empty() && !pat.is_empty() => {
+            Some(PatchRule::new(&ep, &pat, is_regex))
+        }
+        _ => None,
+    }
+}
+
+/// Parse a FIX directive line.
+fn parse_fix_directive(rest: &str) -> Option<String> {
+    // FIX endpoint=/path description=what to fix
+    if let Some(desc_idx) = rest.find("description=") {
+        let desc = rest[desc_idx + "description=".len()..].trim();
+        if !desc.is_empty() {
+            return Some(desc.to_string());
+        }
+    }
+    None
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /// Normalize endpoint paths (strip trailing IDs from paths like /profile/123).
@@ -291,7 +537,6 @@ fn normalize_endpoint(path: &str) -> String {
     if parts.len() <= 1 {
         return format!("/{}", parts.first().unwrap_or(&""));
     }
-    // If the last segment looks like an ID (numeric), drop it
     let last = parts.last().unwrap_or(&"");
     if last.chars().all(|c| c.is_ascii_digit()) {
         format!("/{}", parts[..parts.len() - 1].join("/"))
@@ -305,8 +550,10 @@ fn detect_vuln_class(endpoint: &str, query: &str, body: &str) -> Option<String> 
     let combined = format!("{endpoint} {query} {body}").to_lowercase();
 
     if endpoint.contains("search") || endpoint.contains("login") {
-        if combined.contains("or ") || combined.contains("union")
-            || combined.contains("select") || combined.contains("'")
+        if combined.contains("or ")
+            || combined.contains("union")
+            || combined.contains("select")
+            || combined.contains("'")
             || combined.contains("--")
         {
             return Some("sqli".to_string());
@@ -334,7 +581,8 @@ fn detect_vuln_class(endpoint: &str, query: &str, body: &str) -> Option<String> 
     }
 
     if endpoint.contains("comment") {
-        if combined.contains("<script") || combined.contains("javascript:")
+        if combined.contains("<script")
+            || combined.contains("javascript:")
             || combined.contains("onerror")
         {
             return Some("xss".to_string());
@@ -349,7 +597,6 @@ fn is_successful_attack(entry: &RequestLogEntry) -> bool {
     if entry.status == 403 {
         return false;
     }
-    // Check if response contains flag-like data or error leaks
     entry.response_body.contains("CTF{")
         || entry.response_body.contains("SQL Error")
         || entry.response_body.contains("root:x:0")
@@ -361,7 +608,9 @@ fn is_successful_attack(entry: &RequestLogEntry) -> bool {
 
 /// Extract an attack pattern from a payload string.
 fn extract_attack_pattern(payload: &str) -> Option<String> {
-    let dangerous = ["' OR", "UNION", "../", "{{", "{%", "<script", "javascript:"];
+    let dangerous = [
+        "' OR", "UNION", "../", "{{", "{%", "<script", "javascript:",
+    ];
     for pattern in dangerous {
         if payload.to_uppercase().contains(&pattern.to_uppercase()) {
             return Some(pattern.to_string());

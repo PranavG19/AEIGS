@@ -134,6 +134,7 @@ async fn two_round_mini_arena() {
         port: 0, // Will be overridden per-round
         model: "test-model".to_string(),
         workspace: workspace.clone(),
+        resume: false,
     };
 
     // We can't use port 0 with our start_arena_target, so use a high random port
