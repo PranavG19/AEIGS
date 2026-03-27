@@ -206,9 +206,11 @@ impl aegis_arena::red_agent::OpencodeRunner for RealOpencodeRunner {
                 .arg("run")
                 .arg("--dir").arg(&project_dir)
                 .arg("--model").arg(&full_model)
-                // No --agent flag — use CLAUDE.md (ENI persona) from project root
+                // No --agent flag — uses CLAUDE.md (ENI persona)
                 .arg(prompt)
                 .env("AWS_PROFILE", "ziya")
+                // Discard stderr (opencode UI noise) so stdout is clean response text
+                .stderr(std::process::Stdio::null())
                 .output(),
         )
         .await
