@@ -105,8 +105,8 @@ async fn run_infinite_mode(cli: Cli) {
     let start = Instant::now();
     print_header();
 
-    // The mock runner for now — in production this would spawn real opencode
-    let runner = DashboardMockRunner;
+    // Real opencode runner
+    let runner = RealOpencodeRunner;
 
     loop {
         if controller.should_shutdown() {
@@ -175,23 +175,38 @@ fn print_cycle_detail(outcome: &CycleOutcome, cycle: usize) {
     }
 }
 
-/// Mock runner for the dashboard binary — produces minimal output.
-/// In production this would be replaced with the real opencode spawner.
-struct DashboardMockRunner;
+/// Real opencode runner — spawns `opencode run` as a subprocess.
+struct RealOpencodeRunner;
 
-impl aegis_arena::red_agent::OpencodeRunner for DashboardMockRunner {
+impl aegis_arena::red_agent::OpencodeRunner for RealOpencodeRunner {
     async fn run(
         &self,
-        _workspace: &std::path::Path,
-        _prompt: &str,
-        _model: &str,
-        _timeout: Duration,
+        workspace: &std::path::Path,
+        prompt: &str,
+        model: &str,
+        timeout: Duration,
     ) -> std::io::Result<std::process::Output> {
-        use std::os::unix::process::ExitStatusExt;
-        Ok(std::process::Output {
-            status: std::process::ExitStatus::from_raw(0),
-            stdout: b"No action taken.".to_vec(),
-            stderr: Vec::new(),
-        })
+        let full_model = if model.contains('/') {
+            model.to_string()
+        } else {
+            format!("amazon-bedrock/global.anthropic.claude-{}-4-6-v1", model)
+        };
+
+        tokio::time::timeout(
+            timeout,
+            tokio::process::Command::new("opencode")
+                .arg("run")
+                .arg("--dir")
+                .arg(workspace)
+                .arg("--model")
+                .arg(&full_model)
+                .arg("--agent")
+                .arg("build")
+                .arg(prompt)
+                .env("AWS_PROFILE", "ziya")
+                .output(),
+        )
+        .await
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::TimedOut, "opencode timed out"))?
     }
 }
