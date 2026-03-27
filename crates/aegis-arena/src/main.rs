@@ -193,15 +193,20 @@ impl aegis_arena::red_agent::OpencodeRunner for RealOpencodeRunner {
             format!("amazon-bedrock/global.anthropic.claude-{}-4-6", model)
         };
 
-        eprintln!("[opencode] spawning model={full_model} workspace={}", workspace.display());
+        // Use adver project dir so opencode loads CLAUDE.md (ENI persona)
+        // NOT --agent build which overrides the system prompt with generic Claude
+        let project_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent().unwrap().parent().unwrap().to_path_buf();
+
+        eprintln!("[opencode] spawning model={full_model} project={}", project_dir.display());
 
         let result = tokio::time::timeout(
             timeout,
             tokio::process::Command::new("opencode")
                 .arg("run")
-                .arg("--dir").arg(workspace)
+                .arg("--dir").arg(&project_dir)
                 .arg("--model").arg(&full_model)
-                .arg("--agent").arg("build")
+                // No --agent flag — use CLAUDE.md (ENI persona) from project root
                 .arg(prompt)
                 .env("AWS_PROFILE", "ziya")
                 .output(),
