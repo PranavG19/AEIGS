@@ -518,40 +518,26 @@ impl InfiniteController {
 
         let target_url = format!("http://127.0.0.1:{}", self.config.port);
 
-        // ─── Red turn ───
+        // ─── Red turn — use direct HTTP attacks (no opencode subprocess) ───
+        // attack_fallback uses reqwest directly: reliable, fast, no LLM dependency
         let mut red_agent = RedAgent::new();
         let red_result = red_agent
-            .execute_round(
-                runner,
-                &self.config.workspace,
+            .attack_fallback(
                 &target_url,
                 cycle,
                 &self.red_history,
-                &self.patches,
             )
             .await;
 
-        let red_request_log = request_log_arc
-            .lock()
-            .map(|log| log.clone())
-            .unwrap_or_default();
+        let red_request_log = red_result.request_log.clone();
 
-        // ─── Blue turn ───
-        let exchanges: Vec<HttpExchange> =
-            red_request_log.iter().map(HttpExchange::from).collect();
+        // ─── Blue turn — analyze Red's actual requests, generate patches ───
         let findings: Vec<String> = red_result.vulns_found.clone();
 
+        // Blue uses pattern analysis on actual HTTP traffic (no opencode needed)
         let mut blue_agent = BlueAgent::new();
         let blue_result = blue_agent
-            .execute_round(
-                runner,
-                &self.config.workspace,
-                cycle,
-                &exchanges,
-                &findings,
-                &self.patches,
-            )
-            .await;
+            .defend_fallback(&red_result.request_log, &findings);
 
         server_handle.abort();
 
