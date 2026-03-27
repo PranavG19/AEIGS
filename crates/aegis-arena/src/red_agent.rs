@@ -369,6 +369,102 @@ impl RedAgent {
     }
 }
 
+/// Parameters for generating the infinite-mode red team prompt.
+pub struct InfiniteRedBriefingParams<'a> {
+    pub cycle: usize,
+    pub target_url: &'a str,
+    pub flags_captured: usize,
+    pub times_blocked: usize,
+    pub identity_section: &'a str,
+    pub ban_list: &'a str,
+    pub endpoint_list: &'a [String],
+    pub new_endpoints: Vec<String>,
+    pub capabilities: Vec<String>,
+    pub history_summary: &'a str,
+    pub lessons: &'a str,
+    pub safety_rules: &'a str,
+}
+
+/// Generate the infinite-mode red team briefing.
+pub fn write_infinite_red_briefing(params: &InfiniteRedBriefingParams) -> String {
+    let mut b = String::new();
+
+    b.push_str(&format!("# Red Team — INFINITE MODE — Cycle {}\n\n", params.cycle));
+    b.push_str("You are in a PERMANENT adversarial drill. There is no end. You run forever.\n\n");
+    b.push_str(&format!(
+        "This is cycle **{}**. You have captured **{}** flags. You have been blocked **{}** times.\n\n",
+        params.cycle, params.flags_captured, params.times_blocked,
+    ));
+    b.push_str(&format!("**TARGET:** {}\n\n", params.target_url));
+
+    // Identity section
+    if !params.identity_section.is_empty() {
+        b.push_str(params.identity_section);
+        b.push('\n');
+    }
+
+    // Active bans from Blue
+    if !params.ban_list.is_empty() {
+        b.push_str("### Blue's Active Bans\n\n");
+        b.push_str(params.ban_list);
+        b.push('\n');
+    }
+
+    b.push_str("## Directives\n\n");
+    b.push_str("1. Use a DIFFERENT technique than what Blue has banned\n");
+    b.push_str("2. Stay within your current identity's fingerprint (or Blue will detect you)\n");
+    b.push_str("3. Think about what Blue EXPECTS you to do — then do something else\n");
+    b.push_str("4. If blocked 3 times in a row: completely reinvent your approach\n\n");
+    b.push_str("Your SURVIVAL depends on not being detected. If Blue bans all your identities, ");
+    b.push_str("you must forge entirely new ones. Be creative. Be unpredictable. Be patient.\n\n");
+
+    // Endpoint list
+    b.push_str("## Available Endpoints\n\n");
+    for ep in params.endpoint_list {
+        b.push_str(&format!("- `{ep}`\n"));
+    }
+    b.push('\n');
+
+    if !params.new_endpoints.is_empty() {
+        b.push_str("### New Since Last Cycle\n\n");
+        for ep in &params.new_endpoints {
+            b.push_str(&format!("- `{ep}` (**NEW**)\n"));
+        }
+        b.push('\n');
+    }
+
+    if !params.capabilities.is_empty() {
+        b.push_str("### Unlocked Capabilities\n\n");
+        for cap in &params.capabilities {
+            b.push_str(&format!("- {cap}\n"));
+        }
+        b.push('\n');
+    }
+
+    // History
+    if !params.history_summary.is_empty() {
+        b.push_str("## Recent History\n\n");
+        b.push_str(params.history_summary);
+        b.push('\n');
+    }
+
+    // Lessons
+    if !params.lessons.is_empty() {
+        b.push_str("## Lessons\n\n");
+        b.push_str(params.lessons);
+        b.push('\n');
+    }
+
+    // Safety rules
+    if !params.safety_rules.is_empty() {
+        b.push_str(&format!("\n---\n{}\n", params.safety_rules));
+    }
+
+    b.push_str("\n**IMPORTANT:** Output `FLAG_CAPTURED:<flag_value>` on its own line when you find the flag.\n");
+
+    b
+}
+
 impl Default for RedAgent {
     fn default() -> Self {
         Self::new()

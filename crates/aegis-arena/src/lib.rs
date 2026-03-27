@@ -8,3 +8,7 @@ pub mod result_protocol;
 pub mod hint_system;
 pub mod convergence;
 pub mod lessons_db;
+pub mod identity_system;
+pub mod sandbox;
+pub mod ban_system;
+pub mod escalation_manager;

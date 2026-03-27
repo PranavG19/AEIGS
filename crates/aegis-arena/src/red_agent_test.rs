@@ -333,3 +333,65 @@ fn urlencoded_handles_special_chars() {
     assert_eq!(urlencoded("a b"), "a%20b");
     assert!(urlencoded("' OR 1=1").contains("%27"));
 }
+
+// ─── Infinite prompt tests ──────────────────────────────────────────────────
+
+#[test]
+fn infinite_red_briefing_contains_key_sections() {
+    let endpoints = vec!["/search".to_string(), "/flag".to_string()];
+    let params = InfiniteRedBriefingParams {
+        cycle: 42,
+        target_url: "http://localhost:9999",
+        flags_captured: 10,
+        times_blocked: 5,
+        identity_section: "Current: red-001\nIP: 10.50.x",
+        ban_list: "- [IP] 10.50. (90%)\n- [UA] Chrome/120 (80%)",
+        endpoint_list: &endpoints,
+        new_endpoints: vec!["/webhook".to_string()],
+        capabilities: vec!["payload_obfuscation".to_string()],
+        history_summary: "Cycle 41: Red blocked on /search",
+        lessons: "Double encoding bypasses string-match bans",
+        safety_rules: "ONLY make HTTP requests to localhost:9999",
+    };
+
+    let briefing = write_infinite_red_briefing(&params);
+    assert!(briefing.contains("INFINITE MODE"));
+    assert!(briefing.contains("Cycle 42"));
+    assert!(briefing.contains("**10** flags"));
+    assert!(briefing.contains("**5** times"));
+    assert!(briefing.contains("PERMANENT adversarial drill"));
+    assert!(briefing.contains("Current: red-001"));
+    assert!(briefing.contains("Blue's Active Bans"));
+    assert!(briefing.contains("/search"));
+    assert!(briefing.contains("/webhook"));
+    assert!(briefing.contains("NEW"));
+    assert!(briefing.contains("payload_obfuscation"));
+    assert!(briefing.contains("Cycle 41"));
+    assert!(briefing.contains("Double encoding"));
+    assert!(briefing.contains("localhost:9999"));
+    assert!(briefing.contains("FLAG_CAPTURED"));
+}
+
+#[test]
+fn infinite_red_briefing_empty_optionals() {
+    let endpoints = vec!["/search".to_string()];
+    let params = InfiniteRedBriefingParams {
+        cycle: 1,
+        target_url: "http://localhost:9999",
+        flags_captured: 0,
+        times_blocked: 0,
+        identity_section: "",
+        ban_list: "",
+        endpoint_list: &endpoints,
+        new_endpoints: vec![],
+        capabilities: vec![],
+        history_summary: "",
+        lessons: "",
+        safety_rules: "",
+    };
+
+    let briefing = write_infinite_red_briefing(&params);
+    assert!(briefing.contains("Cycle 1"));
+    assert!(!briefing.contains("Blue's Active Bans"));
+    assert!(!briefing.contains("Recent History"));
+}

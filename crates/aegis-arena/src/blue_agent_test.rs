@@ -452,3 +452,61 @@ fn http_exchange_truncates_long_response() {
     assert!(exchange.response_snippet.len() < 250);
     assert!(exchange.response_snippet.ends_with("..."));
 }
+
+// ─── Infinite prompt tests ──────────────────────────────────────────────────
+
+#[test]
+fn infinite_blue_briefing_contains_key_sections() {
+    let params = InfiniteBlueBriefingParams {
+        cycle: 42,
+        total_blocks: 30,
+        times_bypassed: 5,
+        ban_list: "- [IP] 10.50. (90%)\n- [UA] Chrome/120 (80%)",
+        remaining_ban_budget: 2,
+        last_attack_details: "Red used double-encoded SQLi on /search",
+        history_summary: "Cycle 41: Red blocked by IP ban",
+        lessons: "Regex bans catch more variants than string bans",
+        capabilities: vec!["regex_bans".to_string(), "rate_limiting".to_string()],
+        safety_rules: "ONLY make HTTP requests to localhost:9999",
+    };
+
+    let briefing = write_infinite_blue_briefing(&params);
+    assert!(briefing.contains("INFINITE MODE"));
+    assert!(briefing.contains("Cycle 42"));
+    assert!(briefing.contains("**30** attacks"));
+    assert!(briefing.contains("**5** times"));
+    assert!(briefing.contains("permanent defender"));
+    assert!(briefing.contains("Active Bans"));
+    assert!(briefing.contains("2/3 new bans"));
+    assert!(briefing.contains("Red's Last Attack"));
+    assert!(briefing.contains("double-encoded SQLi"));
+    assert!(briefing.contains("regex_bans"));
+    assert!(briefing.contains("rate_limiting"));
+    assert!(briefing.contains("Cycle 41"));
+    assert!(briefing.contains("Regex bans"));
+    assert!(briefing.contains("BLOCK"));
+    assert!(briefing.contains("BAN"));
+    assert!(briefing.contains("localhost:9999"));
+}
+
+#[test]
+fn infinite_blue_briefing_empty_optionals() {
+    let params = InfiniteBlueBriefingParams {
+        cycle: 1,
+        total_blocks: 0,
+        times_bypassed: 0,
+        ban_list: "",
+        remaining_ban_budget: 3,
+        last_attack_details: "",
+        history_summary: "",
+        lessons: "",
+        capabilities: vec![],
+        safety_rules: "",
+    };
+
+    let briefing = write_infinite_blue_briefing(&params);
+    assert!(briefing.contains("Cycle 1"));
+    assert!(!briefing.contains("Active Bans"));
+    assert!(!briefing.contains("Red's Last Attack"));
+    assert!(briefing.contains("BLOCK"));
+}

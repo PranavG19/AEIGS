@@ -446,6 +446,95 @@ impl BlueAgent {
     }
 }
 
+/// Parameters for generating the infinite-mode blue team prompt.
+pub struct InfiniteBlueBriefingParams<'a> {
+    pub cycle: usize,
+    pub total_blocks: usize,
+    pub times_bypassed: usize,
+    pub ban_list: &'a str,
+    pub remaining_ban_budget: usize,
+    pub last_attack_details: &'a str,
+    pub history_summary: &'a str,
+    pub lessons: &'a str,
+    pub capabilities: Vec<String>,
+    pub safety_rules: &'a str,
+}
+
+/// Generate the infinite-mode blue team briefing.
+pub fn write_infinite_blue_briefing(params: &InfiniteBlueBriefingParams) -> String {
+    let mut b = String::new();
+
+    b.push_str(&format!("# Blue Team — INFINITE MODE — Cycle {}\n\n", params.cycle));
+    b.push_str("You are the permanent defender. You run forever. The red team WILL adapt to every defense.\n\n");
+    b.push_str(&format!(
+        "This is cycle **{}**. You have blocked **{}** attacks. Red has bypassed you **{}** times.\n\n",
+        params.cycle, params.total_blocks, params.times_bypassed,
+    ));
+
+    // Active bans
+    if !params.ban_list.is_empty() {
+        b.push_str("### Your Active Bans\n\n");
+        b.push_str(params.ban_list);
+        b.push_str(&format!(
+            "\n**Budget:** {}/3 new bans this cycle\n\n",
+            params.remaining_ban_budget,
+        ));
+    }
+
+    // Last attack details
+    if !params.last_attack_details.is_empty() {
+        b.push_str("### Red's Last Attack\n\n");
+        b.push_str(params.last_attack_details);
+        b.push('\n');
+    }
+
+    b.push_str("## Directives\n\n");
+    b.push_str("1. Analyze Red's PATTERN, not just the specific payload\n");
+    b.push_str("2. Write bans that catch the CATEGORY of attack, not just the exact string\n");
+    b.push_str("3. Consider encoding variants Red will try next cycle\n");
+    b.push_str("4. Don't waste bans on attacks that aren't working (Red will change approach anyway)\n");
+    b.push_str("5. NEVER ban patterns that match /health — that costs you 20 points\n\n");
+    b.push_str("Your patches are PERMANENT — they accumulate. Make each one count.\n");
+    b.push_str("Think about what Red will try NEXT, not what Red tried LAST.\n\n");
+
+    if !params.capabilities.is_empty() {
+        b.push_str("### Unlocked Capabilities\n\n");
+        for cap in &params.capabilities {
+            b.push_str(&format!("- {cap}\n"));
+        }
+        b.push('\n');
+    }
+
+    // History
+    if !params.history_summary.is_empty() {
+        b.push_str("## Recent History\n\n");
+        b.push_str(params.history_summary);
+        b.push('\n');
+    }
+
+    // Lessons
+    if !params.lessons.is_empty() {
+        b.push_str("## Lessons\n\n");
+        b.push_str(params.lessons);
+        b.push('\n');
+    }
+
+    // Safety rules
+    if !params.safety_rules.is_empty() {
+        b.push_str(&format!("\n---\n{}\n", params.safety_rules));
+    }
+
+    b.push_str("\n## Write Defense Rules\n\n");
+    b.push_str("Format your output using these directives:\n");
+    b.push_str("```\n");
+    b.push_str("BLOCK endpoint=/path pattern=string_to_block\n");
+    b.push_str("BLOCK_REGEX endpoint=/path pattern=regex_pattern\n");
+    b.push_str("BAN type=IP|UA|Timing|TLS|ReqPattern pattern=value confidence=0.9\n");
+    b.push_str("```\n");
+
+    b
+}
+
 impl Default for BlueAgent {
     fn default() -> Self {
         Self::new()

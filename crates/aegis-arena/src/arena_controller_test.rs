@@ -168,3 +168,199 @@ fn print_functions_dont_panic() {
     };
     print_scoreboard(&score);
 }
+
+// ─── Infinite Controller Tests ──────────────────────────────────────────────
+
+#[test]
+fn infinite_config_default() {
+    let config = InfiniteConfig::default();
+    assert_eq!(config.port, 9999);
+    assert_eq!(config.endpoint_escalation_interval, 10);
+    assert_eq!(config.capability_escalation_interval, 25);
+    assert_eq!(config.speed, SpeedPreset::Normal);
+    assert!(!config.resume);
+    assert!(!config.watch);
+}
+
+#[test]
+fn infinite_state_initial() {
+    let state = InfiniteState::new();
+    assert_eq!(state.cycle, 0);
+    assert_eq!(state.red_flags, 0);
+    assert_eq!(state.blue_blocks, 0);
+    assert_eq!(state.red_identities_remaining, 10);
+    assert_eq!(state.endpoints_active, 8);
+    assert_eq!(state.escalation_level, 0);
+    assert_eq!(state.false_positive_count, 0);
+}
+
+#[test]
+fn infinite_state_security_maturity_zero_when_empty() {
+    let state = InfiniteState::new();
+    assert_eq!(state.security_maturity(), 0.0);
+}
+
+#[test]
+fn infinite_state_security_maturity_nonzero() {
+    let mut state = InfiniteState::new();
+    state.cycle = 100;
+    state.blue_blocks = 80;
+    state.blue_bypassed = 20;
+    state.red_flags = 20;
+    let maturity = state.security_maturity();
+    assert!(maturity > 0.0);
+    assert!(maturity <= 100.0);
+}
+
+#[test]
+fn infinite_state_escalation_level() {
+    let mut state = InfiniteState::new();
+    state.cycle = 50;
+    let level = state.compute_escalation_level(10, 25);
+    // 50/10 = 5 endpoint unlocks + 50/25 = 2 cap unlocks = 7
+    assert_eq!(level, 7);
+}
+
+#[tokio::test]
+async fn infinite_state_save_and_load() {
+    let tmp = std::env::temp_dir().join("aegis_test_infinite_state.json");
+    let mut state = InfiniteState::new();
+    state.cycle = 42;
+    state.red_flags = 7;
+    state.blue_blocks = 35;
+
+    state.save(&tmp).await.unwrap();
+    let loaded = InfiniteState::load(&tmp).await.unwrap();
+
+    assert_eq!(loaded.cycle, 42);
+    assert_eq!(loaded.red_flags, 7);
+    assert_eq!(loaded.blue_blocks, 35);
+
+    let _ = tokio::fs::remove_file(&tmp).await;
+}
+
+#[test]
+fn cycle_outcome_variants() {
+    assert_eq!(CycleOutcome::RedCapture, CycleOutcome::RedCapture);
+    assert_ne!(CycleOutcome::RedCapture, CycleOutcome::RedBlocked);
+    assert_ne!(CycleOutcome::RedBlocked, CycleOutcome::Stalemate);
+}
+
+#[test]
+fn infinite_controller_shutdown_check() {
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let config = InfiniteConfig::default();
+    let controller = InfiniteController::new(config, Arc::clone(&shutdown));
+
+    assert!(!controller.should_shutdown());
+    shutdown.store(true, Ordering::Relaxed);
+    assert!(controller.should_shutdown());
+}
+
+#[test]
+fn infinite_controller_deep_research_trigger() {
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let config = InfiniteConfig::default();
+    let mut controller = InfiniteController::new(config, shutdown);
+
+    assert!(!controller.red_needs_deep_research());
+    controller.state.red_consecutive_blocks = 3;
+    assert!(controller.red_needs_deep_research());
+}
+
+#[test]
+fn infinite_controller_live_stats() {
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let config = InfiniteConfig::default();
+    let mut controller = InfiniteController::new(config, shutdown);
+    controller.state.red_flags = 5;
+    controller.state.blue_blocks = 10;
+    controller.state.cycle = 15;
+
+    let stats = controller.live_stats_line();
+    assert!(stats.contains("RED: 5 flags"));
+    assert!(stats.contains("BLUE: 10 blocks"));
+    assert!(stats.contains("Cycle: 15"));
+}
+
+#[test]
+fn infinite_controller_final_summary() {
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let config = InfiniteConfig::default();
+    let mut controller = InfiniteController::new(config, shutdown);
+    controller.state.cycle = 100;
+    controller.state.red_flags = 30;
+    controller.state.blue_blocks = 60;
+
+    let summary = controller.final_summary();
+    assert!(summary.contains("INFINITE ARENA"));
+    assert!(summary.contains("30 flags"));
+    assert!(summary.contains("60 blocks"));
+    assert!(summary.contains("Cycles: 100"));
+}
+
+#[tokio::test]
+async fn infinite_controller_run_cycle() {
+    let runner = MockArenaRunner::new();
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let workspace = std::env::temp_dir().join("aegis_test_infinite_cycle");
+    let _ = tokio::fs::create_dir_all(&workspace).await;
+
+    let port = 19880 + (std::process::id() % 1000) as u16;
+    let config = InfiniteConfig {
+        port,
+        workspace: workspace.clone(),
+        min_cycle_duration: Duration::from_millis(0),
+        ..InfiniteConfig::default()
+    };
+
+    let mut controller = InfiniteController::new(config, shutdown);
+    let result = controller.run_cycle(&runner).await;
+
+    assert!(result.is_some());
+    let cycle_result = result.unwrap();
+    assert_eq!(cycle_result.cycle, 1);
+    assert_eq!(controller.state().cycle, 1);
+    assert_eq!(controller.state().score.rounds_played, 1);
+
+    let _ = tokio::fs::remove_dir_all(&workspace).await;
+}
+
+#[tokio::test]
+async fn infinite_controller_respects_shutdown() {
+    let runner = MockArenaRunner::new();
+    let shutdown = Arc::new(AtomicBool::new(true)); // pre-shutdown
+    let config = InfiniteConfig::default();
+    let mut controller = InfiniteController::new(config, shutdown);
+
+    let result = controller.run_cycle(&runner).await;
+    assert!(result.is_none());
+}
+
+#[test]
+fn format_duration_seconds() {
+    assert_eq!(format_duration(Duration::from_secs(45)), "45s");
+}
+
+#[test]
+fn format_duration_minutes() {
+    assert_eq!(format_duration(Duration::from_secs(125)), "2m 05s");
+}
+
+#[test]
+fn format_duration_hours() {
+    assert_eq!(format_duration(Duration::from_secs(7380)), "2h 03m");
+}
+
+#[test]
+fn infinite_controller_with_resume_state() {
+    let shutdown = Arc::new(AtomicBool::new(false));
+    let mut state = InfiniteState::new();
+    state.cycle = 50;
+    state.red_flags = 10;
+    let config = InfiniteConfig::default();
+    let controller = InfiniteController::with_state(config, state, shutdown);
+
+    assert_eq!(controller.state().cycle, 50);
+    assert_eq!(controller.state().red_flags, 10);
+}
