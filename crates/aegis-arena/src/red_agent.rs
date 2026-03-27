@@ -46,6 +46,7 @@ struct Attack {
     endpoint: String,
     method: String,
     path: String,
+    query: Option<String>,
     headers: Vec<(String, String)>,
     body: Option<String>,
     flag_extraction: FlagExtraction,
@@ -278,14 +279,18 @@ impl RedAgent {
             let (status, body) = match resp {
                 Ok((s, b)) => (s, b),
                 Err(_) => continue,
-            };
+             };
 
-            result.request_log.push(RequestLogEntry {
-                method: attack.method.clone(),
-                path: attack.endpoint.clone(),
-                query_string: String::new(),
-                body: attack.body.clone().unwrap_or_default(),
-                status,
+             let query_str = attack.path.find('?')
+                 .map(|i| attack.path[i+1..].to_string())
+                 .unwrap_or_default();
+
+             result.request_log.push(RequestLogEntry {
+                 method: attack.method.clone(),
+                 path: attack.endpoint.clone(),
+                 query_string: query_str,
+                 body: attack.body.clone().unwrap_or_default(),
+                 status,
                 response_body: body.clone(),
             });
 
@@ -549,7 +554,7 @@ fn sqli_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/search?q={}", urlencoded(payload)),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -572,7 +577,7 @@ fn lfi_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/file?path={}", urlencoded(payload)),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -586,7 +591,7 @@ fn idor_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/profile/{id}"),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -609,7 +614,7 @@ fn ssti_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/template"),
             headers: vec![],
             body: Some(body.to_string()),
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -625,7 +630,7 @@ fn jwt_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/admin"),
             headers: vec![("authorization".to_string(), format!("Bearer {alg_none_token}"))],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
         Attack {
             name: "jwt_alg_none_flag".to_string(),
@@ -634,7 +639,7 @@ fn jwt_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/flag"),
             headers: vec![("authorization".to_string(), format!("Bearer {alg_none_token}"))],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
         Attack {
             name: "jwt_admin_keyword".to_string(),
@@ -643,7 +648,7 @@ fn jwt_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/flag"),
             headers: vec![("authorization".to_string(), "Bearer admin-token".to_string())],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
     ]
 }
@@ -665,7 +670,7 @@ fn login_sqli_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/login"),
             headers: vec![],
             body: Some(body.to_string()),
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -689,7 +694,7 @@ fn encoded_sqli_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/search?q={payload}"),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -712,7 +717,7 @@ fn encoded_lfi_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/file?path={payload}"),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -734,7 +739,7 @@ fn encoded_ssti_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/template"),
             headers: vec![],
             body: Some(body.to_string()),
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -759,7 +764,7 @@ fn advanced_sqli_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/search?q={}", urlencoded(payload)),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -782,7 +787,7 @@ fn advanced_lfi_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/file?path={}", urlencoded(payload)),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -805,7 +810,7 @@ fn advanced_ssti_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/template"),
             headers: vec![],
             body: Some(body.to_string()),
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         })
         .collect()
 }
@@ -821,7 +826,7 @@ fn deep_evasion_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/search?q=%2527%2520OR%25201%253D1%2520--"),
             headers: vec![],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
         Attack {
             name: "deep_ssti_unicode".to_string(),
@@ -830,7 +835,7 @@ fn deep_evasion_attacks(base: &str) -> Vec<Attack> {
             path: format!("{base}/template"),
             headers: vec![],
             body: Some(r#"{"template":"﹛﹛config﹜﹜"}"#.to_string()),
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
         Attack {
             name: "deep_jwt_empty_sig".to_string(),
@@ -842,7 +847,7 @@ fn deep_evasion_attacks(base: &str) -> Vec<Attack> {
                 "Bearer eyJhbGciOiJub25lIn0.eyJ1c2VyIjoiYWRtaW4iLCJyb2xlIjoiYWRtaW4ifQ.".to_string(),
             )],
             body: None,
-            flag_extraction: FlagExtraction::BodyContains,
+            query: None, flag_extraction: FlagExtraction::BodyContains,
         },
     ]
 }

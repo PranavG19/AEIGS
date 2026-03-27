@@ -495,9 +495,10 @@ impl InfiniteController {
 
         let _ = tokio::fs::create_dir_all(&self.config.workspace).await;
 
-        // Start target server
-        let target_result =
-            start_arena_target(self.config.port, &flag, &self.patches).await;
+         // Start target server
+         eprintln!("[arena] cycle={cycle} patches={}", self.patches.len());
+         let target_result =
+             start_arena_target(self.config.port, &flag, &self.patches).await;
 
         let (server_handle, request_log_arc) = match target_result {
             Ok(pair) => {
