@@ -500,9 +500,12 @@ impl InfiniteController {
             start_arena_target(self.config.port, &flag, &self.patches).await;
 
         let (server_handle, request_log_arc) = match target_result {
-            Ok(pair) => pair,
+            Ok(pair) => {
+                tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+                pair
+            }
             Err(e) => {
-                tracing::error!("Failed to start target on cycle {cycle}: {e}");
+                eprintln!("[arena] ERROR cycle {cycle}: target failed to start: {e}");
                 return Some(CycleResult {
                     cycle,
                     outcome: CycleOutcome::Stalemate,

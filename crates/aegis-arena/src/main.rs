@@ -189,24 +189,34 @@ impl aegis_arena::red_agent::OpencodeRunner for RealOpencodeRunner {
         let full_model = if model.contains('/') {
             model.to_string()
         } else {
-            format!("amazon-bedrock/global.anthropic.claude-{}-4-6-v1", model)
+            // Correct opencode model ID format for Bedrock
+            format!("amazon-bedrock/global.anthropic.claude-{}-4-6", model)
         };
 
-        tokio::time::timeout(
+        eprintln!("[opencode] spawning model={full_model} workspace={}", workspace.display());
+
+        let result = tokio::time::timeout(
             timeout,
             tokio::process::Command::new("opencode")
                 .arg("run")
-                .arg("--dir")
-                .arg(workspace)
-                .arg("--model")
-                .arg(&full_model)
-                .arg("--agent")
-                .arg("build")
+                .arg("--dir").arg(workspace)
+                .arg("--model").arg(&full_model)
+                .arg("--agent").arg("build")
                 .arg(prompt)
                 .env("AWS_PROFILE", "ziya")
                 .output(),
         )
         .await
-        .map_err(|_| std::io::Error::new(std::io::ErrorKind::TimedOut, "opencode timed out"))?
+        .map_err(|_| std::io::Error::new(std::io::ErrorKind::TimedOut, "opencode timed out"))??;
+
+        eprintln!("[opencode] done exit={} stdout={}b stderr={}b",
+            result.status, result.stdout.len(), result.stderr.len());
+        if !result.stdout.is_empty() {
+            eprintln!("[opencode] stdout: {}", String::from_utf8_lossy(&result.stdout[..result.stdout.len().min(300)]));
+        }
+        if !result.stderr.is_empty() {
+            eprintln!("[opencode] stderr: {}", String::from_utf8_lossy(&result.stderr[..result.stderr.len().min(200)]));
+        }
+        Ok(result)
     }
 }
