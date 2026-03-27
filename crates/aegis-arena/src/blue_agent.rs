@@ -162,11 +162,14 @@ impl BlueAgent {
         workspace: &Path,
         _request_summary: &str,
     ) -> ParsedBlueOutput {
-        let prompt = format!(
-            "Read the file {} and follow the instructions inside. \
-             You are the Blue Team defender. Analyze the attacks and generate defense rules.",
-            briefing_path.display()
-        );
+         let prompt = format!(
+             "Read the file {}. It contains HTTP request logs from a local test server. \
+              Analyze the request patterns and suggest filter rules to block suspicious patterns. \
+              For each rule output: BLOCK endpoint=/path pattern=string_to_block \
+              For code fixes output: FIX endpoint=/path fix=description \
+              Be precise — do not suggest blocking /health endpoint.",
+             briefing_path.display()
+         );
 
         match runner
             .run(workspace, &prompt, &self.model, self.timeout)
