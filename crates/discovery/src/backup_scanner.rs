@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
 use reqwest::blocking::Client;
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
+
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 
 use crate::brute_forcer::{is_baseline_match, BASELINE_404_PROBE};
 
@@ -119,11 +123,14 @@ impl std::error::Error for BackupScanError {}
 /// filtering out false positives via baseline 404 body-size comparison.
 pub struct BackupScanner {
     client: Client,
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
 }
 
 impl std::fmt::Debug for BackupScanner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("BackupScanner").finish()
+        f.debug_struct("BackupScanner")
+            .field("uses_evasion_client", &self.evasion_client.is_some())
+            .finish()
     }
 }
 
@@ -135,7 +142,18 @@ impl BackupScanner {
             .build()
             .map_err(|e| BackupScanError::HttpError(e.to_string()))?;
 
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            evasion_client: None,
+        })
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
     }
 
     pub fn scan(

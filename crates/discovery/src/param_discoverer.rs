@@ -1,6 +1,10 @@
+use std::sync::Arc;
+
 use reqwest::blocking::Client;
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
+
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 
 pub const COMMON_PARAMS: &[&str] = &[
     "id", "user", "username", "name", "email", "page", "limit", "offset", "sort", "order",
@@ -59,11 +63,14 @@ impl std::error::Error for ParamDiscoverError {}
 /// looking for status code changes, body size differences, or content changes.
 pub struct ParamDiscoverer {
     client: Client,
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
 }
 
 impl std::fmt::Debug for ParamDiscoverer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ParamDiscoverer").finish()
+        f.debug_struct("ParamDiscoverer")
+            .field("uses_evasion_client", &self.evasion_client.is_some())
+            .finish()
     }
 }
 
@@ -80,7 +87,18 @@ impl ParamDiscoverer {
             .build()
             .map_err(|e| ParamDiscoverError::HttpError(e.to_string()))?;
 
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            evasion_client: None,
+        })
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
     }
 
     pub fn discover_params(

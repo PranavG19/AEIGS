@@ -7,9 +7,14 @@ use aegis_protocol::scope_attestation::SignedScopeAttestation;
 
 use crate::header_transformer::HeaderTransformer;
 use crate::http2_fingerprint::{Http2Fingerprint, h2_fingerprint_for_persona};
+use crate::identity_rotation::{IdentityRotationConfig, IdentityRotationEngine};
 use crate::persona::Persona;
+use crate::proxy_chain::{ProxyChainConfig, ProxyChainManager, ProxyChainPath};
+use crate::rate_adaptive_throttle::{RateAdaptiveThrottle, RateLimitSignal, AdaptiveThrottleConfig};
+use crate::session_compartment::{SessionCompartment, SessionCompartmentConfig, SessionIdentity};
 use crate::session_manager::SessionManager;
 use crate::timing_controller::TimingController;
+use crate::traffic_shaper::{TrafficShaper, TrafficShaperConfig};
 
 /// Errors that can occur during evasion transport request execution.
 #[derive(Debug)]
@@ -18,6 +23,7 @@ pub enum TransportError {
     Timeout(String),
     BuildError(String),
     TargetNotAllowed(String),
+    ProxyExhausted(String),
 }
 
 impl std::fmt::Display for TransportError {
@@ -27,6 +33,7 @@ impl std::fmt::Display for TransportError {
             Self::Timeout(msg) => write!(f, "timeout: {msg}"),
             Self::BuildError(msg) => write!(f, "build error: {msg}"),
             Self::TargetNotAllowed(msg) => write!(f, "target not allowed: {msg}"),
+            Self::ProxyExhausted(msg) => write!(f, "proxy exhausted: {msg}"),
         }
     }
 }
@@ -44,6 +51,8 @@ pub struct EvasionTransport {
     client: Client,
     header_transformer: HeaderTransformer,
     timing: TimingController,
+    traffic_shaper: TrafficShaper,
+    rate_throttle: RateAdaptiveThrottle,
     session: SessionManager,
     persona: Persona,
     persona_catalog: Vec<Persona>,
@@ -53,6 +62,12 @@ pub struct EvasionTransport {
     scope_attestation: Option<SignedScopeAttestation>,
     operator_authorized: bool,
     h2_fingerprint: Http2Fingerprint,
+    proxy_manager: Option<ProxyChainManager>,
+    active_proxy_chain: Option<ProxyChainPath>,
+    accept_self_signed: bool,
+    session_compartment: SessionCompartment,
+    identity_engine: Option<IdentityRotationEngine>,
+    active_session_identity: Option<SessionIdentity>,
 }
 
 impl EvasionTransport {
@@ -66,6 +81,11 @@ impl EvasionTransport {
             accept_self_signed: false,
             scope_attestation: None,
             operator_authorized: false,
+            proxy_manager: None,
+            traffic_shaper_config: None,
+            throttle_config: None,
+            identity_rotation_config: None,
+            session_compartment_config: None,
         }
     }
 
@@ -77,7 +97,10 @@ impl EvasionTransport {
         )
         .map_err(|e| TransportError::TargetNotAllowed(e.to_string()))?;
 
-        let delay_ms = self.timing.compute_delay_ms();
+        let shaper_delay = self.traffic_shaper.next_delay_ms();
+        let throttle_delay = self.rate_throttle.delay_ms(&request.endpoint);
+        let timing_delay = self.timing.compute_delay_ms();
+        let delay_ms = shaper_delay.max(throttle_delay).max(timing_delay);
         if delay_ms > 0 {
             tokio::time::sleep(Duration::from_millis(delay_ms)).await;
         }
@@ -90,6 +113,19 @@ impl EvasionTransport {
         let start = Instant::now();
         let response = self.execute_request(reqwest_request).await?;
         let response_time = start.elapsed();
+        let status_code = response.status().as_u16();
+
+        let signal = match status_code {
+            429 => RateLimitSignal::HardLimit,
+            403 => RateLimitSignal::SoftLimit,
+            _ if status_code >= 200 && status_code < 400 => RateLimitSignal::Ok,
+            _ => RateLimitSignal::Ok,
+        };
+        self.rate_throttle.report(&request.endpoint, signal);
+
+        if ProxyChainManager::should_rotate_on_status(status_code) {
+            self.rotate_proxy_chain(&request.endpoint);
+        }
 
         self.timing.record_request();
         let session_before = self.session.session_id();
@@ -116,6 +152,31 @@ impl EvasionTransport {
         self.session.rotate_session();
     }
 
+    /// Sends cover traffic requests to mask attack patterns.
+    /// Generates benign requests interleaved with actual scan traffic.
+    pub async fn send_cover_traffic(&mut self, base_url: &str, count: usize) -> Vec<Result<FuzzResponse, TransportError>> {
+        let cover_requests = self.traffic_shaper.generate_cover_traffic(base_url, count);
+        let mut results = Vec::with_capacity(cover_requests.len());
+        for cover in &cover_requests {
+            let fuzz_request = FuzzRequest {
+                request_id: 0,
+                endpoint: cover.url.clone(),
+                method: "GET".to_string(),
+                parameter_name: String::new(),
+                parameter_location: ParameterLocation::Query,
+                payload: String::new(),
+                headers: cover.referer.as_ref().map(|r| vec![("Referer".to_string(), r.clone())]).unwrap_or_default(),
+            };
+            results.push(self.send(&fuzz_request).await);
+        }
+        results
+    }
+
+    /// Returns the number of cover requests needed before the next attack request.
+    pub fn cover_requests_needed(&self) -> usize {
+        self.traffic_shaper.cover_requests_needed()
+    }
+
     /// Returns the HTTP/2 fingerprint currently in use by this transport.
     ///
     /// The fingerprint matches the active persona's browser identity and
@@ -136,8 +197,102 @@ impl EvasionTransport {
                 self.header_transformer = HeaderTransformer::new();
                 self.timing = TimingController::from_persona(&self.persona, 0);
                 self.h2_fingerprint = h2_fingerprint_for_persona(self.persona.id);
+
+                if let Some(ref mut engine) = self.identity_engine {
+                    engine.record_use();
+                }
+
+                let new_identity = self.session_compartment.create_session();
+                self.active_session_identity = Some(new_identity);
+
+                self.rebuild_client();
             }
         }
+    }
+
+    /// Rotate the proxy chain for the given target, burning the current exit node.
+    fn rotate_proxy_chain(&mut self, target: &str) {
+        if let Some(ref mut manager) = self.proxy_manager {
+            if let Some(ref current_chain) = self.active_proxy_chain.take() {
+                let new_chain = manager.rotate_on_detection(target, current_chain);
+                self.active_proxy_chain = new_chain;
+            } else {
+                let new_chain = manager.build_chain(target);
+                self.active_proxy_chain = new_chain;
+            }
+            self.rebuild_client();
+        }
+    }
+
+    /// Rebuild the reqwest Client with current proxy settings.
+    fn rebuild_client(&mut self) {
+        let mut builder = Client::builder()
+            .danger_accept_invalid_certs(self.accept_self_signed);
+
+        if let (Some(manager), Some(chain)) = (&self.proxy_manager, &self.active_proxy_chain) {
+            if let Some(proxy) = manager.build_reqwest_proxy(chain) {
+                builder = builder.proxy(proxy);
+            }
+        }
+
+        if let Ok(new_client) = builder.build() {
+            self.client = new_client;
+        }
+    }
+
+    /// Returns a reference to the proxy chain manager, if configured.
+    pub fn proxy_manager(&self) -> Option<&ProxyChainManager> {
+        self.proxy_manager.as_ref()
+    }
+
+    /// Returns a mutable reference to the proxy chain manager.
+    pub fn proxy_manager_mut(&mut self) -> Option<&mut ProxyChainManager> {
+        self.proxy_manager.as_mut()
+    }
+
+    /// Returns the active proxy chain path, if any.
+    pub fn active_proxy_chain(&self) -> Option<&ProxyChainPath> {
+        self.active_proxy_chain.as_ref()
+    }
+
+    /// Returns a reference to the rate adaptive throttle.
+    pub fn rate_throttle(&self) -> &RateAdaptiveThrottle {
+        &self.rate_throttle
+    }
+
+    /// Returns a reference to the traffic shaper.
+    pub fn traffic_shaper(&self) -> &TrafficShaper {
+        &self.traffic_shaper
+    }
+
+    /// Returns the active compartmented session identity, if any.
+    pub fn active_session_identity(&self) -> Option<&SessionIdentity> {
+        self.active_session_identity.as_ref()
+    }
+
+    /// Returns a reference to the session compartment manager.
+    pub fn session_compartment(&self) -> &SessionCompartment {
+        &self.session_compartment
+    }
+
+    /// Returns a reference to the identity rotation engine, if configured.
+    pub fn identity_engine(&self) -> Option<&IdentityRotationEngine> {
+        self.identity_engine.as_ref()
+    }
+
+    /// Explicitly rotates the identity, destroying the current session
+    /// and rebuilding the client with a fresh fingerprint.
+    pub fn rotate_identity(&mut self) {
+        if let Some(ref id) = self.active_session_identity.take() {
+            self.session_compartment.destroy_session(&id.session_id);
+        }
+        if let Some(ref mut engine) = self.identity_engine {
+            engine.rotate();
+        }
+        let new_identity = self.session_compartment.create_session();
+        self.active_session_identity = Some(new_identity);
+        self.session.rotate_session();
+        self.rebuild_client();
     }
 
     fn transform_headers(&self, headers: &[(String, String)]) -> Vec<(String, String)> {
@@ -330,6 +485,11 @@ pub struct EvasionTransportBuilder {
     accept_self_signed: bool,
     scope_attestation: Option<SignedScopeAttestation>,
     operator_authorized: bool,
+    proxy_manager: Option<ProxyChainManager>,
+    traffic_shaper_config: Option<TrafficShaperConfig>,
+    throttle_config: Option<AdaptiveThrottleConfig>,
+    identity_rotation_config: Option<IdentityRotationConfig>,
+    session_compartment_config: Option<SessionCompartmentConfig>,
 }
 
 impl EvasionTransportBuilder {
@@ -380,6 +540,36 @@ impl EvasionTransportBuilder {
         self
     }
 
+    /// Attach a pre-configured proxy chain manager for proxy rotation.
+    pub fn with_proxy_manager(mut self, manager: ProxyChainManager) -> Self {
+        self.proxy_manager = Some(manager);
+        self
+    }
+
+    /// Set traffic shaper configuration for human-like timing.
+    pub fn with_traffic_shaper(mut self, config: TrafficShaperConfig) -> Self {
+        self.traffic_shaper_config = Some(config);
+        self
+    }
+
+    /// Set adaptive rate throttle configuration.
+    pub fn with_rate_throttle(mut self, config: AdaptiveThrottleConfig) -> Self {
+        self.throttle_config = Some(config);
+        self
+    }
+
+    /// Enable identity rotation with the given configuration.
+    pub fn with_identity_rotation(mut self, config: IdentityRotationConfig) -> Self {
+        self.identity_rotation_config = Some(config);
+        self
+    }
+
+    /// Set session compartmentalization configuration.
+    pub fn with_session_compartment(mut self, config: SessionCompartmentConfig) -> Self {
+        self.session_compartment_config = Some(config);
+        self
+    }
+
     pub fn build(self) -> EvasionTransport {
         let catalog = crate::persona::load_persona_catalog(self.persona_catalog_path.as_deref())
             .expect("persona catalog must be valid");
@@ -387,6 +577,30 @@ impl EvasionTransportBuilder {
 
         let timing = TimingController::from_persona(&persona, self.timing_seed);
         let h2_fingerprint = h2_fingerprint_for_persona(persona.id);
+
+        let traffic_shaper = match self.traffic_shaper_config {
+            Some(config) => TrafficShaper::with_seed(config, self.timing_seed),
+            None => TrafficShaper::with_seed(TrafficShaperConfig::default(), self.timing_seed),
+        };
+
+        let rate_throttle = match self.throttle_config {
+            Some(config) => RateAdaptiveThrottle::new(config),
+            None => RateAdaptiveThrottle::with_defaults(),
+        };
+
+        let mut session_compartment = match self.session_compartment_config {
+            Some(config) => SessionCompartment::new(config),
+            None => SessionCompartment::with_defaults(),
+        };
+
+        let identity_engine = self.identity_rotation_config.map(|config| {
+            let mut engine = IdentityRotationEngine::with_seed(config, self.timing_seed);
+            engine.generate_pool();
+            engine.activate_next();
+            engine
+        });
+
+        let initial_identity = session_compartment.create_session();
 
         let client = Client::builder()
             .danger_accept_invalid_certs(self.accept_self_signed)
@@ -397,6 +611,8 @@ impl EvasionTransportBuilder {
             client,
             header_transformer: HeaderTransformer::new(),
             timing,
+            traffic_shaper,
+            rate_throttle,
             session: SessionManager::new(self.max_requests_per_session),
             persona,
             persona_catalog: catalog,
@@ -406,6 +622,12 @@ impl EvasionTransportBuilder {
             scope_attestation: self.scope_attestation,
             operator_authorized: self.operator_authorized,
             h2_fingerprint,
+            proxy_manager: self.proxy_manager,
+            active_proxy_chain: None,
+            accept_self_signed: self.accept_self_signed,
+            session_compartment,
+            identity_engine,
+            active_session_identity: Some(initial_identity),
         }
     }
 }

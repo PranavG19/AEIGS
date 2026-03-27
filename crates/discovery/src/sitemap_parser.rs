@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use aegis_protocol::node::NodeType;
 use aegis_protocol::operation::{GraphOperation, ModuleIdentifier, OperationLogEntry};
 use aegis_protocol::target_validation::validate_target_is_localhost;
 use regex::Regex;
 use reqwest::blocking::Client;
 
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 use crate::graph_ops::timestamp_ms;
 
 /// Parsed contents of a `robots.txt` file.
@@ -39,6 +42,39 @@ impl std::fmt::Display for SitemapError {
 }
 
 impl std::error::Error for SitemapError {}
+
+/// Struct-based sitemap fetcher that supports an optional evasion-aware HTTP client.
+///
+/// For backwards compatibility the free function `fetch_and_parse` still works;
+/// this struct is the builder-style equivalent used by the orchestrator when
+/// evasion transport is available.
+pub struct SitemapFetcher {
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
+}
+
+impl std::fmt::Debug for SitemapFetcher {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SitemapFetcher")
+            .field("uses_evasion_client", &self.evasion_client.is_some())
+            .finish()
+    }
+}
+
+impl SitemapFetcher {
+    pub fn new() -> Self {
+        Self {
+            evasion_client: None,
+        }
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
+    }
+}
 
 pub fn parse_robots_txt(content: &str) -> RobotsResult {
     let mut result = RobotsResult::default();

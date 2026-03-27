@@ -11,7 +11,9 @@ mod http2_fingerprint;
 mod payload_obfuscator;
 mod persona;
 mod proxy_chain;
+mod rate_adaptive_throttle;
 mod rate_limit_bypass;
+mod session_compartment;
 mod session_manager;
 mod timing_controller;
 mod tls_clienthello;
@@ -23,6 +25,11 @@ mod waf_evasion_orchestrator;
 pub mod waf_grammar;
 mod response_injection;
 mod verb_tampering;
+mod cover_traffic_v2;
+mod honeypot_scorer_v2;
+mod canary_detector_v2;
+pub mod waf_pipeline;
+pub mod opsec_preflight;
 
 pub use anti_forensics::*;
 pub use cors_exploit::*;
@@ -37,7 +44,9 @@ pub use http2_fingerprint::*;
 pub use payload_obfuscator::*;
 pub use persona::*;
 pub use proxy_chain::*;
+pub use rate_adaptive_throttle::*;
 pub use rate_limit_bypass::*;
+pub use session_compartment::*;
 pub use session_manager::*;
 pub use timing_controller::*;
 pub use tls_clienthello::*;
@@ -49,6 +58,11 @@ pub use waf_evasion_orchestrator::*;
 pub use waf_grammar::*;
 pub use response_injection::*;
 pub use verb_tampering::*;
+pub use cover_traffic_v2::*;
+pub use honeypot_scorer_v2::*;
+pub use canary_detector_v2::*;
+pub use waf_pipeline::*;
+pub use opsec_preflight::*;
 
 pub mod adaptive_evasion;
 pub mod desync_library;
@@ -415,3 +429,31 @@ mod asn_router_test;
 #[cfg(test)]
 #[path = "biometric_mimicry_test.rs"]
 mod biometric_mimicry_test;
+
+#[cfg(test)]
+#[path = "rate_adaptive_throttle_test.rs"]
+mod rate_adaptive_throttle_test;
+
+#[cfg(test)]
+#[path = "session_compartment_test.rs"]
+mod session_compartment_test;
+
+#[cfg(test)]
+#[path = "cover_traffic_v2_test.rs"]
+mod cover_traffic_v2_test;
+
+#[cfg(test)]
+#[path = "honeypot_scorer_v2_test.rs"]
+mod honeypot_scorer_v2_test;
+
+#[cfg(test)]
+#[path = "canary_detector_v2_test.rs"]
+mod canary_detector_v2_test;
+
+#[cfg(test)]
+#[path = "waf_pipeline_test.rs"]
+mod waf_pipeline_test;
+
+#[cfg(test)]
+#[path = "opsec_preflight_test.rs"]
+mod opsec_preflight_test;

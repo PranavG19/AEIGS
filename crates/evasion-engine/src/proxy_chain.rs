@@ -437,6 +437,28 @@ impl ProxyChainManager {
         &self.residential_providers
     }
 
+    /// Builds a `reqwest::Proxy` from the first hop of a chain path.
+    /// Only the exit node (last hop) is used as the HTTP proxy.
+    pub fn build_reqwest_proxy(&self, chain: &ProxyChainPath) -> Option<reqwest::Proxy> {
+        let exit_id = chain.hops.last()?;
+        let node = self.get_node(*exit_id)?;
+        let proxy_url = match node.protocol {
+            ProxyProtocol::Socks5 => format!("socks5://{}:{}", node.host, node.port),
+            ProxyProtocol::HttpConnect => format!("http://{}:{}", node.host, node.port),
+            ProxyProtocol::Tor => format!("socks5://{}:{}", node.host, node.port),
+        };
+        let mut proxy = reqwest::Proxy::all(&proxy_url).ok()?;
+        if let Some(auth) = &node.auth {
+            proxy = proxy.basic_auth(&auth.username, &auth.password);
+        }
+        Some(proxy)
+    }
+
+    /// Determines if a status code signals proxy rotation is needed (403/429).
+    pub fn should_rotate_on_status(status_code: u16) -> bool {
+        status_code == 403 || status_code == 429
+    }
+
     fn is_node_healthy(&self, id: u64) -> bool {
         self.health.get(&id).is_some_and(|h| h.is_healthy())
     }

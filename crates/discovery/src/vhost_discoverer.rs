@@ -1,9 +1,12 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use reqwest::blocking::Client;
 use reqwest::header::{HeaderValue, HOST};
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
+
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 pub(crate) const BODY_SIZE_TOLERANCE: usize = 64;
@@ -77,11 +80,14 @@ impl std::error::Error for VhostError {}
 /// or content differences that indicate a distinct vhost configuration.
 pub struct VhostDiscoverer {
     client: Client,
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
 }
 
 impl std::fmt::Debug for VhostDiscoverer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("VhostDiscoverer").finish()
+        f.debug_struct("VhostDiscoverer")
+            .field("uses_evasion_client", &self.evasion_client.is_some())
+            .finish()
     }
 }
 
@@ -93,7 +99,18 @@ impl VhostDiscoverer {
             .build()
             .map_err(|e| VhostError::HttpError(e.to_string()))?;
 
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            evasion_client: None,
+        })
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
     }
 
     pub fn discover_vhosts(

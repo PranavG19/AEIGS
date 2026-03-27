@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc};
 use std::thread;
 
 use reqwest::blocking::Client;
@@ -7,6 +7,7 @@ use url::Url;
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
 
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 use crate::wordlist::default_wordlist;
 
 const DEFAULT_CONCURRENCY: usize = 20;
@@ -50,6 +51,7 @@ impl std::error::Error for BruteForceError {}
 /// `with_extensions`, `with_concurrency`, and `with_filter_codes` to customize.
 pub struct DirectoryBruster {
     client: Client,
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
     pub(crate) base_url: String,
     pub(crate) wordlist: Vec<String>,
     extensions: Vec<String>,
@@ -67,6 +69,7 @@ impl std::fmt::Debug for DirectoryBruster {
             .field("concurrency", &self.concurrency)
             .field("filter_status_codes", &self.filter_status_codes)
             .field("baseline_404_size", &self.baseline_404_size)
+            .field("uses_evasion_client", &self.evasion_client.is_some())
             .finish()
     }
 }
@@ -86,6 +89,7 @@ impl DirectoryBruster {
 
         Ok(Self {
             client,
+            evasion_client: None,
             base_url: base_url.trim_end_matches('/').to_string(),
             wordlist,
             extensions: Vec::new(),
@@ -97,6 +101,14 @@ impl DirectoryBruster {
 
     pub fn with_default_wordlist(base_url: &str) -> Result<Self, BruteForceError> {
         Self::new(base_url, default_wordlist())
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
     }
 
     pub fn with_extensions(mut self, extensions: Vec<String>) -> Self {
@@ -116,16 +128,27 @@ impl DirectoryBruster {
 
     pub fn detect_baseline_404(&mut self) -> Option<usize> {
         let probe_url = format!("{}/{BASELINE_404_PROBE}", self.base_url);
-        match self.client.get(&probe_url).send() {
-            Ok(resp) => {
-                let size = resp
-                    .content_length()
-                    .map(|l| l as usize)
-                    .or_else(|| resp.bytes().ok().map(|b| b.len()));
-                self.baseline_404_size = size;
-                size
+        if let Some(ref evasion_client) = self.evasion_client {
+            match evasion_client.get(&probe_url) {
+                Ok(resp) => {
+                    let size = resp.body.len();
+                    self.baseline_404_size = Some(size);
+                    Some(size)
+                }
+                Err(_) => None,
             }
-            Err(_) => None,
+        } else {
+            match self.client.get(&probe_url).send() {
+                Ok(resp) => {
+                    let size = resp
+                        .content_length()
+                        .map(|l| l as usize)
+                        .or_else(|| resp.bytes().ok().map(|b| b.len()));
+                    self.baseline_404_size = size;
+                    size
+                }
+                Err(_) => None,
+            }
         }
     }
 
@@ -142,17 +165,21 @@ impl DirectoryBruster {
         let mut handles = Vec::new();
         for chunk in chunks {
             let tx = tx.clone();
-            let client = self.client.clone();
             let base_url = self.base_url.clone();
             let filter_codes = self.filter_status_codes.clone();
             let baseline_size = self.baseline_404_size;
+            let evasion_client = self.evasion_client.clone();
+            let client = self.client.clone();
 
             handles.push(thread::spawn(move || {
                 for path in &chunk {
                     let url = format!("{base_url}/{path}");
-                    if let Some(result) =
+                    let result = if let Some(ref ec) = evasion_client {
+                        probe_path_evasion(ec.as_ref(), &url, path, &filter_codes, baseline_size)
+                    } else {
                         probe_path(&client, &url, path, &filter_codes, baseline_size)
-                    {
+                    };
+                    if let Some(result) = result {
                         let _ = tx.send(result);
                     }
                 }
@@ -264,4 +291,32 @@ pub(crate) fn is_interesting_path(path: &str) -> bool {
     INTERESTING_KEYWORDS
         .iter()
         .any(|keyword| lower.contains(keyword))
+}
+
+fn probe_path_evasion(
+    client: &dyn DiscoveryHttpClient,
+    url: &str,
+    path: &str,
+    filter_codes: &HashSet<u16>,
+    baseline_size: Option<usize>,
+) -> Option<DiscoveredPath> {
+    let resp = client.get(url).ok()?;
+
+    if filter_codes.contains(&resp.status_code) {
+        return None;
+    }
+
+    let content_length = resp.body.len();
+
+    if is_baseline_match(content_length, baseline_size) {
+        return None;
+    }
+
+    Some(DiscoveredPath {
+        path: path.to_string(),
+        status_code: resp.status_code,
+        content_length,
+        content_type: resp.content_type,
+        interesting: is_interesting_path(path),
+    })
 }

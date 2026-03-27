@@ -1,5 +1,8 @@
 #![allow(ambiguous_glob_reexports)]
 
+pub mod discovery_client;
+pub mod dns_resolver;
+pub mod live_client;
 pub mod api_abuse_detector;
 pub mod attack_surface_mapper;
 mod backup_scanner;

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 
 use regex::Regex;
@@ -6,6 +7,8 @@ use reqwest::blocking::Client;
 use url::Url;
 
 use aegis_protocol::target_validation::validate_target_is_localhost;
+
+use crate::discovery_client::{DefaultDiscoveryClient, DiscoveryHttpClient};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -79,11 +82,14 @@ impl std::error::Error for FingerprintError {}
 /// Deduplicates results by technology name, keeping the highest-confidence detection.
 pub struct TechFingerprinter {
     client: Client,
+    evasion_client: Option<Arc<dyn DiscoveryHttpClient>>,
 }
 
 impl std::fmt::Debug for TechFingerprinter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TechFingerprinter").finish()
+        f.debug_struct("TechFingerprinter")
+            .field("uses_evasion_client", &self.evasion_client.is_some())
+            .finish()
     }
 }
 
@@ -95,7 +101,18 @@ impl TechFingerprinter {
             .build()
             .map_err(|e| FingerprintError::HttpError(e.to_string()))?;
 
-        Ok(Self { client })
+        Ok(Self {
+            client,
+            evasion_client: None,
+        })
+    }
+
+    /// Attach an evasion-aware HTTP client for stealth scanning.
+    /// When set, all HTTP requests route through this client instead
+    /// of the built-in bare reqwest client.
+    pub fn with_evasion_client(mut self, client: Arc<dyn DiscoveryHttpClient>) -> Self {
+        self.evasion_client = Some(client);
+        self
     }
 
     pub fn fingerprint(&self, target: &str) -> Result<TechFingerprint, FingerprintError> {
