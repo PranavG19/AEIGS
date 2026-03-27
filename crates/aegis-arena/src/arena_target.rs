@@ -77,9 +77,14 @@ async fn patch_middleware(
     let path = uri.path().to_string();
     let query_raw = uri.query().unwrap_or("");
 
-    // URL-decode the query string so patches match decoded content
-    let query_decoded = percent_decode(query_raw);
-    let full_request_str = format!("{path}?{query_decoded}");
+     // URL-decode the query string so patches match decoded content
+     let query_decoded = percent_decode(query_raw);
+     // Include auth header so Blue can patch JWT bypass attempts
+     let auth_header = request.headers()
+         .get("authorization")
+         .and_then(|v| v.to_str().ok())
+         .unwrap_or("");
+     let full_request_str = format!("{path}?{query_decoded} auth={auth_header}");
 
     // /health always passes through
     if path == "/health" {

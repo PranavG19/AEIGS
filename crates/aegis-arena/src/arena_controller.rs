@@ -621,6 +621,11 @@ impl InfiniteController {
                 self.state.cycles_since_last_capture = 0;
                 self.state.cycles_since_last_bypass += 1;
                 self.state.red_consecutive_blocks = 0;
+                // Count partial Blue wins — even if Red captured, blocked attempts matter
+                if red_result.blocked_count > 0 {
+                    self.state.blue_blocks += red_result.blocked_count;
+                    self.state.score.blue_blocks_effective += red_result.blocked_count;
+                }
             }
             CycleOutcome::RedBlocked => {
                 self.state.red_blocked += 1;

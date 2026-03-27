@@ -226,14 +226,14 @@ impl BlueAgent {
     }
 
     /// Fallback: analyze traffic and generate patches without opencode.
-    pub fn defend_fallback(
-        &mut self,
-        request_log: &[RequestLogEntry],
-        vulns_found: &[String],
-    ) -> BlueRoundResult {
-        self.rounds_defended += 1;
-        let analyses = self.analyze_traffic(request_log);
-        let mut patches = Vec::new();
+     pub fn defend_fallback(
+         &mut self,
+         request_log: &[RequestLogEntry],
+         vulns_found: &[String],
+     ) -> BlueRoundResult {
+         self.rounds_defended += 1;
+         let analyses = self.analyze_traffic(request_log);
+         let mut patches = Vec::new();
 
         for analysis in &analyses {
             if analysis.success_count == 0 && analysis.attack_count == 0 {
@@ -324,16 +324,22 @@ impl BlueAgent {
                 patches.push(PatchRule::new(ep, "{{", false));
                 patches.push(PatchRule::new(ep, "{%", false));
             }
-            Some("jwt") | Some("idor") => {
-                for payload in &analysis.payloads {
-                    if payload.contains("none") {
-                        patches.push(PatchRule::new(ep, "none", false));
-                    }
-                    if payload.contains("admin") {
-                        patches.push(PatchRule::new(ep, "admin", false));
-                    }
-                }
-            }
+             Some("jwt") | Some("idor") => {
+                 // Always block alg:none JWT pattern when JWT endpoint is attacked
+                 if analysis.success_count > 0 {
+                     patches.push(PatchRule::new(ep, "alg%22%3A%22none", false));
+                     patches.push(PatchRule::new(ep, "alg\":\"none", false));
+                     patches.push(PatchRule::new(ep, "eyJhbGciOiJub25l", false)); // base64 of alg:none header
+                 }
+                 for payload in &analysis.payloads {
+                     if payload.contains("none") {
+                         patches.push(PatchRule::new(ep, "none", false));
+                     }
+                     if payload.contains("admin") {
+                         patches.push(PatchRule::new(ep, "admin", false));
+                     }
+                 }
+             }
             Some("xss") => {
                 patches.push(PatchRule::new(ep, "<script", false));
                 patches.push(PatchRule::new(ep, "javascript:", false));
