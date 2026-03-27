@@ -22,7 +22,7 @@ pub struct Identity {
 impl Identity {
     /// Generate a new random identity with the given index.
     pub fn generate(index: usize) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let subnet: u8 = rng.random_range(1..=254);
         let ua_pool = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0",

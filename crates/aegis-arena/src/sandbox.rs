@@ -305,7 +305,7 @@ fn collect_files_recursive(dir: &Path, set: &mut HashSet<String>) -> std::io::Re
 /// Generate a simple hex UUID-v4-like string for workspace naming.
 fn uuid_v4_hex() -> String {
     use rand::Rng;
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let bytes: [u8; 16] = rng.random();
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }

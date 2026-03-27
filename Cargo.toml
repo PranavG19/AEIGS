@@ -21,6 +21,7 @@ members = [
     "crates/aegis-c2",
     "crates/aegis-scan-tui",
     "crates/aegis-web-ui",
+    "crates/aegis-arena",
 ]
 resolver = "2"
 
