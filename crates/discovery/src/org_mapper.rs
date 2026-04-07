@@ -280,7 +280,7 @@ pub enum MaEventType {
     Acquisition,
     Merger,
     Divestiture,
-    Spin_off,
+    SpinOff,
     ManagementChange,
 }
 
@@ -290,7 +290,7 @@ impl std::fmt::Display for MaEventType {
             Self::Acquisition => write!(f, "Acquisition"),
             Self::Merger => write!(f, "Merger"),
             Self::Divestiture => write!(f, "Divestiture"),
-            Self::Spin_off => write!(f, "Spin-off"),
+            Self::SpinOff => write!(f, "Spin-off"),
             Self::ManagementChange => write!(f, "Management Change"),
         }
     }
@@ -825,7 +825,7 @@ pub fn assess_ma_security(events: &[(&str, &str, Option<&str>)]) -> Vec<MaEvent>
                 "acquisition" => MaEventType::Acquisition,
                 "merger" => MaEventType::Merger,
                 "divestiture" => MaEventType::Divestiture,
-                "spinoff" => MaEventType::Spin_off,
+                "spinoff" => MaEventType::SpinOff,
                 _ => MaEventType::ManagementChange,
             };
 
@@ -841,7 +841,7 @@ pub fn assess_ma_security(events: &[(&str, &str, Option<&str>)]) -> Vec<MaEvent>
                     "Policy conflicts between merged entities".to_string(),
                     "Employee access sprawl".to_string(),
                 ],
-                MaEventType::Divestiture | MaEventType::Spin_off => vec![
+                MaEventType::Divestiture | MaEventType::SpinOff => vec![
                     "Shared credentials may not be rotated".to_string(),
                     "Divested systems may retain access".to_string(),
                     "DNS/infrastructure overlap persists".to_string(),
@@ -855,7 +855,7 @@ pub fn assess_ma_security(events: &[(&str, &str, Option<&str>)]) -> Vec<MaEvent>
             let risk_score = match etype {
                 MaEventType::Acquisition => 0.80,
                 MaEventType::Merger => 0.75,
-                MaEventType::Divestiture | MaEventType::Spin_off => 0.70,
+                MaEventType::Divestiture | MaEventType::SpinOff => 0.70,
                 MaEventType::ManagementChange => 0.40,
             };
 

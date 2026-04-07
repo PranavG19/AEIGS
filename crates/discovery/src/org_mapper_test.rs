@@ -394,7 +394,7 @@ fn test_subsidiary_relationship_display() {
 
 #[test]
 fn test_ma_event_type_display() {
-    assert_eq!(MaEventType::Spin_off.to_string(), "Spin-off");
+    assert_eq!(MaEventType::SpinOff.to_string(), "Spin-off");
     assert_eq!(MaEventType::Divestiture.to_string(), "Divestiture");
 }
 

@@ -1,0 +1,344 @@
+
+  ═══ AEGIS ARENA — INFINITE MODE ═══
+
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     1 | 17s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 1: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     2 | 31s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 2: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     3 | 44s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 3: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     4 | 58s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 4: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     5 | 1m 11s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 5: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     6 | 1m 23s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 6: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     7 | 1m 36s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 7: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     8 | 1m 48s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 8: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle     9 | 2m 01s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 9: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    10 | 2m 14s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 10: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    11 | 2m 28s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 11: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    12 | 2m 41s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 12: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    13 | 2m 56s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 13: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    14 | 3m 10s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 14: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    15 | 3m 23s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 15: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    16 | 3m 37s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 16: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver
+[opencode] done exit=exit status: 0 stdout=0b stderr=909b
+[opencode] stderr: Performing one time database migration, may take a few minutes...
+sqlite-migration:0
+sqlite-migration:100
+sqlite-migration:done
+Database migration complete.
+[0m
+> build · global.anthropic.claude-son
+[2K  Cycle    17 | 3m 50s | RED:   0 flags   0 blocked | BLUE:   0 blocks   0 bypassed | Maturity:   0 | Esc: 0 | STALE
+  --> Cycle 17: Stalemate. Neither scored.
+[opencode] spawning model=amazon-bedrock/global.anthropic.claude-sonnet-4-6 project=/Users/pranavgk/Documents/temp/adver

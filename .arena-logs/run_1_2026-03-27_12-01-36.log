@@ -1,0 +1,2383 @@
+
+  ═══ AEGIS ARENA — INFINITE MODE ═══
+
+[arena] cycle=1 patches=0
+[2K  Cycle     1 | 2s | RED:   1 flags   0 blocked | BLUE:   0 blocks   1 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 1: Red captured the flag. Blue must respond.
+[arena] cycle=2 patches=4
+[2K  Cycle     2 | 4s | RED:   2 flags   0 blocked | BLUE:   5 blocks   2 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 2: Red captured the flag. Blue must respond.
+[arena] cycle=3 patches=10
+[2K  Cycle     3 | 6s | RED:   3 flags   0 blocked | BLUE:  14 blocks   3 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 3: Red captured the flag. Blue must respond.
+[arena] cycle=4 patches=19
+[2K  Cycle     4 | 8s | RED:   4 flags   0 blocked | BLUE:  23 blocks   4 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 4: Red captured the flag. Blue must respond.
+[arena] cycle=5 patches=28
+[2K  Cycle     5 | 10s | RED:   5 flags   0 blocked | BLUE:  32 blocks   5 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 5: Red captured the flag. Blue must respond.
+[arena] cycle=6 patches=37
+[2K  Cycle     6 | 12s | RED:   6 flags   0 blocked | BLUE:  41 blocks   6 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 6: Red captured the flag. Blue must respond.
+[arena] cycle=7 patches=46
+[2K  Cycle     7 | 14s | RED:   7 flags   0 blocked | BLUE:  50 blocks   7 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 7: Red captured the flag. Blue must respond.
+[arena] cycle=8 patches=55
+[2K  Cycle     8 | 16s | RED:   8 flags   0 blocked | BLUE:  59 blocks   8 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 8: Red captured the flag. Blue must respond.
+[arena] cycle=9 patches=64
+[2K  Cycle     9 | 18s | RED:   9 flags   0 blocked | BLUE:  68 blocks   9 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 9: Red captured the flag. Blue must respond.
+[arena] cycle=10 patches=73
+[2K  Cycle    10 | 20s | RED:  10 flags   0 blocked | BLUE:  77 blocks  10 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 10: Red captured the flag. Blue must respond.
+[arena] cycle=11 patches=82
+[2K  Cycle    11 | 22s | RED:  11 flags   0 blocked | BLUE:  86 blocks  11 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 11: Red captured the flag. Blue must respond.
+[arena] cycle=12 patches=91
+[2K  Cycle    12 | 24s | RED:  12 flags   0 blocked | BLUE:  95 blocks  12 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 12: Red captured the flag. Blue must respond.
+[arena] cycle=13 patches=100
+[2K  Cycle    13 | 26s | RED:  13 flags   0 blocked | BLUE: 104 blocks  13 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 13: Red captured the flag. Blue must respond.
+[arena] cycle=14 patches=109
+[2K  Cycle    14 | 28s | RED:  14 flags   0 blocked | BLUE: 113 blocks  14 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 14: Red captured the flag. Blue must respond.
+[arena] cycle=15 patches=118
+[2K  Cycle    15 | 30s | RED:  15 flags   0 blocked | BLUE: 122 blocks  15 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 15: Red captured the flag. Blue must respond.
+[arena] cycle=16 patches=127
+[2K  Cycle    16 | 32s | RED:  16 flags   0 blocked | BLUE: 131 blocks  16 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 16: Red captured the flag. Blue must respond.
+[arena] cycle=17 patches=136
+[2K  Cycle    17 | 34s | RED:  17 flags   0 blocked | BLUE: 140 blocks  17 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 17: Red captured the flag. Blue must respond.
+[arena] cycle=18 patches=145
+[2K  Cycle    18 | 36s | RED:  18 flags   0 blocked | BLUE: 149 blocks  18 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 18: Red captured the flag. Blue must respond.
+[arena] cycle=19 patches=154
+[2K  Cycle    19 | 38s | RED:  19 flags   0 blocked | BLUE: 158 blocks  19 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 19: Red captured the flag. Blue must respond.
+[arena] cycle=20 patches=163
+[2K  Cycle    20 | 40s | RED:  20 flags   0 blocked | BLUE: 167 blocks  20 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 20: Red captured the flag. Blue must respond.
+[arena] cycle=21 patches=172
+[2K  Cycle    21 | 42s | RED:  21 flags   0 blocked | BLUE: 176 blocks  21 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 21: Red captured the flag. Blue must respond.
+[arena] cycle=22 patches=181
+[2K  Cycle    22 | 44s | RED:  22 flags   0 blocked | BLUE: 185 blocks  22 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 22: Red captured the flag. Blue must respond.
+[arena] cycle=23 patches=190
+[2K  Cycle    23 | 46s | RED:  23 flags   0 blocked | BLUE: 194 blocks  23 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 23: Red captured the flag. Blue must respond.
+[arena] cycle=24 patches=199
+[2K  Cycle    24 | 48s | RED:  24 flags   0 blocked | BLUE: 203 blocks  24 bypassed | Maturity: 100 | Esc: 0 | FLAG!
+  --> Cycle 24: Red captured the flag. Blue must respond.
+[arena] cycle=25 patches=208
+[2K  Cycle    25 | 50s | RED:  25 flags   0 blocked | BLUE: 212 blocks  25 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 25: Red captured the flag. Blue must respond.
+[arena] cycle=26 patches=217
+[2K  Cycle    26 | 52s | RED:  26 flags   0 blocked | BLUE: 221 blocks  26 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 26: Red captured the flag. Blue must respond.
+[arena] cycle=27 patches=226
+[2K  Cycle    27 | 54s | RED:  27 flags   0 blocked | BLUE: 230 blocks  27 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 27: Red captured the flag. Blue must respond.
+[arena] cycle=28 patches=235
+[2K  Cycle    28 | 56s | RED:  28 flags   0 blocked | BLUE: 239 blocks  28 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 28: Red captured the flag. Blue must respond.
+[arena] cycle=29 patches=244
+[2K  Cycle    29 | 58s | RED:  29 flags   0 blocked | BLUE: 248 blocks  29 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 29: Red captured the flag. Blue must respond.
+[arena] cycle=30 patches=253
+[2K  Cycle    30 | 1m 00s | RED:  30 flags   0 blocked | BLUE: 257 blocks  30 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 30: Red captured the flag. Blue must respond.
+[arena] cycle=31 patches=262
+[2K  Cycle    31 | 1m 02s | RED:  31 flags   0 blocked | BLUE: 266 blocks  31 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 31: Red captured the flag. Blue must respond.
+[arena] cycle=32 patches=271
+[2K  Cycle    32 | 1m 04s | RED:  32 flags   0 blocked | BLUE: 275 blocks  32 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 32: Red captured the flag. Blue must respond.
+[arena] cycle=33 patches=280
+[2K  Cycle    33 | 1m 06s | RED:  33 flags   0 blocked | BLUE: 284 blocks  33 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 33: Red captured the flag. Blue must respond.
+[arena] cycle=34 patches=289
+[2K  Cycle    34 | 1m 08s | RED:  34 flags   0 blocked | BLUE: 293 blocks  34 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 34: Red captured the flag. Blue must respond.
+[arena] cycle=35 patches=298
+[2K  Cycle    35 | 1m 10s | RED:  35 flags   0 blocked | BLUE: 302 blocks  35 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 35: Red captured the flag. Blue must respond.
+[arena] cycle=36 patches=307
+[2K  Cycle    36 | 1m 12s | RED:  36 flags   0 blocked | BLUE: 311 blocks  36 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 36: Red captured the flag. Blue must respond.
+[arena] cycle=37 patches=316
+[2K  Cycle    37 | 1m 14s | RED:  37 flags   0 blocked | BLUE: 320 blocks  37 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 37: Red captured the flag. Blue must respond.
+[arena] cycle=38 patches=325
+[2K  Cycle    38 | 1m 16s | RED:  38 flags   0 blocked | BLUE: 329 blocks  38 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 38: Red captured the flag. Blue must respond.
+[arena] cycle=39 patches=334
+[2K  Cycle    39 | 1m 18s | RED:  39 flags   0 blocked | BLUE: 338 blocks  39 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 39: Red captured the flag. Blue must respond.
+[arena] cycle=40 patches=343
+[2K  Cycle    40 | 1m 20s | RED:  40 flags   0 blocked | BLUE: 347 blocks  40 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 40: Red captured the flag. Blue must respond.
+[arena] cycle=41 patches=352
+[2K  Cycle    41 | 1m 22s | RED:  41 flags   0 blocked | BLUE: 356 blocks  41 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 41: Red captured the flag. Blue must respond.
+[arena] cycle=42 patches=361
+[2K  Cycle    42 | 1m 24s | RED:  42 flags   0 blocked | BLUE: 365 blocks  42 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 42: Red captured the flag. Blue must respond.
+[arena] cycle=43 patches=370
+[2K  Cycle    43 | 1m 26s | RED:  43 flags   0 blocked | BLUE: 374 blocks  43 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 43: Red captured the flag. Blue must respond.
+[arena] cycle=44 patches=379
+[2K  Cycle    44 | 1m 28s | RED:  44 flags   0 blocked | BLUE: 383 blocks  44 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 44: Red captured the flag. Blue must respond.
+[arena] cycle=45 patches=388
+[2K  Cycle    45 | 1m 30s | RED:  45 flags   0 blocked | BLUE: 392 blocks  45 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 45: Red captured the flag. Blue must respond.
+[arena] cycle=46 patches=397
+[2K  Cycle    46 | 1m 32s | RED:  46 flags   0 blocked | BLUE: 401 blocks  46 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 46: Red captured the flag. Blue must respond.
+[arena] cycle=47 patches=406
+[2K  Cycle    47 | 1m 34s | RED:  47 flags   0 blocked | BLUE: 410 blocks  47 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 47: Red captured the flag. Blue must respond.
+[arena] cycle=48 patches=415
+[2K  Cycle    48 | 1m 36s | RED:  48 flags   0 blocked | BLUE: 419 blocks  48 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 48: Red captured the flag. Blue must respond.
+[arena] cycle=49 patches=424
+[2K  Cycle    49 | 1m 38s | RED:  49 flags   0 blocked | BLUE: 428 blocks  49 bypassed | Maturity: 100 | Esc: 1 | FLAG!
+  --> Cycle 49: Red captured the flag. Blue must respond.
+[arena] cycle=50 patches=433
+[2K  Cycle    50 | 1m 40s | RED:  50 flags   0 blocked | BLUE: 437 blocks  50 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 50: Red captured the flag. Blue must respond.
+[arena] cycle=51 patches=442
+[2K  Cycle    51 | 1m 42s | RED:  51 flags   0 blocked | BLUE: 446 blocks  51 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 51: Red captured the flag. Blue must respond.
+[arena] cycle=52 patches=451
+[2K  Cycle    52 | 1m 44s | RED:  52 flags   0 blocked | BLUE: 455 blocks  52 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 52: Red captured the flag. Blue must respond.
+[arena] cycle=53 patches=460
+[2K  Cycle    53 | 1m 46s | RED:  53 flags   0 blocked | BLUE: 464 blocks  53 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 53: Red captured the flag. Blue must respond.
+[arena] cycle=54 patches=469
+[2K  Cycle    54 | 1m 48s | RED:  54 flags   0 blocked | BLUE: 473 blocks  54 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 54: Red captured the flag. Blue must respond.
+[arena] cycle=55 patches=478
+[2K  Cycle    55 | 1m 50s | RED:  55 flags   0 blocked | BLUE: 482 blocks  55 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 55: Red captured the flag. Blue must respond.
+[arena] cycle=56 patches=487
+[2K  Cycle    56 | 1m 52s | RED:  56 flags   0 blocked | BLUE: 491 blocks  56 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 56: Red captured the flag. Blue must respond.
+[arena] cycle=57 patches=496
+[2K  Cycle    57 | 1m 54s | RED:  57 flags   0 blocked | BLUE: 500 blocks  57 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 57: Red captured the flag. Blue must respond.
+[arena] cycle=58 patches=505
+[2K  Cycle    58 | 1m 56s | RED:  58 flags   0 blocked | BLUE: 509 blocks  58 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 58: Red captured the flag. Blue must respond.
+[arena] cycle=59 patches=514
+[2K  Cycle    59 | 1m 58s | RED:  59 flags   0 blocked | BLUE: 518 blocks  59 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 59: Red captured the flag. Blue must respond.
+[arena] cycle=60 patches=523
+[2K  Cycle    60 | 2m 00s | RED:  60 flags   0 blocked | BLUE: 527 blocks  60 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 60: Red captured the flag. Blue must respond.
+[arena] cycle=61 patches=532
+[2K  Cycle    61 | 2m 02s | RED:  61 flags   0 blocked | BLUE: 536 blocks  61 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 61: Red captured the flag. Blue must respond.
+[arena] cycle=62 patches=541
+[2K  Cycle    62 | 2m 04s | RED:  62 flags   0 blocked | BLUE: 545 blocks  62 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 62: Red captured the flag. Blue must respond.
+[arena] cycle=63 patches=550
+[2K  Cycle    63 | 2m 06s | RED:  63 flags   0 blocked | BLUE: 554 blocks  63 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 63: Red captured the flag. Blue must respond.
+[arena] cycle=64 patches=559
+[2K  Cycle    64 | 2m 08s | RED:  64 flags   0 blocked | BLUE: 563 blocks  64 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 64: Red captured the flag. Blue must respond.
+[arena] cycle=65 patches=568
+[2K  Cycle    65 | 2m 10s | RED:  65 flags   0 blocked | BLUE: 572 blocks  65 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 65: Red captured the flag. Blue must respond.
+[arena] cycle=66 patches=577
+[2K  Cycle    66 | 2m 12s | RED:  66 flags   0 blocked | BLUE: 581 blocks  66 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 66: Red captured the flag. Blue must respond.
+[arena] cycle=67 patches=586
+[2K  Cycle    67 | 2m 14s | RED:  67 flags   0 blocked | BLUE: 590 blocks  67 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 67: Red captured the flag. Blue must respond.
+[arena] cycle=68 patches=595
+[2K  Cycle    68 | 2m 16s | RED:  68 flags   0 blocked | BLUE: 599 blocks  68 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 68: Red captured the flag. Blue must respond.
+[arena] cycle=69 patches=604
+[2K  Cycle    69 | 2m 18s | RED:  69 flags   0 blocked | BLUE: 608 blocks  69 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 69: Red captured the flag. Blue must respond.
+[arena] cycle=70 patches=613
+[2K  Cycle    70 | 2m 20s | RED:  70 flags   0 blocked | BLUE: 617 blocks  70 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 70: Red captured the flag. Blue must respond.
+[arena] cycle=71 patches=622
+[2K  Cycle    71 | 2m 22s | RED:  71 flags   0 blocked | BLUE: 626 blocks  71 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 71: Red captured the flag. Blue must respond.
+[arena] cycle=72 patches=631
+[2K  Cycle    72 | 2m 24s | RED:  72 flags   0 blocked | BLUE: 635 blocks  72 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 72: Red captured the flag. Blue must respond.
+[arena] cycle=73 patches=640
+[2K  Cycle    73 | 2m 26s | RED:  73 flags   0 blocked | BLUE: 644 blocks  73 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 73: Red captured the flag. Blue must respond.
+[arena] cycle=74 patches=649
+[2K  Cycle    74 | 2m 28s | RED:  74 flags   0 blocked | BLUE: 653 blocks  74 bypassed | Maturity: 100 | Esc: 2 | FLAG!
+  --> Cycle 74: Red captured the flag. Blue must respond.
+[arena] cycle=75 patches=658
+[2K  Cycle    75 | 2m 30s | RED:  75 flags   0 blocked | BLUE: 662 blocks  75 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 75: Red captured the flag. Blue must respond.
+[arena] cycle=76 patches=667
+[2K  Cycle    76 | 2m 32s | RED:  76 flags   0 blocked | BLUE: 671 blocks  76 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 76: Red captured the flag. Blue must respond.
+[arena] cycle=77 patches=676
+[2K  Cycle    77 | 2m 34s | RED:  77 flags   0 blocked | BLUE: 680 blocks  77 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 77: Red captured the flag. Blue must respond.
+[arena] cycle=78 patches=685
+[2K  Cycle    78 | 2m 36s | RED:  78 flags   0 blocked | BLUE: 689 blocks  78 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 78: Red captured the flag. Blue must respond.
+[arena] cycle=79 patches=694
+[2K  Cycle    79 | 2m 38s | RED:  79 flags   0 blocked | BLUE: 698 blocks  79 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 79: Red captured the flag. Blue must respond.
+[arena] cycle=80 patches=703
+[2K  Cycle    80 | 2m 40s | RED:  80 flags   0 blocked | BLUE: 707 blocks  80 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 80: Red captured the flag. Blue must respond.
+[arena] cycle=81 patches=712
+[2K  Cycle    81 | 2m 42s | RED:  81 flags   0 blocked | BLUE: 716 blocks  81 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 81: Red captured the flag. Blue must respond.
+[arena] cycle=82 patches=721
+[2K  Cycle    82 | 2m 44s | RED:  82 flags   0 blocked | BLUE: 725 blocks  82 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 82: Red captured the flag. Blue must respond.
+[arena] cycle=83 patches=730
+[2K  Cycle    83 | 2m 46s | RED:  83 flags   0 blocked | BLUE: 734 blocks  83 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 83: Red captured the flag. Blue must respond.
+[arena] cycle=84 patches=739
+[2K  Cycle    84 | 2m 48s | RED:  84 flags   0 blocked | BLUE: 743 blocks  84 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 84: Red captured the flag. Blue must respond.
+[arena] cycle=85 patches=748
+[2K  Cycle    85 | 2m 50s | RED:  85 flags   0 blocked | BLUE: 752 blocks  85 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 85: Red captured the flag. Blue must respond.
+[arena] cycle=86 patches=757
+[2K  Cycle    86 | 2m 52s | RED:  86 flags   0 blocked | BLUE: 761 blocks  86 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 86: Red captured the flag. Blue must respond.
+[arena] cycle=87 patches=766
+[2K  Cycle    87 | 2m 54s | RED:  87 flags   0 blocked | BLUE: 770 blocks  87 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 87: Red captured the flag. Blue must respond.
+[arena] cycle=88 patches=775
+[2K  Cycle    88 | 2m 56s | RED:  88 flags   0 blocked | BLUE: 779 blocks  88 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 88: Red captured the flag. Blue must respond.
+[arena] cycle=89 patches=784
+[2K  Cycle    89 | 2m 58s | RED:  89 flags   0 blocked | BLUE: 788 blocks  89 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 89: Red captured the flag. Blue must respond.
+[arena] cycle=90 patches=793
+[2K  Cycle    90 | 3m 00s | RED:  90 flags   0 blocked | BLUE: 797 blocks  90 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 90: Red captured the flag. Blue must respond.
+[arena] cycle=91 patches=802
+[2K  Cycle    91 | 3m 02s | RED:  91 flags   0 blocked | BLUE: 806 blocks  91 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 91: Red captured the flag. Blue must respond.
+[arena] cycle=92 patches=811
+[2K  Cycle    92 | 3m 04s | RED:  92 flags   0 blocked | BLUE: 815 blocks  92 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 92: Red captured the flag. Blue must respond.
+[arena] cycle=93 patches=820
+[2K  Cycle    93 | 3m 06s | RED:  93 flags   0 blocked | BLUE: 824 blocks  93 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 93: Red captured the flag. Blue must respond.
+[arena] cycle=94 patches=829
+[2K  Cycle    94 | 3m 08s | RED:  94 flags   0 blocked | BLUE: 833 blocks  94 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 94: Red captured the flag. Blue must respond.
+[arena] cycle=95 patches=838
+[2K  Cycle    95 | 3m 10s | RED:  95 flags   0 blocked | BLUE: 842 blocks  95 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 95: Red captured the flag. Blue must respond.
+[arena] cycle=96 patches=847
+[2K  Cycle    96 | 3m 12s | RED:  96 flags   0 blocked | BLUE: 851 blocks  96 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 96: Red captured the flag. Blue must respond.
+[arena] cycle=97 patches=856
+[2K  Cycle    97 | 3m 14s | RED:  97 flags   0 blocked | BLUE: 860 blocks  97 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 97: Red captured the flag. Blue must respond.
+[arena] cycle=98 patches=865
+[2K  Cycle    98 | 3m 16s | RED:  98 flags   0 blocked | BLUE: 869 blocks  98 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 98: Red captured the flag. Blue must respond.
+[arena] cycle=99 patches=874
+[2K  Cycle    99 | 3m 18s | RED:  99 flags   0 blocked | BLUE: 878 blocks  99 bypassed | Maturity: 100 | Esc: 3 | FLAG!
+  --> Cycle 99: Red captured the flag. Blue must respond.
+[arena] cycle=100 patches=883
+[2K  Cycle   100 | 3m 20s | RED: 100 flags   0 blocked | BLUE: 887 blocks 100 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 100: Red captured the flag. Blue must respond.
+[arena] cycle=101 patches=892
+[2K  Cycle   101 | 3m 22s | RED: 101 flags   0 blocked | BLUE: 896 blocks 101 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 101: Red captured the flag. Blue must respond.
+[arena] cycle=102 patches=901
+[2K  Cycle   102 | 3m 24s | RED: 102 flags   0 blocked | BLUE: 905 blocks 102 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 102: Red captured the flag. Blue must respond.
+[arena] cycle=103 patches=910
+[2K  Cycle   103 | 3m 26s | RED: 103 flags   0 blocked | BLUE: 914 blocks 103 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 103: Red captured the flag. Blue must respond.
+[arena] cycle=104 patches=919
+[2K  Cycle   104 | 3m 28s | RED: 104 flags   0 blocked | BLUE: 923 blocks 104 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 104: Red captured the flag. Blue must respond.
+[arena] cycle=105 patches=928
+[2K  Cycle   105 | 3m 30s | RED: 105 flags   0 blocked | BLUE: 932 blocks 105 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 105: Red captured the flag. Blue must respond.
+[arena] cycle=106 patches=937
+[2K  Cycle   106 | 3m 32s | RED: 106 flags   0 blocked | BLUE: 941 blocks 106 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 106: Red captured the flag. Blue must respond.
+[arena] cycle=107 patches=946
+[2K  Cycle   107 | 3m 34s | RED: 107 flags   0 blocked | BLUE: 950 blocks 107 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 107: Red captured the flag. Blue must respond.
+[arena] cycle=108 patches=955
+[2K  Cycle   108 | 3m 36s | RED: 108 flags   0 blocked | BLUE: 959 blocks 108 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 108: Red captured the flag. Blue must respond.
+[arena] cycle=109 patches=964
+[2K  Cycle   109 | 3m 38s | RED: 109 flags   0 blocked | BLUE: 968 blocks 109 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 109: Red captured the flag. Blue must respond.
+[arena] cycle=110 patches=973
+[2K  Cycle   110 | 3m 40s | RED: 110 flags   0 blocked | BLUE: 977 blocks 110 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 110: Red captured the flag. Blue must respond.
+[arena] cycle=111 patches=982
+[2K  Cycle   111 | 3m 42s | RED: 111 flags   0 blocked | BLUE: 986 blocks 111 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 111: Red captured the flag. Blue must respond.
+[arena] cycle=112 patches=991
+[2K  Cycle   112 | 3m 44s | RED: 112 flags   0 blocked | BLUE: 995 blocks 112 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 112: Red captured the flag. Blue must respond.
+[arena] cycle=113 patches=1000
+[2K  Cycle   113 | 3m 46s | RED: 113 flags   0 blocked | BLUE: 1004 blocks 113 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 113: Red captured the flag. Blue must respond.
+[arena] cycle=114 patches=1009
+[2K  Cycle   114 | 3m 48s | RED: 114 flags   0 blocked | BLUE: 1013 blocks 114 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 114: Red captured the flag. Blue must respond.
+[arena] cycle=115 patches=1018
+[2K  Cycle   115 | 3m 50s | RED: 115 flags   0 blocked | BLUE: 1022 blocks 115 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 115: Red captured the flag. Blue must respond.
+[arena] cycle=116 patches=1027
+[2K  Cycle   116 | 3m 52s | RED: 116 flags   0 blocked | BLUE: 1031 blocks 116 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 116: Red captured the flag. Blue must respond.
+[arena] cycle=117 patches=1036
+[2K  Cycle   117 | 3m 54s | RED: 117 flags   0 blocked | BLUE: 1040 blocks 117 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 117: Red captured the flag. Blue must respond.
+[arena] cycle=118 patches=1045
+[2K  Cycle   118 | 3m 56s | RED: 118 flags   0 blocked | BLUE: 1049 blocks 118 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 118: Red captured the flag. Blue must respond.
+[arena] cycle=119 patches=1054
+[2K  Cycle   119 | 3m 58s | RED: 119 flags   0 blocked | BLUE: 1058 blocks 119 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 119: Red captured the flag. Blue must respond.
+[arena] cycle=120 patches=1063
+[2K  Cycle   120 | 4m 00s | RED: 120 flags   0 blocked | BLUE: 1067 blocks 120 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 120: Red captured the flag. Blue must respond.
+[arena] cycle=121 patches=1072
+[2K  Cycle   121 | 4m 02s | RED: 121 flags   0 blocked | BLUE: 1076 blocks 121 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 121: Red captured the flag. Blue must respond.
+[arena] cycle=122 patches=1081
+[2K  Cycle   122 | 4m 04s | RED: 122 flags   0 blocked | BLUE: 1085 blocks 122 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 122: Red captured the flag. Blue must respond.
+[arena] cycle=123 patches=1090
+[2K  Cycle   123 | 4m 06s | RED: 123 flags   0 blocked | BLUE: 1094 blocks 123 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 123: Red captured the flag. Blue must respond.
+[arena] cycle=124 patches=1099
+[2K  Cycle   124 | 4m 08s | RED: 124 flags   0 blocked | BLUE: 1103 blocks 124 bypassed | Maturity: 100 | Esc: 4 | FLAG!
+  --> Cycle 124: Red captured the flag. Blue must respond.
+[arena] cycle=125 patches=1108
+[2K  Cycle   125 | 4m 10s | RED: 125 flags   0 blocked | BLUE: 1112 blocks 125 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 125: Red captured the flag. Blue must respond.
+[arena] cycle=126 patches=1117
+[2K  Cycle   126 | 4m 12s | RED: 126 flags   0 blocked | BLUE: 1121 blocks 126 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 126: Red captured the flag. Blue must respond.
+[arena] cycle=127 patches=1126
+[2K  Cycle   127 | 4m 14s | RED: 127 flags   0 blocked | BLUE: 1130 blocks 127 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 127: Red captured the flag. Blue must respond.
+[arena] cycle=128 patches=1135
+[2K  Cycle   128 | 4m 16s | RED: 128 flags   0 blocked | BLUE: 1139 blocks 128 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 128: Red captured the flag. Blue must respond.
+[arena] cycle=129 patches=1144
+[2K  Cycle   129 | 4m 18s | RED: 129 flags   0 blocked | BLUE: 1148 blocks 129 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 129: Red captured the flag. Blue must respond.
+[arena] cycle=130 patches=1153
+[2K  Cycle   130 | 4m 20s | RED: 130 flags   0 blocked | BLUE: 1157 blocks 130 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 130: Red captured the flag. Blue must respond.
+[arena] cycle=131 patches=1162
+[2K  Cycle   131 | 4m 22s | RED: 131 flags   0 blocked | BLUE: 1166 blocks 131 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 131: Red captured the flag. Blue must respond.
+[arena] cycle=132 patches=1171
+[2K  Cycle   132 | 4m 24s | RED: 132 flags   0 blocked | BLUE: 1175 blocks 132 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 132: Red captured the flag. Blue must respond.
+[arena] cycle=133 patches=1180
+[2K  Cycle   133 | 4m 26s | RED: 133 flags   0 blocked | BLUE: 1184 blocks 133 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 133: Red captured the flag. Blue must respond.
+[arena] cycle=134 patches=1189
+[2K  Cycle   134 | 4m 28s | RED: 134 flags   0 blocked | BLUE: 1193 blocks 134 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 134: Red captured the flag. Blue must respond.
+[arena] cycle=135 patches=1198
+[2K  Cycle   135 | 4m 30s | RED: 135 flags   0 blocked | BLUE: 1202 blocks 135 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 135: Red captured the flag. Blue must respond.
+[arena] cycle=136 patches=1207
+[2K  Cycle   136 | 4m 32s | RED: 136 flags   0 blocked | BLUE: 1211 blocks 136 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 136: Red captured the flag. Blue must respond.
+[arena] cycle=137 patches=1216
+[2K  Cycle   137 | 4m 34s | RED: 137 flags   0 blocked | BLUE: 1220 blocks 137 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 137: Red captured the flag. Blue must respond.
+[arena] cycle=138 patches=1225
+[2K  Cycle   138 | 4m 36s | RED: 138 flags   0 blocked | BLUE: 1229 blocks 138 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 138: Red captured the flag. Blue must respond.
+[arena] cycle=139 patches=1234
+[2K  Cycle   139 | 4m 38s | RED: 139 flags   0 blocked | BLUE: 1238 blocks 139 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 139: Red captured the flag. Blue must respond.
+[arena] cycle=140 patches=1243
+[2K  Cycle   140 | 4m 40s | RED: 140 flags   0 blocked | BLUE: 1247 blocks 140 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 140: Red captured the flag. Blue must respond.
+[arena] cycle=141 patches=1252
+[2K  Cycle   141 | 4m 42s | RED: 141 flags   0 blocked | BLUE: 1256 blocks 141 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 141: Red captured the flag. Blue must respond.
+[arena] cycle=142 patches=1261
+[2K  Cycle   142 | 4m 44s | RED: 142 flags   0 blocked | BLUE: 1265 blocks 142 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 142: Red captured the flag. Blue must respond.
+[arena] cycle=143 patches=1270
+[2K  Cycle   143 | 4m 46s | RED: 143 flags   0 blocked | BLUE: 1274 blocks 143 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 143: Red captured the flag. Blue must respond.
+[arena] cycle=144 patches=1279
+[2K  Cycle   144 | 4m 48s | RED: 144 flags   0 blocked | BLUE: 1283 blocks 144 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 144: Red captured the flag. Blue must respond.
+[arena] cycle=145 patches=1288
+[2K  Cycle   145 | 4m 50s | RED: 145 flags   0 blocked | BLUE: 1292 blocks 145 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 145: Red captured the flag. Blue must respond.
+[arena] cycle=146 patches=1297
+[2K  Cycle   146 | 4m 52s | RED: 146 flags   0 blocked | BLUE: 1301 blocks 146 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 146: Red captured the flag. Blue must respond.
+[arena] cycle=147 patches=1306
+[2K  Cycle   147 | 4m 54s | RED: 147 flags   0 blocked | BLUE: 1310 blocks 147 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 147: Red captured the flag. Blue must respond.
+[arena] cycle=148 patches=1315
+[2K  Cycle   148 | 4m 56s | RED: 148 flags   0 blocked | BLUE: 1319 blocks 148 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 148: Red captured the flag. Blue must respond.
+[arena] cycle=149 patches=1324
+[2K  Cycle   149 | 4m 58s | RED: 149 flags   0 blocked | BLUE: 1328 blocks 149 bypassed | Maturity: 100 | Esc: 5 | FLAG!
+  --> Cycle 149: Red captured the flag. Blue must respond.
+[arena] cycle=150 patches=1333
+[2K  Cycle   150 | 5m 00s | RED: 150 flags   0 blocked | BLUE: 1337 blocks 150 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 150: Red captured the flag. Blue must respond.
+[arena] cycle=151 patches=1342
+[2K  Cycle   151 | 5m 02s | RED: 151 flags   0 blocked | BLUE: 1346 blocks 151 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 151: Red captured the flag. Blue must respond.
+[arena] cycle=152 patches=1351
+[2K  Cycle   152 | 5m 04s | RED: 152 flags   0 blocked | BLUE: 1355 blocks 152 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 152: Red captured the flag. Blue must respond.
+[arena] cycle=153 patches=1360
+[2K  Cycle   153 | 5m 06s | RED: 153 flags   0 blocked | BLUE: 1364 blocks 153 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 153: Red captured the flag. Blue must respond.
+[arena] cycle=154 patches=1369
+[2K  Cycle   154 | 5m 08s | RED: 154 flags   0 blocked | BLUE: 1373 blocks 154 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 154: Red captured the flag. Blue must respond.
+[arena] cycle=155 patches=1378
+[2K  Cycle   155 | 5m 10s | RED: 155 flags   0 blocked | BLUE: 1382 blocks 155 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 155: Red captured the flag. Blue must respond.
+[arena] cycle=156 patches=1387
+[2K  Cycle   156 | 5m 12s | RED: 156 flags   0 blocked | BLUE: 1391 blocks 156 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 156: Red captured the flag. Blue must respond.
+[arena] cycle=157 patches=1396
+[2K  Cycle   157 | 5m 14s | RED: 157 flags   0 blocked | BLUE: 1400 blocks 157 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 157: Red captured the flag. Blue must respond.
+[arena] cycle=158 patches=1405
+[2K  Cycle   158 | 5m 16s | RED: 158 flags   0 blocked | BLUE: 1409 blocks 158 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 158: Red captured the flag. Blue must respond.
+[arena] cycle=159 patches=1414
+[2K  Cycle   159 | 5m 18s | RED: 159 flags   0 blocked | BLUE: 1418 blocks 159 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 159: Red captured the flag. Blue must respond.
+[arena] cycle=160 patches=1423
+[2K  Cycle   160 | 5m 20s | RED: 160 flags   0 blocked | BLUE: 1427 blocks 160 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 160: Red captured the flag. Blue must respond.
+[arena] cycle=161 patches=1432
+[2K  Cycle   161 | 5m 22s | RED: 161 flags   0 blocked | BLUE: 1436 blocks 161 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 161: Red captured the flag. Blue must respond.
+[arena] cycle=162 patches=1441
+[2K  Cycle   162 | 5m 24s | RED: 162 flags   0 blocked | BLUE: 1445 blocks 162 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 162: Red captured the flag. Blue must respond.
+[arena] cycle=163 patches=1450
+[2K  Cycle   163 | 5m 26s | RED: 163 flags   0 blocked | BLUE: 1454 blocks 163 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 163: Red captured the flag. Blue must respond.
+[arena] cycle=164 patches=1459
+[2K  Cycle   164 | 5m 28s | RED: 164 flags   0 blocked | BLUE: 1463 blocks 164 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 164: Red captured the flag. Blue must respond.
+[arena] cycle=165 patches=1468
+[2K  Cycle   165 | 5m 30s | RED: 165 flags   0 blocked | BLUE: 1472 blocks 165 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 165: Red captured the flag. Blue must respond.
+[arena] cycle=166 patches=1477
+[2K  Cycle   166 | 5m 32s | RED: 166 flags   0 blocked | BLUE: 1481 blocks 166 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 166: Red captured the flag. Blue must respond.
+[arena] cycle=167 patches=1486
+[2K  Cycle   167 | 5m 34s | RED: 167 flags   0 blocked | BLUE: 1490 blocks 167 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 167: Red captured the flag. Blue must respond.
+[arena] cycle=168 patches=1495
+[2K  Cycle   168 | 5m 36s | RED: 168 flags   0 blocked | BLUE: 1499 blocks 168 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 168: Red captured the flag. Blue must respond.
+[arena] cycle=169 patches=1504
+[2K  Cycle   169 | 5m 38s | RED: 169 flags   0 blocked | BLUE: 1508 blocks 169 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 169: Red captured the flag. Blue must respond.
+[arena] cycle=170 patches=1513
+[2K  Cycle   170 | 5m 40s | RED: 170 flags   0 blocked | BLUE: 1517 blocks 170 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 170: Red captured the flag. Blue must respond.
+[arena] cycle=171 patches=1522
+[2K  Cycle   171 | 5m 42s | RED: 171 flags   0 blocked | BLUE: 1526 blocks 171 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 171: Red captured the flag. Blue must respond.
+[arena] cycle=172 patches=1531
+[2K  Cycle   172 | 5m 44s | RED: 172 flags   0 blocked | BLUE: 1535 blocks 172 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 172: Red captured the flag. Blue must respond.
+[arena] cycle=173 patches=1540
+[2K  Cycle   173 | 5m 46s | RED: 173 flags   0 blocked | BLUE: 1544 blocks 173 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 173: Red captured the flag. Blue must respond.
+[arena] cycle=174 patches=1549
+[2K  Cycle   174 | 5m 48s | RED: 174 flags   0 blocked | BLUE: 1553 blocks 174 bypassed | Maturity: 100 | Esc: 6 | FLAG!
+  --> Cycle 174: Red captured the flag. Blue must respond.
+[arena] cycle=175 patches=1558
+[2K  Cycle   175 | 5m 50s | RED: 175 flags   0 blocked | BLUE: 1562 blocks 175 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 175: Red captured the flag. Blue must respond.
+[arena] cycle=176 patches=1567
+[2K  Cycle   176 | 5m 52s | RED: 176 flags   0 blocked | BLUE: 1571 blocks 176 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 176: Red captured the flag. Blue must respond.
+[arena] cycle=177 patches=1576
+[2K  Cycle   177 | 5m 54s | RED: 177 flags   0 blocked | BLUE: 1580 blocks 177 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 177: Red captured the flag. Blue must respond.
+[arena] cycle=178 patches=1585
+[2K  Cycle   178 | 5m 56s | RED: 178 flags   0 blocked | BLUE: 1589 blocks 178 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 178: Red captured the flag. Blue must respond.
+[arena] cycle=179 patches=1594
+[2K  Cycle   179 | 5m 58s | RED: 179 flags   0 blocked | BLUE: 1598 blocks 179 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 179: Red captured the flag. Blue must respond.
+[arena] cycle=180 patches=1603
+[2K  Cycle   180 | 6m 00s | RED: 180 flags   0 blocked | BLUE: 1607 blocks 180 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 180: Red captured the flag. Blue must respond.
+[arena] cycle=181 patches=1612
+[2K  Cycle   181 | 6m 02s | RED: 181 flags   0 blocked | BLUE: 1616 blocks 181 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 181: Red captured the flag. Blue must respond.
+[arena] cycle=182 patches=1621
+[2K  Cycle   182 | 6m 04s | RED: 182 flags   0 blocked | BLUE: 1625 blocks 182 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 182: Red captured the flag. Blue must respond.
+[arena] cycle=183 patches=1630
+[2K  Cycle   183 | 6m 06s | RED: 183 flags   0 blocked | BLUE: 1634 blocks 183 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 183: Red captured the flag. Blue must respond.
+[arena] cycle=184 patches=1639
+[2K  Cycle   184 | 6m 08s | RED: 184 flags   0 blocked | BLUE: 1643 blocks 184 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 184: Red captured the flag. Blue must respond.
+[arena] cycle=185 patches=1648
+[2K  Cycle   185 | 6m 10s | RED: 185 flags   0 blocked | BLUE: 1652 blocks 185 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 185: Red captured the flag. Blue must respond.
+[arena] cycle=186 patches=1657
+[2K  Cycle   186 | 6m 12s | RED: 186 flags   0 blocked | BLUE: 1661 blocks 186 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 186: Red captured the flag. Blue must respond.
+[arena] cycle=187 patches=1666
+[2K  Cycle   187 | 6m 14s | RED: 187 flags   0 blocked | BLUE: 1670 blocks 187 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 187: Red captured the flag. Blue must respond.
+[arena] cycle=188 patches=1675
+[2K  Cycle   188 | 6m 16s | RED: 188 flags   0 blocked | BLUE: 1679 blocks 188 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 188: Red captured the flag. Blue must respond.
+[arena] cycle=189 patches=1684
+[2K  Cycle   189 | 6m 18s | RED: 189 flags   0 blocked | BLUE: 1688 blocks 189 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 189: Red captured the flag. Blue must respond.
+[arena] cycle=190 patches=1693
+[2K  Cycle   190 | 6m 20s | RED: 190 flags   0 blocked | BLUE: 1697 blocks 190 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 190: Red captured the flag. Blue must respond.
+[arena] cycle=191 patches=1702
+[2K  Cycle   191 | 6m 22s | RED: 191 flags   0 blocked | BLUE: 1706 blocks 191 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 191: Red captured the flag. Blue must respond.
+[arena] cycle=192 patches=1711
+[2K  Cycle   192 | 6m 24s | RED: 192 flags   0 blocked | BLUE: 1715 blocks 192 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 192: Red captured the flag. Blue must respond.
+[arena] cycle=193 patches=1720
+[2K  Cycle   193 | 6m 26s | RED: 193 flags   0 blocked | BLUE: 1724 blocks 193 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 193: Red captured the flag. Blue must respond.
+[arena] cycle=194 patches=1729
+[2K  Cycle   194 | 6m 28s | RED: 194 flags   0 blocked | BLUE: 1733 blocks 194 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 194: Red captured the flag. Blue must respond.
+[arena] cycle=195 patches=1738
+[2K  Cycle   195 | 6m 30s | RED: 195 flags   0 blocked | BLUE: 1742 blocks 195 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 195: Red captured the flag. Blue must respond.
+[arena] cycle=196 patches=1747
+[2K  Cycle   196 | 6m 32s | RED: 196 flags   0 blocked | BLUE: 1751 blocks 196 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 196: Red captured the flag. Blue must respond.
+[arena] cycle=197 patches=1756
+[2K  Cycle   197 | 6m 34s | RED: 197 flags   0 blocked | BLUE: 1760 blocks 197 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 197: Red captured the flag. Blue must respond.
+[arena] cycle=198 patches=1765
+[2K  Cycle   198 | 6m 36s | RED: 198 flags   0 blocked | BLUE: 1769 blocks 198 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 198: Red captured the flag. Blue must respond.
+[arena] cycle=199 patches=1774
+[2K  Cycle   199 | 6m 38s | RED: 199 flags   0 blocked | BLUE: 1778 blocks 199 bypassed | Maturity: 100 | Esc: 7 | FLAG!
+  --> Cycle 199: Red captured the flag. Blue must respond.
+[arena] cycle=200 patches=1783
+[2K  Cycle   200 | 6m 40s | RED: 200 flags   0 blocked | BLUE: 1787 blocks 200 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 200: Red captured the flag. Blue must respond.
+[arena] cycle=201 patches=1792
+[2K  Cycle   201 | 6m 42s | RED: 201 flags   0 blocked | BLUE: 1796 blocks 201 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 201: Red captured the flag. Blue must respond.
+[arena] cycle=202 patches=1801
+[2K  Cycle   202 | 6m 44s | RED: 202 flags   0 blocked | BLUE: 1805 blocks 202 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 202: Red captured the flag. Blue must respond.
+[arena] cycle=203 patches=1810
+[2K  Cycle   203 | 6m 46s | RED: 203 flags   0 blocked | BLUE: 1814 blocks 203 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 203: Red captured the flag. Blue must respond.
+[arena] cycle=204 patches=1819
+[2K  Cycle   204 | 6m 48s | RED: 204 flags   0 blocked | BLUE: 1823 blocks 204 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 204: Red captured the flag. Blue must respond.
+[arena] cycle=205 patches=1828
+[2K  Cycle   205 | 6m 50s | RED: 205 flags   0 blocked | BLUE: 1832 blocks 205 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 205: Red captured the flag. Blue must respond.
+[arena] cycle=206 patches=1837
+[2K  Cycle   206 | 6m 52s | RED: 206 flags   0 blocked | BLUE: 1841 blocks 206 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 206: Red captured the flag. Blue must respond.
+[arena] cycle=207 patches=1846
+[2K  Cycle   207 | 6m 54s | RED: 207 flags   0 blocked | BLUE: 1850 blocks 207 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 207: Red captured the flag. Blue must respond.
+[arena] cycle=208 patches=1855
+[2K  Cycle   208 | 6m 56s | RED: 208 flags   0 blocked | BLUE: 1859 blocks 208 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 208: Red captured the flag. Blue must respond.
+[arena] cycle=209 patches=1864
+[2K  Cycle   209 | 6m 58s | RED: 209 flags   0 blocked | BLUE: 1868 blocks 209 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 209: Red captured the flag. Blue must respond.
+[arena] cycle=210 patches=1873
+[2K  Cycle   210 | 7m 00s | RED: 210 flags   0 blocked | BLUE: 1877 blocks 210 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 210: Red captured the flag. Blue must respond.
+[arena] cycle=211 patches=1882
+[2K  Cycle   211 | 7m 02s | RED: 211 flags   0 blocked | BLUE: 1886 blocks 211 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 211: Red captured the flag. Blue must respond.
+[arena] cycle=212 patches=1891
+[2K  Cycle   212 | 7m 04s | RED: 212 flags   0 blocked | BLUE: 1895 blocks 212 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 212: Red captured the flag. Blue must respond.
+[arena] cycle=213 patches=1900
+[2K  Cycle   213 | 7m 06s | RED: 213 flags   0 blocked | BLUE: 1904 blocks 213 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 213: Red captured the flag. Blue must respond.
+[arena] cycle=214 patches=1909
+[2K  Cycle   214 | 7m 08s | RED: 214 flags   0 blocked | BLUE: 1913 blocks 214 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 214: Red captured the flag. Blue must respond.
+[arena] cycle=215 patches=1918
+[2K  Cycle   215 | 7m 10s | RED: 215 flags   0 blocked | BLUE: 1922 blocks 215 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 215: Red captured the flag. Blue must respond.
+[arena] cycle=216 patches=1927
+[2K  Cycle   216 | 7m 12s | RED: 216 flags   0 blocked | BLUE: 1931 blocks 216 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 216: Red captured the flag. Blue must respond.
+[arena] cycle=217 patches=1936
+[2K  Cycle   217 | 7m 14s | RED: 217 flags   0 blocked | BLUE: 1940 blocks 217 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 217: Red captured the flag. Blue must respond.
+[arena] cycle=218 patches=1945
+[2K  Cycle   218 | 7m 16s | RED: 218 flags   0 blocked | BLUE: 1949 blocks 218 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 218: Red captured the flag. Blue must respond.
+[arena] cycle=219 patches=1954
+[2K  Cycle   219 | 7m 18s | RED: 219 flags   0 blocked | BLUE: 1958 blocks 219 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 219: Red captured the flag. Blue must respond.
+[arena] cycle=220 patches=1963
+[2K  Cycle   220 | 7m 20s | RED: 220 flags   0 blocked | BLUE: 1967 blocks 220 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 220: Red captured the flag. Blue must respond.
+[arena] cycle=221 patches=1972
+[2K  Cycle   221 | 7m 22s | RED: 221 flags   0 blocked | BLUE: 1976 blocks 221 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 221: Red captured the flag. Blue must respond.
+[arena] cycle=222 patches=1981
+[2K  Cycle   222 | 7m 24s | RED: 222 flags   0 blocked | BLUE: 1985 blocks 222 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 222: Red captured the flag. Blue must respond.
+[arena] cycle=223 patches=1990
+[2K  Cycle   223 | 7m 26s | RED: 223 flags   0 blocked | BLUE: 1994 blocks 223 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 223: Red captured the flag. Blue must respond.
+[arena] cycle=224 patches=1999
+[2K  Cycle   224 | 7m 28s | RED: 224 flags   0 blocked | BLUE: 2003 blocks 224 bypassed | Maturity: 100 | Esc: 8 | FLAG!
+  --> Cycle 224: Red captured the flag. Blue must respond.
+[arena] cycle=225 patches=2008
+[2K  Cycle   225 | 7m 30s | RED: 225 flags   0 blocked | BLUE: 2012 blocks 225 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 225: Red captured the flag. Blue must respond.
+[arena] cycle=226 patches=2017
+[2K  Cycle   226 | 7m 32s | RED: 226 flags   0 blocked | BLUE: 2021 blocks 226 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 226: Red captured the flag. Blue must respond.
+[arena] cycle=227 patches=2026
+[2K  Cycle   227 | 7m 34s | RED: 227 flags   0 blocked | BLUE: 2030 blocks 227 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 227: Red captured the flag. Blue must respond.
+[arena] cycle=228 patches=2035
+[2K  Cycle   228 | 7m 36s | RED: 228 flags   0 blocked | BLUE: 2039 blocks 228 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 228: Red captured the flag. Blue must respond.
+[arena] cycle=229 patches=2044
+[2K  Cycle   229 | 7m 38s | RED: 229 flags   0 blocked | BLUE: 2048 blocks 229 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 229: Red captured the flag. Blue must respond.
+[arena] cycle=230 patches=2053
+[2K  Cycle   230 | 7m 40s | RED: 230 flags   0 blocked | BLUE: 2057 blocks 230 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 230: Red captured the flag. Blue must respond.
+[arena] cycle=231 patches=2062
+[2K  Cycle   231 | 7m 42s | RED: 231 flags   0 blocked | BLUE: 2066 blocks 231 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 231: Red captured the flag. Blue must respond.
+[arena] cycle=232 patches=2071
+[2K  Cycle   232 | 7m 44s | RED: 232 flags   0 blocked | BLUE: 2075 blocks 232 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 232: Red captured the flag. Blue must respond.
+[arena] cycle=233 patches=2080
+[2K  Cycle   233 | 7m 46s | RED: 233 flags   0 blocked | BLUE: 2084 blocks 233 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 233: Red captured the flag. Blue must respond.
+[arena] cycle=234 patches=2089
+[2K  Cycle   234 | 7m 48s | RED: 234 flags   0 blocked | BLUE: 2093 blocks 234 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 234: Red captured the flag. Blue must respond.
+[arena] cycle=235 patches=2098
+[2K  Cycle   235 | 7m 50s | RED: 235 flags   0 blocked | BLUE: 2102 blocks 235 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 235: Red captured the flag. Blue must respond.
+[arena] cycle=236 patches=2107
+[2K  Cycle   236 | 7m 52s | RED: 236 flags   0 blocked | BLUE: 2111 blocks 236 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 236: Red captured the flag. Blue must respond.
+[arena] cycle=237 patches=2116
+[2K  Cycle   237 | 7m 54s | RED: 237 flags   0 blocked | BLUE: 2120 blocks 237 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 237: Red captured the flag. Blue must respond.
+[arena] cycle=238 patches=2125
+[2K  Cycle   238 | 7m 56s | RED: 238 flags   0 blocked | BLUE: 2129 blocks 238 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 238: Red captured the flag. Blue must respond.
+[arena] cycle=239 patches=2134
+[2K  Cycle   239 | 7m 58s | RED: 239 flags   0 blocked | BLUE: 2138 blocks 239 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 239: Red captured the flag. Blue must respond.
+[arena] cycle=240 patches=2143
+[2K  Cycle   240 | 8m 00s | RED: 240 flags   0 blocked | BLUE: 2147 blocks 240 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 240: Red captured the flag. Blue must respond.
+[arena] cycle=241 patches=2152
+[2K  Cycle   241 | 8m 02s | RED: 241 flags   0 blocked | BLUE: 2156 blocks 241 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 241: Red captured the flag. Blue must respond.
+[arena] cycle=242 patches=2161
+[2K  Cycle   242 | 8m 04s | RED: 242 flags   0 blocked | BLUE: 2165 blocks 242 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 242: Red captured the flag. Blue must respond.
+[arena] cycle=243 patches=2170
+[2K  Cycle   243 | 8m 06s | RED: 243 flags   0 blocked | BLUE: 2174 blocks 243 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 243: Red captured the flag. Blue must respond.
+[arena] cycle=244 patches=2179
+[2K  Cycle   244 | 8m 08s | RED: 244 flags   0 blocked | BLUE: 2183 blocks 244 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 244: Red captured the flag. Blue must respond.
+[arena] cycle=245 patches=2188
+[2K  Cycle   245 | 8m 10s | RED: 245 flags   0 blocked | BLUE: 2192 blocks 245 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 245: Red captured the flag. Blue must respond.
+[arena] cycle=246 patches=2197
+[2K  Cycle   246 | 8m 12s | RED: 246 flags   0 blocked | BLUE: 2201 blocks 246 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 246: Red captured the flag. Blue must respond.
+[arena] cycle=247 patches=2206
+[2K  Cycle   247 | 8m 14s | RED: 247 flags   0 blocked | BLUE: 2210 blocks 247 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 247: Red captured the flag. Blue must respond.
+[arena] cycle=248 patches=2215
+[2K  Cycle   248 | 8m 16s | RED: 248 flags   0 blocked | BLUE: 2219 blocks 248 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 248: Red captured the flag. Blue must respond.
+[arena] cycle=249 patches=2224
+[2K  Cycle   249 | 8m 18s | RED: 249 flags   0 blocked | BLUE: 2228 blocks 249 bypassed | Maturity: 100 | Esc: 9 | FLAG!
+  --> Cycle 249: Red captured the flag. Blue must respond.
+[arena] cycle=250 patches=2233
+[2K  Cycle   250 | 8m 20s | RED: 250 flags   0 blocked | BLUE: 2237 blocks 250 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 250: Red captured the flag. Blue must respond.
+[arena] cycle=251 patches=2242
+[2K  Cycle   251 | 8m 22s | RED: 251 flags   0 blocked | BLUE: 2246 blocks 251 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 251: Red captured the flag. Blue must respond.
+[arena] cycle=252 patches=2251
+[2K  Cycle   252 | 8m 24s | RED: 252 flags   0 blocked | BLUE: 2255 blocks 252 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 252: Red captured the flag. Blue must respond.
+[arena] cycle=253 patches=2260
+[2K  Cycle   253 | 8m 26s | RED: 253 flags   0 blocked | BLUE: 2264 blocks 253 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 253: Red captured the flag. Blue must respond.
+[arena] cycle=254 patches=2269
+[2K  Cycle   254 | 8m 28s | RED: 254 flags   0 blocked | BLUE: 2273 blocks 254 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 254: Red captured the flag. Blue must respond.
+[arena] cycle=255 patches=2278
+[2K  Cycle   255 | 8m 30s | RED: 255 flags   0 blocked | BLUE: 2282 blocks 255 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 255: Red captured the flag. Blue must respond.
+[arena] cycle=256 patches=2287
+[2K  Cycle   256 | 8m 32s | RED: 256 flags   0 blocked | BLUE: 2291 blocks 256 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 256: Red captured the flag. Blue must respond.
+[arena] cycle=257 patches=2296
+[2K  Cycle   257 | 8m 34s | RED: 257 flags   0 blocked | BLUE: 2300 blocks 257 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 257: Red captured the flag. Blue must respond.
+[arena] cycle=258 patches=2305
+[2K  Cycle   258 | 8m 36s | RED: 258 flags   0 blocked | BLUE: 2309 blocks 258 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 258: Red captured the flag. Blue must respond.
+[arena] cycle=259 patches=2314
+[2K  Cycle   259 | 8m 38s | RED: 259 flags   0 blocked | BLUE: 2318 blocks 259 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 259: Red captured the flag. Blue must respond.
+[arena] cycle=260 patches=2323
+[2K  Cycle   260 | 8m 40s | RED: 260 flags   0 blocked | BLUE: 2327 blocks 260 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 260: Red captured the flag. Blue must respond.
+[arena] cycle=261 patches=2332
+[2K  Cycle   261 | 8m 42s | RED: 261 flags   0 blocked | BLUE: 2336 blocks 261 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 261: Red captured the flag. Blue must respond.
+[arena] cycle=262 patches=2341
+[2K  Cycle   262 | 8m 44s | RED: 262 flags   0 blocked | BLUE: 2345 blocks 262 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 262: Red captured the flag. Blue must respond.
+[arena] cycle=263 patches=2350
+[2K  Cycle   263 | 8m 46s | RED: 263 flags   0 blocked | BLUE: 2354 blocks 263 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 263: Red captured the flag. Blue must respond.
+[arena] cycle=264 patches=2359
+[2K  Cycle   264 | 8m 48s | RED: 264 flags   0 blocked | BLUE: 2363 blocks 264 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 264: Red captured the flag. Blue must respond.
+[arena] cycle=265 patches=2368
+[2K  Cycle   265 | 8m 50s | RED: 265 flags   0 blocked | BLUE: 2372 blocks 265 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 265: Red captured the flag. Blue must respond.
+[arena] cycle=266 patches=2377
+[2K  Cycle   266 | 8m 52s | RED: 266 flags   0 blocked | BLUE: 2381 blocks 266 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 266: Red captured the flag. Blue must respond.
+[arena] cycle=267 patches=2386
+[2K  Cycle   267 | 8m 54s | RED: 267 flags   0 blocked | BLUE: 2390 blocks 267 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 267: Red captured the flag. Blue must respond.
+[arena] cycle=268 patches=2395
+[2K  Cycle   268 | 8m 56s | RED: 268 flags   0 blocked | BLUE: 2399 blocks 268 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 268: Red captured the flag. Blue must respond.
+[arena] cycle=269 patches=2404
+[2K  Cycle   269 | 8m 58s | RED: 269 flags   0 blocked | BLUE: 2408 blocks 269 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 269: Red captured the flag. Blue must respond.
+[arena] cycle=270 patches=2413
+[2K  Cycle   270 | 9m 00s | RED: 270 flags   0 blocked | BLUE: 2417 blocks 270 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 270: Red captured the flag. Blue must respond.
+[arena] cycle=271 patches=2422
+[2K  Cycle   271 | 9m 02s | RED: 271 flags   0 blocked | BLUE: 2426 blocks 271 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 271: Red captured the flag. Blue must respond.
+[arena] cycle=272 patches=2431
+[2K  Cycle   272 | 9m 04s | RED: 272 flags   0 blocked | BLUE: 2435 blocks 272 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 272: Red captured the flag. Blue must respond.
+[arena] cycle=273 patches=2440
+[2K  Cycle   273 | 9m 06s | RED: 273 flags   0 blocked | BLUE: 2444 blocks 273 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 273: Red captured the flag. Blue must respond.
+[arena] cycle=274 patches=2449
+[2K  Cycle   274 | 9m 08s | RED: 274 flags   0 blocked | BLUE: 2453 blocks 274 bypassed | Maturity: 100 | Esc: 10 | FLAG!
+  --> Cycle 274: Red captured the flag. Blue must respond.
+[arena] cycle=275 patches=2458
+[2K  Cycle   275 | 9m 10s | RED: 275 flags   0 blocked | BLUE: 2462 blocks 275 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 275: Red captured the flag. Blue must respond.
+[arena] cycle=276 patches=2467
+[2K  Cycle   276 | 9m 12s | RED: 276 flags   0 blocked | BLUE: 2471 blocks 276 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 276: Red captured the flag. Blue must respond.
+[arena] cycle=277 patches=2476
+[2K  Cycle   277 | 9m 14s | RED: 277 flags   0 blocked | BLUE: 2480 blocks 277 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 277: Red captured the flag. Blue must respond.
+[arena] cycle=278 patches=2485
+[2K  Cycle   278 | 9m 16s | RED: 278 flags   0 blocked | BLUE: 2489 blocks 278 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 278: Red captured the flag. Blue must respond.
+[arena] cycle=279 patches=2494
+[2K  Cycle   279 | 9m 18s | RED: 279 flags   0 blocked | BLUE: 2498 blocks 279 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 279: Red captured the flag. Blue must respond.
+[arena] cycle=280 patches=2503
+[2K  Cycle   280 | 9m 20s | RED: 280 flags   0 blocked | BLUE: 2507 blocks 280 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 280: Red captured the flag. Blue must respond.
+[arena] cycle=281 patches=2512
+[2K  Cycle   281 | 9m 22s | RED: 281 flags   0 blocked | BLUE: 2516 blocks 281 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 281: Red captured the flag. Blue must respond.
+[arena] cycle=282 patches=2521
+[2K  Cycle   282 | 9m 24s | RED: 282 flags   0 blocked | BLUE: 2525 blocks 282 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 282: Red captured the flag. Blue must respond.
+[arena] cycle=283 patches=2530
+[2K  Cycle   283 | 9m 26s | RED: 283 flags   0 blocked | BLUE: 2534 blocks 283 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 283: Red captured the flag. Blue must respond.
+[arena] cycle=284 patches=2539
+[2K  Cycle   284 | 9m 28s | RED: 284 flags   0 blocked | BLUE: 2543 blocks 284 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 284: Red captured the flag. Blue must respond.
+[arena] cycle=285 patches=2548
+[2K  Cycle   285 | 9m 30s | RED: 285 flags   0 blocked | BLUE: 2552 blocks 285 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 285: Red captured the flag. Blue must respond.
+[arena] cycle=286 patches=2557
+[2K  Cycle   286 | 9m 32s | RED: 286 flags   0 blocked | BLUE: 2561 blocks 286 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 286: Red captured the flag. Blue must respond.
+[arena] cycle=287 patches=2566
+[2K  Cycle   287 | 9m 34s | RED: 287 flags   0 blocked | BLUE: 2570 blocks 287 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 287: Red captured the flag. Blue must respond.
+[arena] cycle=288 patches=2575
+[2K  Cycle   288 | 9m 36s | RED: 288 flags   0 blocked | BLUE: 2579 blocks 288 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 288: Red captured the flag. Blue must respond.
+[arena] cycle=289 patches=2584
+[2K  Cycle   289 | 9m 38s | RED: 289 flags   0 blocked | BLUE: 2588 blocks 289 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 289: Red captured the flag. Blue must respond.
+[arena] cycle=290 patches=2593
+[2K  Cycle   290 | 9m 40s | RED: 290 flags   0 blocked | BLUE: 2597 blocks 290 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 290: Red captured the flag. Blue must respond.
+[arena] cycle=291 patches=2602
+[2K  Cycle   291 | 9m 42s | RED: 291 flags   0 blocked | BLUE: 2606 blocks 291 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 291: Red captured the flag. Blue must respond.
+[arena] cycle=292 patches=2611
+[2K  Cycle   292 | 9m 44s | RED: 292 flags   0 blocked | BLUE: 2615 blocks 292 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 292: Red captured the flag. Blue must respond.
+[arena] cycle=293 patches=2620
+[2K  Cycle   293 | 9m 46s | RED: 293 flags   0 blocked | BLUE: 2624 blocks 293 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 293: Red captured the flag. Blue must respond.
+[arena] cycle=294 patches=2629
+[2K  Cycle   294 | 9m 48s | RED: 294 flags   0 blocked | BLUE: 2633 blocks 294 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 294: Red captured the flag. Blue must respond.
+[arena] cycle=295 patches=2638
+[2K  Cycle   295 | 9m 51s | RED: 295 flags   0 blocked | BLUE: 2642 blocks 295 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 295: Red captured the flag. Blue must respond.
+[arena] cycle=296 patches=2647
+[2K  Cycle   296 | 9m 53s | RED: 296 flags   0 blocked | BLUE: 2651 blocks 296 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 296: Red captured the flag. Blue must respond.
+[arena] cycle=297 patches=2656
+[2K  Cycle   297 | 9m 55s | RED: 297 flags   0 blocked | BLUE: 2660 blocks 297 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 297: Red captured the flag. Blue must respond.
+[arena] cycle=298 patches=2665
+[2K  Cycle   298 | 9m 57s | RED: 298 flags   0 blocked | BLUE: 2669 blocks 298 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 298: Red captured the flag. Blue must respond.
+[arena] cycle=299 patches=2674
+[2K  Cycle   299 | 9m 59s | RED: 299 flags   0 blocked | BLUE: 2678 blocks 299 bypassed | Maturity: 100 | Esc: 11 | FLAG!
+  --> Cycle 299: Red captured the flag. Blue must respond.
+[arena] cycle=300 patches=2683
+[2K  Cycle   300 | 10m 01s | RED: 300 flags   0 blocked | BLUE: 2687 blocks 300 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 300: Red captured the flag. Blue must respond.
+[arena] cycle=301 patches=2692
+[2K  Cycle   301 | 10m 03s | RED: 301 flags   0 blocked | BLUE: 2696 blocks 301 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 301: Red captured the flag. Blue must respond.
+[arena] cycle=302 patches=2701
+[2K  Cycle   302 | 10m 05s | RED: 302 flags   0 blocked | BLUE: 2705 blocks 302 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 302: Red captured the flag. Blue must respond.
+[arena] cycle=303 patches=2710
+[2K  Cycle   303 | 10m 07s | RED: 303 flags   0 blocked | BLUE: 2714 blocks 303 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 303: Red captured the flag. Blue must respond.
+[arena] cycle=304 patches=2719
+[2K  Cycle   304 | 10m 09s | RED: 304 flags   0 blocked | BLUE: 2723 blocks 304 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 304: Red captured the flag. Blue must respond.
+[arena] cycle=305 patches=2728
+[2K  Cycle   305 | 10m 11s | RED: 305 flags   0 blocked | BLUE: 2732 blocks 305 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 305: Red captured the flag. Blue must respond.
+[arena] cycle=306 patches=2737
+[2K  Cycle   306 | 10m 13s | RED: 306 flags   0 blocked | BLUE: 2741 blocks 306 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 306: Red captured the flag. Blue must respond.
+[arena] cycle=307 patches=2746
+[2K  Cycle   307 | 10m 15s | RED: 307 flags   0 blocked | BLUE: 2750 blocks 307 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 307: Red captured the flag. Blue must respond.
+[arena] cycle=308 patches=2755
+[2K  Cycle   308 | 10m 17s | RED: 308 flags   0 blocked | BLUE: 2759 blocks 308 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 308: Red captured the flag. Blue must respond.
+[arena] cycle=309 patches=2764
+[2K  Cycle   309 | 10m 19s | RED: 309 flags   0 blocked | BLUE: 2768 blocks 309 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 309: Red captured the flag. Blue must respond.
+[arena] cycle=310 patches=2773
+[2K  Cycle   310 | 10m 21s | RED: 310 flags   0 blocked | BLUE: 2777 blocks 310 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 310: Red captured the flag. Blue must respond.
+[arena] cycle=311 patches=2782
+[2K  Cycle   311 | 10m 23s | RED: 311 flags   0 blocked | BLUE: 2786 blocks 311 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 311: Red captured the flag. Blue must respond.
+[arena] cycle=312 patches=2791
+[2K  Cycle   312 | 10m 25s | RED: 312 flags   0 blocked | BLUE: 2795 blocks 312 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 312: Red captured the flag. Blue must respond.
+[arena] cycle=313 patches=2800
+[2K  Cycle   313 | 10m 27s | RED: 313 flags   0 blocked | BLUE: 2804 blocks 313 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 313: Red captured the flag. Blue must respond.
+[arena] cycle=314 patches=2809
+[2K  Cycle   314 | 10m 29s | RED: 314 flags   0 blocked | BLUE: 2813 blocks 314 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 314: Red captured the flag. Blue must respond.
+[arena] cycle=315 patches=2818
+[2K  Cycle   315 | 10m 31s | RED: 315 flags   0 blocked | BLUE: 2822 blocks 315 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 315: Red captured the flag. Blue must respond.
+[arena] cycle=316 patches=2827
+[2K  Cycle   316 | 10m 33s | RED: 316 flags   0 blocked | BLUE: 2831 blocks 316 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 316: Red captured the flag. Blue must respond.
+[arena] cycle=317 patches=2836
+[2K  Cycle   317 | 10m 35s | RED: 317 flags   0 blocked | BLUE: 2840 blocks 317 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 317: Red captured the flag. Blue must respond.
+[arena] cycle=318 patches=2845
+[2K  Cycle   318 | 10m 37s | RED: 318 flags   0 blocked | BLUE: 2849 blocks 318 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 318: Red captured the flag. Blue must respond.
+[arena] cycle=319 patches=2854
+[2K  Cycle   319 | 10m 39s | RED: 319 flags   0 blocked | BLUE: 2858 blocks 319 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 319: Red captured the flag. Blue must respond.
+[arena] cycle=320 patches=2863
+[2K  Cycle   320 | 10m 41s | RED: 320 flags   0 blocked | BLUE: 2867 blocks 320 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 320: Red captured the flag. Blue must respond.
+[arena] cycle=321 patches=2872
+[2K  Cycle   321 | 10m 43s | RED: 321 flags   0 blocked | BLUE: 2876 blocks 321 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 321: Red captured the flag. Blue must respond.
+[arena] cycle=322 patches=2881
+[2K  Cycle   322 | 10m 45s | RED: 322 flags   0 blocked | BLUE: 2885 blocks 322 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 322: Red captured the flag. Blue must respond.
+[arena] cycle=323 patches=2890
+[2K  Cycle   323 | 10m 47s | RED: 323 flags   0 blocked | BLUE: 2894 blocks 323 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 323: Red captured the flag. Blue must respond.
+[arena] cycle=324 patches=2899
+[2K  Cycle   324 | 10m 49s | RED: 324 flags   0 blocked | BLUE: 2903 blocks 324 bypassed | Maturity: 100 | Esc: 12 | FLAG!
+  --> Cycle 324: Red captured the flag. Blue must respond.
+[arena] cycle=325 patches=2908
+[2K  Cycle   325 | 10m 51s | RED: 325 flags   0 blocked | BLUE: 2912 blocks 325 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 325: Red captured the flag. Blue must respond.
+[arena] cycle=326 patches=2917
+[2K  Cycle   326 | 10m 53s | RED: 326 flags   0 blocked | BLUE: 2921 blocks 326 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 326: Red captured the flag. Blue must respond.
+[arena] cycle=327 patches=2926
+[2K  Cycle   327 | 10m 55s | RED: 327 flags   0 blocked | BLUE: 2930 blocks 327 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 327: Red captured the flag. Blue must respond.
+[arena] cycle=328 patches=2935
+[2K  Cycle   328 | 10m 57s | RED: 328 flags   0 blocked | BLUE: 2939 blocks 328 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 328: Red captured the flag. Blue must respond.
+[arena] cycle=329 patches=2944
+[2K  Cycle   329 | 10m 59s | RED: 329 flags   0 blocked | BLUE: 2948 blocks 329 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 329: Red captured the flag. Blue must respond.
+[arena] cycle=330 patches=2953
+[2K  Cycle   330 | 11m 01s | RED: 330 flags   0 blocked | BLUE: 2957 blocks 330 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 330: Red captured the flag. Blue must respond.
+[arena] cycle=331 patches=2962
+[2K  Cycle   331 | 11m 03s | RED: 331 flags   0 blocked | BLUE: 2966 blocks 331 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 331: Red captured the flag. Blue must respond.
+[arena] cycle=332 patches=2971
+[2K  Cycle   332 | 11m 05s | RED: 332 flags   0 blocked | BLUE: 2975 blocks 332 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 332: Red captured the flag. Blue must respond.
+[arena] cycle=333 patches=2980
+[2K  Cycle   333 | 11m 07s | RED: 333 flags   0 blocked | BLUE: 2984 blocks 333 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 333: Red captured the flag. Blue must respond.
+[arena] cycle=334 patches=2989
+[2K  Cycle   334 | 11m 09s | RED: 334 flags   0 blocked | BLUE: 2993 blocks 334 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 334: Red captured the flag. Blue must respond.
+[arena] cycle=335 patches=2998
+[2K  Cycle   335 | 11m 11s | RED: 335 flags   0 blocked | BLUE: 3002 blocks 335 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 335: Red captured the flag. Blue must respond.
+[arena] cycle=336 patches=3007
+[2K  Cycle   336 | 11m 13s | RED: 336 flags   0 blocked | BLUE: 3011 blocks 336 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 336: Red captured the flag. Blue must respond.
+[arena] cycle=337 patches=3016
+[2K  Cycle   337 | 11m 15s | RED: 337 flags   0 blocked | BLUE: 3020 blocks 337 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 337: Red captured the flag. Blue must respond.
+[arena] cycle=338 patches=3025
+[2K  Cycle   338 | 11m 17s | RED: 338 flags   0 blocked | BLUE: 3029 blocks 338 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 338: Red captured the flag. Blue must respond.
+[arena] cycle=339 patches=3034
+[2K  Cycle   339 | 11m 19s | RED: 339 flags   0 blocked | BLUE: 3038 blocks 339 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 339: Red captured the flag. Blue must respond.
+[arena] cycle=340 patches=3043
+[2K  Cycle   340 | 11m 21s | RED: 340 flags   0 blocked | BLUE: 3047 blocks 340 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 340: Red captured the flag. Blue must respond.
+[arena] cycle=341 patches=3052
+[2K  Cycle   341 | 11m 23s | RED: 341 flags   0 blocked | BLUE: 3056 blocks 341 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 341: Red captured the flag. Blue must respond.
+[arena] cycle=342 patches=3061
+[2K  Cycle   342 | 11m 25s | RED: 342 flags   0 blocked | BLUE: 3065 blocks 342 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 342: Red captured the flag. Blue must respond.
+[arena] cycle=343 patches=3070
+[2K  Cycle   343 | 11m 27s | RED: 343 flags   0 blocked | BLUE: 3074 blocks 343 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 343: Red captured the flag. Blue must respond.
+[arena] cycle=344 patches=3079
+[2K  Cycle   344 | 11m 29s | RED: 344 flags   0 blocked | BLUE: 3083 blocks 344 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 344: Red captured the flag. Blue must respond.
+[arena] cycle=345 patches=3088
+[2K  Cycle   345 | 11m 31s | RED: 345 flags   0 blocked | BLUE: 3092 blocks 345 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 345: Red captured the flag. Blue must respond.
+[arena] cycle=346 patches=3097
+[2K  Cycle   346 | 11m 33s | RED: 346 flags   0 blocked | BLUE: 3101 blocks 346 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 346: Red captured the flag. Blue must respond.
+[arena] cycle=347 patches=3106
+[2K  Cycle   347 | 11m 35s | RED: 347 flags   0 blocked | BLUE: 3110 blocks 347 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 347: Red captured the flag. Blue must respond.
+[arena] cycle=348 patches=3115
+[2K  Cycle   348 | 11m 37s | RED: 348 flags   0 blocked | BLUE: 3119 blocks 348 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 348: Red captured the flag. Blue must respond.
+[arena] cycle=349 patches=3124
+[2K  Cycle   349 | 11m 39s | RED: 349 flags   0 blocked | BLUE: 3128 blocks 349 bypassed | Maturity: 100 | Esc: 13 | FLAG!
+  --> Cycle 349: Red captured the flag. Blue must respond.
+[arena] cycle=350 patches=3133
+[2K  Cycle   350 | 11m 41s | RED: 350 flags   0 blocked | BLUE: 3137 blocks 350 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 350: Red captured the flag. Blue must respond.
+[arena] cycle=351 patches=3142
+[2K  Cycle   351 | 11m 43s | RED: 351 flags   0 blocked | BLUE: 3146 blocks 351 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 351: Red captured the flag. Blue must respond.
+[arena] cycle=352 patches=3151
+[2K  Cycle   352 | 11m 45s | RED: 352 flags   0 blocked | BLUE: 3155 blocks 352 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 352: Red captured the flag. Blue must respond.
+[arena] cycle=353 patches=3160
+[2K  Cycle   353 | 11m 47s | RED: 353 flags   0 blocked | BLUE: 3164 blocks 353 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 353: Red captured the flag. Blue must respond.
+[arena] cycle=354 patches=3169
+[2K  Cycle   354 | 11m 49s | RED: 354 flags   0 blocked | BLUE: 3173 blocks 354 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 354: Red captured the flag. Blue must respond.
+[arena] cycle=355 patches=3178
+[2K  Cycle   355 | 11m 51s | RED: 355 flags   0 blocked | BLUE: 3182 blocks 355 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 355: Red captured the flag. Blue must respond.
+[arena] cycle=356 patches=3187
+[2K  Cycle   356 | 11m 53s | RED: 356 flags   0 blocked | BLUE: 3191 blocks 356 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 356: Red captured the flag. Blue must respond.
+[arena] cycle=357 patches=3196
+[2K  Cycle   357 | 11m 55s | RED: 357 flags   0 blocked | BLUE: 3200 blocks 357 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 357: Red captured the flag. Blue must respond.
+[arena] cycle=358 patches=3205
+[2K  Cycle   358 | 11m 57s | RED: 358 flags   0 blocked | BLUE: 3209 blocks 358 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 358: Red captured the flag. Blue must respond.
+[arena] cycle=359 patches=3214
+[2K  Cycle   359 | 11m 59s | RED: 359 flags   0 blocked | BLUE: 3218 blocks 359 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 359: Red captured the flag. Blue must respond.
+[arena] cycle=360 patches=3223
+[2K  Cycle   360 | 12m 01s | RED: 360 flags   0 blocked | BLUE: 3227 blocks 360 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 360: Red captured the flag. Blue must respond.
+[arena] cycle=361 patches=3232
+[2K  Cycle   361 | 12m 03s | RED: 361 flags   0 blocked | BLUE: 3236 blocks 361 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 361: Red captured the flag. Blue must respond.
+[arena] cycle=362 patches=3241
+[2K  Cycle   362 | 12m 05s | RED: 362 flags   0 blocked | BLUE: 3245 blocks 362 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 362: Red captured the flag. Blue must respond.
+[arena] cycle=363 patches=3250
+[2K  Cycle   363 | 12m 07s | RED: 363 flags   0 blocked | BLUE: 3254 blocks 363 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 363: Red captured the flag. Blue must respond.
+[arena] cycle=364 patches=3259
+[2K  Cycle   364 | 12m 09s | RED: 364 flags   0 blocked | BLUE: 3263 blocks 364 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 364: Red captured the flag. Blue must respond.
+[arena] cycle=365 patches=3268
+[2K  Cycle   365 | 12m 11s | RED: 365 flags   0 blocked | BLUE: 3272 blocks 365 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 365: Red captured the flag. Blue must respond.
+[arena] cycle=366 patches=3277
+[2K  Cycle   366 | 12m 13s | RED: 366 flags   0 blocked | BLUE: 3281 blocks 366 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 366: Red captured the flag. Blue must respond.
+[arena] cycle=367 patches=3286
+[2K  Cycle   367 | 12m 15s | RED: 367 flags   0 blocked | BLUE: 3290 blocks 367 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 367: Red captured the flag. Blue must respond.
+[arena] cycle=368 patches=3295
+[2K  Cycle   368 | 12m 17s | RED: 368 flags   0 blocked | BLUE: 3299 blocks 368 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 368: Red captured the flag. Blue must respond.
+[arena] cycle=369 patches=3304
+[2K  Cycle   369 | 12m 19s | RED: 369 flags   0 blocked | BLUE: 3308 blocks 369 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 369: Red captured the flag. Blue must respond.
+[arena] cycle=370 patches=3313
+[2K  Cycle   370 | 12m 21s | RED: 370 flags   0 blocked | BLUE: 3317 blocks 370 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 370: Red captured the flag. Blue must respond.
+[arena] cycle=371 patches=3322
+[2K  Cycle   371 | 12m 23s | RED: 371 flags   0 blocked | BLUE: 3326 blocks 371 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 371: Red captured the flag. Blue must respond.
+[arena] cycle=372 patches=3331
+[2K  Cycle   372 | 12m 25s | RED: 372 flags   0 blocked | BLUE: 3335 blocks 372 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 372: Red captured the flag. Blue must respond.
+[arena] cycle=373 patches=3340
+[2K  Cycle   373 | 12m 27s | RED: 373 flags   0 blocked | BLUE: 3344 blocks 373 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 373: Red captured the flag. Blue must respond.
+[arena] cycle=374 patches=3349
+[2K  Cycle   374 | 12m 29s | RED: 374 flags   0 blocked | BLUE: 3353 blocks 374 bypassed | Maturity: 100 | Esc: 14 | FLAG!
+  --> Cycle 374: Red captured the flag. Blue must respond.
+[arena] cycle=375 patches=3358
+[2K  Cycle   375 | 12m 31s | RED: 375 flags   0 blocked | BLUE: 3362 blocks 375 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 375: Red captured the flag. Blue must respond.
+[arena] cycle=376 patches=3367
+[2K  Cycle   376 | 12m 33s | RED: 376 flags   0 blocked | BLUE: 3371 blocks 376 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 376: Red captured the flag. Blue must respond.
+[arena] cycle=377 patches=3376
+[2K  Cycle   377 | 12m 35s | RED: 377 flags   0 blocked | BLUE: 3380 blocks 377 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 377: Red captured the flag. Blue must respond.
+[arena] cycle=378 patches=3385
+[2K  Cycle   378 | 12m 37s | RED: 378 flags   0 blocked | BLUE: 3389 blocks 378 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 378: Red captured the flag. Blue must respond.
+[arena] cycle=379 patches=3394
+[2K  Cycle   379 | 12m 39s | RED: 379 flags   0 blocked | BLUE: 3398 blocks 379 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 379: Red captured the flag. Blue must respond.
+[arena] cycle=380 patches=3403
+[2K  Cycle   380 | 12m 41s | RED: 380 flags   0 blocked | BLUE: 3407 blocks 380 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 380: Red captured the flag. Blue must respond.
+[arena] cycle=381 patches=3412
+[2K  Cycle   381 | 12m 43s | RED: 381 flags   0 blocked | BLUE: 3416 blocks 381 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 381: Red captured the flag. Blue must respond.
+[arena] cycle=382 patches=3421
+[2K  Cycle   382 | 12m 45s | RED: 382 flags   0 blocked | BLUE: 3425 blocks 382 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 382: Red captured the flag. Blue must respond.
+[arena] cycle=383 patches=3430
+[2K  Cycle   383 | 12m 47s | RED: 383 flags   0 blocked | BLUE: 3434 blocks 383 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 383: Red captured the flag. Blue must respond.
+[arena] cycle=384 patches=3439
+[2K  Cycle   384 | 12m 49s | RED: 384 flags   0 blocked | BLUE: 3443 blocks 384 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 384: Red captured the flag. Blue must respond.
+[arena] cycle=385 patches=3448
+[2K  Cycle   385 | 12m 51s | RED: 385 flags   0 blocked | BLUE: 3452 blocks 385 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 385: Red captured the flag. Blue must respond.
+[arena] cycle=386 patches=3457
+[2K  Cycle   386 | 12m 53s | RED: 386 flags   0 blocked | BLUE: 3461 blocks 386 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 386: Red captured the flag. Blue must respond.
+[arena] cycle=387 patches=3466
+[2K  Cycle   387 | 12m 55s | RED: 387 flags   0 blocked | BLUE: 3470 blocks 387 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 387: Red captured the flag. Blue must respond.
+[arena] cycle=388 patches=3475
+[2K  Cycle   388 | 12m 57s | RED: 388 flags   0 blocked | BLUE: 3479 blocks 388 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 388: Red captured the flag. Blue must respond.
+[arena] cycle=389 patches=3484
+[2K  Cycle   389 | 12m 59s | RED: 389 flags   0 blocked | BLUE: 3488 blocks 389 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 389: Red captured the flag. Blue must respond.
+[arena] cycle=390 patches=3493
+[2K  Cycle   390 | 13m 01s | RED: 390 flags   0 blocked | BLUE: 3497 blocks 390 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 390: Red captured the flag. Blue must respond.
+[arena] cycle=391 patches=3502
+[2K  Cycle   391 | 13m 03s | RED: 391 flags   0 blocked | BLUE: 3506 blocks 391 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 391: Red captured the flag. Blue must respond.
+[arena] cycle=392 patches=3511
+[2K  Cycle   392 | 13m 05s | RED: 392 flags   0 blocked | BLUE: 3515 blocks 392 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 392: Red captured the flag. Blue must respond.
+[arena] cycle=393 patches=3520
+[2K  Cycle   393 | 13m 07s | RED: 393 flags   0 blocked | BLUE: 3524 blocks 393 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 393: Red captured the flag. Blue must respond.
+[arena] cycle=394 patches=3529
+[2K  Cycle   394 | 13m 09s | RED: 394 flags   0 blocked | BLUE: 3533 blocks 394 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 394: Red captured the flag. Blue must respond.
+[arena] cycle=395 patches=3538
+[2K  Cycle   395 | 13m 11s | RED: 395 flags   0 blocked | BLUE: 3542 blocks 395 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 395: Red captured the flag. Blue must respond.
+[arena] cycle=396 patches=3547
+[2K  Cycle   396 | 13m 13s | RED: 396 flags   0 blocked | BLUE: 3551 blocks 396 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 396: Red captured the flag. Blue must respond.
+[arena] cycle=397 patches=3556
+[2K  Cycle   397 | 13m 15s | RED: 397 flags   0 blocked | BLUE: 3560 blocks 397 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 397: Red captured the flag. Blue must respond.
+[arena] cycle=398 patches=3565
+[2K  Cycle   398 | 13m 17s | RED: 398 flags   0 blocked | BLUE: 3569 blocks 398 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 398: Red captured the flag. Blue must respond.
+[arena] cycle=399 patches=3574
+[2K  Cycle   399 | 13m 19s | RED: 399 flags   0 blocked | BLUE: 3578 blocks 399 bypassed | Maturity: 100 | Esc: 15 | FLAG!
+  --> Cycle 399: Red captured the flag. Blue must respond.
+[arena] cycle=400 patches=3583
+[2K  Cycle   400 | 13m 21s | RED: 400 flags   0 blocked | BLUE: 3587 blocks 400 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 400: Red captured the flag. Blue must respond.
+[arena] cycle=401 patches=3592
+[2K  Cycle   401 | 13m 23s | RED: 401 flags   0 blocked | BLUE: 3596 blocks 401 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 401: Red captured the flag. Blue must respond.
+[arena] cycle=402 patches=3601
+[2K  Cycle   402 | 13m 25s | RED: 402 flags   0 blocked | BLUE: 3605 blocks 402 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 402: Red captured the flag. Blue must respond.
+[arena] cycle=403 patches=3610
+[2K  Cycle   403 | 13m 27s | RED: 403 flags   0 blocked | BLUE: 3614 blocks 403 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 403: Red captured the flag. Blue must respond.
+[arena] cycle=404 patches=3619
+[2K  Cycle   404 | 13m 29s | RED: 404 flags   0 blocked | BLUE: 3623 blocks 404 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 404: Red captured the flag. Blue must respond.
+[arena] cycle=405 patches=3628
+[2K  Cycle   405 | 13m 31s | RED: 405 flags   0 blocked | BLUE: 3632 blocks 405 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 405: Red captured the flag. Blue must respond.
+[arena] cycle=406 patches=3637
+[2K  Cycle   406 | 13m 33s | RED: 406 flags   0 blocked | BLUE: 3641 blocks 406 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 406: Red captured the flag. Blue must respond.
+[arena] cycle=407 patches=3646
+[2K  Cycle   407 | 13m 35s | RED: 407 flags   0 blocked | BLUE: 3650 blocks 407 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 407: Red captured the flag. Blue must respond.
+[arena] cycle=408 patches=3655
+[2K  Cycle   408 | 13m 37s | RED: 408 flags   0 blocked | BLUE: 3659 blocks 408 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 408: Red captured the flag. Blue must respond.
+[arena] cycle=409 patches=3664
+[2K  Cycle   409 | 13m 39s | RED: 409 flags   0 blocked | BLUE: 3668 blocks 409 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 409: Red captured the flag. Blue must respond.
+[arena] cycle=410 patches=3673
+[2K  Cycle   410 | 13m 41s | RED: 410 flags   0 blocked | BLUE: 3677 blocks 410 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 410: Red captured the flag. Blue must respond.
+[arena] cycle=411 patches=3682
+[2K  Cycle   411 | 13m 43s | RED: 411 flags   0 blocked | BLUE: 3686 blocks 411 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 411: Red captured the flag. Blue must respond.
+[arena] cycle=412 patches=3691
+[2K  Cycle   412 | 13m 45s | RED: 412 flags   0 blocked | BLUE: 3695 blocks 412 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 412: Red captured the flag. Blue must respond.
+[arena] cycle=413 patches=3700
+[2K  Cycle   413 | 13m 47s | RED: 413 flags   0 blocked | BLUE: 3704 blocks 413 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 413: Red captured the flag. Blue must respond.
+[arena] cycle=414 patches=3709
+[2K  Cycle   414 | 13m 49s | RED: 414 flags   0 blocked | BLUE: 3713 blocks 414 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 414: Red captured the flag. Blue must respond.
+[arena] cycle=415 patches=3718
+[2K  Cycle   415 | 13m 51s | RED: 415 flags   0 blocked | BLUE: 3722 blocks 415 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 415: Red captured the flag. Blue must respond.
+[arena] cycle=416 patches=3727
+[2K  Cycle   416 | 13m 53s | RED: 416 flags   0 blocked | BLUE: 3731 blocks 416 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 416: Red captured the flag. Blue must respond.
+[arena] cycle=417 patches=3736
+[2K  Cycle   417 | 13m 55s | RED: 417 flags   0 blocked | BLUE: 3740 blocks 417 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 417: Red captured the flag. Blue must respond.
+[arena] cycle=418 patches=3745
+[2K  Cycle   418 | 13m 57s | RED: 418 flags   0 blocked | BLUE: 3749 blocks 418 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 418: Red captured the flag. Blue must respond.
+[arena] cycle=419 patches=3754
+[2K  Cycle   419 | 13m 59s | RED: 419 flags   0 blocked | BLUE: 3758 blocks 419 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 419: Red captured the flag. Blue must respond.
+[arena] cycle=420 patches=3763
+[2K  Cycle   420 | 14m 01s | RED: 420 flags   0 blocked | BLUE: 3767 blocks 420 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 420: Red captured the flag. Blue must respond.
+[arena] cycle=421 patches=3772
+[2K  Cycle   421 | 14m 03s | RED: 421 flags   0 blocked | BLUE: 3776 blocks 421 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 421: Red captured the flag. Blue must respond.
+[arena] cycle=422 patches=3781
+[2K  Cycle   422 | 14m 05s | RED: 422 flags   0 blocked | BLUE: 3785 blocks 422 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 422: Red captured the flag. Blue must respond.
+[arena] cycle=423 patches=3790
+[2K  Cycle   423 | 14m 07s | RED: 423 flags   0 blocked | BLUE: 3794 blocks 423 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 423: Red captured the flag. Blue must respond.
+[arena] cycle=424 patches=3799
+[2K  Cycle   424 | 14m 09s | RED: 424 flags   0 blocked | BLUE: 3803 blocks 424 bypassed | Maturity: 100 | Esc: 16 | FLAG!
+  --> Cycle 424: Red captured the flag. Blue must respond.
+[arena] cycle=425 patches=3808
+[2K  Cycle   425 | 14m 11s | RED: 425 flags   0 blocked | BLUE: 3812 blocks 425 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 425: Red captured the flag. Blue must respond.
+[arena] cycle=426 patches=3817
+[2K  Cycle   426 | 14m 13s | RED: 426 flags   0 blocked | BLUE: 3821 blocks 426 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 426: Red captured the flag. Blue must respond.
+[arena] cycle=427 patches=3826
+[2K  Cycle   427 | 14m 15s | RED: 427 flags   0 blocked | BLUE: 3830 blocks 427 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 427: Red captured the flag. Blue must respond.
+[arena] cycle=428 patches=3835
+[2K  Cycle   428 | 14m 17s | RED: 428 flags   0 blocked | BLUE: 3839 blocks 428 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 428: Red captured the flag. Blue must respond.
+[arena] cycle=429 patches=3844
+[2K  Cycle   429 | 14m 19s | RED: 429 flags   0 blocked | BLUE: 3848 blocks 429 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 429: Red captured the flag. Blue must respond.
+[arena] cycle=430 patches=3853
+[2K  Cycle   430 | 14m 21s | RED: 430 flags   0 blocked | BLUE: 3857 blocks 430 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 430: Red captured the flag. Blue must respond.
+[arena] cycle=431 patches=3862
+[2K  Cycle   431 | 14m 23s | RED: 431 flags   0 blocked | BLUE: 3866 blocks 431 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 431: Red captured the flag. Blue must respond.
+[arena] cycle=432 patches=3871
+[2K  Cycle   432 | 14m 25s | RED: 432 flags   0 blocked | BLUE: 3875 blocks 432 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 432: Red captured the flag. Blue must respond.
+[arena] cycle=433 patches=3880
+[2K  Cycle   433 | 14m 27s | RED: 433 flags   0 blocked | BLUE: 3884 blocks 433 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 433: Red captured the flag. Blue must respond.
+[arena] cycle=434 patches=3889
+[2K  Cycle   434 | 14m 29s | RED: 434 flags   0 blocked | BLUE: 3893 blocks 434 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 434: Red captured the flag. Blue must respond.
+[arena] cycle=435 patches=3898
+[2K  Cycle   435 | 14m 31s | RED: 435 flags   0 blocked | BLUE: 3902 blocks 435 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 435: Red captured the flag. Blue must respond.
+[arena] cycle=436 patches=3907
+[2K  Cycle   436 | 14m 33s | RED: 436 flags   0 blocked | BLUE: 3911 blocks 436 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 436: Red captured the flag. Blue must respond.
+[arena] cycle=437 patches=3916
+[2K  Cycle   437 | 14m 35s | RED: 437 flags   0 blocked | BLUE: 3920 blocks 437 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 437: Red captured the flag. Blue must respond.
+[arena] cycle=438 patches=3925
+[2K  Cycle   438 | 14m 37s | RED: 438 flags   0 blocked | BLUE: 3929 blocks 438 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 438: Red captured the flag. Blue must respond.
+[arena] cycle=439 patches=3934
+[2K  Cycle   439 | 14m 39s | RED: 439 flags   0 blocked | BLUE: 3938 blocks 439 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 439: Red captured the flag. Blue must respond.
+[arena] cycle=440 patches=3943
+[2K  Cycle   440 | 14m 41s | RED: 440 flags   0 blocked | BLUE: 3947 blocks 440 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 440: Red captured the flag. Blue must respond.
+[arena] cycle=441 patches=3952
+[2K  Cycle   441 | 14m 43s | RED: 441 flags   0 blocked | BLUE: 3956 blocks 441 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 441: Red captured the flag. Blue must respond.
+[arena] cycle=442 patches=3961
+[2K  Cycle   442 | 14m 45s | RED: 442 flags   0 blocked | BLUE: 3965 blocks 442 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 442: Red captured the flag. Blue must respond.
+[arena] cycle=443 patches=3970
+[2K  Cycle   443 | 14m 47s | RED: 443 flags   0 blocked | BLUE: 3974 blocks 443 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 443: Red captured the flag. Blue must respond.
+[arena] cycle=444 patches=3979
+[2K  Cycle   444 | 14m 49s | RED: 444 flags   0 blocked | BLUE: 3983 blocks 444 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 444: Red captured the flag. Blue must respond.
+[arena] cycle=445 patches=3988
+[2K  Cycle   445 | 14m 51s | RED: 445 flags   0 blocked | BLUE: 3992 blocks 445 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 445: Red captured the flag. Blue must respond.
+[arena] cycle=446 patches=3997
+[2K  Cycle   446 | 14m 53s | RED: 446 flags   0 blocked | BLUE: 4001 blocks 446 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 446: Red captured the flag. Blue must respond.
+[arena] cycle=447 patches=4006
+[2K  Cycle   447 | 14m 55s | RED: 447 flags   0 blocked | BLUE: 4010 blocks 447 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 447: Red captured the flag. Blue must respond.
+[arena] cycle=448 patches=4015
+[2K  Cycle   448 | 14m 57s | RED: 448 flags   0 blocked | BLUE: 4019 blocks 448 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 448: Red captured the flag. Blue must respond.
+[arena] cycle=449 patches=4024
+[2K  Cycle   449 | 14m 59s | RED: 449 flags   0 blocked | BLUE: 4028 blocks 449 bypassed | Maturity: 100 | Esc: 17 | FLAG!
+  --> Cycle 449: Red captured the flag. Blue must respond.
+[arena] cycle=450 patches=4033
+[2K  Cycle   450 | 15m 01s | RED: 450 flags   0 blocked | BLUE: 4037 blocks 450 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 450: Red captured the flag. Blue must respond.
+[arena] cycle=451 patches=4042
+[2K  Cycle   451 | 15m 03s | RED: 451 flags   0 blocked | BLUE: 4046 blocks 451 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 451: Red captured the flag. Blue must respond.
+[arena] cycle=452 patches=4051
+[2K  Cycle   452 | 15m 05s | RED: 452 flags   0 blocked | BLUE: 4055 blocks 452 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 452: Red captured the flag. Blue must respond.
+[arena] cycle=453 patches=4060
+[2K  Cycle   453 | 15m 07s | RED: 453 flags   0 blocked | BLUE: 4064 blocks 453 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 453: Red captured the flag. Blue must respond.
+[arena] cycle=454 patches=4069
+[2K  Cycle   454 | 15m 09s | RED: 454 flags   0 blocked | BLUE: 4073 blocks 454 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 454: Red captured the flag. Blue must respond.
+[arena] cycle=455 patches=4078
+[2K  Cycle   455 | 15m 11s | RED: 455 flags   0 blocked | BLUE: 4082 blocks 455 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 455: Red captured the flag. Blue must respond.
+[arena] cycle=456 patches=4087
+[2K  Cycle   456 | 15m 13s | RED: 456 flags   0 blocked | BLUE: 4091 blocks 456 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 456: Red captured the flag. Blue must respond.
+[arena] cycle=457 patches=4096
+[2K  Cycle   457 | 15m 15s | RED: 457 flags   0 blocked | BLUE: 4100 blocks 457 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 457: Red captured the flag. Blue must respond.
+[arena] cycle=458 patches=4105
+[2K  Cycle   458 | 15m 17s | RED: 458 flags   0 blocked | BLUE: 4109 blocks 458 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 458: Red captured the flag. Blue must respond.
+[arena] cycle=459 patches=4114
+[2K  Cycle   459 | 15m 19s | RED: 459 flags   0 blocked | BLUE: 4118 blocks 459 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 459: Red captured the flag. Blue must respond.
+[arena] cycle=460 patches=4123
+[2K  Cycle   460 | 15m 21s | RED: 460 flags   0 blocked | BLUE: 4127 blocks 460 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 460: Red captured the flag. Blue must respond.
+[arena] cycle=461 patches=4132
+[2K  Cycle   461 | 15m 23s | RED: 461 flags   0 blocked | BLUE: 4136 blocks 461 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 461: Red captured the flag. Blue must respond.
+[arena] cycle=462 patches=4141
+[2K  Cycle   462 | 15m 25s | RED: 462 flags   0 blocked | BLUE: 4145 blocks 462 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 462: Red captured the flag. Blue must respond.
+[arena] cycle=463 patches=4150
+[2K  Cycle   463 | 15m 27s | RED: 463 flags   0 blocked | BLUE: 4154 blocks 463 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 463: Red captured the flag. Blue must respond.
+[arena] cycle=464 patches=4159
+[2K  Cycle   464 | 15m 29s | RED: 464 flags   0 blocked | BLUE: 4163 blocks 464 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 464: Red captured the flag. Blue must respond.
+[arena] cycle=465 patches=4168
+[2K  Cycle   465 | 15m 31s | RED: 465 flags   0 blocked | BLUE: 4172 blocks 465 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 465: Red captured the flag. Blue must respond.
+[arena] cycle=466 patches=4177
+[2K  Cycle   466 | 15m 33s | RED: 466 flags   0 blocked | BLUE: 4181 blocks 466 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 466: Red captured the flag. Blue must respond.
+[arena] cycle=467 patches=4186
+[2K  Cycle   467 | 15m 35s | RED: 467 flags   0 blocked | BLUE: 4190 blocks 467 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 467: Red captured the flag. Blue must respond.
+[arena] cycle=468 patches=4195
+[2K  Cycle   468 | 15m 37s | RED: 468 flags   0 blocked | BLUE: 4199 blocks 468 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 468: Red captured the flag. Blue must respond.
+[arena] cycle=469 patches=4204
+[2K  Cycle   469 | 15m 39s | RED: 469 flags   0 blocked | BLUE: 4208 blocks 469 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 469: Red captured the flag. Blue must respond.
+[arena] cycle=470 patches=4213
+[2K  Cycle   470 | 15m 41s | RED: 470 flags   0 blocked | BLUE: 4217 blocks 470 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 470: Red captured the flag. Blue must respond.
+[arena] cycle=471 patches=4222
+[2K  Cycle   471 | 15m 43s | RED: 471 flags   0 blocked | BLUE: 4226 blocks 471 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 471: Red captured the flag. Blue must respond.
+[arena] cycle=472 patches=4231
+[2K  Cycle   472 | 15m 45s | RED: 472 flags   0 blocked | BLUE: 4235 blocks 472 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 472: Red captured the flag. Blue must respond.
+[arena] cycle=473 patches=4240
+[2K  Cycle   473 | 15m 47s | RED: 473 flags   0 blocked | BLUE: 4244 blocks 473 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 473: Red captured the flag. Blue must respond.
+[arena] cycle=474 patches=4249
+[2K  Cycle   474 | 15m 49s | RED: 474 flags   0 blocked | BLUE: 4253 blocks 474 bypassed | Maturity: 100 | Esc: 18 | FLAG!
+  --> Cycle 474: Red captured the flag. Blue must respond.
+[arena] cycle=475 patches=4258
+[2K  Cycle   475 | 15m 51s | RED: 475 flags   0 blocked | BLUE: 4262 blocks 475 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 475: Red captured the flag. Blue must respond.
+[arena] cycle=476 patches=4267
+[2K  Cycle   476 | 15m 53s | RED: 476 flags   0 blocked | BLUE: 4271 blocks 476 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 476: Red captured the flag. Blue must respond.
+[arena] cycle=477 patches=4276
+[2K  Cycle   477 | 15m 55s | RED: 477 flags   0 blocked | BLUE: 4280 blocks 477 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 477: Red captured the flag. Blue must respond.
+[arena] cycle=478 patches=4285
+[2K  Cycle   478 | 15m 57s | RED: 478 flags   0 blocked | BLUE: 4289 blocks 478 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 478: Red captured the flag. Blue must respond.
+[arena] cycle=479 patches=4294
+[2K  Cycle   479 | 15m 59s | RED: 479 flags   0 blocked | BLUE: 4298 blocks 479 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 479: Red captured the flag. Blue must respond.
+[arena] cycle=480 patches=4303
+[2K  Cycle   480 | 16m 01s | RED: 480 flags   0 blocked | BLUE: 4307 blocks 480 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 480: Red captured the flag. Blue must respond.
+[arena] cycle=481 patches=4312
+[2K  Cycle   481 | 16m 03s | RED: 481 flags   0 blocked | BLUE: 4316 blocks 481 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 481: Red captured the flag. Blue must respond.
+[arena] cycle=482 patches=4321
+[2K  Cycle   482 | 16m 05s | RED: 482 flags   0 blocked | BLUE: 4325 blocks 482 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 482: Red captured the flag. Blue must respond.
+[arena] cycle=483 patches=4330
+[2K  Cycle   483 | 16m 07s | RED: 483 flags   0 blocked | BLUE: 4334 blocks 483 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 483: Red captured the flag. Blue must respond.
+[arena] cycle=484 patches=4339
+[2K  Cycle   484 | 16m 09s | RED: 484 flags   0 blocked | BLUE: 4343 blocks 484 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 484: Red captured the flag. Blue must respond.
+[arena] cycle=485 patches=4348
+[2K  Cycle   485 | 16m 11s | RED: 485 flags   0 blocked | BLUE: 4352 blocks 485 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 485: Red captured the flag. Blue must respond.
+[arena] cycle=486 patches=4357
+[2K  Cycle   486 | 16m 13s | RED: 486 flags   0 blocked | BLUE: 4361 blocks 486 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 486: Red captured the flag. Blue must respond.
+[arena] cycle=487 patches=4366
+[2K  Cycle   487 | 16m 15s | RED: 487 flags   0 blocked | BLUE: 4370 blocks 487 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 487: Red captured the flag. Blue must respond.
+[arena] cycle=488 patches=4375
+[2K  Cycle   488 | 16m 17s | RED: 488 flags   0 blocked | BLUE: 4379 blocks 488 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 488: Red captured the flag. Blue must respond.
+[arena] cycle=489 patches=4384
+[2K  Cycle   489 | 16m 19s | RED: 489 flags   0 blocked | BLUE: 4388 blocks 489 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 489: Red captured the flag. Blue must respond.
+[arena] cycle=490 patches=4393
+[2K  Cycle   490 | 16m 21s | RED: 490 flags   0 blocked | BLUE: 4397 blocks 490 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 490: Red captured the flag. Blue must respond.
+[arena] cycle=491 patches=4402
+[2K  Cycle   491 | 16m 23s | RED: 491 flags   0 blocked | BLUE: 4406 blocks 491 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 491: Red captured the flag. Blue must respond.
+[arena] cycle=492 patches=4411
+[2K  Cycle   492 | 16m 25s | RED: 492 flags   0 blocked | BLUE: 4415 blocks 492 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 492: Red captured the flag. Blue must respond.
+[arena] cycle=493 patches=4420
+[2K  Cycle   493 | 16m 27s | RED: 493 flags   0 blocked | BLUE: 4424 blocks 493 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 493: Red captured the flag. Blue must respond.
+[arena] cycle=494 patches=4429
+[2K  Cycle   494 | 16m 29s | RED: 494 flags   0 blocked | BLUE: 4433 blocks 494 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 494: Red captured the flag. Blue must respond.
+[arena] cycle=495 patches=4438
+[2K  Cycle   495 | 16m 31s | RED: 495 flags   0 blocked | BLUE: 4442 blocks 495 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 495: Red captured the flag. Blue must respond.
+[arena] cycle=496 patches=4447
+[2K  Cycle   496 | 16m 33s | RED: 496 flags   0 blocked | BLUE: 4451 blocks 496 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 496: Red captured the flag. Blue must respond.
+[arena] cycle=497 patches=4456
+[2K  Cycle   497 | 16m 35s | RED: 497 flags   0 blocked | BLUE: 4460 blocks 497 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 497: Red captured the flag. Blue must respond.
+[arena] cycle=498 patches=4465
+[2K  Cycle   498 | 16m 37s | RED: 498 flags   0 blocked | BLUE: 4469 blocks 498 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 498: Red captured the flag. Blue must respond.
+[arena] cycle=499 patches=4474
+[2K  Cycle   499 | 16m 39s | RED: 499 flags   0 blocked | BLUE: 4478 blocks 499 bypassed | Maturity: 100 | Esc: 19 | FLAG!
+  --> Cycle 499: Red captured the flag. Blue must respond.
+[arena] cycle=500 patches=4483
+[2K  Cycle   500 | 16m 41s | RED: 500 flags   0 blocked | BLUE: 4487 blocks 500 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 500: Red captured the flag. Blue must respond.
+[arena] cycle=501 patches=4492
+[2K  Cycle   501 | 16m 43s | RED: 501 flags   0 blocked | BLUE: 4496 blocks 501 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 501: Red captured the flag. Blue must respond.
+[arena] cycle=502 patches=4501
+[2K  Cycle   502 | 16m 45s | RED: 502 flags   0 blocked | BLUE: 4505 blocks 502 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 502: Red captured the flag. Blue must respond.
+[arena] cycle=503 patches=4510
+[2K  Cycle   503 | 16m 47s | RED: 503 flags   0 blocked | BLUE: 4514 blocks 503 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 503: Red captured the flag. Blue must respond.
+[arena] cycle=504 patches=4519
+[2K  Cycle   504 | 16m 49s | RED: 504 flags   0 blocked | BLUE: 4523 blocks 504 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 504: Red captured the flag. Blue must respond.
+[arena] cycle=505 patches=4528
+[2K  Cycle   505 | 16m 51s | RED: 505 flags   0 blocked | BLUE: 4532 blocks 505 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 505: Red captured the flag. Blue must respond.
+[arena] cycle=506 patches=4537
+[2K  Cycle   506 | 16m 53s | RED: 506 flags   0 blocked | BLUE: 4541 blocks 506 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 506: Red captured the flag. Blue must respond.
+[arena] cycle=507 patches=4546
+[2K  Cycle   507 | 16m 55s | RED: 507 flags   0 blocked | BLUE: 4550 blocks 507 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 507: Red captured the flag. Blue must respond.
+[arena] cycle=508 patches=4555
+[2K  Cycle   508 | 16m 57s | RED: 508 flags   0 blocked | BLUE: 4559 blocks 508 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 508: Red captured the flag. Blue must respond.
+[arena] cycle=509 patches=4564
+[2K  Cycle   509 | 16m 59s | RED: 509 flags   0 blocked | BLUE: 4568 blocks 509 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 509: Red captured the flag. Blue must respond.
+[arena] cycle=510 patches=4573
+[2K  Cycle   510 | 17m 01s | RED: 510 flags   0 blocked | BLUE: 4577 blocks 510 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 510: Red captured the flag. Blue must respond.
+[arena] cycle=511 patches=4582
+[2K  Cycle   511 | 17m 03s | RED: 511 flags   0 blocked | BLUE: 4586 blocks 511 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 511: Red captured the flag. Blue must respond.
+[arena] cycle=512 patches=4591
+[2K  Cycle   512 | 17m 05s | RED: 512 flags   0 blocked | BLUE: 4595 blocks 512 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 512: Red captured the flag. Blue must respond.
+[arena] cycle=513 patches=4600
+[2K  Cycle   513 | 17m 07s | RED: 513 flags   0 blocked | BLUE: 4604 blocks 513 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 513: Red captured the flag. Blue must respond.
+[arena] cycle=514 patches=4609
+[2K  Cycle   514 | 17m 09s | RED: 514 flags   0 blocked | BLUE: 4613 blocks 514 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 514: Red captured the flag. Blue must respond.
+[arena] cycle=515 patches=4618
+[2K  Cycle   515 | 17m 11s | RED: 515 flags   0 blocked | BLUE: 4622 blocks 515 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 515: Red captured the flag. Blue must respond.
+[arena] cycle=516 patches=4627
+[2K  Cycle   516 | 17m 13s | RED: 516 flags   0 blocked | BLUE: 4631 blocks 516 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 516: Red captured the flag. Blue must respond.
+[arena] cycle=517 patches=4636
+[2K  Cycle   517 | 17m 15s | RED: 517 flags   0 blocked | BLUE: 4640 blocks 517 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 517: Red captured the flag. Blue must respond.
+[arena] cycle=518 patches=4645
+[2K  Cycle   518 | 17m 17s | RED: 518 flags   0 blocked | BLUE: 4649 blocks 518 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 518: Red captured the flag. Blue must respond.
+[arena] cycle=519 patches=4654
+[2K  Cycle   519 | 17m 19s | RED: 519 flags   0 blocked | BLUE: 4658 blocks 519 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 519: Red captured the flag. Blue must respond.
+[arena] cycle=520 patches=4663
+[2K  Cycle   520 | 17m 21s | RED: 520 flags   0 blocked | BLUE: 4667 blocks 520 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 520: Red captured the flag. Blue must respond.
+[arena] cycle=521 patches=4672
+[2K  Cycle   521 | 17m 23s | RED: 521 flags   0 blocked | BLUE: 4676 blocks 521 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 521: Red captured the flag. Blue must respond.
+[arena] cycle=522 patches=4681
+[2K  Cycle   522 | 17m 25s | RED: 522 flags   0 blocked | BLUE: 4685 blocks 522 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 522: Red captured the flag. Blue must respond.
+[arena] cycle=523 patches=4690
+[2K  Cycle   523 | 17m 27s | RED: 523 flags   0 blocked | BLUE: 4694 blocks 523 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 523: Red captured the flag. Blue must respond.
+[arena] cycle=524 patches=4699
+[2K  Cycle   524 | 17m 29s | RED: 524 flags   0 blocked | BLUE: 4703 blocks 524 bypassed | Maturity: 100 | Esc: 20 | FLAG!
+  --> Cycle 524: Red captured the flag. Blue must respond.
+[arena] cycle=525 patches=4708
+[2K  Cycle   525 | 17m 31s | RED: 525 flags   0 blocked | BLUE: 4712 blocks 525 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 525: Red captured the flag. Blue must respond.
+[arena] cycle=526 patches=4717
+[2K  Cycle   526 | 17m 33s | RED: 526 flags   0 blocked | BLUE: 4721 blocks 526 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 526: Red captured the flag. Blue must respond.
+[arena] cycle=527 patches=4726
+[2K  Cycle   527 | 17m 35s | RED: 527 flags   0 blocked | BLUE: 4730 blocks 527 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 527: Red captured the flag. Blue must respond.
+[arena] cycle=528 patches=4735
+[2K  Cycle   528 | 17m 37s | RED: 528 flags   0 blocked | BLUE: 4739 blocks 528 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 528: Red captured the flag. Blue must respond.
+[arena] cycle=529 patches=4744
+[2K  Cycle   529 | 17m 39s | RED: 529 flags   0 blocked | BLUE: 4748 blocks 529 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 529: Red captured the flag. Blue must respond.
+[arena] cycle=530 patches=4753
+[2K  Cycle   530 | 17m 41s | RED: 530 flags   0 blocked | BLUE: 4757 blocks 530 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 530: Red captured the flag. Blue must respond.
+[arena] cycle=531 patches=4762
+[2K  Cycle   531 | 17m 43s | RED: 531 flags   0 blocked | BLUE: 4766 blocks 531 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 531: Red captured the flag. Blue must respond.
+[arena] cycle=532 patches=4771
+[2K  Cycle   532 | 17m 45s | RED: 532 flags   0 blocked | BLUE: 4775 blocks 532 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 532: Red captured the flag. Blue must respond.
+[arena] cycle=533 patches=4780
+[2K  Cycle   533 | 17m 47s | RED: 533 flags   0 blocked | BLUE: 4784 blocks 533 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 533: Red captured the flag. Blue must respond.
+[arena] cycle=534 patches=4789
+[2K  Cycle   534 | 17m 49s | RED: 534 flags   0 blocked | BLUE: 4793 blocks 534 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 534: Red captured the flag. Blue must respond.
+[arena] cycle=535 patches=4798
+[2K  Cycle   535 | 17m 51s | RED: 535 flags   0 blocked | BLUE: 4802 blocks 535 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 535: Red captured the flag. Blue must respond.
+[arena] cycle=536 patches=4807
+[2K  Cycle   536 | 17m 53s | RED: 536 flags   0 blocked | BLUE: 4811 blocks 536 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 536: Red captured the flag. Blue must respond.
+[arena] cycle=537 patches=4816
+[2K  Cycle   537 | 17m 55s | RED: 537 flags   0 blocked | BLUE: 4820 blocks 537 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 537: Red captured the flag. Blue must respond.
+[arena] cycle=538 patches=4825
+[2K  Cycle   538 | 17m 57s | RED: 538 flags   0 blocked | BLUE: 4829 blocks 538 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 538: Red captured the flag. Blue must respond.
+[arena] cycle=539 patches=4834
+[2K  Cycle   539 | 17m 59s | RED: 539 flags   0 blocked | BLUE: 4838 blocks 539 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 539: Red captured the flag. Blue must respond.
+[arena] cycle=540 patches=4843
+[2K  Cycle   540 | 18m 01s | RED: 540 flags   0 blocked | BLUE: 4847 blocks 540 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 540: Red captured the flag. Blue must respond.
+[arena] cycle=541 patches=4852
+[2K  Cycle   541 | 18m 03s | RED: 541 flags   0 blocked | BLUE: 4856 blocks 541 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 541: Red captured the flag. Blue must respond.
+[arena] cycle=542 patches=4861
+[2K  Cycle   542 | 18m 05s | RED: 542 flags   0 blocked | BLUE: 4865 blocks 542 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 542: Red captured the flag. Blue must respond.
+[arena] cycle=543 patches=4870
+[2K  Cycle   543 | 18m 07s | RED: 543 flags   0 blocked | BLUE: 4874 blocks 543 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 543: Red captured the flag. Blue must respond.
+[arena] cycle=544 patches=4879
+[2K  Cycle   544 | 18m 09s | RED: 544 flags   0 blocked | BLUE: 4883 blocks 544 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 544: Red captured the flag. Blue must respond.
+[arena] cycle=545 patches=4888
+[2K  Cycle   545 | 18m 11s | RED: 545 flags   0 blocked | BLUE: 4892 blocks 545 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 545: Red captured the flag. Blue must respond.
+[arena] cycle=546 patches=4897
+[2K  Cycle   546 | 18m 13s | RED: 546 flags   0 blocked | BLUE: 4901 blocks 546 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 546: Red captured the flag. Blue must respond.
+[arena] cycle=547 patches=4906
+[2K  Cycle   547 | 18m 15s | RED: 547 flags   0 blocked | BLUE: 4910 blocks 547 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 547: Red captured the flag. Blue must respond.
+[arena] cycle=548 patches=4915
+[2K  Cycle   548 | 18m 17s | RED: 548 flags   0 blocked | BLUE: 4919 blocks 548 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 548: Red captured the flag. Blue must respond.
+[arena] cycle=549 patches=4924
+[2K  Cycle   549 | 18m 19s | RED: 549 flags   0 blocked | BLUE: 4928 blocks 549 bypassed | Maturity: 100 | Esc: 21 | FLAG!
+  --> Cycle 549: Red captured the flag. Blue must respond.
+[arena] cycle=550 patches=4933
+[2K  Cycle   550 | 18m 21s | RED: 550 flags   0 blocked | BLUE: 4937 blocks 550 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 550: Red captured the flag. Blue must respond.
+[arena] cycle=551 patches=4942
+[2K  Cycle   551 | 18m 23s | RED: 551 flags   0 blocked | BLUE: 4946 blocks 551 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 551: Red captured the flag. Blue must respond.
+[arena] cycle=552 patches=4951
+[2K  Cycle   552 | 18m 25s | RED: 552 flags   0 blocked | BLUE: 4955 blocks 552 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 552: Red captured the flag. Blue must respond.
+[arena] cycle=553 patches=4960
+[2K  Cycle   553 | 18m 27s | RED: 553 flags   0 blocked | BLUE: 4964 blocks 553 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 553: Red captured the flag. Blue must respond.
+[arena] cycle=554 patches=4969
+[2K  Cycle   554 | 18m 29s | RED: 554 flags   0 blocked | BLUE: 4973 blocks 554 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 554: Red captured the flag. Blue must respond.
+[arena] cycle=555 patches=4978
+[2K  Cycle   555 | 18m 31s | RED: 555 flags   0 blocked | BLUE: 4982 blocks 555 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 555: Red captured the flag. Blue must respond.
+[arena] cycle=556 patches=4987
+[2K  Cycle   556 | 18m 33s | RED: 556 flags   0 blocked | BLUE: 4991 blocks 556 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 556: Red captured the flag. Blue must respond.
+[arena] cycle=557 patches=4996
+[2K  Cycle   557 | 18m 35s | RED: 557 flags   0 blocked | BLUE: 5000 blocks 557 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 557: Red captured the flag. Blue must respond.
+[arena] cycle=558 patches=5005
+[2K  Cycle   558 | 18m 37s | RED: 558 flags   0 blocked | BLUE: 5009 blocks 558 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 558: Red captured the flag. Blue must respond.
+[arena] cycle=559 patches=5014
+[2K  Cycle   559 | 18m 39s | RED: 559 flags   0 blocked | BLUE: 5018 blocks 559 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 559: Red captured the flag. Blue must respond.
+[arena] cycle=560 patches=5023
+[2K  Cycle   560 | 18m 41s | RED: 560 flags   0 blocked | BLUE: 5027 blocks 560 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 560: Red captured the flag. Blue must respond.
+[arena] cycle=561 patches=5032
+[2K  Cycle   561 | 18m 43s | RED: 561 flags   0 blocked | BLUE: 5036 blocks 561 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 561: Red captured the flag. Blue must respond.
+[arena] cycle=562 patches=5041
+[2K  Cycle   562 | 18m 45s | RED: 562 flags   0 blocked | BLUE: 5045 blocks 562 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 562: Red captured the flag. Blue must respond.
+[arena] cycle=563 patches=5050
+[2K  Cycle   563 | 18m 47s | RED: 563 flags   0 blocked | BLUE: 5054 blocks 563 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 563: Red captured the flag. Blue must respond.
+[arena] cycle=564 patches=5059
+[2K  Cycle   564 | 18m 49s | RED: 564 flags   0 blocked | BLUE: 5063 blocks 564 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 564: Red captured the flag. Blue must respond.
+[arena] cycle=565 patches=5068
+[2K  Cycle   565 | 18m 51s | RED: 565 flags   0 blocked | BLUE: 5072 blocks 565 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 565: Red captured the flag. Blue must respond.
+[arena] cycle=566 patches=5077
+[2K  Cycle   566 | 18m 53s | RED: 566 flags   0 blocked | BLUE: 5081 blocks 566 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 566: Red captured the flag. Blue must respond.
+[arena] cycle=567 patches=5086
+[2K  Cycle   567 | 18m 55s | RED: 567 flags   0 blocked | BLUE: 5090 blocks 567 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 567: Red captured the flag. Blue must respond.
+[arena] cycle=568 patches=5095
+[2K  Cycle   568 | 18m 57s | RED: 568 flags   0 blocked | BLUE: 5099 blocks 568 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 568: Red captured the flag. Blue must respond.
+[arena] cycle=569 patches=5104
+[2K  Cycle   569 | 18m 59s | RED: 569 flags   0 blocked | BLUE: 5108 blocks 569 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 569: Red captured the flag. Blue must respond.
+[arena] cycle=570 patches=5113
+[2K  Cycle   570 | 19m 01s | RED: 570 flags   0 blocked | BLUE: 5117 blocks 570 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 570: Red captured the flag. Blue must respond.
+[arena] cycle=571 patches=5122
+[2K  Cycle   571 | 19m 03s | RED: 571 flags   0 blocked | BLUE: 5126 blocks 571 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 571: Red captured the flag. Blue must respond.
+[arena] cycle=572 patches=5131
+[2K  Cycle   572 | 19m 05s | RED: 572 flags   0 blocked | BLUE: 5135 blocks 572 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 572: Red captured the flag. Blue must respond.
+[arena] cycle=573 patches=5140
+[2K  Cycle   573 | 19m 07s | RED: 573 flags   0 blocked | BLUE: 5144 blocks 573 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 573: Red captured the flag. Blue must respond.
+[arena] cycle=574 patches=5149
+[2K  Cycle   574 | 19m 09s | RED: 574 flags   0 blocked | BLUE: 5153 blocks 574 bypassed | Maturity: 100 | Esc: 22 | FLAG!
+  --> Cycle 574: Red captured the flag. Blue must respond.
+[arena] cycle=575 patches=5158
+[2K  Cycle   575 | 19m 11s | RED: 575 flags   0 blocked | BLUE: 5162 blocks 575 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 575: Red captured the flag. Blue must respond.
+[arena] cycle=576 patches=5167
+[2K  Cycle   576 | 19m 13s | RED: 576 flags   0 blocked | BLUE: 5171 blocks 576 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 576: Red captured the flag. Blue must respond.
+[arena] cycle=577 patches=5176
+[2K  Cycle   577 | 19m 15s | RED: 577 flags   0 blocked | BLUE: 5180 blocks 577 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 577: Red captured the flag. Blue must respond.
+[arena] cycle=578 patches=5185
+[2K  Cycle   578 | 19m 17s | RED: 578 flags   0 blocked | BLUE: 5189 blocks 578 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 578: Red captured the flag. Blue must respond.
+[arena] cycle=579 patches=5194
+[2K  Cycle   579 | 19m 19s | RED: 579 flags   0 blocked | BLUE: 5198 blocks 579 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 579: Red captured the flag. Blue must respond.
+[arena] cycle=580 patches=5203
+[2K  Cycle   580 | 19m 21s | RED: 580 flags   0 blocked | BLUE: 5207 blocks 580 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 580: Red captured the flag. Blue must respond.
+[arena] cycle=581 patches=5212
+[2K  Cycle   581 | 19m 23s | RED: 581 flags   0 blocked | BLUE: 5216 blocks 581 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 581: Red captured the flag. Blue must respond.
+[arena] cycle=582 patches=5221
+[2K  Cycle   582 | 19m 25s | RED: 582 flags   0 blocked | BLUE: 5225 blocks 582 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 582: Red captured the flag. Blue must respond.
+[arena] cycle=583 patches=5230
+[2K  Cycle   583 | 19m 27s | RED: 583 flags   0 blocked | BLUE: 5234 blocks 583 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 583: Red captured the flag. Blue must respond.
+[arena] cycle=584 patches=5239
+[2K  Cycle   584 | 19m 29s | RED: 584 flags   0 blocked | BLUE: 5243 blocks 584 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 584: Red captured the flag. Blue must respond.
+[arena] cycle=585 patches=5248
+[2K  Cycle   585 | 19m 31s | RED: 585 flags   0 blocked | BLUE: 5252 blocks 585 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 585: Red captured the flag. Blue must respond.
+[arena] cycle=586 patches=5257
+[2K  Cycle   586 | 19m 33s | RED: 586 flags   0 blocked | BLUE: 5261 blocks 586 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 586: Red captured the flag. Blue must respond.
+[arena] cycle=587 patches=5266
+[2K  Cycle   587 | 19m 35s | RED: 587 flags   0 blocked | BLUE: 5270 blocks 587 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 587: Red captured the flag. Blue must respond.
+[arena] cycle=588 patches=5275
+[2K  Cycle   588 | 19m 37s | RED: 588 flags   0 blocked | BLUE: 5279 blocks 588 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 588: Red captured the flag. Blue must respond.
+[arena] cycle=589 patches=5284
+[2K  Cycle   589 | 19m 39s | RED: 589 flags   0 blocked | BLUE: 5288 blocks 589 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 589: Red captured the flag. Blue must respond.
+[arena] cycle=590 patches=5293
+[2K  Cycle   590 | 19m 41s | RED: 590 flags   0 blocked | BLUE: 5297 blocks 590 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 590: Red captured the flag. Blue must respond.
+[arena] cycle=591 patches=5302
+[2K  Cycle   591 | 19m 43s | RED: 591 flags   0 blocked | BLUE: 5306 blocks 591 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 591: Red captured the flag. Blue must respond.
+[arena] cycle=592 patches=5311
+[2K  Cycle   592 | 19m 45s | RED: 592 flags   0 blocked | BLUE: 5315 blocks 592 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 592: Red captured the flag. Blue must respond.
+[arena] cycle=593 patches=5320
+[2K  Cycle   593 | 19m 47s | RED: 593 flags   0 blocked | BLUE: 5324 blocks 593 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 593: Red captured the flag. Blue must respond.
+[arena] cycle=594 patches=5329
+[2K  Cycle   594 | 19m 49s | RED: 594 flags   0 blocked | BLUE: 5333 blocks 594 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 594: Red captured the flag. Blue must respond.
+[arena] cycle=595 patches=5338
+[2K  Cycle   595 | 19m 51s | RED: 595 flags   0 blocked | BLUE: 5342 blocks 595 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 595: Red captured the flag. Blue must respond.
+[arena] cycle=596 patches=5347
+[2K  Cycle   596 | 19m 53s | RED: 596 flags   0 blocked | BLUE: 5351 blocks 596 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 596: Red captured the flag. Blue must respond.
+[arena] cycle=597 patches=5356
+[2K  Cycle   597 | 19m 55s | RED: 597 flags   0 blocked | BLUE: 5360 blocks 597 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 597: Red captured the flag. Blue must respond.
+[arena] cycle=598 patches=5365
+[2K  Cycle   598 | 19m 57s | RED: 598 flags   0 blocked | BLUE: 5369 blocks 598 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 598: Red captured the flag. Blue must respond.
+[arena] cycle=599 patches=5374
+[2K  Cycle   599 | 19m 59s | RED: 599 flags   0 blocked | BLUE: 5378 blocks 599 bypassed | Maturity: 100 | Esc: 23 | FLAG!
+  --> Cycle 599: Red captured the flag. Blue must respond.
+[arena] cycle=600 patches=5383
+[2K  Cycle   600 | 20m 01s | RED: 600 flags   0 blocked | BLUE: 5387 blocks 600 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 600: Red captured the flag. Blue must respond.
+[arena] cycle=601 patches=5392
+[2K  Cycle   601 | 20m 03s | RED: 601 flags   0 blocked | BLUE: 5396 blocks 601 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 601: Red captured the flag. Blue must respond.
+[arena] cycle=602 patches=5401
+[2K  Cycle   602 | 20m 05s | RED: 602 flags   0 blocked | BLUE: 5405 blocks 602 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 602: Red captured the flag. Blue must respond.
+[arena] cycle=603 patches=5410
+[2K  Cycle   603 | 20m 07s | RED: 603 flags   0 blocked | BLUE: 5414 blocks 603 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 603: Red captured the flag. Blue must respond.
+[arena] cycle=604 patches=5419
+[2K  Cycle   604 | 20m 09s | RED: 604 flags   0 blocked | BLUE: 5423 blocks 604 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 604: Red captured the flag. Blue must respond.
+[arena] cycle=605 patches=5428
+[2K  Cycle   605 | 20m 11s | RED: 605 flags   0 blocked | BLUE: 5432 blocks 605 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 605: Red captured the flag. Blue must respond.
+[arena] cycle=606 patches=5437
+[2K  Cycle   606 | 20m 13s | RED: 606 flags   0 blocked | BLUE: 5441 blocks 606 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 606: Red captured the flag. Blue must respond.
+[arena] cycle=607 patches=5446
+[2K  Cycle   607 | 20m 15s | RED: 607 flags   0 blocked | BLUE: 5450 blocks 607 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 607: Red captured the flag. Blue must respond.
+[arena] cycle=608 patches=5455
+[2K  Cycle   608 | 20m 17s | RED: 608 flags   0 blocked | BLUE: 5459 blocks 608 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 608: Red captured the flag. Blue must respond.
+[arena] cycle=609 patches=5464
+[2K  Cycle   609 | 20m 19s | RED: 609 flags   0 blocked | BLUE: 5468 blocks 609 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 609: Red captured the flag. Blue must respond.
+[arena] cycle=610 patches=5473
+[2K  Cycle   610 | 20m 21s | RED: 610 flags   0 blocked | BLUE: 5477 blocks 610 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 610: Red captured the flag. Blue must respond.
+[arena] cycle=611 patches=5482
+[2K  Cycle   611 | 20m 23s | RED: 611 flags   0 blocked | BLUE: 5486 blocks 611 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 611: Red captured the flag. Blue must respond.
+[arena] cycle=612 patches=5491
+[2K  Cycle   612 | 20m 25s | RED: 612 flags   0 blocked | BLUE: 5495 blocks 612 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 612: Red captured the flag. Blue must respond.
+[arena] cycle=613 patches=5500
+[2K  Cycle   613 | 20m 27s | RED: 613 flags   0 blocked | BLUE: 5504 blocks 613 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 613: Red captured the flag. Blue must respond.
+[arena] cycle=614 patches=5509
+[2K  Cycle   614 | 20m 29s | RED: 614 flags   0 blocked | BLUE: 5513 blocks 614 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 614: Red captured the flag. Blue must respond.
+[arena] cycle=615 patches=5518
+[2K  Cycle   615 | 20m 31s | RED: 615 flags   0 blocked | BLUE: 5522 blocks 615 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 615: Red captured the flag. Blue must respond.
+[arena] cycle=616 patches=5527
+[2K  Cycle   616 | 20m 33s | RED: 616 flags   0 blocked | BLUE: 5531 blocks 616 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 616: Red captured the flag. Blue must respond.
+[arena] cycle=617 patches=5536
+[2K  Cycle   617 | 20m 35s | RED: 617 flags   0 blocked | BLUE: 5540 blocks 617 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 617: Red captured the flag. Blue must respond.
+[arena] cycle=618 patches=5545
+[2K  Cycle   618 | 20m 37s | RED: 618 flags   0 blocked | BLUE: 5549 blocks 618 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 618: Red captured the flag. Blue must respond.
+[arena] cycle=619 patches=5554
+[2K  Cycle   619 | 20m 39s | RED: 619 flags   0 blocked | BLUE: 5558 blocks 619 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 619: Red captured the flag. Blue must respond.
+[arena] cycle=620 patches=5563
+[2K  Cycle   620 | 20m 41s | RED: 620 flags   0 blocked | BLUE: 5567 blocks 620 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 620: Red captured the flag. Blue must respond.
+[arena] cycle=621 patches=5572
+[2K  Cycle   621 | 20m 43s | RED: 621 flags   0 blocked | BLUE: 5576 blocks 621 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 621: Red captured the flag. Blue must respond.
+[arena] cycle=622 patches=5581
+[2K  Cycle   622 | 20m 45s | RED: 622 flags   0 blocked | BLUE: 5585 blocks 622 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 622: Red captured the flag. Blue must respond.
+[arena] cycle=623 patches=5590
+[2K  Cycle   623 | 20m 47s | RED: 623 flags   0 blocked | BLUE: 5594 blocks 623 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 623: Red captured the flag. Blue must respond.
+[arena] cycle=624 patches=5599
+[2K  Cycle   624 | 20m 49s | RED: 624 flags   0 blocked | BLUE: 5603 blocks 624 bypassed | Maturity: 100 | Esc: 24 | FLAG!
+  --> Cycle 624: Red captured the flag. Blue must respond.
+[arena] cycle=625 patches=5608
+[2K  Cycle   625 | 20m 51s | RED: 625 flags   0 blocked | BLUE: 5612 blocks 625 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 625: Red captured the flag. Blue must respond.
+[arena] cycle=626 patches=5617
+[2K  Cycle   626 | 20m 53s | RED: 626 flags   0 blocked | BLUE: 5621 blocks 626 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 626: Red captured the flag. Blue must respond.
+[arena] cycle=627 patches=5626
+[2K  Cycle   627 | 20m 55s | RED: 627 flags   0 blocked | BLUE: 5630 blocks 627 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 627: Red captured the flag. Blue must respond.
+[arena] cycle=628 patches=5635
+[2K  Cycle   628 | 20m 57s | RED: 628 flags   0 blocked | BLUE: 5639 blocks 628 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 628: Red captured the flag. Blue must respond.
+[arena] cycle=629 patches=5644
+[2K  Cycle   629 | 20m 59s | RED: 629 flags   0 blocked | BLUE: 5648 blocks 629 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 629: Red captured the flag. Blue must respond.
+[arena] cycle=630 patches=5653
+[2K  Cycle   630 | 21m 01s | RED: 630 flags   0 blocked | BLUE: 5657 blocks 630 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 630: Red captured the flag. Blue must respond.
+[arena] cycle=631 patches=5662
+[2K  Cycle   631 | 21m 03s | RED: 631 flags   0 blocked | BLUE: 5666 blocks 631 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 631: Red captured the flag. Blue must respond.
+[arena] cycle=632 patches=5671
+[2K  Cycle   632 | 21m 05s | RED: 632 flags   0 blocked | BLUE: 5675 blocks 632 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 632: Red captured the flag. Blue must respond.
+[arena] cycle=633 patches=5680
+[2K  Cycle   633 | 21m 07s | RED: 633 flags   0 blocked | BLUE: 5684 blocks 633 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 633: Red captured the flag. Blue must respond.
+[arena] cycle=634 patches=5689
+[2K  Cycle   634 | 21m 09s | RED: 634 flags   0 blocked | BLUE: 5693 blocks 634 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 634: Red captured the flag. Blue must respond.
+[arena] cycle=635 patches=5698
+[2K  Cycle   635 | 21m 11s | RED: 635 flags   0 blocked | BLUE: 5702 blocks 635 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 635: Red captured the flag. Blue must respond.
+[arena] cycle=636 patches=5707
+[2K  Cycle   636 | 21m 13s | RED: 636 flags   0 blocked | BLUE: 5711 blocks 636 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 636: Red captured the flag. Blue must respond.
+[arena] cycle=637 patches=5716
+[2K  Cycle   637 | 21m 16s | RED: 637 flags   0 blocked | BLUE: 5720 blocks 637 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 637: Red captured the flag. Blue must respond.
+[arena] cycle=638 patches=5725
+[2K  Cycle   638 | 21m 18s | RED: 638 flags   0 blocked | BLUE: 5729 blocks 638 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 638: Red captured the flag. Blue must respond.
+[arena] cycle=639 patches=5734
+[2K  Cycle   639 | 21m 20s | RED: 639 flags   0 blocked | BLUE: 5738 blocks 639 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 639: Red captured the flag. Blue must respond.
+[arena] cycle=640 patches=5743
+[2K  Cycle   640 | 21m 22s | RED: 640 flags   0 blocked | BLUE: 5747 blocks 640 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 640: Red captured the flag. Blue must respond.
+[arena] cycle=641 patches=5752
+[2K  Cycle   641 | 21m 24s | RED: 641 flags   0 blocked | BLUE: 5756 blocks 641 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 641: Red captured the flag. Blue must respond.
+[arena] cycle=642 patches=5761
+[2K  Cycle   642 | 21m 26s | RED: 642 flags   0 blocked | BLUE: 5765 blocks 642 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 642: Red captured the flag. Blue must respond.
+[arena] cycle=643 patches=5770
+[2K  Cycle   643 | 21m 28s | RED: 643 flags   0 blocked | BLUE: 5774 blocks 643 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 643: Red captured the flag. Blue must respond.
+[arena] cycle=644 patches=5779
+[2K  Cycle   644 | 21m 30s | RED: 644 flags   0 blocked | BLUE: 5783 blocks 644 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 644: Red captured the flag. Blue must respond.
+[arena] cycle=645 patches=5788
+[2K  Cycle   645 | 21m 32s | RED: 645 flags   0 blocked | BLUE: 5792 blocks 645 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 645: Red captured the flag. Blue must respond.
+[arena] cycle=646 patches=5797
+[2K  Cycle   646 | 21m 34s | RED: 646 flags   0 blocked | BLUE: 5801 blocks 646 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 646: Red captured the flag. Blue must respond.
+[arena] cycle=647 patches=5806
+[2K  Cycle   647 | 21m 36s | RED: 647 flags   0 blocked | BLUE: 5810 blocks 647 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 647: Red captured the flag. Blue must respond.
+[arena] cycle=648 patches=5815
+[2K  Cycle   648 | 21m 38s | RED: 648 flags   0 blocked | BLUE: 5819 blocks 648 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 648: Red captured the flag. Blue must respond.
+[arena] cycle=649 patches=5824
+[2K  Cycle   649 | 21m 40s | RED: 649 flags   0 blocked | BLUE: 5828 blocks 649 bypassed | Maturity: 100 | Esc: 25 | FLAG!
+  --> Cycle 649: Red captured the flag. Blue must respond.
+[arena] cycle=650 patches=5833
+[2K  Cycle   650 | 21m 42s | RED: 650 flags   0 blocked | BLUE: 5837 blocks 650 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 650: Red captured the flag. Blue must respond.
+[arena] cycle=651 patches=5842
+[2K  Cycle   651 | 21m 44s | RED: 651 flags   0 blocked | BLUE: 5846 blocks 651 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 651: Red captured the flag. Blue must respond.
+[arena] cycle=652 patches=5851
+[2K  Cycle   652 | 21m 46s | RED: 652 flags   0 blocked | BLUE: 5855 blocks 652 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 652: Red captured the flag. Blue must respond.
+[arena] cycle=653 patches=5860
+[2K  Cycle   653 | 21m 48s | RED: 653 flags   0 blocked | BLUE: 5864 blocks 653 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 653: Red captured the flag. Blue must respond.
+[arena] cycle=654 patches=5869
+[2K  Cycle   654 | 21m 50s | RED: 654 flags   0 blocked | BLUE: 5873 blocks 654 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 654: Red captured the flag. Blue must respond.
+[arena] cycle=655 patches=5878
+[2K  Cycle   655 | 21m 52s | RED: 655 flags   0 blocked | BLUE: 5882 blocks 655 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 655: Red captured the flag. Blue must respond.
+[arena] cycle=656 patches=5887
+[2K  Cycle   656 | 21m 54s | RED: 656 flags   0 blocked | BLUE: 5891 blocks 656 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 656: Red captured the flag. Blue must respond.
+[arena] cycle=657 patches=5896
+[2K  Cycle   657 | 21m 56s | RED: 657 flags   0 blocked | BLUE: 5900 blocks 657 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 657: Red captured the flag. Blue must respond.
+[arena] cycle=658 patches=5905
+[2K  Cycle   658 | 21m 58s | RED: 658 flags   0 blocked | BLUE: 5909 blocks 658 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 658: Red captured the flag. Blue must respond.
+[arena] cycle=659 patches=5914
+[2K  Cycle   659 | 22m 00s | RED: 659 flags   0 blocked | BLUE: 5918 blocks 659 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 659: Red captured the flag. Blue must respond.
+[arena] cycle=660 patches=5923
+[2K  Cycle   660 | 22m 02s | RED: 660 flags   0 blocked | BLUE: 5927 blocks 660 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 660: Red captured the flag. Blue must respond.
+[arena] cycle=661 patches=5932
+[2K  Cycle   661 | 22m 04s | RED: 661 flags   0 blocked | BLUE: 5936 blocks 661 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 661: Red captured the flag. Blue must respond.
+[arena] cycle=662 patches=5941
+[2K  Cycle   662 | 22m 06s | RED: 662 flags   0 blocked | BLUE: 5945 blocks 662 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 662: Red captured the flag. Blue must respond.
+[arena] cycle=663 patches=5950
+[2K  Cycle   663 | 22m 08s | RED: 663 flags   0 blocked | BLUE: 5954 blocks 663 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 663: Red captured the flag. Blue must respond.
+[arena] cycle=664 patches=5959
+[2K  Cycle   664 | 22m 10s | RED: 664 flags   0 blocked | BLUE: 5963 blocks 664 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 664: Red captured the flag. Blue must respond.
+[arena] cycle=665 patches=5968
+[2K  Cycle   665 | 22m 12s | RED: 665 flags   0 blocked | BLUE: 5972 blocks 665 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 665: Red captured the flag. Blue must respond.
+[arena] cycle=666 patches=5977
+[2K  Cycle   666 | 22m 14s | RED: 666 flags   0 blocked | BLUE: 5981 blocks 666 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 666: Red captured the flag. Blue must respond.
+[arena] cycle=667 patches=5986
+[2K  Cycle   667 | 22m 16s | RED: 667 flags   0 blocked | BLUE: 5990 blocks 667 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 667: Red captured the flag. Blue must respond.
+[arena] cycle=668 patches=5995
+[2K  Cycle   668 | 22m 18s | RED: 668 flags   0 blocked | BLUE: 5999 blocks 668 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 668: Red captured the flag. Blue must respond.
+[arena] cycle=669 patches=6004
+[2K  Cycle   669 | 22m 20s | RED: 669 flags   0 blocked | BLUE: 6008 blocks 669 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 669: Red captured the flag. Blue must respond.
+[arena] cycle=670 patches=6013
+[2K  Cycle   670 | 22m 22s | RED: 670 flags   0 blocked | BLUE: 6017 blocks 670 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 670: Red captured the flag. Blue must respond.
+[arena] cycle=671 patches=6022
+[2K  Cycle   671 | 22m 24s | RED: 671 flags   0 blocked | BLUE: 6026 blocks 671 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 671: Red captured the flag. Blue must respond.
+[arena] cycle=672 patches=6031
+[2K  Cycle   672 | 22m 26s | RED: 672 flags   0 blocked | BLUE: 6035 blocks 672 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 672: Red captured the flag. Blue must respond.
+[arena] cycle=673 patches=6040
+[2K  Cycle   673 | 22m 28s | RED: 673 flags   0 blocked | BLUE: 6044 blocks 673 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 673: Red captured the flag. Blue must respond.
+[arena] cycle=674 patches=6049
+[2K  Cycle   674 | 22m 30s | RED: 674 flags   0 blocked | BLUE: 6053 blocks 674 bypassed | Maturity: 100 | Esc: 26 | FLAG!
+  --> Cycle 674: Red captured the flag. Blue must respond.
+[arena] cycle=675 patches=6058
+[2K  Cycle   675 | 22m 32s | RED: 675 flags   0 blocked | BLUE: 6062 blocks 675 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 675: Red captured the flag. Blue must respond.
+[arena] cycle=676 patches=6067
+[2K  Cycle   676 | 22m 34s | RED: 676 flags   0 blocked | BLUE: 6071 blocks 676 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 676: Red captured the flag. Blue must respond.
+[arena] cycle=677 patches=6076
+[2K  Cycle   677 | 22m 36s | RED: 677 flags   0 blocked | BLUE: 6080 blocks 677 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 677: Red captured the flag. Blue must respond.
+[arena] cycle=678 patches=6085
+[2K  Cycle   678 | 22m 38s | RED: 678 flags   0 blocked | BLUE: 6089 blocks 678 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 678: Red captured the flag. Blue must respond.
+[arena] cycle=679 patches=6094
+[2K  Cycle   679 | 22m 40s | RED: 679 flags   0 blocked | BLUE: 6098 blocks 679 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 679: Red captured the flag. Blue must respond.
+[arena] cycle=680 patches=6103
+[2K  Cycle   680 | 22m 42s | RED: 680 flags   0 blocked | BLUE: 6107 blocks 680 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 680: Red captured the flag. Blue must respond.
+[arena] cycle=681 patches=6112
+[2K  Cycle   681 | 22m 44s | RED: 681 flags   0 blocked | BLUE: 6116 blocks 681 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 681: Red captured the flag. Blue must respond.
+[arena] cycle=682 patches=6121
+[2K  Cycle   682 | 22m 46s | RED: 682 flags   0 blocked | BLUE: 6125 blocks 682 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 682: Red captured the flag. Blue must respond.
+[arena] cycle=683 patches=6130
+[2K  Cycle   683 | 22m 48s | RED: 683 flags   0 blocked | BLUE: 6134 blocks 683 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 683: Red captured the flag. Blue must respond.
+[arena] cycle=684 patches=6139
+[2K  Cycle   684 | 22m 50s | RED: 684 flags   0 blocked | BLUE: 6143 blocks 684 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 684: Red captured the flag. Blue must respond.
+[arena] cycle=685 patches=6148
+[2K  Cycle   685 | 22m 52s | RED: 685 flags   0 blocked | BLUE: 6152 blocks 685 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 685: Red captured the flag. Blue must respond.
+[arena] cycle=686 patches=6157
+[2K  Cycle   686 | 22m 54s | RED: 686 flags   0 blocked | BLUE: 6161 blocks 686 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 686: Red captured the flag. Blue must respond.
+[arena] cycle=687 patches=6166
+[2K  Cycle   687 | 22m 56s | RED: 687 flags   0 blocked | BLUE: 6170 blocks 687 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 687: Red captured the flag. Blue must respond.
+[arena] cycle=688 patches=6175
+[2K  Cycle   688 | 22m 58s | RED: 688 flags   0 blocked | BLUE: 6179 blocks 688 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 688: Red captured the flag. Blue must respond.
+[arena] cycle=689 patches=6184
+[2K  Cycle   689 | 23m 00s | RED: 689 flags   0 blocked | BLUE: 6188 blocks 689 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 689: Red captured the flag. Blue must respond.
+[arena] cycle=690 patches=6193
+[2K  Cycle   690 | 23m 02s | RED: 690 flags   0 blocked | BLUE: 6197 blocks 690 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 690: Red captured the flag. Blue must respond.
+[arena] cycle=691 patches=6202
+[2K  Cycle   691 | 23m 04s | RED: 691 flags   0 blocked | BLUE: 6206 blocks 691 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 691: Red captured the flag. Blue must respond.
+[arena] cycle=692 patches=6211
+[2K  Cycle   692 | 23m 06s | RED: 692 flags   0 blocked | BLUE: 6215 blocks 692 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 692: Red captured the flag. Blue must respond.
+[arena] cycle=693 patches=6220
+[2K  Cycle   693 | 23m 08s | RED: 693 flags   0 blocked | BLUE: 6224 blocks 693 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 693: Red captured the flag. Blue must respond.
+[arena] cycle=694 patches=6229
+[2K  Cycle   694 | 23m 10s | RED: 694 flags   0 blocked | BLUE: 6233 blocks 694 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 694: Red captured the flag. Blue must respond.
+[arena] cycle=695 patches=6238
+[2K  Cycle   695 | 23m 12s | RED: 695 flags   0 blocked | BLUE: 6242 blocks 695 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 695: Red captured the flag. Blue must respond.
+[arena] cycle=696 patches=6247
+[2K  Cycle   696 | 23m 14s | RED: 696 flags   0 blocked | BLUE: 6251 blocks 696 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 696: Red captured the flag. Blue must respond.
+[arena] cycle=697 patches=6256
+[2K  Cycle   697 | 23m 16s | RED: 697 flags   0 blocked | BLUE: 6260 blocks 697 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 697: Red captured the flag. Blue must respond.
+[arena] cycle=698 patches=6265
+[2K  Cycle   698 | 23m 18s | RED: 698 flags   0 blocked | BLUE: 6269 blocks 698 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 698: Red captured the flag. Blue must respond.
+[arena] cycle=699 patches=6274
+[2K  Cycle   699 | 23m 20s | RED: 699 flags   0 blocked | BLUE: 6278 blocks 699 bypassed | Maturity: 100 | Esc: 27 | FLAG!
+  --> Cycle 699: Red captured the flag. Blue must respond.
+[arena] cycle=700 patches=6283
+[2K  Cycle   700 | 23m 22s | RED: 700 flags   0 blocked | BLUE: 6287 blocks 700 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 700: Red captured the flag. Blue must respond.
+[arena] cycle=701 patches=6292
+[2K  Cycle   701 | 23m 24s | RED: 701 flags   0 blocked | BLUE: 6296 blocks 701 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 701: Red captured the flag. Blue must respond.
+[arena] cycle=702 patches=6301
+[2K  Cycle   702 | 23m 26s | RED: 702 flags   0 blocked | BLUE: 6305 blocks 702 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 702: Red captured the flag. Blue must respond.
+[arena] cycle=703 patches=6310
+[2K  Cycle   703 | 23m 28s | RED: 703 flags   0 blocked | BLUE: 6314 blocks 703 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 703: Red captured the flag. Blue must respond.
+[arena] cycle=704 patches=6319
+[2K  Cycle   704 | 23m 30s | RED: 704 flags   0 blocked | BLUE: 6323 blocks 704 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 704: Red captured the flag. Blue must respond.
+[arena] cycle=705 patches=6328
+[2K  Cycle   705 | 23m 32s | RED: 705 flags   0 blocked | BLUE: 6332 blocks 705 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 705: Red captured the flag. Blue must respond.
+[arena] cycle=706 patches=6337
+[2K  Cycle   706 | 23m 34s | RED: 706 flags   0 blocked | BLUE: 6341 blocks 706 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 706: Red captured the flag. Blue must respond.
+[arena] cycle=707 patches=6346
+[2K  Cycle   707 | 23m 36s | RED: 707 flags   0 blocked | BLUE: 6350 blocks 707 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 707: Red captured the flag. Blue must respond.
+[arena] cycle=708 patches=6355
+[2K  Cycle   708 | 23m 38s | RED: 708 flags   0 blocked | BLUE: 6359 blocks 708 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 708: Red captured the flag. Blue must respond.
+[arena] cycle=709 patches=6364
+[2K  Cycle   709 | 23m 40s | RED: 709 flags   0 blocked | BLUE: 6368 blocks 709 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 709: Red captured the flag. Blue must respond.
+[arena] cycle=710 patches=6373
+[2K  Cycle   710 | 23m 42s | RED: 710 flags   0 blocked | BLUE: 6377 blocks 710 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 710: Red captured the flag. Blue must respond.
+[arena] cycle=711 patches=6382
+[2K  Cycle   711 | 23m 44s | RED: 711 flags   0 blocked | BLUE: 6386 blocks 711 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 711: Red captured the flag. Blue must respond.
+[arena] cycle=712 patches=6391
+[2K  Cycle   712 | 23m 46s | RED: 712 flags   0 blocked | BLUE: 6395 blocks 712 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 712: Red captured the flag. Blue must respond.
+[arena] cycle=713 patches=6400
+[2K  Cycle   713 | 23m 48s | RED: 713 flags   0 blocked | BLUE: 6404 blocks 713 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 713: Red captured the flag. Blue must respond.
+[arena] cycle=714 patches=6409
+[2K  Cycle   714 | 23m 50s | RED: 714 flags   0 blocked | BLUE: 6413 blocks 714 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 714: Red captured the flag. Blue must respond.
+[arena] cycle=715 patches=6418
+[2K  Cycle   715 | 23m 52s | RED: 715 flags   0 blocked | BLUE: 6422 blocks 715 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 715: Red captured the flag. Blue must respond.
+[arena] cycle=716 patches=6427
+[2K  Cycle   716 | 23m 54s | RED: 716 flags   0 blocked | BLUE: 6431 blocks 716 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 716: Red captured the flag. Blue must respond.
+[arena] cycle=717 patches=6436
+[2K  Cycle   717 | 23m 56s | RED: 717 flags   0 blocked | BLUE: 6440 blocks 717 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 717: Red captured the flag. Blue must respond.
+[arena] cycle=718 patches=6445
+[2K  Cycle   718 | 23m 58s | RED: 718 flags   0 blocked | BLUE: 6449 blocks 718 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 718: Red captured the flag. Blue must respond.
+[arena] cycle=719 patches=6454
+[2K  Cycle   719 | 24m 00s | RED: 719 flags   0 blocked | BLUE: 6458 blocks 719 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 719: Red captured the flag. Blue must respond.
+[arena] cycle=720 patches=6463
+[2K  Cycle   720 | 24m 02s | RED: 720 flags   0 blocked | BLUE: 6467 blocks 720 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 720: Red captured the flag. Blue must respond.
+[arena] cycle=721 patches=6472
+[2K  Cycle   721 | 24m 04s | RED: 721 flags   0 blocked | BLUE: 6476 blocks 721 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 721: Red captured the flag. Blue must respond.
+[arena] cycle=722 patches=6481
+[2K  Cycle   722 | 24m 06s | RED: 722 flags   0 blocked | BLUE: 6485 blocks 722 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 722: Red captured the flag. Blue must respond.
+[arena] cycle=723 patches=6490
+[2K  Cycle   723 | 24m 08s | RED: 723 flags   0 blocked | BLUE: 6494 blocks 723 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 723: Red captured the flag. Blue must respond.
+[arena] cycle=724 patches=6499
+[2K  Cycle   724 | 24m 10s | RED: 724 flags   0 blocked | BLUE: 6503 blocks 724 bypassed | Maturity: 100 | Esc: 28 | FLAG!
+  --> Cycle 724: Red captured the flag. Blue must respond.
+[arena] cycle=725 patches=6508
+[2K  Cycle   725 | 24m 12s | RED: 725 flags   0 blocked | BLUE: 6512 blocks 725 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 725: Red captured the flag. Blue must respond.
+[arena] cycle=726 patches=6517
+[2K  Cycle   726 | 24m 14s | RED: 726 flags   0 blocked | BLUE: 6521 blocks 726 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 726: Red captured the flag. Blue must respond.
+[arena] cycle=727 patches=6526
+[2K  Cycle   727 | 24m 16s | RED: 727 flags   0 blocked | BLUE: 6530 blocks 727 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 727: Red captured the flag. Blue must respond.
+[arena] cycle=728 patches=6535
+[2K  Cycle   728 | 24m 18s | RED: 728 flags   0 blocked | BLUE: 6539 blocks 728 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 728: Red captured the flag. Blue must respond.
+[arena] cycle=729 patches=6544
+[2K  Cycle   729 | 24m 20s | RED: 729 flags   0 blocked | BLUE: 6548 blocks 729 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 729: Red captured the flag. Blue must respond.
+[arena] cycle=730 patches=6553
+[2K  Cycle   730 | 24m 22s | RED: 730 flags   0 blocked | BLUE: 6557 blocks 730 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 730: Red captured the flag. Blue must respond.
+[arena] cycle=731 patches=6562
+[2K  Cycle   731 | 24m 24s | RED: 731 flags   0 blocked | BLUE: 6566 blocks 731 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 731: Red captured the flag. Blue must respond.
+[arena] cycle=732 patches=6571
+[2K  Cycle   732 | 24m 26s | RED: 732 flags   0 blocked | BLUE: 6575 blocks 732 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 732: Red captured the flag. Blue must respond.
+[arena] cycle=733 patches=6580
+[2K  Cycle   733 | 24m 28s | RED: 733 flags   0 blocked | BLUE: 6584 blocks 733 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 733: Red captured the flag. Blue must respond.
+[arena] cycle=734 patches=6589
+[2K  Cycle   734 | 24m 30s | RED: 734 flags   0 blocked | BLUE: 6593 blocks 734 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 734: Red captured the flag. Blue must respond.
+[arena] cycle=735 patches=6598
+[2K  Cycle   735 | 24m 32s | RED: 735 flags   0 blocked | BLUE: 6602 blocks 735 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 735: Red captured the flag. Blue must respond.
+[arena] cycle=736 patches=6607
+[2K  Cycle   736 | 24m 34s | RED: 736 flags   0 blocked | BLUE: 6611 blocks 736 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 736: Red captured the flag. Blue must respond.
+[arena] cycle=737 patches=6616
+[2K  Cycle   737 | 24m 36s | RED: 737 flags   0 blocked | BLUE: 6620 blocks 737 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 737: Red captured the flag. Blue must respond.
+[arena] cycle=738 patches=6625
+[2K  Cycle   738 | 24m 38s | RED: 738 flags   0 blocked | BLUE: 6629 blocks 738 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 738: Red captured the flag. Blue must respond.
+[arena] cycle=739 patches=6634
+[2K  Cycle   739 | 24m 40s | RED: 739 flags   0 blocked | BLUE: 6638 blocks 739 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 739: Red captured the flag. Blue must respond.
+[arena] cycle=740 patches=6643
+[2K  Cycle   740 | 24m 42s | RED: 740 flags   0 blocked | BLUE: 6647 blocks 740 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 740: Red captured the flag. Blue must respond.
+[arena] cycle=741 patches=6652
+[2K  Cycle   741 | 24m 44s | RED: 741 flags   0 blocked | BLUE: 6656 blocks 741 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 741: Red captured the flag. Blue must respond.
+[arena] cycle=742 patches=6661
+[2K  Cycle   742 | 24m 46s | RED: 742 flags   0 blocked | BLUE: 6665 blocks 742 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 742: Red captured the flag. Blue must respond.
+[arena] cycle=743 patches=6670
+[2K  Cycle   743 | 24m 48s | RED: 743 flags   0 blocked | BLUE: 6674 blocks 743 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 743: Red captured the flag. Blue must respond.
+[arena] cycle=744 patches=6679
+[2K  Cycle   744 | 24m 50s | RED: 744 flags   0 blocked | BLUE: 6683 blocks 744 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 744: Red captured the flag. Blue must respond.
+[arena] cycle=745 patches=6688
+[2K  Cycle   745 | 24m 52s | RED: 745 flags   0 blocked | BLUE: 6692 blocks 745 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 745: Red captured the flag. Blue must respond.
+[arena] cycle=746 patches=6697
+[2K  Cycle   746 | 24m 54s | RED: 746 flags   0 blocked | BLUE: 6701 blocks 746 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 746: Red captured the flag. Blue must respond.
+[arena] cycle=747 patches=6706
+[2K  Cycle   747 | 24m 56s | RED: 747 flags   0 blocked | BLUE: 6710 blocks 747 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 747: Red captured the flag. Blue must respond.
+[arena] cycle=748 patches=6715
+[2K  Cycle   748 | 24m 58s | RED: 748 flags   0 blocked | BLUE: 6719 blocks 748 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 748: Red captured the flag. Blue must respond.
+[arena] cycle=749 patches=6724
+[2K  Cycle   749 | 25m 00s | RED: 749 flags   0 blocked | BLUE: 6728 blocks 749 bypassed | Maturity: 100 | Esc: 29 | FLAG!
+  --> Cycle 749: Red captured the flag. Blue must respond.
+[arena] cycle=750 patches=6733
+[2K  Cycle   750 | 25m 02s | RED: 750 flags   0 blocked | BLUE: 6737 blocks 750 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 750: Red captured the flag. Blue must respond.
+[arena] cycle=751 patches=6742
+[2K  Cycle   751 | 25m 04s | RED: 751 flags   0 blocked | BLUE: 6746 blocks 751 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 751: Red captured the flag. Blue must respond.
+[arena] cycle=752 patches=6751
+[2K  Cycle   752 | 25m 06s | RED: 752 flags   0 blocked | BLUE: 6755 blocks 752 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 752: Red captured the flag. Blue must respond.
+[arena] cycle=753 patches=6760
+[2K  Cycle   753 | 25m 08s | RED: 753 flags   0 blocked | BLUE: 6764 blocks 753 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 753: Red captured the flag. Blue must respond.
+[arena] cycle=754 patches=6769
+[2K  Cycle   754 | 25m 10s | RED: 754 flags   0 blocked | BLUE: 6773 blocks 754 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 754: Red captured the flag. Blue must respond.
+[arena] cycle=755 patches=6778
+[2K  Cycle   755 | 25m 12s | RED: 755 flags   0 blocked | BLUE: 6782 blocks 755 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 755: Red captured the flag. Blue must respond.
+[arena] cycle=756 patches=6787
+[2K  Cycle   756 | 25m 14s | RED: 756 flags   0 blocked | BLUE: 6791 blocks 756 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 756: Red captured the flag. Blue must respond.
+[arena] cycle=757 patches=6796
+[2K  Cycle   757 | 25m 16s | RED: 757 flags   0 blocked | BLUE: 6800 blocks 757 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 757: Red captured the flag. Blue must respond.
+[arena] cycle=758 patches=6805
+[2K  Cycle   758 | 25m 18s | RED: 758 flags   0 blocked | BLUE: 6809 blocks 758 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 758: Red captured the flag. Blue must respond.
+[arena] cycle=759 patches=6814
+[2K  Cycle   759 | 25m 20s | RED: 759 flags   0 blocked | BLUE: 6818 blocks 759 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 759: Red captured the flag. Blue must respond.
+[arena] cycle=760 patches=6823
+[2K  Cycle   760 | 25m 22s | RED: 760 flags   0 blocked | BLUE: 6827 blocks 760 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 760: Red captured the flag. Blue must respond.
+[arena] cycle=761 patches=6832
+[2K  Cycle   761 | 25m 24s | RED: 761 flags   0 blocked | BLUE: 6836 blocks 761 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 761: Red captured the flag. Blue must respond.
+[arena] cycle=762 patches=6841
+[2K  Cycle   762 | 25m 26s | RED: 762 flags   0 blocked | BLUE: 6845 blocks 762 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 762: Red captured the flag. Blue must respond.
+[arena] cycle=763 patches=6850
+[2K  Cycle   763 | 25m 28s | RED: 763 flags   0 blocked | BLUE: 6854 blocks 763 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 763: Red captured the flag. Blue must respond.
+[arena] cycle=764 patches=6859
+[2K  Cycle   764 | 25m 30s | RED: 764 flags   0 blocked | BLUE: 6863 blocks 764 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 764: Red captured the flag. Blue must respond.
+[arena] cycle=765 patches=6868
+[2K  Cycle   765 | 25m 32s | RED: 765 flags   0 blocked | BLUE: 6872 blocks 765 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 765: Red captured the flag. Blue must respond.
+[arena] cycle=766 patches=6877
+[2K  Cycle   766 | 25m 34s | RED: 766 flags   0 blocked | BLUE: 6881 blocks 766 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 766: Red captured the flag. Blue must respond.
+[arena] cycle=767 patches=6886
+[2K  Cycle   767 | 25m 36s | RED: 767 flags   0 blocked | BLUE: 6890 blocks 767 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 767: Red captured the flag. Blue must respond.
+[arena] cycle=768 patches=6895
+[2K  Cycle   768 | 25m 38s | RED: 768 flags   0 blocked | BLUE: 6899 blocks 768 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 768: Red captured the flag. Blue must respond.
+[arena] cycle=769 patches=6904
+[2K  Cycle   769 | 25m 40s | RED: 769 flags   0 blocked | BLUE: 6908 blocks 769 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 769: Red captured the flag. Blue must respond.
+[arena] cycle=770 patches=6913
+[2K  Cycle   770 | 25m 42s | RED: 770 flags   0 blocked | BLUE: 6917 blocks 770 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 770: Red captured the flag. Blue must respond.
+[arena] cycle=771 patches=6922
+[2K  Cycle   771 | 25m 44s | RED: 771 flags   0 blocked | BLUE: 6926 blocks 771 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 771: Red captured the flag. Blue must respond.
+[arena] cycle=772 patches=6931
+[2K  Cycle   772 | 25m 46s | RED: 772 flags   0 blocked | BLUE: 6935 blocks 772 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 772: Red captured the flag. Blue must respond.
+[arena] cycle=773 patches=6940
+[2K  Cycle   773 | 25m 48s | RED: 773 flags   0 blocked | BLUE: 6944 blocks 773 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 773: Red captured the flag. Blue must respond.
+[arena] cycle=774 patches=6949
+[2K  Cycle   774 | 25m 50s | RED: 774 flags   0 blocked | BLUE: 6953 blocks 774 bypassed | Maturity: 100 | Esc: 30 | FLAG!
+  --> Cycle 774: Red captured the flag. Blue must respond.
+[arena] cycle=775 patches=6958
+[2K  Cycle   775 | 25m 52s | RED: 775 flags   0 blocked | BLUE: 6962 blocks 775 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 775: Red captured the flag. Blue must respond.
+[arena] cycle=776 patches=6967
+[2K  Cycle   776 | 25m 54s | RED: 776 flags   0 blocked | BLUE: 6971 blocks 776 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 776: Red captured the flag. Blue must respond.
+[arena] cycle=777 patches=6976
+[2K  Cycle   777 | 25m 56s | RED: 777 flags   0 blocked | BLUE: 6980 blocks 777 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 777: Red captured the flag. Blue must respond.
+[arena] cycle=778 patches=6985
+[2K  Cycle   778 | 25m 58s | RED: 778 flags   0 blocked | BLUE: 6989 blocks 778 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 778: Red captured the flag. Blue must respond.
+[arena] cycle=779 patches=6994
+[2K  Cycle   779 | 26m 00s | RED: 779 flags   0 blocked | BLUE: 6998 blocks 779 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 779: Red captured the flag. Blue must respond.
+[arena] cycle=780 patches=7003
+[2K  Cycle   780 | 26m 02s | RED: 780 flags   0 blocked | BLUE: 7007 blocks 780 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 780: Red captured the flag. Blue must respond.
+[arena] cycle=781 patches=7012
+[2K  Cycle   781 | 26m 04s | RED: 781 flags   0 blocked | BLUE: 7016 blocks 781 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 781: Red captured the flag. Blue must respond.
+[arena] cycle=782 patches=7021
+[2K  Cycle   782 | 26m 06s | RED: 782 flags   0 blocked | BLUE: 7025 blocks 782 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 782: Red captured the flag. Blue must respond.
+[arena] cycle=783 patches=7030
+[2K  Cycle   783 | 26m 08s | RED: 783 flags   0 blocked | BLUE: 7034 blocks 783 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 783: Red captured the flag. Blue must respond.
+[arena] cycle=784 patches=7039
+[2K  Cycle   784 | 26m 10s | RED: 784 flags   0 blocked | BLUE: 7043 blocks 784 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 784: Red captured the flag. Blue must respond.
+[arena] cycle=785 patches=7048
+[2K  Cycle   785 | 26m 12s | RED: 785 flags   0 blocked | BLUE: 7052 blocks 785 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 785: Red captured the flag. Blue must respond.
+[arena] cycle=786 patches=7057
+[2K  Cycle   786 | 26m 14s | RED: 786 flags   0 blocked | BLUE: 7061 blocks 786 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 786: Red captured the flag. Blue must respond.
+[arena] cycle=787 patches=7066
+[2K  Cycle   787 | 26m 16s | RED: 787 flags   0 blocked | BLUE: 7070 blocks 787 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 787: Red captured the flag. Blue must respond.
+[arena] cycle=788 patches=7075
+[2K  Cycle   788 | 26m 18s | RED: 788 flags   0 blocked | BLUE: 7079 blocks 788 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 788: Red captured the flag. Blue must respond.
+[arena] cycle=789 patches=7084
+[2K  Cycle   789 | 26m 20s | RED: 789 flags   0 blocked | BLUE: 7088 blocks 789 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 789: Red captured the flag. Blue must respond.
+[arena] cycle=790 patches=7093
+[2K  Cycle   790 | 26m 22s | RED: 790 flags   0 blocked | BLUE: 7097 blocks 790 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 790: Red captured the flag. Blue must respond.
+[arena] cycle=791 patches=7102
+[2K  Cycle   791 | 26m 24s | RED: 791 flags   0 blocked | BLUE: 7106 blocks 791 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 791: Red captured the flag. Blue must respond.
+[arena] cycle=792 patches=7111
+[2K  Cycle   792 | 26m 26s | RED: 792 flags   0 blocked | BLUE: 7115 blocks 792 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 792: Red captured the flag. Blue must respond.
+[arena] cycle=793 patches=7120
+[2K  Cycle   793 | 26m 28s | RED: 793 flags   0 blocked | BLUE: 7124 blocks 793 bypassed | Maturity: 100 | Esc: 31 | FLAG!
+  --> Cycle 793: Red captured the flag. Blue must respond.
+[arena] cycle=794 patches=7129

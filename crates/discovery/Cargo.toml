@@ -11,6 +11,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
+hickory-resolver = "0.24"
+urlencoding = "2.1"
+rand = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

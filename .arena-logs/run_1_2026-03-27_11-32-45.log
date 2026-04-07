@@ -1,0 +1,717 @@
+
+  ═══ AEGIS ARENA — INFINITE MODE ═══
+
+[2K  Cycle     1 | 2s | RED:   1 flags   0 blocked | BLUE:   0 blocks   1 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 1: Red captured the flag. Blue must respond.
+[2K  Cycle     2 | 4s | RED:   2 flags   0 blocked | BLUE:   0 blocks   2 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 2: Red captured the flag. Blue must respond.
+[2K  Cycle     3 | 6s | RED:   3 flags   0 blocked | BLUE:   0 blocks   3 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 3: Red captured the flag. Blue must respond.
+[2K  Cycle     4 | 8s | RED:   4 flags   0 blocked | BLUE:   0 blocks   4 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 4: Red captured the flag. Blue must respond.
+[2K  Cycle     5 | 10s | RED:   5 flags   0 blocked | BLUE:   0 blocks   5 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 5: Red captured the flag. Blue must respond.
+[2K  Cycle     6 | 12s | RED:   6 flags   0 blocked | BLUE:   0 blocks   6 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 6: Red captured the flag. Blue must respond.
+[2K  Cycle     7 | 14s | RED:   7 flags   0 blocked | BLUE:   0 blocks   7 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 7: Red captured the flag. Blue must respond.
+[2K  Cycle     8 | 16s | RED:   8 flags   0 blocked | BLUE:   0 blocks   8 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 8: Red captured the flag. Blue must respond.
+[2K  Cycle     9 | 18s | RED:   9 flags   0 blocked | BLUE:   0 blocks   9 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 9: Red captured the flag. Blue must respond.
+[2K  Cycle    10 | 20s | RED:  10 flags   0 blocked | BLUE:   0 blocks  10 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 10: Red captured the flag. Blue must respond.
+[2K  Cycle    11 | 22s | RED:  11 flags   0 blocked | BLUE:   0 blocks  11 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 11: Red captured the flag. Blue must respond.
+[2K  Cycle    12 | 24s | RED:  12 flags   0 blocked | BLUE:   0 blocks  12 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 12: Red captured the flag. Blue must respond.
+[2K  Cycle    13 | 26s | RED:  13 flags   0 blocked | BLUE:   0 blocks  13 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 13: Red captured the flag. Blue must respond.
+[2K  Cycle    14 | 28s | RED:  14 flags   0 blocked | BLUE:   0 blocks  14 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 14: Red captured the flag. Blue must respond.
+[2K  Cycle    15 | 30s | RED:  15 flags   0 blocked | BLUE:   0 blocks  15 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 15: Red captured the flag. Blue must respond.
+[2K  Cycle    16 | 32s | RED:  16 flags   0 blocked | BLUE:   0 blocks  16 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 16: Red captured the flag. Blue must respond.
+[2K  Cycle    17 | 34s | RED:  17 flags   0 blocked | BLUE:   0 blocks  17 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 17: Red captured the flag. Blue must respond.
+[2K  Cycle    18 | 36s | RED:  18 flags   0 blocked | BLUE:   0 blocks  18 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 18: Red captured the flag. Blue must respond.
+[2K  Cycle    19 | 38s | RED:  19 flags   0 blocked | BLUE:   0 blocks  19 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 19: Red captured the flag. Blue must respond.
+[2K  Cycle    20 | 40s | RED:  20 flags   0 blocked | BLUE:   0 blocks  20 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 20: Red captured the flag. Blue must respond.
+[2K  Cycle    21 | 42s | RED:  21 flags   0 blocked | BLUE:   0 blocks  21 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 21: Red captured the flag. Blue must respond.
+[2K  Cycle    22 | 44s | RED:  22 flags   0 blocked | BLUE:   0 blocks  22 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 22: Red captured the flag. Blue must respond.
+[2K  Cycle    23 | 46s | RED:  23 flags   0 blocked | BLUE:   0 blocks  23 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 23: Red captured the flag. Blue must respond.
+[2K  Cycle    24 | 48s | RED:  24 flags   0 blocked | BLUE:   0 blocks  24 bypassed | Maturity:   0 | Esc: 0 | FLAG!
+  --> Cycle 24: Red captured the flag. Blue must respond.
+[2K  Cycle    25 | 50s | RED:  25 flags   0 blocked | BLUE:   0 blocks  25 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 25: Red captured the flag. Blue must respond.
+[2K  Cycle    26 | 52s | RED:  26 flags   0 blocked | BLUE:   0 blocks  26 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 26: Red captured the flag. Blue must respond.
+[2K  Cycle    27 | 54s | RED:  27 flags   0 blocked | BLUE:   0 blocks  27 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 27: Red captured the flag. Blue must respond.
+[2K  Cycle    28 | 56s | RED:  28 flags   0 blocked | BLUE:   0 blocks  28 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 28: Red captured the flag. Blue must respond.
+[2K  Cycle    29 | 58s | RED:  29 flags   0 blocked | BLUE:   0 blocks  29 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 29: Red captured the flag. Blue must respond.
+[2K  Cycle    30 | 1m 00s | RED:  30 flags   0 blocked | BLUE:   0 blocks  30 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 30: Red captured the flag. Blue must respond.
+[2K  Cycle    31 | 1m 02s | RED:  31 flags   0 blocked | BLUE:   0 blocks  31 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 31: Red captured the flag. Blue must respond.
+[2K  Cycle    32 | 1m 04s | RED:  32 flags   0 blocked | BLUE:   0 blocks  32 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 32: Red captured the flag. Blue must respond.
+[2K  Cycle    33 | 1m 06s | RED:  33 flags   0 blocked | BLUE:   0 blocks  33 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 33: Red captured the flag. Blue must respond.
+[2K  Cycle    34 | 1m 08s | RED:  34 flags   0 blocked | BLUE:   0 blocks  34 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 34: Red captured the flag. Blue must respond.
+[2K  Cycle    35 | 1m 10s | RED:  35 flags   0 blocked | BLUE:   0 blocks  35 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 35: Red captured the flag. Blue must respond.
+[2K  Cycle    36 | 1m 12s | RED:  36 flags   0 blocked | BLUE:   0 blocks  36 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 36: Red captured the flag. Blue must respond.
+[2K  Cycle    37 | 1m 14s | RED:  37 flags   0 blocked | BLUE:   0 blocks  37 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 37: Red captured the flag. Blue must respond.
+[2K  Cycle    38 | 1m 16s | RED:  38 flags   0 blocked | BLUE:   0 blocks  38 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 38: Red captured the flag. Blue must respond.
+[2K  Cycle    39 | 1m 18s | RED:  39 flags   0 blocked | BLUE:   0 blocks  39 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 39: Red captured the flag. Blue must respond.
+[2K  Cycle    40 | 1m 20s | RED:  40 flags   0 blocked | BLUE:   0 blocks  40 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 40: Red captured the flag. Blue must respond.
+[2K  Cycle    41 | 1m 22s | RED:  41 flags   0 blocked | BLUE:   0 blocks  41 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 41: Red captured the flag. Blue must respond.
+[2K  Cycle    42 | 1m 24s | RED:  42 flags   0 blocked | BLUE:   0 blocks  42 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 42: Red captured the flag. Blue must respond.
+[2K  Cycle    43 | 1m 26s | RED:  43 flags   0 blocked | BLUE:   0 blocks  43 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 43: Red captured the flag. Blue must respond.
+[2K  Cycle    44 | 1m 28s | RED:  44 flags   0 blocked | BLUE:   0 blocks  44 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 44: Red captured the flag. Blue must respond.
+[2K  Cycle    45 | 1m 30s | RED:  45 flags   0 blocked | BLUE:   0 blocks  45 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 45: Red captured the flag. Blue must respond.
+[2K  Cycle    46 | 1m 32s | RED:  46 flags   0 blocked | BLUE:   0 blocks  46 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 46: Red captured the flag. Blue must respond.
+[2K  Cycle    47 | 1m 34s | RED:  47 flags   0 blocked | BLUE:   0 blocks  47 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 47: Red captured the flag. Blue must respond.
+[2K  Cycle    48 | 1m 36s | RED:  48 flags   0 blocked | BLUE:   0 blocks  48 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 48: Red captured the flag. Blue must respond.
+[2K  Cycle    49 | 1m 38s | RED:  49 flags   0 blocked | BLUE:   0 blocks  49 bypassed | Maturity:   0 | Esc: 1 | FLAG!
+  --> Cycle 49: Red captured the flag. Blue must respond.
+[2K  Cycle    50 | 1m 40s | RED:  50 flags   0 blocked | BLUE:   0 blocks  50 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 50: Red captured the flag. Blue must respond.
+[2K  Cycle    51 | 1m 42s | RED:  51 flags   0 blocked | BLUE:   0 blocks  51 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 51: Red captured the flag. Blue must respond.
+[2K  Cycle    52 | 1m 44s | RED:  52 flags   0 blocked | BLUE:   0 blocks  52 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 52: Red captured the flag. Blue must respond.
+[2K  Cycle    53 | 1m 46s | RED:  53 flags   0 blocked | BLUE:   0 blocks  53 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 53: Red captured the flag. Blue must respond.
+[2K  Cycle    54 | 1m 48s | RED:  54 flags   0 blocked | BLUE:   0 blocks  54 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 54: Red captured the flag. Blue must respond.
+[2K  Cycle    55 | 1m 50s | RED:  55 flags   0 blocked | BLUE:   0 blocks  55 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 55: Red captured the flag. Blue must respond.
+[2K  Cycle    56 | 1m 52s | RED:  56 flags   0 blocked | BLUE:   0 blocks  56 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 56: Red captured the flag. Blue must respond.
+[2K  Cycle    57 | 1m 54s | RED:  57 flags   0 blocked | BLUE:   0 blocks  57 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 57: Red captured the flag. Blue must respond.
+[2K  Cycle    58 | 1m 56s | RED:  58 flags   0 blocked | BLUE:   0 blocks  58 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 58: Red captured the flag. Blue must respond.
+[2K  Cycle    59 | 1m 58s | RED:  59 flags   0 blocked | BLUE:   0 blocks  59 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 59: Red captured the flag. Blue must respond.
+[2K  Cycle    60 | 2m 00s | RED:  60 flags   0 blocked | BLUE:   0 blocks  60 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 60: Red captured the flag. Blue must respond.
+[2K  Cycle    61 | 2m 02s | RED:  61 flags   0 blocked | BLUE:   0 blocks  61 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 61: Red captured the flag. Blue must respond.
+[2K  Cycle    62 | 2m 04s | RED:  62 flags   0 blocked | BLUE:   0 blocks  62 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 62: Red captured the flag. Blue must respond.
+[2K  Cycle    63 | 2m 06s | RED:  63 flags   0 blocked | BLUE:   0 blocks  63 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 63: Red captured the flag. Blue must respond.
+[2K  Cycle    64 | 2m 08s | RED:  64 flags   0 blocked | BLUE:   0 blocks  64 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 64: Red captured the flag. Blue must respond.
+[2K  Cycle    65 | 2m 10s | RED:  65 flags   0 blocked | BLUE:   0 blocks  65 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 65: Red captured the flag. Blue must respond.
+[2K  Cycle    66 | 2m 12s | RED:  66 flags   0 blocked | BLUE:   0 blocks  66 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 66: Red captured the flag. Blue must respond.
+[2K  Cycle    67 | 2m 14s | RED:  67 flags   0 blocked | BLUE:   0 blocks  67 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 67: Red captured the flag. Blue must respond.
+[2K  Cycle    68 | 2m 16s | RED:  68 flags   0 blocked | BLUE:   0 blocks  68 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 68: Red captured the flag. Blue must respond.
+[2K  Cycle    69 | 2m 18s | RED:  69 flags   0 blocked | BLUE:   0 blocks  69 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 69: Red captured the flag. Blue must respond.
+[2K  Cycle    70 | 2m 20s | RED:  70 flags   0 blocked | BLUE:   0 blocks  70 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 70: Red captured the flag. Blue must respond.
+[2K  Cycle    71 | 2m 22s | RED:  71 flags   0 blocked | BLUE:   0 blocks  71 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 71: Red captured the flag. Blue must respond.
+[2K  Cycle    72 | 2m 24s | RED:  72 flags   0 blocked | BLUE:   0 blocks  72 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 72: Red captured the flag. Blue must respond.
+[2K  Cycle    73 | 2m 26s | RED:  73 flags   0 blocked | BLUE:   0 blocks  73 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 73: Red captured the flag. Blue must respond.
+[2K  Cycle    74 | 2m 28s | RED:  74 flags   0 blocked | BLUE:   0 blocks  74 bypassed | Maturity:   0 | Esc: 2 | FLAG!
+  --> Cycle 74: Red captured the flag. Blue must respond.
+[2K  Cycle    75 | 2m 30s | RED:  75 flags   0 blocked | BLUE:   0 blocks  75 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 75: Red captured the flag. Blue must respond.
+[2K  Cycle    76 | 2m 32s | RED:  76 flags   0 blocked | BLUE:   0 blocks  76 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 76: Red captured the flag. Blue must respond.
+[2K  Cycle    77 | 2m 34s | RED:  77 flags   0 blocked | BLUE:   0 blocks  77 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 77: Red captured the flag. Blue must respond.
+[2K  Cycle    78 | 2m 36s | RED:  78 flags   0 blocked | BLUE:   0 blocks  78 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 78: Red captured the flag. Blue must respond.
+[2K  Cycle    79 | 2m 38s | RED:  79 flags   0 blocked | BLUE:   0 blocks  79 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 79: Red captured the flag. Blue must respond.
+[2K  Cycle    80 | 2m 40s | RED:  80 flags   0 blocked | BLUE:   0 blocks  80 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 80: Red captured the flag. Blue must respond.
+[2K  Cycle    81 | 2m 42s | RED:  81 flags   0 blocked | BLUE:   0 blocks  81 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 81: Red captured the flag. Blue must respond.
+[2K  Cycle    82 | 2m 44s | RED:  82 flags   0 blocked | BLUE:   0 blocks  82 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 82: Red captured the flag. Blue must respond.
+[2K  Cycle    83 | 2m 46s | RED:  83 flags   0 blocked | BLUE:   0 blocks  83 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 83: Red captured the flag. Blue must respond.
+[2K  Cycle    84 | 2m 48s | RED:  84 flags   0 blocked | BLUE:   0 blocks  84 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 84: Red captured the flag. Blue must respond.
+[2K  Cycle    85 | 2m 50s | RED:  85 flags   0 blocked | BLUE:   0 blocks  85 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 85: Red captured the flag. Blue must respond.
+[2K  Cycle    86 | 2m 52s | RED:  86 flags   0 blocked | BLUE:   0 blocks  86 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 86: Red captured the flag. Blue must respond.
+[2K  Cycle    87 | 2m 54s | RED:  87 flags   0 blocked | BLUE:   0 blocks  87 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 87: Red captured the flag. Blue must respond.
+[2K  Cycle    88 | 2m 56s | RED:  88 flags   0 blocked | BLUE:   0 blocks  88 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 88: Red captured the flag. Blue must respond.
+[2K  Cycle    89 | 2m 58s | RED:  89 flags   0 blocked | BLUE:   0 blocks  89 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 89: Red captured the flag. Blue must respond.
+[2K  Cycle    90 | 3m 00s | RED:  90 flags   0 blocked | BLUE:   0 blocks  90 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 90: Red captured the flag. Blue must respond.
+[2K  Cycle    91 | 3m 02s | RED:  91 flags   0 blocked | BLUE:   0 blocks  91 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 91: Red captured the flag. Blue must respond.
+[2K  Cycle    92 | 3m 04s | RED:  92 flags   0 blocked | BLUE:   0 blocks  92 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 92: Red captured the flag. Blue must respond.
+[2K  Cycle    93 | 3m 06s | RED:  93 flags   0 blocked | BLUE:   0 blocks  93 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 93: Red captured the flag. Blue must respond.
+[2K  Cycle    94 | 3m 08s | RED:  94 flags   0 blocked | BLUE:   0 blocks  94 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 94: Red captured the flag. Blue must respond.
+[2K  Cycle    95 | 3m 10s | RED:  95 flags   0 blocked | BLUE:   0 blocks  95 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 95: Red captured the flag. Blue must respond.
+[2K  Cycle    96 | 3m 12s | RED:  96 flags   0 blocked | BLUE:   0 blocks  96 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 96: Red captured the flag. Blue must respond.
+[2K  Cycle    97 | 3m 14s | RED:  97 flags   0 blocked | BLUE:   0 blocks  97 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 97: Red captured the flag. Blue must respond.
+[2K  Cycle    98 | 3m 16s | RED:  98 flags   0 blocked | BLUE:   0 blocks  98 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 98: Red captured the flag. Blue must respond.
+[2K  Cycle    99 | 3m 18s | RED:  99 flags   0 blocked | BLUE:   0 blocks  99 bypassed | Maturity:   0 | Esc: 3 | FLAG!
+  --> Cycle 99: Red captured the flag. Blue must respond.
+[2K  Cycle   100 | 3m 20s | RED: 100 flags   0 blocked | BLUE:   0 blocks 100 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 100: Red captured the flag. Blue must respond.
+[2K  Cycle   101 | 3m 22s | RED: 101 flags   0 blocked | BLUE:   0 blocks 101 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 101: Red captured the flag. Blue must respond.
+[2K  Cycle   102 | 3m 24s | RED: 102 flags   0 blocked | BLUE:   0 blocks 102 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 102: Red captured the flag. Blue must respond.
+[2K  Cycle   103 | 3m 26s | RED: 103 flags   0 blocked | BLUE:   0 blocks 103 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 103: Red captured the flag. Blue must respond.
+[2K  Cycle   104 | 3m 28s | RED: 104 flags   0 blocked | BLUE:   0 blocks 104 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 104: Red captured the flag. Blue must respond.
+[2K  Cycle   105 | 3m 30s | RED: 105 flags   0 blocked | BLUE:   0 blocks 105 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 105: Red captured the flag. Blue must respond.
+[2K  Cycle   106 | 3m 32s | RED: 106 flags   0 blocked | BLUE:   0 blocks 106 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 106: Red captured the flag. Blue must respond.
+[2K  Cycle   107 | 3m 34s | RED: 107 flags   0 blocked | BLUE:   0 blocks 107 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 107: Red captured the flag. Blue must respond.
+[2K  Cycle   108 | 3m 36s | RED: 108 flags   0 blocked | BLUE:   0 blocks 108 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 108: Red captured the flag. Blue must respond.
+[2K  Cycle   109 | 3m 38s | RED: 109 flags   0 blocked | BLUE:   0 blocks 109 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 109: Red captured the flag. Blue must respond.
+[2K  Cycle   110 | 3m 40s | RED: 110 flags   0 blocked | BLUE:   0 blocks 110 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 110: Red captured the flag. Blue must respond.
+[2K  Cycle   111 | 3m 42s | RED: 111 flags   0 blocked | BLUE:   0 blocks 111 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 111: Red captured the flag. Blue must respond.
+[2K  Cycle   112 | 3m 44s | RED: 112 flags   0 blocked | BLUE:   0 blocks 112 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 112: Red captured the flag. Blue must respond.
+[2K  Cycle   113 | 3m 46s | RED: 113 flags   0 blocked | BLUE:   0 blocks 113 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 113: Red captured the flag. Blue must respond.
+[2K  Cycle   114 | 3m 48s | RED: 114 flags   0 blocked | BLUE:   0 blocks 114 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 114: Red captured the flag. Blue must respond.
+[2K  Cycle   115 | 3m 50s | RED: 115 flags   0 blocked | BLUE:   0 blocks 115 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 115: Red captured the flag. Blue must respond.
+[2K  Cycle   116 | 3m 52s | RED: 116 flags   0 blocked | BLUE:   0 blocks 116 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 116: Red captured the flag. Blue must respond.
+[2K  Cycle   117 | 3m 54s | RED: 117 flags   0 blocked | BLUE:   0 blocks 117 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 117: Red captured the flag. Blue must respond.
+[2K  Cycle   118 | 3m 56s | RED: 118 flags   0 blocked | BLUE:   0 blocks 118 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 118: Red captured the flag. Blue must respond.
+[2K  Cycle   119 | 3m 58s | RED: 119 flags   0 blocked | BLUE:   0 blocks 119 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 119: Red captured the flag. Blue must respond.
+[2K  Cycle   120 | 4m 00s | RED: 120 flags   0 blocked | BLUE:   0 blocks 120 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 120: Red captured the flag. Blue must respond.
+[2K  Cycle   121 | 4m 02s | RED: 121 flags   0 blocked | BLUE:   0 blocks 121 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 121: Red captured the flag. Blue must respond.
+[2K  Cycle   122 | 4m 04s | RED: 122 flags   0 blocked | BLUE:   0 blocks 122 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 122: Red captured the flag. Blue must respond.
+[2K  Cycle   123 | 4m 06s | RED: 123 flags   0 blocked | BLUE:   0 blocks 123 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 123: Red captured the flag. Blue must respond.
+[2K  Cycle   124 | 4m 08s | RED: 124 flags   0 blocked | BLUE:   0 blocks 124 bypassed | Maturity:   0 | Esc: 4 | FLAG!
+  --> Cycle 124: Red captured the flag. Blue must respond.
+[2K  Cycle   125 | 4m 10s | RED: 125 flags   0 blocked | BLUE:   0 blocks 125 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 125: Red captured the flag. Blue must respond.
+[2K  Cycle   126 | 4m 12s | RED: 126 flags   0 blocked | BLUE:   0 blocks 126 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 126: Red captured the flag. Blue must respond.
+[2K  Cycle   127 | 4m 14s | RED: 127 flags   0 blocked | BLUE:   0 blocks 127 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 127: Red captured the flag. Blue must respond.
+[2K  Cycle   128 | 4m 16s | RED: 128 flags   0 blocked | BLUE:   0 blocks 128 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 128: Red captured the flag. Blue must respond.
+[2K  Cycle   129 | 4m 18s | RED: 129 flags   0 blocked | BLUE:   0 blocks 129 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 129: Red captured the flag. Blue must respond.
+[2K  Cycle   130 | 4m 20s | RED: 130 flags   0 blocked | BLUE:   0 blocks 130 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 130: Red captured the flag. Blue must respond.
+[2K  Cycle   131 | 4m 22s | RED: 131 flags   0 blocked | BLUE:   0 blocks 131 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 131: Red captured the flag. Blue must respond.
+[2K  Cycle   132 | 4m 24s | RED: 132 flags   0 blocked | BLUE:   0 blocks 132 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 132: Red captured the flag. Blue must respond.
+[2K  Cycle   133 | 4m 26s | RED: 133 flags   0 blocked | BLUE:   0 blocks 133 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 133: Red captured the flag. Blue must respond.
+[2K  Cycle   134 | 4m 28s | RED: 134 flags   0 blocked | BLUE:   0 blocks 134 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 134: Red captured the flag. Blue must respond.
+[2K  Cycle   135 | 4m 30s | RED: 135 flags   0 blocked | BLUE:   0 blocks 135 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 135: Red captured the flag. Blue must respond.
+[2K  Cycle   136 | 4m 32s | RED: 136 flags   0 blocked | BLUE:   0 blocks 136 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 136: Red captured the flag. Blue must respond.
+[2K  Cycle   137 | 4m 34s | RED: 137 flags   0 blocked | BLUE:   0 blocks 137 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 137: Red captured the flag. Blue must respond.
+[2K  Cycle   138 | 4m 36s | RED: 138 flags   0 blocked | BLUE:   0 blocks 138 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 138: Red captured the flag. Blue must respond.
+[2K  Cycle   139 | 4m 38s | RED: 139 flags   0 blocked | BLUE:   0 blocks 139 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 139: Red captured the flag. Blue must respond.
+[2K  Cycle   140 | 4m 40s | RED: 140 flags   0 blocked | BLUE:   0 blocks 140 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 140: Red captured the flag. Blue must respond.
+[2K  Cycle   141 | 4m 42s | RED: 141 flags   0 blocked | BLUE:   0 blocks 141 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 141: Red captured the flag. Blue must respond.
+[2K  Cycle   142 | 4m 44s | RED: 142 flags   0 blocked | BLUE:   0 blocks 142 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 142: Red captured the flag. Blue must respond.
+[2K  Cycle   143 | 4m 46s | RED: 143 flags   0 blocked | BLUE:   0 blocks 143 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 143: Red captured the flag. Blue must respond.
+[2K  Cycle   144 | 4m 48s | RED: 144 flags   0 blocked | BLUE:   0 blocks 144 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 144: Red captured the flag. Blue must respond.
+[2K  Cycle   145 | 4m 50s | RED: 145 flags   0 blocked | BLUE:   0 blocks 145 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 145: Red captured the flag. Blue must respond.
+[2K  Cycle   146 | 4m 52s | RED: 146 flags   0 blocked | BLUE:   0 blocks 146 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 146: Red captured the flag. Blue must respond.
+[2K  Cycle   147 | 4m 54s | RED: 147 flags   0 blocked | BLUE:   0 blocks 147 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 147: Red captured the flag. Blue must respond.
+[2K  Cycle   148 | 4m 56s | RED: 148 flags   0 blocked | BLUE:   0 blocks 148 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 148: Red captured the flag. Blue must respond.
+[2K  Cycle   149 | 4m 58s | RED: 149 flags   0 blocked | BLUE:   0 blocks 149 bypassed | Maturity:   0 | Esc: 5 | FLAG!
+  --> Cycle 149: Red captured the flag. Blue must respond.
+[2K  Cycle   150 | 5m 00s | RED: 150 flags   0 blocked | BLUE:   0 blocks 150 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 150: Red captured the flag. Blue must respond.
+[2K  Cycle   151 | 5m 02s | RED: 151 flags   0 blocked | BLUE:   0 blocks 151 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 151: Red captured the flag. Blue must respond.
+[2K  Cycle   152 | 5m 04s | RED: 152 flags   0 blocked | BLUE:   0 blocks 152 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 152: Red captured the flag. Blue must respond.
+[2K  Cycle   153 | 5m 06s | RED: 153 flags   0 blocked | BLUE:   0 blocks 153 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 153: Red captured the flag. Blue must respond.
+[2K  Cycle   154 | 5m 08s | RED: 154 flags   0 blocked | BLUE:   0 blocks 154 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 154: Red captured the flag. Blue must respond.
+[2K  Cycle   155 | 5m 10s | RED: 155 flags   0 blocked | BLUE:   0 blocks 155 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 155: Red captured the flag. Blue must respond.
+[2K  Cycle   156 | 5m 12s | RED: 156 flags   0 blocked | BLUE:   0 blocks 156 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 156: Red captured the flag. Blue must respond.
+[2K  Cycle   157 | 5m 14s | RED: 157 flags   0 blocked | BLUE:   0 blocks 157 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 157: Red captured the flag. Blue must respond.
+[2K  Cycle   158 | 5m 16s | RED: 158 flags   0 blocked | BLUE:   0 blocks 158 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 158: Red captured the flag. Blue must respond.
+[2K  Cycle   159 | 5m 18s | RED: 159 flags   0 blocked | BLUE:   0 blocks 159 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 159: Red captured the flag. Blue must respond.
+[2K  Cycle   160 | 5m 20s | RED: 160 flags   0 blocked | BLUE:   0 blocks 160 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 160: Red captured the flag. Blue must respond.
+[2K  Cycle   161 | 5m 22s | RED: 161 flags   0 blocked | BLUE:   0 blocks 161 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 161: Red captured the flag. Blue must respond.
+[2K  Cycle   162 | 5m 24s | RED: 162 flags   0 blocked | BLUE:   0 blocks 162 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 162: Red captured the flag. Blue must respond.
+[2K  Cycle   163 | 5m 26s | RED: 163 flags   0 blocked | BLUE:   0 blocks 163 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 163: Red captured the flag. Blue must respond.
+[2K  Cycle   164 | 5m 28s | RED: 164 flags   0 blocked | BLUE:   0 blocks 164 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 164: Red captured the flag. Blue must respond.
+[2K  Cycle   165 | 5m 30s | RED: 165 flags   0 blocked | BLUE:   0 blocks 165 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 165: Red captured the flag. Blue must respond.
+[2K  Cycle   166 | 5m 32s | RED: 166 flags   0 blocked | BLUE:   0 blocks 166 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 166: Red captured the flag. Blue must respond.
+[2K  Cycle   167 | 5m 34s | RED: 167 flags   0 blocked | BLUE:   0 blocks 167 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 167: Red captured the flag. Blue must respond.
+[2K  Cycle   168 | 5m 36s | RED: 168 flags   0 blocked | BLUE:   0 blocks 168 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 168: Red captured the flag. Blue must respond.
+[2K  Cycle   169 | 5m 38s | RED: 169 flags   0 blocked | BLUE:   0 blocks 169 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 169: Red captured the flag. Blue must respond.
+[2K  Cycle   170 | 5m 40s | RED: 170 flags   0 blocked | BLUE:   0 blocks 170 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 170: Red captured the flag. Blue must respond.
+[2K  Cycle   171 | 5m 42s | RED: 171 flags   0 blocked | BLUE:   0 blocks 171 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 171: Red captured the flag. Blue must respond.
+[2K  Cycle   172 | 5m 44s | RED: 172 flags   0 blocked | BLUE:   0 blocks 172 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 172: Red captured the flag. Blue must respond.
+[2K  Cycle   173 | 5m 46s | RED: 173 flags   0 blocked | BLUE:   0 blocks 173 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 173: Red captured the flag. Blue must respond.
+[2K  Cycle   174 | 5m 48s | RED: 174 flags   0 blocked | BLUE:   0 blocks 174 bypassed | Maturity:   0 | Esc: 6 | FLAG!
+  --> Cycle 174: Red captured the flag. Blue must respond.
+[2K  Cycle   175 | 5m 50s | RED: 175 flags   0 blocked | BLUE:   0 blocks 175 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 175: Red captured the flag. Blue must respond.
+[2K  Cycle   176 | 5m 52s | RED: 176 flags   0 blocked | BLUE:   0 blocks 176 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 176: Red captured the flag. Blue must respond.
+[2K  Cycle   177 | 5m 54s | RED: 177 flags   0 blocked | BLUE:   0 blocks 177 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 177: Red captured the flag. Blue must respond.
+[2K  Cycle   178 | 5m 56s | RED: 178 flags   0 blocked | BLUE:   0 blocks 178 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 178: Red captured the flag. Blue must respond.
+[2K  Cycle   179 | 5m 58s | RED: 179 flags   0 blocked | BLUE:   0 blocks 179 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 179: Red captured the flag. Blue must respond.
+[2K  Cycle   180 | 6m 00s | RED: 180 flags   0 blocked | BLUE:   0 blocks 180 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 180: Red captured the flag. Blue must respond.
+[2K  Cycle   181 | 6m 02s | RED: 181 flags   0 blocked | BLUE:   0 blocks 181 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 181: Red captured the flag. Blue must respond.
+[2K  Cycle   182 | 6m 04s | RED: 182 flags   0 blocked | BLUE:   0 blocks 182 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 182: Red captured the flag. Blue must respond.
+[2K  Cycle   183 | 6m 06s | RED: 183 flags   0 blocked | BLUE:   0 blocks 183 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 183: Red captured the flag. Blue must respond.
+[2K  Cycle   184 | 6m 08s | RED: 184 flags   0 blocked | BLUE:   0 blocks 184 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 184: Red captured the flag. Blue must respond.
+[2K  Cycle   185 | 6m 10s | RED: 185 flags   0 blocked | BLUE:   0 blocks 185 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 185: Red captured the flag. Blue must respond.
+[2K  Cycle   186 | 6m 12s | RED: 186 flags   0 blocked | BLUE:   0 blocks 186 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 186: Red captured the flag. Blue must respond.
+[2K  Cycle   187 | 6m 14s | RED: 187 flags   0 blocked | BLUE:   0 blocks 187 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 187: Red captured the flag. Blue must respond.
+[2K  Cycle   188 | 6m 16s | RED: 188 flags   0 blocked | BLUE:   0 blocks 188 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 188: Red captured the flag. Blue must respond.
+[2K  Cycle   189 | 6m 18s | RED: 189 flags   0 blocked | BLUE:   0 blocks 189 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 189: Red captured the flag. Blue must respond.
+[2K  Cycle   190 | 6m 20s | RED: 190 flags   0 blocked | BLUE:   0 blocks 190 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 190: Red captured the flag. Blue must respond.
+[2K  Cycle   191 | 6m 22s | RED: 191 flags   0 blocked | BLUE:   0 blocks 191 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 191: Red captured the flag. Blue must respond.
+[2K  Cycle   192 | 6m 24s | RED: 192 flags   0 blocked | BLUE:   0 blocks 192 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 192: Red captured the flag. Blue must respond.
+[2K  Cycle   193 | 6m 26s | RED: 193 flags   0 blocked | BLUE:   0 blocks 193 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 193: Red captured the flag. Blue must respond.
+[2K  Cycle   194 | 6m 28s | RED: 194 flags   0 blocked | BLUE:   0 blocks 194 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 194: Red captured the flag. Blue must respond.
+[2K  Cycle   195 | 6m 30s | RED: 195 flags   0 blocked | BLUE:   0 blocks 195 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 195: Red captured the flag. Blue must respond.
+[2K  Cycle   196 | 6m 32s | RED: 196 flags   0 blocked | BLUE:   0 blocks 196 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 196: Red captured the flag. Blue must respond.
+[2K  Cycle   197 | 6m 34s | RED: 197 flags   0 blocked | BLUE:   0 blocks 197 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 197: Red captured the flag. Blue must respond.
+[2K  Cycle   198 | 6m 36s | RED: 198 flags   0 blocked | BLUE:   0 blocks 198 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 198: Red captured the flag. Blue must respond.
+[2K  Cycle   199 | 6m 38s | RED: 199 flags   0 blocked | BLUE:   0 blocks 199 bypassed | Maturity:   0 | Esc: 7 | FLAG!
+  --> Cycle 199: Red captured the flag. Blue must respond.
+[2K  Cycle   200 | 6m 40s | RED: 200 flags   0 blocked | BLUE:   0 blocks 200 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 200: Red captured the flag. Blue must respond.
+[2K  Cycle   201 | 6m 42s | RED: 201 flags   0 blocked | BLUE:   0 blocks 201 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 201: Red captured the flag. Blue must respond.
+[2K  Cycle   202 | 6m 44s | RED: 202 flags   0 blocked | BLUE:   0 blocks 202 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 202: Red captured the flag. Blue must respond.
+[2K  Cycle   203 | 6m 46s | RED: 203 flags   0 blocked | BLUE:   0 blocks 203 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 203: Red captured the flag. Blue must respond.
+[2K  Cycle   204 | 6m 48s | RED: 204 flags   0 blocked | BLUE:   0 blocks 204 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 204: Red captured the flag. Blue must respond.
+[2K  Cycle   205 | 6m 50s | RED: 205 flags   0 blocked | BLUE:   0 blocks 205 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 205: Red captured the flag. Blue must respond.
+[2K  Cycle   206 | 6m 52s | RED: 206 flags   0 blocked | BLUE:   0 blocks 206 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 206: Red captured the flag. Blue must respond.
+[2K  Cycle   207 | 6m 54s | RED: 207 flags   0 blocked | BLUE:   0 blocks 207 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 207: Red captured the flag. Blue must respond.
+[2K  Cycle   208 | 6m 56s | RED: 208 flags   0 blocked | BLUE:   0 blocks 208 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 208: Red captured the flag. Blue must respond.
+[2K  Cycle   209 | 6m 58s | RED: 209 flags   0 blocked | BLUE:   0 blocks 209 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 209: Red captured the flag. Blue must respond.
+[2K  Cycle   210 | 7m 00s | RED: 210 flags   0 blocked | BLUE:   0 blocks 210 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 210: Red captured the flag. Blue must respond.
+[2K  Cycle   211 | 7m 02s | RED: 211 flags   0 blocked | BLUE:   0 blocks 211 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 211: Red captured the flag. Blue must respond.
+[2K  Cycle   212 | 7m 04s | RED: 212 flags   0 blocked | BLUE:   0 blocks 212 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 212: Red captured the flag. Blue must respond.
+[2K  Cycle   213 | 7m 06s | RED: 213 flags   0 blocked | BLUE:   0 blocks 213 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 213: Red captured the flag. Blue must respond.
+[2K  Cycle   214 | 7m 08s | RED: 214 flags   0 blocked | BLUE:   0 blocks 214 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 214: Red captured the flag. Blue must respond.
+[2K  Cycle   215 | 7m 10s | RED: 215 flags   0 blocked | BLUE:   0 blocks 215 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 215: Red captured the flag. Blue must respond.
+[2K  Cycle   216 | 7m 12s | RED: 216 flags   0 blocked | BLUE:   0 blocks 216 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 216: Red captured the flag. Blue must respond.
+[2K  Cycle   217 | 7m 14s | RED: 217 flags   0 blocked | BLUE:   0 blocks 217 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 217: Red captured the flag. Blue must respond.
+[2K  Cycle   218 | 7m 16s | RED: 218 flags   0 blocked | BLUE:   0 blocks 218 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 218: Red captured the flag. Blue must respond.
+[2K  Cycle   219 | 7m 18s | RED: 219 flags   0 blocked | BLUE:   0 blocks 219 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 219: Red captured the flag. Blue must respond.
+[2K  Cycle   220 | 7m 20s | RED: 220 flags   0 blocked | BLUE:   0 blocks 220 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 220: Red captured the flag. Blue must respond.
+[2K  Cycle   221 | 7m 22s | RED: 221 flags   0 blocked | BLUE:   0 blocks 221 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 221: Red captured the flag. Blue must respond.
+[2K  Cycle   222 | 7m 24s | RED: 222 flags   0 blocked | BLUE:   0 blocks 222 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 222: Red captured the flag. Blue must respond.
+[2K  Cycle   223 | 7m 26s | RED: 223 flags   0 blocked | BLUE:   0 blocks 223 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 223: Red captured the flag. Blue must respond.
+[2K  Cycle   224 | 7m 28s | RED: 224 flags   0 blocked | BLUE:   0 blocks 224 bypassed | Maturity:   0 | Esc: 8 | FLAG!
+  --> Cycle 224: Red captured the flag. Blue must respond.
+[2K  Cycle   225 | 7m 30s | RED: 225 flags   0 blocked | BLUE:   0 blocks 225 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 225: Red captured the flag. Blue must respond.
+[2K  Cycle   226 | 7m 32s | RED: 226 flags   0 blocked | BLUE:   0 blocks 226 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 226: Red captured the flag. Blue must respond.
+[2K  Cycle   227 | 7m 34s | RED: 227 flags   0 blocked | BLUE:   0 blocks 227 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 227: Red captured the flag. Blue must respond.
+[2K  Cycle   228 | 7m 36s | RED: 228 flags   0 blocked | BLUE:   0 blocks 228 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 228: Red captured the flag. Blue must respond.
+[2K  Cycle   229 | 7m 38s | RED: 229 flags   0 blocked | BLUE:   0 blocks 229 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 229: Red captured the flag. Blue must respond.
+[2K  Cycle   230 | 7m 40s | RED: 230 flags   0 blocked | BLUE:   0 blocks 230 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 230: Red captured the flag. Blue must respond.
+[2K  Cycle   231 | 7m 42s | RED: 231 flags   0 blocked | BLUE:   0 blocks 231 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 231: Red captured the flag. Blue must respond.
+[2K  Cycle   232 | 7m 44s | RED: 232 flags   0 blocked | BLUE:   0 blocks 232 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 232: Red captured the flag. Blue must respond.
+[2K  Cycle   233 | 7m 46s | RED: 233 flags   0 blocked | BLUE:   0 blocks 233 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 233: Red captured the flag. Blue must respond.
+[2K  Cycle   234 | 7m 48s | RED: 234 flags   0 blocked | BLUE:   0 blocks 234 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 234: Red captured the flag. Blue must respond.
+[2K  Cycle   235 | 7m 50s | RED: 235 flags   0 blocked | BLUE:   0 blocks 235 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 235: Red captured the flag. Blue must respond.
+[2K  Cycle   236 | 7m 52s | RED: 236 flags   0 blocked | BLUE:   0 blocks 236 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 236: Red captured the flag. Blue must respond.
+[2K  Cycle   237 | 7m 54s | RED: 237 flags   0 blocked | BLUE:   0 blocks 237 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 237: Red captured the flag. Blue must respond.
+[2K  Cycle   238 | 7m 56s | RED: 238 flags   0 blocked | BLUE:   0 blocks 238 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 238: Red captured the flag. Blue must respond.
+[2K  Cycle   239 | 7m 58s | RED: 239 flags   0 blocked | BLUE:   0 blocks 239 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 239: Red captured the flag. Blue must respond.
+[2K  Cycle   240 | 8m 00s | RED: 240 flags   0 blocked | BLUE:   0 blocks 240 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 240: Red captured the flag. Blue must respond.
+[2K  Cycle   241 | 8m 02s | RED: 241 flags   0 blocked | BLUE:   0 blocks 241 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 241: Red captured the flag. Blue must respond.
+[2K  Cycle   242 | 8m 04s | RED: 242 flags   0 blocked | BLUE:   0 blocks 242 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 242: Red captured the flag. Blue must respond.
+[2K  Cycle   243 | 8m 06s | RED: 243 flags   0 blocked | BLUE:   0 blocks 243 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 243: Red captured the flag. Blue must respond.
+[2K  Cycle   244 | 8m 08s | RED: 244 flags   0 blocked | BLUE:   0 blocks 244 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 244: Red captured the flag. Blue must respond.
+[2K  Cycle   245 | 8m 10s | RED: 245 flags   0 blocked | BLUE:   0 blocks 245 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 245: Red captured the flag. Blue must respond.
+[2K  Cycle   246 | 8m 12s | RED: 246 flags   0 blocked | BLUE:   0 blocks 246 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 246: Red captured the flag. Blue must respond.
+[2K  Cycle   247 | 8m 14s | RED: 247 flags   0 blocked | BLUE:   0 blocks 247 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 247: Red captured the flag. Blue must respond.
+[2K  Cycle   248 | 8m 16s | RED: 248 flags   0 blocked | BLUE:   0 blocks 248 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 248: Red captured the flag. Blue must respond.
+[2K  Cycle   249 | 8m 18s | RED: 249 flags   0 blocked | BLUE:   0 blocks 249 bypassed | Maturity:   0 | Esc: 9 | FLAG!
+  --> Cycle 249: Red captured the flag. Blue must respond.
+[2K  Cycle   250 | 8m 20s | RED: 250 flags   0 blocked | BLUE:   0 blocks 250 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 250: Red captured the flag. Blue must respond.
+[2K  Cycle   251 | 8m 22s | RED: 251 flags   0 blocked | BLUE:   0 blocks 251 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 251: Red captured the flag. Blue must respond.
+[2K  Cycle   252 | 8m 24s | RED: 252 flags   0 blocked | BLUE:   0 blocks 252 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 252: Red captured the flag. Blue must respond.
+[2K  Cycle   253 | 8m 26s | RED: 253 flags   0 blocked | BLUE:   0 blocks 253 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 253: Red captured the flag. Blue must respond.
+[2K  Cycle   254 | 8m 28s | RED: 254 flags   0 blocked | BLUE:   0 blocks 254 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 254: Red captured the flag. Blue must respond.
+[2K  Cycle   255 | 8m 30s | RED: 255 flags   0 blocked | BLUE:   0 blocks 255 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 255: Red captured the flag. Blue must respond.
+[2K  Cycle   256 | 8m 32s | RED: 256 flags   0 blocked | BLUE:   0 blocks 256 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 256: Red captured the flag. Blue must respond.
+[2K  Cycle   257 | 8m 34s | RED: 257 flags   0 blocked | BLUE:   0 blocks 257 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 257: Red captured the flag. Blue must respond.
+[2K  Cycle   258 | 8m 36s | RED: 258 flags   0 blocked | BLUE:   0 blocks 258 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 258: Red captured the flag. Blue must respond.
+[2K  Cycle   259 | 8m 38s | RED: 259 flags   0 blocked | BLUE:   0 blocks 259 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 259: Red captured the flag. Blue must respond.
+[2K  Cycle   260 | 8m 40s | RED: 260 flags   0 blocked | BLUE:   0 blocks 260 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 260: Red captured the flag. Blue must respond.
+[2K  Cycle   261 | 8m 42s | RED: 261 flags   0 blocked | BLUE:   0 blocks 261 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 261: Red captured the flag. Blue must respond.
+[2K  Cycle   262 | 8m 44s | RED: 262 flags   0 blocked | BLUE:   0 blocks 262 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 262: Red captured the flag. Blue must respond.
+[2K  Cycle   263 | 8m 46s | RED: 263 flags   0 blocked | BLUE:   0 blocks 263 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 263: Red captured the flag. Blue must respond.
+[2K  Cycle   264 | 8m 48s | RED: 264 flags   0 blocked | BLUE:   0 blocks 264 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 264: Red captured the flag. Blue must respond.
+[2K  Cycle   265 | 8m 50s | RED: 265 flags   0 blocked | BLUE:   0 blocks 265 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 265: Red captured the flag. Blue must respond.
+[2K  Cycle   266 | 8m 52s | RED: 266 flags   0 blocked | BLUE:   0 blocks 266 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 266: Red captured the flag. Blue must respond.
+[2K  Cycle   267 | 8m 54s | RED: 267 flags   0 blocked | BLUE:   0 blocks 267 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 267: Red captured the flag. Blue must respond.
+[2K  Cycle   268 | 8m 56s | RED: 268 flags   0 blocked | BLUE:   0 blocks 268 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 268: Red captured the flag. Blue must respond.
+[2K  Cycle   269 | 8m 58s | RED: 269 flags   0 blocked | BLUE:   0 blocks 269 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 269: Red captured the flag. Blue must respond.
+[2K  Cycle   270 | 9m 00s | RED: 270 flags   0 blocked | BLUE:   0 blocks 270 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 270: Red captured the flag. Blue must respond.
+[2K  Cycle   271 | 9m 02s | RED: 271 flags   0 blocked | BLUE:   0 blocks 271 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 271: Red captured the flag. Blue must respond.
+[2K  Cycle   272 | 9m 04s | RED: 272 flags   0 blocked | BLUE:   0 blocks 272 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 272: Red captured the flag. Blue must respond.
+[2K  Cycle   273 | 9m 06s | RED: 273 flags   0 blocked | BLUE:   0 blocks 273 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 273: Red captured the flag. Blue must respond.
+[2K  Cycle   274 | 9m 08s | RED: 274 flags   0 blocked | BLUE:   0 blocks 274 bypassed | Maturity:   0 | Esc: 10 | FLAG!
+  --> Cycle 274: Red captured the flag. Blue must respond.
+[2K  Cycle   275 | 9m 10s | RED: 275 flags   0 blocked | BLUE:   0 blocks 275 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 275: Red captured the flag. Blue must respond.
+[2K  Cycle   276 | 9m 12s | RED: 276 flags   0 blocked | BLUE:   0 blocks 276 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 276: Red captured the flag. Blue must respond.
+[2K  Cycle   277 | 9m 14s | RED: 277 flags   0 blocked | BLUE:   0 blocks 277 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 277: Red captured the flag. Blue must respond.
+[2K  Cycle   278 | 9m 16s | RED: 278 flags   0 blocked | BLUE:   0 blocks 278 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 278: Red captured the flag. Blue must respond.
+[2K  Cycle   279 | 9m 18s | RED: 279 flags   0 blocked | BLUE:   0 blocks 279 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 279: Red captured the flag. Blue must respond.
+[2K  Cycle   280 | 9m 20s | RED: 280 flags   0 blocked | BLUE:   0 blocks 280 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 280: Red captured the flag. Blue must respond.
+[2K  Cycle   281 | 9m 22s | RED: 281 flags   0 blocked | BLUE:   0 blocks 281 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 281: Red captured the flag. Blue must respond.
+[2K  Cycle   282 | 9m 24s | RED: 282 flags   0 blocked | BLUE:   0 blocks 282 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 282: Red captured the flag. Blue must respond.
+[2K  Cycle   283 | 9m 26s | RED: 283 flags   0 blocked | BLUE:   0 blocks 283 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 283: Red captured the flag. Blue must respond.
+[2K  Cycle   284 | 9m 28s | RED: 284 flags   0 blocked | BLUE:   0 blocks 284 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 284: Red captured the flag. Blue must respond.
+[2K  Cycle   285 | 9m 30s | RED: 285 flags   0 blocked | BLUE:   0 blocks 285 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 285: Red captured the flag. Blue must respond.
+[2K  Cycle   286 | 9m 32s | RED: 286 flags   0 blocked | BLUE:   0 blocks 286 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 286: Red captured the flag. Blue must respond.
+[2K  Cycle   287 | 9m 34s | RED: 287 flags   0 blocked | BLUE:   0 blocks 287 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 287: Red captured the flag. Blue must respond.
+[2K  Cycle   288 | 9m 36s | RED: 288 flags   0 blocked | BLUE:   0 blocks 288 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 288: Red captured the flag. Blue must respond.
+[2K  Cycle   289 | 9m 38s | RED: 289 flags   0 blocked | BLUE:   0 blocks 289 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 289: Red captured the flag. Blue must respond.
+[2K  Cycle   290 | 9m 40s | RED: 290 flags   0 blocked | BLUE:   0 blocks 290 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 290: Red captured the flag. Blue must respond.
+[2K  Cycle   291 | 9m 42s | RED: 291 flags   0 blocked | BLUE:   0 blocks 291 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 291: Red captured the flag. Blue must respond.
+[2K  Cycle   292 | 9m 44s | RED: 292 flags   0 blocked | BLUE:   0 blocks 292 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 292: Red captured the flag. Blue must respond.
+[2K  Cycle   293 | 9m 46s | RED: 293 flags   0 blocked | BLUE:   0 blocks 293 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 293: Red captured the flag. Blue must respond.
+[2K  Cycle   294 | 9m 48s | RED: 294 flags   0 blocked | BLUE:   0 blocks 294 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 294: Red captured the flag. Blue must respond.
+[2K  Cycle   295 | 9m 50s | RED: 295 flags   0 blocked | BLUE:   0 blocks 295 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 295: Red captured the flag. Blue must respond.
+[2K  Cycle   296 | 9m 52s | RED: 296 flags   0 blocked | BLUE:   0 blocks 296 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 296: Red captured the flag. Blue must respond.
+[2K  Cycle   297 | 9m 54s | RED: 297 flags   0 blocked | BLUE:   0 blocks 297 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 297: Red captured the flag. Blue must respond.
+[2K  Cycle   298 | 9m 56s | RED: 298 flags   0 blocked | BLUE:   0 blocks 298 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 298: Red captured the flag. Blue must respond.
+[2K  Cycle   299 | 9m 58s | RED: 299 flags   0 blocked | BLUE:   0 blocks 299 bypassed | Maturity:   0 | Esc: 11 | FLAG!
+  --> Cycle 299: Red captured the flag. Blue must respond.
+[2K  Cycle   300 | 10m 00s | RED: 300 flags   0 blocked | BLUE:   0 blocks 300 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 300: Red captured the flag. Blue must respond.
+[2K  Cycle   301 | 10m 02s | RED: 301 flags   0 blocked | BLUE:   0 blocks 301 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 301: Red captured the flag. Blue must respond.
+[2K  Cycle   302 | 10m 04s | RED: 302 flags   0 blocked | BLUE:   0 blocks 302 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 302: Red captured the flag. Blue must respond.
+[2K  Cycle   303 | 10m 06s | RED: 303 flags   0 blocked | BLUE:   0 blocks 303 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 303: Red captured the flag. Blue must respond.
+[2K  Cycle   304 | 10m 08s | RED: 304 flags   0 blocked | BLUE:   0 blocks 304 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 304: Red captured the flag. Blue must respond.
+[2K  Cycle   305 | 10m 10s | RED: 305 flags   0 blocked | BLUE:   0 blocks 305 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 305: Red captured the flag. Blue must respond.
+[2K  Cycle   306 | 10m 12s | RED: 306 flags   0 blocked | BLUE:   0 blocks 306 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 306: Red captured the flag. Blue must respond.
+[2K  Cycle   307 | 10m 14s | RED: 307 flags   0 blocked | BLUE:   0 blocks 307 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 307: Red captured the flag. Blue must respond.
+[2K  Cycle   308 | 10m 16s | RED: 308 flags   0 blocked | BLUE:   0 blocks 308 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 308: Red captured the flag. Blue must respond.
+[2K  Cycle   309 | 10m 18s | RED: 309 flags   0 blocked | BLUE:   0 blocks 309 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 309: Red captured the flag. Blue must respond.
+[2K  Cycle   310 | 10m 20s | RED: 310 flags   0 blocked | BLUE:   0 blocks 310 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 310: Red captured the flag. Blue must respond.
+[2K  Cycle   311 | 10m 22s | RED: 311 flags   0 blocked | BLUE:   0 blocks 311 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 311: Red captured the flag. Blue must respond.
+[2K  Cycle   312 | 10m 24s | RED: 312 flags   0 blocked | BLUE:   0 blocks 312 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 312: Red captured the flag. Blue must respond.
+[2K  Cycle   313 | 10m 26s | RED: 313 flags   0 blocked | BLUE:   0 blocks 313 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 313: Red captured the flag. Blue must respond.
+[2K  Cycle   314 | 10m 28s | RED: 314 flags   0 blocked | BLUE:   0 blocks 314 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 314: Red captured the flag. Blue must respond.
+[2K  Cycle   315 | 10m 30s | RED: 315 flags   0 blocked | BLUE:   0 blocks 315 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 315: Red captured the flag. Blue must respond.
+[2K  Cycle   316 | 10m 32s | RED: 316 flags   0 blocked | BLUE:   0 blocks 316 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 316: Red captured the flag. Blue must respond.
+[2K  Cycle   317 | 10m 34s | RED: 317 flags   0 blocked | BLUE:   0 blocks 317 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 317: Red captured the flag. Blue must respond.
+[2K  Cycle   318 | 10m 36s | RED: 318 flags   0 blocked | BLUE:   0 blocks 318 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 318: Red captured the flag. Blue must respond.
+[2K  Cycle   319 | 10m 38s | RED: 319 flags   0 blocked | BLUE:   0 blocks 319 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 319: Red captured the flag. Blue must respond.
+[2K  Cycle   320 | 10m 40s | RED: 320 flags   0 blocked | BLUE:   0 blocks 320 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 320: Red captured the flag. Blue must respond.
+[2K  Cycle   321 | 10m 42s | RED: 321 flags   0 blocked | BLUE:   0 blocks 321 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 321: Red captured the flag. Blue must respond.
+[2K  Cycle   322 | 10m 44s | RED: 322 flags   0 blocked | BLUE:   0 blocks 322 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 322: Red captured the flag. Blue must respond.
+[2K  Cycle   323 | 10m 46s | RED: 323 flags   0 blocked | BLUE:   0 blocks 323 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 323: Red captured the flag. Blue must respond.
+[2K  Cycle   324 | 10m 48s | RED: 324 flags   0 blocked | BLUE:   0 blocks 324 bypassed | Maturity:   0 | Esc: 12 | FLAG!
+  --> Cycle 324: Red captured the flag. Blue must respond.
+[2K  Cycle   325 | 10m 50s | RED: 325 flags   0 blocked | BLUE:   0 blocks 325 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 325: Red captured the flag. Blue must respond.
+[2K  Cycle   326 | 10m 52s | RED: 326 flags   0 blocked | BLUE:   0 blocks 326 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 326: Red captured the flag. Blue must respond.
+[2K  Cycle   327 | 10m 54s | RED: 327 flags   0 blocked | BLUE:   0 blocks 327 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 327: Red captured the flag. Blue must respond.
+[2K  Cycle   328 | 10m 56s | RED: 328 flags   0 blocked | BLUE:   0 blocks 328 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 328: Red captured the flag. Blue must respond.
+[2K  Cycle   329 | 10m 58s | RED: 329 flags   0 blocked | BLUE:   0 blocks 329 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 329: Red captured the flag. Blue must respond.
+[2K  Cycle   330 | 11m 00s | RED: 330 flags   0 blocked | BLUE:   0 blocks 330 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 330: Red captured the flag. Blue must respond.
+[2K  Cycle   331 | 11m 02s | RED: 331 flags   0 blocked | BLUE:   0 blocks 331 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 331: Red captured the flag. Blue must respond.
+[2K  Cycle   332 | 11m 04s | RED: 332 flags   0 blocked | BLUE:   0 blocks 332 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 332: Red captured the flag. Blue must respond.
+[2K  Cycle   333 | 11m 06s | RED: 333 flags   0 blocked | BLUE:   0 blocks 333 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 333: Red captured the flag. Blue must respond.
+[2K  Cycle   334 | 11m 08s | RED: 334 flags   0 blocked | BLUE:   0 blocks 334 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 334: Red captured the flag. Blue must respond.
+[2K  Cycle   335 | 11m 10s | RED: 335 flags   0 blocked | BLUE:   0 blocks 335 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 335: Red captured the flag. Blue must respond.
+[2K  Cycle   336 | 11m 12s | RED: 336 flags   0 blocked | BLUE:   0 blocks 336 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 336: Red captured the flag. Blue must respond.
+[2K  Cycle   337 | 11m 14s | RED: 337 flags   0 blocked | BLUE:   0 blocks 337 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 337: Red captured the flag. Blue must respond.
+[2K  Cycle   338 | 11m 16s | RED: 338 flags   0 blocked | BLUE:   0 blocks 338 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 338: Red captured the flag. Blue must respond.
+[2K  Cycle   339 | 11m 18s | RED: 339 flags   0 blocked | BLUE:   0 blocks 339 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 339: Red captured the flag. Blue must respond.
+[2K  Cycle   340 | 11m 20s | RED: 340 flags   0 blocked | BLUE:   0 blocks 340 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 340: Red captured the flag. Blue must respond.
+[2K  Cycle   341 | 11m 22s | RED: 341 flags   0 blocked | BLUE:   0 blocks 341 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 341: Red captured the flag. Blue must respond.
+[2K  Cycle   342 | 11m 24s | RED: 342 flags   0 blocked | BLUE:   0 blocks 342 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 342: Red captured the flag. Blue must respond.
+[2K  Cycle   343 | 11m 26s | RED: 343 flags   0 blocked | BLUE:   0 blocks 343 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 343: Red captured the flag. Blue must respond.
+[2K  Cycle   344 | 11m 28s | RED: 344 flags   0 blocked | BLUE:   0 blocks 344 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 344: Red captured the flag. Blue must respond.
+[2K  Cycle   345 | 11m 30s | RED: 345 flags   0 blocked | BLUE:   0 blocks 345 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 345: Red captured the flag. Blue must respond.
+[2K  Cycle   346 | 11m 32s | RED: 346 flags   0 blocked | BLUE:   0 blocks 346 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 346: Red captured the flag. Blue must respond.
+[2K  Cycle   347 | 11m 34s | RED: 347 flags   0 blocked | BLUE:   0 blocks 347 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 347: Red captured the flag. Blue must respond.
+[2K  Cycle   348 | 11m 36s | RED: 348 flags   0 blocked | BLUE:   0 blocks 348 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 348: Red captured the flag. Blue must respond.
+[2K  Cycle   349 | 11m 38s | RED: 349 flags   0 blocked | BLUE:   0 blocks 349 bypassed | Maturity:   0 | Esc: 13 | FLAG!
+  --> Cycle 349: Red captured the flag. Blue must respond.
+[2K  Cycle   350 | 11m 40s | RED: 350 flags   0 blocked | BLUE:   0 blocks 350 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 350: Red captured the flag. Blue must respond.
+[2K  Cycle   351 | 11m 42s | RED: 351 flags   0 blocked | BLUE:   0 blocks 351 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 351: Red captured the flag. Blue must respond.
+[2K  Cycle   352 | 11m 45s | RED: 352 flags   0 blocked | BLUE:   0 blocks 352 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 352: Red captured the flag. Blue must respond.
+[2K  Cycle   353 | 11m 47s | RED: 353 flags   0 blocked | BLUE:   0 blocks 353 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 353: Red captured the flag. Blue must respond.
+[2K  Cycle   354 | 11m 49s | RED: 354 flags   0 blocked | BLUE:   0 blocks 354 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 354: Red captured the flag. Blue must respond.
+[2K  Cycle   355 | 11m 51s | RED: 355 flags   0 blocked | BLUE:   0 blocks 355 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 355: Red captured the flag. Blue must respond.
+[2K  Cycle   356 | 11m 53s | RED: 356 flags   0 blocked | BLUE:   0 blocks 356 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 356: Red captured the flag. Blue must respond.
+[2K  Cycle   357 | 11m 55s | RED: 357 flags   0 blocked | BLUE:   0 blocks 357 bypassed | Maturity:   0 | Esc: 14 | FLAG!
+  --> Cycle 357: Red captured the flag. Blue must respond.

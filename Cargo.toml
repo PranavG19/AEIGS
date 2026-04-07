@@ -22,6 +22,11 @@ members = [
     "crates/aegis-scan-tui",
     "crates/aegis-web-ui",
     "crates/aegis-arena",
+    "crates/daemon-launcher",
+    "crates/ghost-protocol-daemon",
+    "crates/cache-poisoning-daemon",
+    "crates/schema-grammar-daemon",
+    "crates/h2-continuation-daemon",
 ]
 resolver = "2"
 
